@@ -67,6 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (foundUser && passwords[username] === password) {
             setUser(foundUser);
             localStorage.setItem('currentUser', JSON.stringify(foundUser));
+            
+            // Déclencher le préchargement du dashboard en arrière-plan
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('dashboardPreload', { detail: { user: foundUser } }));
+            }, 100);
+            
             return true;
         }
         return false;

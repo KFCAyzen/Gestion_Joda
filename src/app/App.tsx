@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import DashBoard from "./components/DashBoard";
 import ReservationPage from "./components/ReservationPage";
 import RoomsPage from "./components/RoomsPage";
-import ClientsPage from "./components/ClientsPage";
+import StudentsPage from "./components/StudentsPage";
 import BillingPage from "./components/BillingPage";
 import UserManagement from "./components/UserManagement";
 import ActivityHistory from "./components/ActivityHistory";
@@ -26,7 +26,7 @@ import NotificationsPage from "./components/NotificationsPage";
 import WelcomeScreen from "./components/WelcomeScreen";
 
 /**
- * Composant principal de l'application de gestion d'hôtel
+ * Composant principal de l'agence de voyage pour bourses d'études en Chine
  * Gère l'authentification, la navigation et l'affichage des pages
  */
 export default function App() {
@@ -94,7 +94,7 @@ export default function App() {
             case "chambres":
                 return <RoomsPage />;
             case "clients":
-                return <ClientsPage />;
+                return <StudentsPage />;
             case "facturation":
                 return <BillingPage />;
             case "users":
@@ -152,9 +152,9 @@ export default function App() {
                     <div className="flex items-center justify-between">
                         {/* Logo et titre */}
                         <button onClick={() => setCurrentPage("home")} className="flex items-center gap-2 sm:gap-3 cursor-pointer">
-                            <Image src={Images.logo} alt="Logo PAULINA HÔTEL" width={32} height={32} className="sm:w-10 sm:h-10 rounded-lg" />
+                            <Image src={Images.logo} alt="Logo SINO EDUCATION" width={32} height={32} className="sm:w-10 sm:h-10 rounded-lg" />
                             <h1 className="text-lg sm:text-xl font-bold text-white">
-                                PAULINA HÔTEL
+                                SINO EDUCATION
                             </h1>
                         </button>
                         
@@ -175,24 +175,24 @@ export default function App() {
                                     ? 'bg-white text-[#7D3837] rounded-t-xl shadow-lg border-b-4 border-white -mb-1 z-10' 
                                     : 'text-white hover:bg-white/15 hover:text-amber-200 rounded-lg'
                             }`}>
-                                    <Image src={currentPage === "reservations" ? Images.reservation : Images.reservationActif} alt="Reservations" width={16} height={16} />
-                                    Réservations
+                                    <Image src={currentPage === "reservations" ? Images.reservation : Images.reservationActif} alt="Bourses" width={16} height={16} />
+                                    Bourses
                                 </button>
                             <button onClick={() => setCurrentPage("chambres")} className={`px-4 py-4 flex items-center gap-2 transition-all duration-300 font-medium text-sm cursor-pointer relative ${
                                 currentPage === "chambres" 
                                     ? 'bg-white text-[#7D3837] rounded-t-xl shadow-lg border-b-4 border-white -mb-1 z-10' 
                                     : 'text-white hover:bg-white/15 hover:text-amber-200 rounded-lg'
                             }`}>
-                                    <Image src={currentPage === "chambres" ? Images.room : Images.roomActif} alt="Chambres" width={16} height={16} />
-                                    Chambres
+                                    <Image src={currentPage === "chambres" ? Images.room : Images.roomActif} alt="Universités" width={16} height={16} />
+                                    Universités
                                 </button>
                             <button onClick={() => setCurrentPage("clients")} className={`px-4 py-4 flex items-center gap-2 transition-all duration-300 font-medium text-sm cursor-pointer relative ${
                                 currentPage === "clients" 
                                     ? 'bg-white text-[#7D3837] rounded-t-xl shadow-lg border-b-4 border-white -mb-1 z-10' 
                                     : 'text-white hover:bg-white/15 hover:text-amber-200 rounded-lg'
                             }`}>
-                                    <Image src={currentPage === "clients" ? Images.client : Images.clientActif} alt="Clients" width={16} height={16} />
-                                    Clients
+                                    <Image src={currentPage === "clients" ? Images.client : Images.clientActif} alt="Étudiants" width={16} height={16} />
+                                    Étudiants
                                 </button>
                             </div>
                             
@@ -203,8 +203,8 @@ export default function App() {
                                     ? 'bg-white text-[#7D3837] rounded-t-xl shadow-lg border-b-4 border-white -mb-1 z-10' 
                                     : 'text-white hover:bg-white/15 hover:text-amber-200 rounded-lg'
                             }`}>
-                                    <Image src={currentPage === "facturation" ? Images.billing : Images.billingActif} alt="Facturation" width={16} height={16} />
-                                    Facturation
+                                    <Image src={currentPage === "facturation" ? Images.billing : Images.billingActif} alt="Paiements" width={16} height={16} />
+                                    Paiements
                                 </button>
                                 <button onClick={() => setCurrentPage("performance")} className={`p-2 rounded-lg transition-all duration-300 cursor-pointer relative overflow-hidden ${
                                     currentPage === "performance" 
@@ -314,20 +314,20 @@ export default function App() {
                                     Tableau de Bord
                                 </button>
                                 <button onClick={() => {setCurrentPage("reservations"); setIsMobileMenuOpen(false);}} style={{backgroundColor: currentPage === "reservations" ? 'white' : 'transparent', color: currentPage === "reservations" ? '#7D3837' : 'white'}} className="w-full px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-20 flex items-center gap-3 transition-all duration-200 font-medium text-left cursor-pointer">
-                                    <Image src={currentPage === "reservations" ? Images.reservation : Images.reservationActif} alt="Reservations" width={20} height={20} />
-                                    Réservations
+                                    <Image src={currentPage === "reservations" ? Images.reservation : Images.reservationActif} alt="Bourses" width={20} height={20} />
+                                    Bourses d'études
                                 </button>
                                 <button onClick={() => {setCurrentPage("chambres"); setIsMobileMenuOpen(false);}} style={{backgroundColor: currentPage === "chambres" ? 'white' : 'transparent', color: currentPage === "chambres" ? '#7D3837' : 'white'}} className="w-full px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-20 flex items-center gap-3 transition-all duration-200 font-medium text-left cursor-pointer">
-                                    <Image src={currentPage === "chambres" ? Images.room : Images.roomActif} alt="Chambres" width={20} height={20} />
-                                    Chambres
+                                    <Image src={currentPage === "chambres" ? Images.room : Images.roomActif} alt="Universités" width={20} height={20} />
+                                    Universités
                                 </button>
                                 <button onClick={() => {setCurrentPage("clients"); setIsMobileMenuOpen(false);}} style={{backgroundColor: currentPage === "clients" ? 'white' : 'transparent', color: currentPage === "clients" ? '#7D3837' : 'white'}} className="w-full px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-20 flex items-center gap-3 transition-all duration-200 font-medium text-left cursor-pointer">
-                                    <Image src={currentPage === "clients" ? Images.client : Images.clientActif} alt="Clients" width={20} height={20} />
-                                    Clients
+                                    <Image src={currentPage === "clients" ? Images.client : Images.clientActif} alt="Étudiants" width={20} height={20} />
+                                    Étudiants
                                 </button>
                                 <button onClick={() => {setCurrentPage("facturation"); setIsMobileMenuOpen(false);}} style={{backgroundColor: currentPage === "facturation" ? 'white' : 'transparent', color: currentPage === "facturation" ? '#7D3837' : 'white'}} className="w-full px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-20 flex items-center gap-3 transition-all duration-200 font-medium text-left cursor-pointer">
-                                    <Image src={currentPage === "facturation" ? Images.billing : Images.billingActif} alt="Facturation" width={20} height={20} />
-                                    Facturation
+                                    <Image src={currentPage === "facturation" ? Images.billing : Images.billingActif} alt="Paiements" width={20} height={20} />
+                                    Paiements
                                 </button>
                                 <button onClick={() => {setCurrentPage("performance"); setIsMobileMenuOpen(false);}} style={{backgroundColor: currentPage === "performance" ? 'white' : 'transparent', color: currentPage === "performance" ? '#7D3837' : 'white'}} className="w-full px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-20 flex items-center gap-3 transition-all duration-200 font-medium text-left cursor-pointer">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

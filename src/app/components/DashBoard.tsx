@@ -2,13 +2,9 @@ import { Images } from "./Images";
 import Image from "next/image";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { formatPrice } from "../utils/formatPrice";
-import { db } from "../firebase";
-import { collection, getDocs } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
-import LoadingSpinner from "./LoadingSpinner";
-import { dataCache } from "../utils/dataCache";
-import { useOptimizedData } from "../hooks/useOptimizedData";
-
+import { useDashboardPreloader } from "../hooks/useDashboardPreloader";
+import ProgressiveLoader from "./ProgressiveLoader";
 import { generateTestData, clearAllData, resetRoomsToDefault } from "../utils/generateTestData";
 
 interface Activity {
@@ -32,16 +28,20 @@ interface Room {
     category: string;
 }
 
-// Memoized stat card component
-const StatCard = memo(({ stat, index }: { stat: any; index: number }) => (
-    <div key={index} className={`${stat.bgColor} rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300`}>
+// Memoized stat card component avec indicateur de chargement
+const StatCard = memo(({ stat, index, isLoading }: { stat: any; index: number; isLoading?: boolean }) => (
+    <div key={index} className={`${stat.bgColor} rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 ${isLoading ? 'animate-pulse' : ''}`}>
         <div className="flex items-center justify-between mb-4">
             <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-r ${stat.color} flex items-center justify-center text-white p-2`}>
                 <Image src={stat.icon} alt={stat.title} width={24} height={24} className="filter brightness-0 invert" />
             </div>
             <div className="text-right">
                 <div className={`text-xl sm:text-2xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
-                    {stat.value}
+                    {isLoading ? (
+                        <div className="w-16 h-6 bg-slate-200 rounded animate-pulse"></div>
+                    ) : (
+                        stat.value
+                    )}
                 </div>
             </div>
         </div>
@@ -54,425 +54,98 @@ StatCard.displayName = 'StatCard';
 
 function DashBoard() {
     const { user } = useAuth();
-    const [isLoading, setIsLoading] = useState(true);
+    const [showSpinner, setShowSpinner] = useState(true);
+    const [hasStartedLoading, setHasStartedLoading] = useState(false);
+    const { data: dashboardData, loadingStates, preloadData, loadDataByPriority } = useDashboardPreloader(user);
 
-    const [dashboardData, setDashboardData] = useState(() => {
-        if (typeof window === 'undefined') {
-            return {
-                occupiedRooms: 0,
-                todayReservations: 0,
-                todayRevenue: 0,
-                recentActivities: [] as Activity[],
-                occupancyRate: 0,
-                availableRooms: 27,
-                maintenanceRooms: 0,
-                cleaningRooms: 0,
-                totalRooms: 27,
-                roomsByCategory: {} as Record<string, Room[]>,
-                weeklyReservations: [] as WeeklyReservation[],
-                monthlyRevenue: 0,
-                totalClients: 0,
-                totalBills: 0,
-                dailyStats: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } },
-                weeklyStats: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } }
-            };
-        }
-        try {
-            const rooms = JSON.parse(localStorage.getItem('rooms') || '[]');
-            let clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            let bills = JSON.parse(localStorage.getItem('bills') || '[]');
-            let reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
-            
-            if (user?.role === 'user') {
-                clients = clients.filter((c: any) => c.createdBy === user.username);
-                bills = bills.filter((b: any) => b.createdBy === user.username);
-                reservations = reservations.filter((r: any) => r.createdBy === user.username);
-            }
-            
-            const roomStatusCounts = {
-                'Disponible': 0,
-                'Occupée': 0,
-                'Maintenance': 0,
-                'Nettoyage': 0
-            };
-            
-            for (const room of rooms) {
-                if (room?.status && roomStatusCounts.hasOwnProperty(room.status)) {
-                    roomStatusCounts[room.status as keyof typeof roomStatusCounts]++;
-                }
-            }
-            
-            const occupiedRooms = roomStatusCounts['Occupée'];
-            const availableRooms = roomStatusCounts['Disponible'];
-            const totalRooms = rooms.length || 27;
-            const occupancyRate = Math.round((occupiedRooms / totalRooms) * 100);
-            
-            return {
-                occupiedRooms,
-                todayReservations: 0,
-                todayRevenue: 0,
-                recentActivities: [] as Activity[],
-                occupancyRate,
-                availableRooms,
-                maintenanceRooms: roomStatusCounts['Maintenance'],
-                cleaningRooms: roomStatusCounts['Nettoyage'],
-                totalRooms,
-                roomsByCategory: (() => {
-                    const categories: Record<string, Room[]> = {};
-                    for (const room of rooms) {
-                        if (!categories[room.category]) categories[room.category] = [];
-                        categories[room.category].push(room);
-                    }
-                    return categories;
-                })(),
-                weeklyReservations: [] as WeeklyReservation[],
-                monthlyRevenue: 0,
-                totalClients: clients.length,
-                totalBills: bills.length,
-                dailyStats: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } },
-                weeklyStats: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } }
-            };
-        } catch (error) {
-            return {
-                occupiedRooms: 0,
-                todayReservations: 0,
-                todayRevenue: 0,
-                recentActivities: [] as Activity[],
-                occupancyRate: 0,
-                availableRooms: 27,
-                maintenanceRooms: 0,
-                cleaningRooms: 0,
-                totalRooms: 27,
-                roomsByCategory: {} as Record<string, Room[]>,
-                weeklyReservations: [] as WeeklyReservation[],
-                monthlyRevenue: 0,
-                totalClients: 0,
-                totalBills: 0,
-                dailyStats: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } },
-                weeklyStats: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } }
-            };
-        }
-    });
 
-    const getWeeklyReservations = useCallback((reservations: any[]): WeeklyReservation[] => {
-        if (!Array.isArray(reservations)) return [];
-        
-        const counts = [0, 0, 0, 0, 0, 0, 0];
-        let maxCount = 1;
-        
-        for (const reservation of reservations) {
-            if (reservation?.checkIn) {
-                const date = new Date(reservation.checkIn);
-                if (!isNaN(date.getTime())) {
-                    const dayIndex = (date.getDay() + 6) % 7;
-                    counts[dayIndex]++;
-                    if (counts[dayIndex] > maxCount) maxCount = counts[dayIndex];
-                }
-            }
-        }
-        
-        return ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day, index) => ({
-            day,
-            count: counts[index],
-            maxCount
-        }));
-    }, []);
+
+    const refreshData = useCallback(async () => {
+        await preloadData();
+        await loadDataByPriority();
+    }, [preloadData, loadDataByPriority]);
     
-    const calculateAllStats = useCallback((bills: any[]) => {
-        if (!Array.isArray(bills)) return {
-            monthly: 0,
-            daily: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } },
-            weekly: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } }
-        };
-        
-        const now = new Date();
-        const today = now.toISOString().split('T')[0];
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-        const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
-        
-        let monthly = 0;
-        let dailyNuitee = 0, dailyNuiteeAmount = 0, dailyRepos = 0, dailyReposAmount = 0;
-        let weeklyNuitee = 0, weeklyNuiteeAmount = 0, weeklyRepos = 0, weeklyReposAmount = 0;
-        
-        for (const bill of bills) {
-            if (!bill?.date) continue;
-            
-            const amount = parseInt(bill.amount) || 0;
-            const billDate = new Date(bill.date);
-            
-            if (isNaN(billDate.getTime())) continue;
-            
-            // Monthly
-            if (billDate.getMonth() === currentMonth && billDate.getFullYear() === currentYear) {
-                monthly += amount;
-            }
-            
-            // Daily
-            if (bill.date === today) {
-                if (bill.motif === 'Nuitée') {
-                    dailyNuitee++;
-                    dailyNuiteeAmount += amount;
-                } else if (bill.motif === 'Repos') {
-                    dailyRepos++;
-                    dailyReposAmount += amount;
-                }
-            }
-            
-            // Weekly
-            if (billDate >= weekStart && billDate <= weekEnd) {
-                if (bill.motif === 'Nuitée') {
-                    weeklyNuitee++;
-                    weeklyNuiteeAmount += amount;
-                } else if (bill.motif === 'Repos') {
-                    weeklyRepos++;
-                    weeklyReposAmount += amount;
-                }
-            }
-        }
-        
-        return {
-            monthly,
-            daily: { nuitee: { count: dailyNuitee, amount: dailyNuiteeAmount }, repos: { count: dailyRepos, amount: dailyReposAmount } },
-            weekly: { nuitee: { count: weeklyNuitee, amount: weeklyNuiteeAmount }, repos: { count: weeklyRepos, amount: weeklyReposAmount } }
-        };
-    }, []);
-
-    const loadDashboardData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            // Check cache first
-            const cacheKey = `dashboard_${user?.username || 'all'}`;
-            const cached = dataCache.get(cacheKey);
-            if (cached && typeof cached === 'object') {
-                setDashboardData(cached as any);
-                setIsLoading(false);
-                return;
-            }
-
-            // Load data with optimized queries
-            let rooms = JSON.parse(localStorage.getItem('rooms') || '[]');
-            let clients = JSON.parse(localStorage.getItem('clients') || '[]');
-            let bills = JSON.parse(localStorage.getItem('bills') || '[]');
-            let reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
-            
-            // Si localStorage est vide, charger depuis Firebase
-            if (rooms.length === 0) {
-                const roomsSnapshot = await getDocs(collection(db, "rooms"));
-                const allRooms = roomsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Room[];
-                const roomMap = new Map();
-                allRooms.forEach(room => {
-                    if (!roomMap.has(room.number)) {
-                        roomMap.set(room.number, room);
-                    }
-                });
-                rooms = Array.from(roomMap.values());
-            }
-            
-            if (clients.length === 0) {
-                const clientsSnapshot = await getDocs(collection(db, "clients"));
-                clients = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            }
-            
-            if (bills.length === 0) {
-                const billsSnapshot = await getDocs(collection(db, "bills"));
-                bills = billsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            }
-            
-            if (reservations.length === 0) {
-                const reservationsSnapshot = await getDocs(collection(db, "reservations"));
-                reservations = reservationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            }
-            
-            if (user?.role === 'user') {
-                clients = clients.filter((c: any) => c.createdBy === user.username);
-                bills = bills.filter((b: any) => b.createdBy === user.username);
-                reservations = reservations.filter((r: any) => r.createdBy === user.username);
-            }
-            
-            const today = new Date().toISOString().split('T')[0];
-            const todayReservations = reservations.filter((r: any) => r.checkIn === today).length;
-            const todayBills = bills.filter((b: any) => b.date === today);
-            const todayRevenue = todayBills.reduce((sum: number, bill: any) => sum + (parseInt(bill.amount) || 0), 0);
-            
-            const roomStatusCounts = {
-                'Disponible': 0,
-                'Occupée': 0,
-                'Maintenance': 0,
-                'Nettoyage': 0
-            };
-            
-            for (const room of rooms) {
-                if (room?.status && roomStatusCounts.hasOwnProperty(room.status)) {
-                    roomStatusCounts[room.status as keyof typeof roomStatusCounts]++;
-                }
-            }
-            
-            const occupiedRooms = roomStatusCounts['Occupée'];
-            const availableRooms = roomStatusCounts['Disponible'];
-            const maintenanceRooms = roomStatusCounts['Maintenance'];
-            const cleaningRooms = roomStatusCounts['Nettoyage'];
-            const totalRooms = rooms.length || 27;
-            const occupancyRate = Math.round((occupiedRooms / totalRooms) * 100);
-            
-            const recentActivities: Activity[] = [];
-            
-            const recent = [...reservations.slice(-3), ...clients.slice(-2), ...bills.slice(-2)]
-                .filter(item => item && typeof item === 'object')
-                .slice(-5)
-                .map((item: any) => {
-                    if (item.clientName) return { type: 'reservation', message: `Nouvelle réservation - ${item.clientName}`, detail: `Chambre ${item.roomNumber || 'N/A'}` };
-                    if (item.name) return { type: 'client', message: `Nouveau client - ${item.name}`, detail: item.phone || 'Téléphone non renseigné' };
-                    return { type: 'billing', message: `Nouveau reçu - ${item.receivedFrom || 'Client'}`, detail: formatPrice(item.amount || '0') };
-                })
-                .map(item => ({ ...item, time: 'Il y a quelques minutes' }));
-            
-            recentActivities.push(...recent);
-            
-            const stats = calculateAllStats(bills);
-            const roomsByCategory: Record<string, Room[]> = {};
-            for (const room of rooms) {
-                if (!roomsByCategory[room.category]) roomsByCategory[room.category] = [];
-                roomsByCategory[room.category].push(room);
-            }
-            
-            const dashboardResult = {
-                occupiedRooms,
-                todayReservations,
-                todayRevenue,
-                recentActivities: recentActivities.slice(0, 5),
-                occupancyRate,
-                availableRooms,
-                maintenanceRooms,
-                cleaningRooms,
-                totalRooms,
-                roomsByCategory,
-                weeklyReservations: getWeeklyReservations(reservations),
-                monthlyRevenue: stats.monthly,
-                totalClients: clients.length,
-                totalBills: bills.length,
-                dailyStats: stats.daily,
-                weeklyStats: stats.weekly
-            };
-            
-            setDashboardData(dashboardResult);
-            // Cache for 2 minutes
-            dataCache.set(cacheKey, dashboardResult, 2 * 60 * 1000);
-        } catch (error) {
-            console.warn('Error loading data:', error);
-            // En cas d'erreur, utiliser les valeurs par défaut
-            setDashboardData({
-                occupiedRooms: 0,
-                todayReservations: 0,
-                todayRevenue: 0,
-                recentActivities: [],
-                occupancyRate: 0,
-                availableRooms: 27,
-                maintenanceRooms: 0,
-                cleaningRooms: 0,
-                totalRooms: 27,
-                roomsByCategory: {},
-                weeklyReservations: [],
-                monthlyRevenue: 0,
-                totalClients: 0,
-                totalBills: 0,
-                dailyStats: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } },
-                weeklyStats: { nuitee: { count: 0, amount: 0 }, repos: { count: 0, amount: 0 } }
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [user?.role, user?.username, calculateAllStats, getWeeklyReservations]);
-    
+    // Gestion du spinner et du chargement progressif
     useEffect(() => {
-        let isMounted = true;
-        let debounceTimer: NodeJS.Timeout;
+        // Démarrer le préchargement immédiatement
+        preloadData();
         
-        const loadData = async () => {
-            if (isMounted) {
-                await loadDashboardData();
+        // Masquer le spinner après 5 secondes maximum
+        const spinnerTimer = setTimeout(() => {
+            setShowSpinner(false);
+            if (!hasStartedLoading) {
+                setHasStartedLoading(true);
+                loadDataByPriority();
             }
-        };
+        }, 5000);
         
-        const debouncedLoadData = () => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                if (isMounted) {
-                    loadData();
-                }
-            }, 500); // Attendre 500ms avant de recharger
-        };
-        
-        loadData();
-        
-
-        
-        const handleStorageChange = (event: StorageEvent) => {
-            if (event.storageArea === localStorage && event.key && isMounted) {
-                debouncedLoadData();
-            }
-        };
-        
+        return () => clearTimeout(spinnerTimer);
+    }, [preloadData, loadDataByPriority, hasStartedLoading]);
+    
+    // Démarrer le chargement progressif dès que les données de base sont disponibles
+    useEffect(() => {
+        if (dashboardData.totalRooms > 0 && !hasStartedLoading) {
+            setShowSpinner(false);
+            setHasStartedLoading(true);
+            loadDataByPriority();
+        }
+    }, [dashboardData.totalRooms, hasStartedLoading, loadDataByPriority]);
+    
+    // Gestion des événements de mise à jour
+    useEffect(() => {
         const handleDataUpdate = () => {
-            if (isMounted) {
-                debouncedLoadData();
-            }
+            preloadData();
+            loadDataByPriority();
         };
         
-        window.addEventListener('storage', handleStorageChange);
         window.addEventListener('dashboardUpdate', handleDataUpdate);
         window.addEventListener('roomStatusChanged', handleDataUpdate);
         window.addEventListener('dataChanged', handleDataUpdate);
         
-        // Rafraîchissement moins fréquent pour éviter les conflits
-        const interval = setInterval(() => {
-            if (isMounted && document.visibilityState === 'visible') {
-                loadData();
-            }
-        }, 10000); // Toutes les 10 secondes au lieu de 5
-        
         return () => {
-            isMounted = false;
-
-            clearTimeout(debounceTimer);
-            window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('dashboardUpdate', handleDataUpdate);
             window.removeEventListener('roomStatusChanged', handleDataUpdate);
             window.removeEventListener('dataChanged', handleDataUpdate);
-            clearInterval(interval);
         };
-    }, [user?.username, loadDashboardData]);
+    }, [preloadData, loadDataByPriority]);
 
     const stats = useMemo(() => [
         {
-            title: user?.role === 'user' ? "Chambres Occupées" : "Chambres Occupées",
+            title: user?.role === 'user' ? "Universités Partenaires" : "Universités Partenaires",
             value: dashboardData.occupiedRooms.toString(),
-            subtitle: `sur ${dashboardData.totalRooms} chambres`,
+            subtitle: `sur ${dashboardData.totalRooms} universités`,
             color: "from-blue-500 to-blue-600",
             bgColor: "bg-blue-50",
             icon: Images.room
         },
         {
-            title: user?.role === 'user' ? "Mes Réservations" : "Réservations Aujourd&apos;hui",
+            title: user?.role === 'user' ? "Mes Candidatures" : "Candidatures Aujourd&apos;hui",
             value: dashboardData.todayReservations.toString(),
-            subtitle: user?.role === 'user' ? "mes réservations" : "nouvelles réservations",
+            subtitle: user?.role === 'user' ? "mes candidatures" : "nouvelles candidatures",
             color: "from-green-500 to-green-600",
             bgColor: "bg-green-50",
             icon: Images.reservation
         },
         {
-            title: user?.role === 'user' ? "Mes Revenus" : "Revenus du Jour",
+            title: user?.role === 'user' ? "Mes Frais" : "Revenus du Jour",
             value: formatPrice(dashboardData.todayRevenue.toString()),
-            subtitle: user?.role === 'user' ? "mes revenus" : "chiffre d&apos;affaires",
+            subtitle: user?.role === 'user' ? "mes frais" : "chiffre d&apos;affaires",
             color: "from-purple-500 to-purple-600",
             bgColor: "bg-purple-50",
             icon: Images.billing
         }
     ], [dashboardData.occupiedRooms, dashboardData.totalRooms, dashboardData.todayReservations, dashboardData.todayRevenue, user?.role]);
 
-    if (isLoading) {
-        return <LoadingSpinner size="lg" text="Chargement du tableau de bord..." />;
+    if (showSpinner) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-slate-600">Chargement du tableau de bord...</p>
+                    <p className="text-xs text-slate-400 mt-2">Maximum 5 secondes</p>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -483,14 +156,14 @@ function DashBoard() {
                         <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Tableau de Bord</h1>
                         <p className="text-sm sm:text-base text-slate-600">
                             {user?.role === 'user' 
-                                ? 'Vue d\'ensemble de vos activités' 
-                                : 'Vue d\'ensemble de votre établissement'
+                                ? 'Vue d\'ensemble de vos candidatures' 
+                                : 'Vue d\'ensemble de l\'agence'
                             }
                         </p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2">
                         <button
-                            onClick={loadDashboardData}
+                            onClick={refreshData}
                             className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm transition-colors"
                         >
                             Actualiser
@@ -503,7 +176,7 @@ function DashBoard() {
                                             const success = await generateTestData();
                                             if (success) {
                                                 alert('Données de test générées avec succès!');
-                                                loadDashboardData();
+                                                refreshData();
                                             } else {
                                                 alert('Erreur lors de la génération des données');
                                             }
@@ -519,7 +192,7 @@ function DashBoard() {
                                         if (confirm('Réinitialiser les chambres aux 27 par défaut ?')) {
                                             resetRoomsToDefault();
                                             alert('Chambres réinitialisées aux 27 par défaut');
-                                            loadDashboardData();
+                                            refreshData();
                                         }
                                     }}
                                     className="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs sm:text-sm transition-colors"
@@ -532,13 +205,100 @@ function DashBoard() {
                                         if (confirm('Supprimer toutes les données ? Cette action est irréversible.')) {
                                             clearAllData();
                                             alert('Toutes les données ont été supprimées');
-                                            loadDashboardData();
+                                            refreshData();
                                         }
                                     }}
                                     className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs sm:text-sm transition-colors"
                                 >
                                     <span className="hidden sm:inline">Vider données</span>
                                     <span className="sm:hidden">Vider</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (confirm('Nettoyer les données parasites ? Cela supprimera les données de test et fictives.')) {
+                                            // Nettoyer les clients fictifs
+                                            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                                            const cleanClients = clients.filter((client: any) => 
+                                                !(client.name === 'Jean Dupont' && client.phone === '+237 690 123 456') &&
+                                                !client.id?.startsWith('fictif_')
+                                            );
+                                            localStorage.setItem('clients', JSON.stringify(cleanClients));
+                                            
+                                            // Nettoyer les factures de test
+                                            const bills = JSON.parse(localStorage.getItem('bills') || '[]');
+                                            const cleanBills = bills.filter((bill: any) => !bill.id?.startsWith('test_'));
+                                            localStorage.setItem('bills', JSON.stringify(cleanBills));
+                                            
+                                            // Nettoyer les réservations de test
+                                            const reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+                                            const cleanReservations = reservations.filter((res: any) => !res.id?.startsWith('test_'));
+                                            localStorage.setItem('reservations', JSON.stringify(cleanReservations));
+                                            
+                                            // Nettoyer les chambres dupliquées
+                                            const rooms = JSON.parse(localStorage.getItem('rooms') || '[]');
+                                            const uniqueRooms = [];
+                                            const seenNumbers = new Set();
+                                            
+                                            for (const room of rooms) {
+                                                if (!seenNumbers.has(room.number)) {
+                                                    seenNumbers.add(room.number);
+                                                    uniqueRooms.push(room);
+                                                }
+                                            }
+                                            
+                                            // Si plus de 50 chambres, garder seulement les 27 prédéfinies
+                                            if (uniqueRooms.length > 50) {
+                                                const predefinedRooms = [
+                                                    // Standard (4)
+                                                    { id: 'std_101', number: '101', price: '15000', status: 'Disponible', category: 'Standard' },
+                                                    { id: 'std_102', number: '102', price: '15000', status: 'Disponible', category: 'Standard' },
+                                                    { id: 'std_103', number: '103', price: '15000', status: 'Disponible', category: 'Standard' },
+                                                    { id: 'std_104', number: '104', price: '15000', status: 'Disponible', category: 'Standard' },
+                                                    // Confort (13)
+                                                    { id: 'conf_201', number: '201', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_202', number: '202', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_203', number: '203', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_301', number: '301', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_302', number: '302', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_303', number: '303', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_304', number: '304', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_305', number: '305', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_306', number: '306', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_307', number: '307', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_308', number: '308', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_309', number: '309', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    { id: 'conf_310', number: '310', price: '25000', status: 'Disponible', category: 'Confort' },
+                                                    // VIP (9)
+                                                    { id: 'vip_311', number: '311', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    { id: 'vip_312', number: '312', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    { id: 'vip_313', number: '313', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    { id: 'vip_314', number: '314', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    { id: 'vip_315', number: '315', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    { id: 'vip_316', number: '316', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    { id: 'vip_317', number: '317', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    { id: 'vip_318', number: '318', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    { id: 'vip_319', number: '319', price: '45000', status: 'Disponible', category: 'VIP' },
+                                                    // Suite (1)
+                                                    { id: 'suite_320', number: '320', price: '75000', status: 'Disponible', category: 'Suite' }
+                                                ];
+                                                localStorage.setItem('rooms', JSON.stringify(predefinedRooms));
+                                            } else {
+                                                localStorage.setItem('rooms', JSON.stringify(uniqueRooms));
+                                            }
+                                            
+                                            // Vider le cache
+                                            ['dashboard_all', 'dashboard_superadmin', 'dashboard_admin', 'dashboard_user'].forEach(key => {
+                                                localStorage.removeItem(key);
+                                            });
+                                            
+                                            alert(`Données nettoyées ! Chambres: ${rooms.length} → ${uniqueRooms.length > 50 ? 27 : uniqueRooms.length}`);
+                                            refreshData();
+                                        }
+                                    }}
+                                    className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs sm:text-sm transition-colors"
+                                >
+                                    <span className="hidden sm:inline">Nettoyer données</span>
+                                    <span className="sm:hidden">Nettoyer</span>
                                 </button>
                             </div>
                         )}
@@ -548,7 +308,7 @@ function DashBoard() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {stats.map((stat, index) => (
-                    <StatCard key={index} stat={stat} index={index} />
+                    <StatCard key={index} stat={stat} index={index} isLoading={loadingStates.rooms && index === 0} />
                 ))}
             </div>
 
@@ -558,12 +318,12 @@ function DashBoard() {
                         <h3 className="text-lg font-semibold text-slate-800 mb-4">Aperçu Rapide</h3>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-slate-600">Taux d&apos;occupation</span>
+                                    <span className="text-slate-600">Taux de réussite</span>
                                     <span className={`font-semibold ${
-                                        dashboardData.occupancyRate > 80 ? 'text-red-600' :
-                                        dashboardData.occupancyRate > 60 ? 'text-orange-600' :
-                                        dashboardData.occupancyRate > 30 ? 'text-yellow-600' :
-                                        'text-green-600'
+                                        dashboardData.occupancyRate > 80 ? 'text-green-600' :
+                                        dashboardData.occupancyRate > 60 ? 'text-yellow-600' :
+                                        dashboardData.occupancyRate > 30 ? 'text-orange-600' :
+                                        'text-red-600'
                                     }`}>
                                         {dashboardData.occupancyRate}%
                                     </span>
@@ -582,11 +342,11 @@ function DashBoard() {
                                 <div className="grid grid-cols-2 gap-4 pt-2">
                                     <div className="text-center p-3 bg-slate-50 rounded-lg">
                                         <div className="text-lg font-bold text-slate-800">{dashboardData.availableRooms}</div>
-                                        <div className="text-xs text-slate-600">Disponibles</div>
+                                        <div className="text-xs text-slate-600">En attente</div>
                                     </div>
                                     <div className="text-center p-3 bg-slate-50 rounded-lg">
                                         <div className="text-lg font-bold text-slate-800">{dashboardData.occupiedRooms}</div>
-                                        <div className="text-xs text-slate-600">Occupées</div>
+                                        <div className="text-xs text-slate-600">Acceptées</div>
                                     </div>
                                 </div>
                                 <div className="pt-2 border-t border-slate-200">
@@ -601,23 +361,23 @@ function DashBoard() {
                         </div>
 
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-4">Statut des Chambres</h3>
+                        <h3 className="text-lg font-semibold text-slate-800 mb-4">Statut des Candidatures</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="text-center p-4 bg-green-50 rounded-lg">
-                                <div className="text-2xl font-bold text-green-600">{dashboardData.availableRooms}</div>
-                                <div className="text-sm text-green-700">Disponibles</div>
-                            </div>
                             <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                <div className="text-2xl font-bold text-blue-600">{dashboardData.occupiedRooms}</div>
-                                <div className="text-sm text-blue-700">Occupées</div>
+                                <div className="text-2xl font-bold text-blue-600">{dashboardData.availableRooms}</div>
+                                <div className="text-sm text-blue-700">En attente</div>
+                            </div>
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                                <div className="text-2xl font-bold text-green-600">{dashboardData.occupiedRooms}</div>
+                                <div className="text-sm text-green-700">Acceptées</div>
                             </div>
                             <div className="text-center p-4 bg-yellow-50 rounded-lg">
                                 <div className="text-2xl font-bold text-yellow-600">{dashboardData.maintenanceRooms}</div>
-                                <div className="text-sm text-yellow-700">Maintenance</div>
+                                <div className="text-sm text-yellow-700">En cours</div>
                             </div>
-                            <div className="text-center p-4 bg-purple-50 rounded-lg">
-                                <div className="text-2xl font-bold text-purple-600">{dashboardData.cleaningRooms}</div>
-                                <div className="text-sm text-purple-700">Nettoyage</div>
+                            <div className="text-center p-4 bg-red-50 rounded-lg">
+                                <div className="text-2xl font-bold text-red-600">{dashboardData.cleaningRooms}</div>
+                                <div className="text-sm text-red-700">Refusées</div>
                             </div>
                         </div>
                     </div>
@@ -627,20 +387,21 @@ function DashBoard() {
             {/* Statistiques de rendement - Section importante */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
                 {/* Rendement journalier */}
-                <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm">
-                    <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-4">Rendement Journalier</h3>
+                <ProgressiveLoader isLoading={loadingStates.revenue}>
+                    <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+                        <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-4">Rendement Journalier</h3>
                     <div className="space-y-4">
                         <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                             <div>
-                                <p className="text-sm font-medium text-blue-800">Nuitées</p>
-                                <p className="text-xs text-blue-600">{dashboardData.dailyStats?.nuitee?.count || 0} chambres</p>
+                                <p className="text-sm font-medium text-blue-800">Bourses complètes</p>
+                                <p className="text-xs text-blue-600">{dashboardData.dailyStats?.nuitee?.count || 0} étudiants</p>
                             </div>
                             <p className="text-lg font-bold text-blue-600">{formatPrice((dashboardData.dailyStats?.nuitee?.amount || 0).toString())}</p>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                             <div>
-                                <p className="text-sm font-medium text-green-800">Repos</p>
-                                <p className="text-xs text-green-600">{dashboardData.dailyStats?.repos?.count || 0} chambres</p>
+                                <p className="text-sm font-medium text-green-800">Bourses partielles</p>
+                                <p className="text-xs text-green-600">{dashboardData.dailyStats?.repos?.count || 0} étudiants</p>
                             </div>
                             <p className="text-lg font-bold text-green-600">{formatPrice((dashboardData.dailyStats?.repos?.amount || 0).toString())}</p>
                         </div>
@@ -653,11 +414,13 @@ function DashBoard() {
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
+                </ProgressiveLoader>
                 
                 {/* Revenus mensuels */}
-                <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm">
-                    <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-4">Revenus du Mois</h3>
+                <ProgressiveLoader isLoading={loadingStates.revenue}>
+                    <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+                        <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-4">Revenus du Mois</h3>
                     <div className="space-y-4">
                         <div className="text-center">
                             <div className="text-3xl font-bold" style={{color: '#7D3837'}}>
@@ -668,11 +431,11 @@ function DashBoard() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="text-center p-3 bg-green-50 rounded-lg">
                                 <div className="text-lg font-bold text-green-600">{dashboardData.totalClients}</div>
-                                <div className="text-xs text-slate-600">Total clients</div>
+                                <div className="text-xs text-slate-600">Total étudiants</div>
                             </div>
                             <div className="text-center p-3 bg-blue-50 rounded-lg">
                                 <div className="text-lg font-bold text-blue-600">{dashboardData.totalBills}</div>
-                                <div className="text-xs text-slate-600">Total reçus</div>
+                                <div className="text-xs text-slate-600">Total paiements</div>
                             </div>
                         </div>
                         <div className="pt-3 border-t border-slate-200">
@@ -688,16 +451,18 @@ function DashBoard() {
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
+                </ProgressiveLoader>
             </div>
             
             {/* Activités récentes et Chambres par catégorie */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                <ProgressiveLoader isLoading={loadingStates.activities}>
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-slate-800">Activités Récentes</h3>
                         <button 
-                            onClick={loadDashboardData}
+                            onClick={refreshData}
                             className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1 rounded hover:bg-slate-100"
                         >
                             Actualiser
@@ -748,17 +513,19 @@ function DashBoard() {
                             })
                         )}
                     </div>
-                </div>
+                    </div>
+                </ProgressiveLoader>
 
                 {/* Chambres par catégorie */}
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Chambres par Catégorie</h3>
+                <ProgressiveLoader isLoading={loadingStates.clients}>
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Universités par Type</h3>
                     <div className="space-y-3">
                         {[
-                            { name: 'Standard', color: 'bg-blue-500' },
-                            { name: 'Confort', color: 'bg-green-500' },
-                            { name: 'VIP', color: 'bg-purple-500' },
-                            { name: 'Suite', color: 'bg-amber-500' }
+                            { name: 'Publiques', color: 'bg-blue-500' },
+                            { name: 'Privées', color: 'bg-green-500' },
+                            { name: 'Techniques', color: 'bg-purple-500' },
+                            { name: 'Médicales', color: 'bg-amber-500' }
                         ].map((category, index) => {
                             const categoryRooms = dashboardData.roomsByCategory[category.name] || [];
                             const totalCount = categoryRooms.length;
@@ -779,13 +546,15 @@ function DashBoard() {
                             );
                         })}
                     </div>
-                </div>
+                    </div>
+                </ProgressiveLoader>
             </div>
             
             {/* Sections secondaires */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
                 {/* Rendement hebdomadaire */}
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                <ProgressiveLoader isLoading={loadingStates.revenue}>
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                     <h3 className="text-lg font-semibold text-slate-800 mb-4">Rendement Hebdomadaire</h3>
                     <div className="space-y-4">
                         <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
@@ -811,11 +580,13 @@ function DashBoard() {
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
+                </ProgressiveLoader>
 
                 {/* Clients récents */}
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Derniers Clients</h3>
+                <ProgressiveLoader isLoading={loadingStates.activities}>
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Derniers Étudiants</h3>
                     <div className="space-y-3">
                         {dashboardData.recentActivities.filter((a: Activity) => a.type === 'client').slice(0, 4).map((client, index) => (
                             <div key={`client-${index}-${client.message}-${client.detail}-${Date.now()}`} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
@@ -834,15 +605,17 @@ function DashBoard() {
                         ))}
                         {dashboardData.recentActivities.filter((a: Activity) => a.type === 'client').length === 0 && (
                             <div className="text-center py-4 text-slate-500 text-sm">
-                                Aucun client récent
+                                Aucun étudiant récent
                             </div>
                         )}
                     </div>
-                </div>
+                    </div>
+                </ProgressiveLoader>
 
                 {/* Réservations par jour de la semaine */}
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Réservations par Jour</h3>
+                <ProgressiveLoader isLoading={loadingStates.reservations}>
+                    <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Candidatures par Jour</h3>
                     <div className="space-y-3">
                         {dashboardData.weeklyReservations.map((dayData, index) => (
                             <div key={`day-${dayData.day}-${index}-${dayData.count}-${dayData.maxCount}`} className="flex items-center gap-3">
@@ -857,7 +630,8 @@ function DashBoard() {
                             </div>
                         ))}
                     </div>
-                </div>
+                    </div>
+                </ProgressiveLoader>
             </div>
             
 

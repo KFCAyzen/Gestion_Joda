@@ -6,7 +6,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import { formatPrice } from "../utils/formatPrice";
 import { useActivityLog } from "../context/ActivityLogContext";
 import { useAuth } from "../context/AuthContext";
-import LoadingSpinner from "./LoadingSpinner";
+import ProgressiveLoader from "./ProgressiveLoader";
 
 interface Room {
     id: string;
@@ -21,6 +21,7 @@ export default function RoomsPage() {
     const [editingRoom, setEditingRoom] = useState<Room | null>(null);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [showSpinner, setShowSpinner] = useState(true);
     const { showNotification } = useNotificationContext();
     const { addLog } = useActivityLog();
     const { user } = useAuth();
@@ -78,18 +79,35 @@ export default function RoomsPage() {
     };
 
     const removeDuplicateRooms = (rooms: Room[]) => {
+        if (!Array.isArray(rooms)) return [];
+        
+        // Si plus de 1000 chambres, c'est clairement un problème de duplication massive
+        if (rooms.length > 1000) {
+            console.warn(`Détection de ${rooms.length} chambres - nettoyage forcé vers les 27 prédéfinies`);
+            return predefinedRooms;
+        }
+        
         const seen = new Set();
-        return rooms.filter(room => {
-            if (seen.has(room.number)) {
-                return false;
+        const uniqueRooms = [];
+        
+        for (const room of rooms) {
+            if (room && room.number && !seen.has(room.number)) {
+                seen.add(room.number);
+                uniqueRooms.push(room);
             }
-            seen.add(room.number);
-            return true;
-        });
+        }
+        
+        // Si encore trop de chambres après déduplication, forcer les prédéfinies
+        if (uniqueRooms.length > 100) {
+            console.warn(`Encore ${uniqueRooms.length} chambres après déduplication - utilisation des prédéfinies`);
+            return predefinedRooms;
+        }
+        
+        return uniqueRooms;
     };
 
     const loadRooms = async () => {
-        setIsLoading(true);
+        if (rooms.length === 0) setIsLoading(true);
         try {
             const roomsData = await loadFromFirebase('rooms');
             if (!Array.isArray(roomsData) || roomsData.length === 0) {
@@ -115,6 +133,7 @@ export default function RoomsPage() {
             }
         } finally {
             setIsLoading(false);
+            setShowSpinner(false);
         }
     };
 
@@ -255,8 +274,15 @@ export default function RoomsPage() {
         showNotification(`Statut mis à jour: ${newStatus}`, "success");
     };
 
-    if (isLoading) {
-        return <LoadingSpinner size="lg" text="Chargement des chambres..." />;
+    if (showSpinner && rooms.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-slate-600">Chargement des chambres...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -342,7 +368,8 @@ export default function RoomsPage() {
                 </div>
                 
                 <div className="p-4 sm:p-6">
-                    {rooms.length === 0 ? (
+                    <ProgressiveLoader isLoading={isLoading}>
+                        {rooms.length === 0 ? (
                         <div className="text-center py-8 sm:py-12">
                             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -452,6 +479,7 @@ export default function RoomsPage() {
                             })}
                         </div>
                     )}
+                    </ProgressiveLoader>
                 </div>
             </div>
         </div>
