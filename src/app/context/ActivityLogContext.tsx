@@ -8,7 +8,7 @@ export interface ActivityLog {
     userId: string;
     username: string;
     action: string;
-    module: 'clients' | 'reservations' | 'bills' | 'rooms' | 'users';
+    module: 'clients' | 'reservations' | 'bills' | 'rooms' | 'users' | 'applicationFees' | 'applications' | 'students' | 'universities';
     details: string;
     timestamp: string;
     data?: any;

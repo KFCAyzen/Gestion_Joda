@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+
 import { loadFromFirebase } from "../utils/syncData";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -19,7 +19,7 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-    const { user } = useAuth();
+    
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'unread' | 'checkout' | 'actions'>('all');
@@ -138,7 +138,7 @@ export default function NotificationsPage() {
         switch (type) {
             case 'checkout':
                 return (
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 );
@@ -164,7 +164,7 @@ export default function NotificationsPage() {
     return (
         <div className="p-4 sm:p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-0" style={{color: '#7D3837'}}>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-0" style={{color: '#dc2626'}}>
                     Notifications
                 </h1>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -199,7 +199,7 @@ export default function NotificationsPage() {
                                 ? 'text-white'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
-                        style={filter === key ? {backgroundColor: '#7D3837'} : {}}
+                        style={filter === key ? {backgroundColor: '#dc2626'} : {}}
                     >
                         {label}
                         {key === 'unread' && notifications.filter(n => !n.read).length > 0 && (
@@ -251,7 +251,7 @@ export default function NotificationsPage() {
                                         </p>
                                         <div className="flex items-center gap-2">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                notification.type === 'checkout' ? 'bg-orange-100 text-orange-800' :
+                                                notification.type === 'checkout' ? 'bg-red-100 text-red-800' :
                                                 notification.type === 'user_action' ? 'bg-blue-100 text-blue-800' :
                                                 'bg-gray-100 text-gray-800'
                                             }`}>

@@ -56,7 +56,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
-                <h2 className="text-lg sm:text-xl font-bold mb-4" style={{color: '#7D3837'}}>
+                <h2 className="text-lg sm:text-xl font-bold mb-4" style={{color: '#dc2626'}}>
                     Modifier le mot de passe
                 </h2>
                 
@@ -69,7 +69,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                             onChange={(e) => setCurrentPassword(e.target.value)}
                             required
                             className="w-full p-2 sm:p-3 border rounded text-sm sm:text-base"
-                            style={{borderColor: '#7D3837'}}
+                            style={{borderColor: '#dc2626'}}
                         />
                     </div>
                     
@@ -81,7 +81,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                             onChange={(e) => setNewPassword(e.target.value)}
                             required
                             className="w-full p-2 sm:p-3 border rounded text-sm sm:text-base"
-                            style={{borderColor: '#7D3837'}}
+                            style={{borderColor: '#dc2626'}}
                         />
                     </div>
                     
@@ -93,7 +93,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             required
                             className="w-full p-2 sm:p-3 border rounded text-sm sm:text-base"
-                            style={{borderColor: '#7D3837'}}
+                            style={{borderColor: '#dc2626'}}
                         />
                     </div>
                     
@@ -102,7 +102,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                             type="submit"
                             disabled={loading}
                             className="flex-1 px-4 py-2 text-white rounded text-sm sm:text-base font-medium"
-                            style={{backgroundColor: '#7D3837'}}
+                            style={{backgroundColor: '#dc2626'}}
                         >
                             {loading ? "Modification..." : "Modifier"}
                         </button>
@@ -110,7 +110,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                             type="button"
                             onClick={onClose}
                             className="flex-1 px-4 py-2 border rounded text-sm sm:text-base"
-                            style={{borderColor: '#7D3837', color: '#7D3837'}}
+                            style={{borderColor: '#dc2626', color: '#dc2626'}}
                         >
                             Annuler
                         </button>

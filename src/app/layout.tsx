@@ -1,30 +1,24 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { AuthProvider } from "./context/AuthContext";
-import { ActivityLogProvider } from "./context/ActivityLogContext";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Gestion d'Hôtel",
-  description: "Système de gestion d'hôtel",
-  icons: {
-    icon: "/favicon.ico",
-  },
-};
+  title: 'Joda Company - Gestion des Bourses',
+  description: 'Plateforme de gestion des bourses d\'études en Chine',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="fr">
-      <body className="antialiased">
-        <AuthProvider>
-          <ActivityLogProvider>
-            {children}
-          </ActivityLogProvider>
-        </AuthProvider>
+    <html lang="fr" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        {children}
       </body>
     </html>
-  );
+  )
 }

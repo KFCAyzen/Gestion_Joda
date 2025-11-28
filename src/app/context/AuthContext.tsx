@@ -9,7 +9,7 @@ export interface User {
     username: string;
     role: UserRole;
     name: string;
-    mustChangePassword: boolean;
+    mustChangePassword?: boolean;
 }
 
 interface AuthContextType {
@@ -43,36 +43,56 @@ const defaultPasswords: Record<string, string> = {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
-    const [users, setUsers] = useState<User[]>(defaultUsers);
-    const [passwords, setPasswords] = useState<Record<string, string>>(defaultPasswords);
+    const [users, setUsers] = useState<User[]>([]);
+    const [passwords, setPasswords] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        const savedUser = localStorage.getItem('currentUser');
-        const savedUsers = localStorage.getItem('systemUsers');
-        const savedPasswords = localStorage.getItem('systemPasswords');
-        
-        if (savedUser) {
-            setUser(JSON.parse(savedUser));
-        }
-        if (savedUsers) {
-            setUsers(JSON.parse(savedUsers));
-        }
-        if (savedPasswords) {
-            setPasswords(JSON.parse(savedPasswords));
+        if (typeof window !== 'undefined') {
+            const savedUser = localStorage.getItem('currentUser');
+            const savedUsers = localStorage.getItem('systemUsers');
+            const savedPasswords = localStorage.getItem('systemPasswords');
+            
+            if (savedUser) {
+                try {
+                    setUser(JSON.parse(savedUser));
+                } catch (e) {
+                    console.error('Error parsing user:', e);
+                }
+            }
+            
+            if (savedUsers) {
+                try {
+                    setUsers(JSON.parse(savedUsers));
+                } catch (e) {
+                    setUsers(defaultUsers);
+                    localStorage.setItem('systemUsers', JSON.stringify(defaultUsers));
+                }
+            } else {
+                setUsers(defaultUsers);
+                localStorage.setItem('systemUsers', JSON.stringify(defaultUsers));
+            }
+            
+            if (savedPasswords) {
+                try {
+                    setPasswords(JSON.parse(savedPasswords));
+                } catch (e) {
+                    setPasswords(defaultPasswords);
+                    localStorage.setItem('systemPasswords', JSON.stringify(defaultPasswords));
+                }
+            } else {
+                setPasswords(defaultPasswords);
+                localStorage.setItem('systemPasswords', JSON.stringify(defaultPasswords));
+            }
         }
     }, []);
 
     const login = async (username: string, password: string): Promise<boolean> => {
-        const foundUser = users.find(u => u.username === username);
-        if (foundUser && passwords[username] === password) {
-            setUser(foundUser);
-            localStorage.setItem('currentUser', JSON.stringify(foundUser));
-            
-            // Déclencher le préchargement du dashboard en arrière-plan
-            setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('dashboardPreload', { detail: { user: foundUser } }));
-            }, 100);
-            
+        const account = users.find(u => u.username === username);
+        if (account && passwords[username] === password) {
+            setUser(account);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('currentUser', JSON.stringify(account));
+            }
             return true;
         }
         return false;
@@ -80,18 +100,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('currentUser');
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('currentUser');
+        }
     };
 
     const hasPermission = (requiredRole: UserRole): boolean => {
         if (!user) return false;
-        
         const roleHierarchy: Record<UserRole, number> = {
             'user': 1,
             'admin': 2,
             'super_admin': 3
         };
-        
         return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
     };
 
@@ -104,60 +124,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const createUser = async (userData: Omit<User, 'id' | 'mustChangePassword'>): Promise<boolean> => {
         if (!canCreateRole(userData.role)) return false;
+        if (users.find(u => u.username === userData.username)) return false;
         
-        // Vérifier si l'utilisateur existe déjà
-        if (users.find(u => u.username === userData.username)) {
-            return false;
-        }
-        
-        const defaultPassword = 'temp123';
-        const newUser: User = {
-            ...userData,
-            id: Date.now().toString(),
-            mustChangePassword: true
-        };
-        
+        const newUser: User = { ...userData, id: Date.now().toString(), mustChangePassword: true };
         const updatedUsers = [...users, newUser];
-        const updatedPasswords = { ...passwords, [userData.username]: defaultPassword };
+        const updatedPasswords = { ...passwords, [userData.username]: 'temp123' };
         
         setUsers(updatedUsers);
         setPasswords(updatedPasswords);
         
-        localStorage.setItem('systemUsers', JSON.stringify(updatedUsers));
-        localStorage.setItem('systemPasswords', JSON.stringify(updatedPasswords));
-        
-        return true;
-    };
-
-    const changePassword = async (newPassword: string): Promise<boolean> => {
-        if (!user) return false;
-        
-        const updatedUser = { ...user, mustChangePassword: false };
-        const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
-        const updatedPasswords = { ...passwords, [user.username]: newPassword };
-        
-        setUser(updatedUser);
-        setUsers(updatedUsers);
-        setPasswords(updatedPasswords);
-        
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        localStorage.setItem('systemUsers', JSON.stringify(updatedUsers));
-        localStorage.setItem('systemPasswords', JSON.stringify(updatedPasswords));
-        
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('systemUsers', JSON.stringify(updatedUsers));
+            localStorage.setItem('systemPasswords', JSON.stringify(updatedPasswords));
+        }
         return true;
     };
 
     const canDeleteUser = (targetUser: User): boolean => {
         if (!user) return false;
-        if (user.id === targetUser.id) return false; // Ne peut pas se supprimer soi-même
-        if (targetUser.username === 'superadmin') return false; // Ne peut pas supprimer le super admin par défaut
-        
-        if (user.role === 'super_admin') {
-            return targetUser.role !== 'super_admin'; // Super admin peut supprimer admin et user
-        }
-        if (user.role === 'admin') {
-            return targetUser.role === 'user'; // Admin peut supprimer seulement user
-        }
+        if (user.id === targetUser.id) return false;
+        if (targetUser.username === 'superadmin') return false;
+        if (user.role === 'super_admin') return targetUser.role !== 'super_admin';
+        if (user.role === 'admin') return targetUser.role === 'user';
         return false;
     };
 
@@ -172,22 +160,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUsers(updatedUsers);
         setPasswords(updatedPasswords);
         
-        localStorage.setItem('systemUsers', JSON.stringify(updatedUsers));
-        localStorage.setItem('systemPasswords', JSON.stringify(updatedPasswords));
-        
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('systemUsers', JSON.stringify(updatedUsers));
+            localStorage.setItem('systemPasswords', JSON.stringify(updatedPasswords));
+        }
         return true;
     };
 
     const canResetPassword = (targetUser: User): boolean => {
         if (!user) return false;
-        if (user.id === targetUser.id) return false; // Ne peut pas réinitialiser son propre mot de passe
-        
-        if (user.role === 'super_admin') {
-            return targetUser.role !== 'super_admin'; // Super admin peut réinitialiser admin et user
-        }
-        if (user.role === 'admin') {
-            return targetUser.role === 'user'; // Admin peut réinitialiser seulement user
-        }
+        if (user.id === targetUser.id) return false;
+        if (user.role === 'super_admin') return targetUser.role !== 'super_admin';
+        if (user.role === 'admin') return targetUser.role === 'user';
         return false;
     };
 
@@ -202,14 +186,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUsers(updatedUsers);
         setPasswords(updatedPasswords);
         
-        localStorage.setItem('systemUsers', JSON.stringify(updatedUsers));
-        localStorage.setItem('systemPasswords', JSON.stringify(updatedPasswords));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('systemUsers', JSON.stringify(updatedUsers));
+            localStorage.setItem('systemPasswords', JSON.stringify(updatedPasswords));
+        }
+        return true;
+    };
+
+    const changePassword = async (newPassword: string): Promise<boolean> => {
+        if (!user) return false;
         
+        const updatedUser = { ...user, mustChangePassword: false };
+        const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
+        const updatedPasswords = { ...passwords, [user.username]: newPassword };
+        
+        setUser(updatedUser);
+        setUsers(updatedUsers);
+        setPasswords(updatedPasswords);
+        
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+            localStorage.setItem('systemUsers', JSON.stringify(updatedUsers));
+            localStorage.setItem('systemPasswords', JSON.stringify(updatedPasswords));
+        }
         return true;
     };
 
     return (
-        <AuthContext.Provider value={{ user, users, login, logout, hasPermission, createUser, canCreateRole, changePassword, deleteUser, canDeleteUser, resetUserPassword, canResetPassword }}>
+        <AuthContext.Provider value={{ 
+            user, 
+            users, 
+            login, 
+            logout, 
+            hasPermission, 
+            canCreateRole, 
+            createUser, 
+            canDeleteUser, 
+            deleteUser, 
+            canResetPassword, 
+            resetUserPassword, 
+            changePassword 
+        }}>
             {children}
         </AuthContext.Provider>
     );

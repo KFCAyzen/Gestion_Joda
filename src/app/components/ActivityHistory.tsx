@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+
 import { useActivityLog } from '../context/ActivityLogContext';
 import ProtectedRoute from './ProtectedRoute';
 import LoadingSpinner from './LoadingSpinner';
 
 export default function ActivityHistory() {
-    const { user, users } = useAuth();
+    
     const { logs, getUserLogs, getModuleLogs } = useActivityLog();
     const [activeTab, setActiveTab] = useState('all');
     const [selectedUser, setSelectedUser] = useState('');
@@ -81,7 +81,7 @@ export default function ActivityHistory() {
     return (
         <ProtectedRoute requiredRole="admin">
             <div className="p-4 sm:p-6">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6" style={{color: '#7D3837'}}>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6" style={{color: '#dc2626'}}>
                     Historique des Activités
                 </h1>
 
@@ -95,7 +95,7 @@ export default function ActivityHistory() {
                                         ? 'border-b-2 text-blue-600'
                                         : 'text-slate-600 hover:text-slate-800'
                                 }`}
-                                style={{borderColor: activeTab === 'all' ? '#7D3837' : 'transparent'}}
+                                style={{borderColor: activeTab === 'all' ? '#dc2626' : 'transparent'}}
                             >
                                 Toutes les activités
                             </button>
@@ -106,7 +106,7 @@ export default function ActivityHistory() {
                                         ? 'border-b-2 text-blue-600'
                                         : 'text-slate-600 hover:text-slate-800'
                                 }`}
-                                style={{borderColor: activeTab === 'user' ? '#7D3837' : 'transparent'}}
+                                style={{borderColor: activeTab === 'user' ? '#dc2626' : 'transparent'}}
                             >
                                 Par utilisateur
                             </button>
@@ -117,7 +117,7 @@ export default function ActivityHistory() {
                                         ? 'border-b-2 text-blue-600'
                                         : 'text-slate-600 hover:text-slate-800'
                                 }`}
-                                style={{borderColor: activeTab === 'module' ? '#7D3837' : 'transparent'}}
+                                style={{borderColor: activeTab === 'module' ? '#dc2626' : 'transparent'}}
                             >
                                 Par module
                             </button>
@@ -132,7 +132,7 @@ export default function ActivityHistory() {
                                     value={selectedUser}
                                     onChange={(e) => setSelectedUser(e.target.value)}
                                     className="px-3 sm:px-4 py-2 border rounded-lg text-sm sm:text-base"
-                                    style={{borderColor: '#7D3837'}}
+                                    style={{borderColor: '#dc2626'}}
                                 >
                                     <option value="">Sélectionner un utilisateur</option>
                                     {users
@@ -149,7 +149,7 @@ export default function ActivityHistory() {
                                     value={selectedModule}
                                     onChange={(e) => setSelectedModule(e.target.value)}
                                     className="px-3 sm:px-4 py-2 border rounded-lg text-sm sm:text-base"
-                                    style={{borderColor: '#7D3837'}}
+                                    style={{borderColor: '#dc2626'}}
                                 >
                                     <option value="">Sélectionner un module</option>
                                     <option value="clients">Clients</option>

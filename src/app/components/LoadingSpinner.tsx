@@ -21,7 +21,7 @@ export default function LoadingSpinner({ size = 'md', text = 'Chargement...' }: 
     return (
         <div className={`flex flex-col items-center justify-center ${containerClasses[size]}`}>
             <div className={`${sizeClasses[size]} border-4 border-slate-200 border-t-4 rounded-full animate-spin mb-4`} 
-                 style={{borderTopColor: '#7D3837'}}></div>
+                 style={{borderTopColor: '#dc2626'}}></div>
             <p className="text-sm text-slate-600 font-medium">{text}</p>
         </div>
     );

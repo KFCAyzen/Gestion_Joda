@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+
 import ProtectedRoute from './ProtectedRoute';
 import { useActivityLog } from '../context/ActivityLogContext';
 
 export default function UserManagement() {
-    const { user, users, createUser, canCreateRole, deleteUser, canDeleteUser, resetUserPassword, canResetPassword } = useAuth();
+    
     const { addLog } = useActivityLog();
     const [activeTab, setActiveTab] = useState('permissions');
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -45,7 +45,7 @@ export default function UserManagement() {
     return (
         <ProtectedRoute requiredRole="admin">
             <div className="p-4 sm:p-6">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6" style={{color: '#7D3837'}}>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6" style={{color: '#dc2626'}}>
                     Gestion des Utilisateurs
                 </h1>
 
@@ -59,7 +59,7 @@ export default function UserManagement() {
                                         ? 'border-b-2 text-blue-600'
                                         : 'text-slate-600 hover:text-slate-800'
                                 }`}
-                                style={{borderColor: activeTab === 'permissions' ? '#7D3837' : 'transparent'}}
+                                style={{borderColor: activeTab === 'permissions' ? '#dc2626' : 'transparent'}}
                             >
                                 Permissions
                             </button>
@@ -70,7 +70,7 @@ export default function UserManagement() {
                                         ? 'border-b-2 text-blue-600'
                                         : 'text-slate-600 hover:text-slate-800'
                                 }`}
-                                style={{borderColor: activeTab === 'users' ? '#7D3837' : 'transparent'}}
+                                style={{borderColor: activeTab === 'users' ? '#dc2626' : 'transparent'}}
                             >
                                 Utilisateurs
                             </button>
@@ -81,7 +81,7 @@ export default function UserManagement() {
                                         ? 'border-b-2 text-blue-600'
                                         : 'text-slate-600 hover:text-slate-800'
                                 }`}
-                                style={{borderColor: activeTab === 'create' ? '#7D3837' : 'transparent'}}
+                                style={{borderColor: activeTab === 'create' ? '#dc2626' : 'transparent'}}
                             >
                                 Créer Utilisateur
                             </button>
@@ -90,8 +90,8 @@ export default function UserManagement() {
 
                     <div className="p-4 sm:p-6">
                         {!canCreateRole('user') && (
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-                                <p className="text-yellow-800 text-sm sm:text-base">Vous n'avez pas les permissions pour créer des utilisateurs.</p>
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                                <p className="text-gray-800 text-sm sm:text-base">Vous n'avez pas les permissions pour créer des utilisateurs.</p>
                             </div>
                         )}
                         {activeTab === 'permissions' && (
@@ -103,7 +103,7 @@ export default function UserManagement() {
                                 <div className="grid gap-4 sm:gap-6">
                                     {Object.entries(rolePermissions).map(([role, permissions]) => (
                                         <div key={role} className="border rounded-lg p-3 sm:p-4">
-                                            <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3" style={{color: '#7D3837'}}>
+                                            <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3" style={{color: '#dc2626'}}>
                                                 {role === 'super_admin' ? 'Super Administrateur' :
                                                  role === 'admin' ? 'Administrateur' : 'Utilisateur'}
                                             </h3>
@@ -148,7 +148,7 @@ export default function UserManagement() {
                                                             <p className="text-xs sm:text-sm text-slate-600">@{u.username}</p>
                                                         </div>
                                                         {u.mustChangePassword && (
-                                                            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs self-start">
+                                                            <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs self-start">
                                                                 Mot de passe à changer
                                                             </span>
                                                         )}
@@ -156,9 +156,9 @@ export default function UserManagement() {
                                                 </div>
                                                 <div className="flex items-center gap-2 sm:gap-3">
                                                     <span className={`px-2 py-1 rounded text-xs ${
-                                                        u.role === 'super_admin' ? 'bg-red-100 text-red-800 sm:text-red-800 text-amber-800' :
-                                                        u.role === 'admin' ? 'bg-orange-100 text-orange-800 sm:text-orange-800 text-amber-800' :
-                                                        'bg-green-100 text-green-800 sm:text-green-800 text-amber-800'
+                                                        u.role === 'super_admin' ? 'bg-red-100 text-red-800 sm:text-red-800 text-red-800' :
+                                                        u.role === 'admin' ? 'bg-red-100 text-red-800 sm:text-red-800 text-red-800' :
+                                                        'bg-green-100 text-green-800 sm:text-green-800 text-red-800'
                                                     }`}>
                                                         {u.role === 'super_admin' ? 'Super Admin' :
                                                          u.role === 'admin' ? 'Admin' : 'Utilisateur'}
@@ -178,7 +178,7 @@ export default function UserManagement() {
                                                                     }
                                                                 }
                                                             }}
-                                                            className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                             title="Réinitialiser le mot de passe"
                                                         >
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,7 +222,7 @@ export default function UserManagement() {
                                 <div className="bg-white border rounded-lg p-4 sm:p-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium mb-2" style={{color: '#7D3837'}}>
+                                            <label className="block text-sm font-medium mb-2" style={{color: '#dc2626'}}>
                                                 Nom d'utilisateur *
                                             </label>
                                             <input
@@ -230,13 +230,13 @@ export default function UserManagement() {
                                                 value={formData.username}
                                                 onChange={(e) => setFormData({...formData, username: e.target.value})}
                                                 className="w-full p-3 border rounded-lg"
-                                                style={{borderColor: '#7D3837'}}
+                                                style={{borderColor: '#dc2626'}}
                                                 placeholder="nom_utilisateur"
                                             />
                                         </div>
                                         
                                         <div>
-                                            <label className="block text-sm font-medium mb-2" style={{color: '#7D3837'}}>
+                                            <label className="block text-sm font-medium mb-2" style={{color: '#dc2626'}}>
                                                 Nom complet *
                                             </label>
                                             <input
@@ -244,20 +244,20 @@ export default function UserManagement() {
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({...formData, name: e.target.value})}
                                                 className="w-full p-3 border rounded-lg"
-                                                style={{borderColor: '#7D3837'}}
+                                                style={{borderColor: '#dc2626'}}
                                                 placeholder="Nom Prénom"
                                             />
                                         </div>
                                         
                                         <div>
-                                            <label className="block text-sm font-medium mb-2" style={{color: '#7D3837'}}>
+                                            <label className="block text-sm font-medium mb-2" style={{color: '#dc2626'}}>
                                                 Rôle *
                                             </label>
                                             <select
                                                 value={formData.role}
                                                 onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'user'})}
                                                 className="w-full p-3 border rounded-lg"
-                                                style={{borderColor: '#7D3837'}}
+                                                style={{borderColor: '#dc2626'}}
                                             >
                                                 <option value="user">Utilisateur</option>
                                                 {user?.role === 'super_admin' && (
@@ -309,7 +309,7 @@ export default function UserManagement() {
                                                 }
                                             }}
                                             className="px-4 sm:px-6 py-3 text-white rounded-lg hover:opacity-90 text-sm sm:text-base font-medium"
-                                            style={{backgroundColor: '#7D3837'}}
+                                            style={{backgroundColor: '#dc2626'}}
                                         >
                                             Créer l'utilisateur
                                         </button>
@@ -325,7 +325,7 @@ export default function UserManagement() {
                                                 setSuccess('');
                                             }}
                                             className="px-4 sm:px-6 py-3 border rounded-lg hover:bg-gray-50 text-sm sm:text-base font-medium"
-                                            style={{borderColor: '#7D3837', color: '#7D3837'}}
+                                            style={{borderColor: '#dc2626', color: '#dc2626'}}
                                         >
                                             Annuler
                                         </button>
@@ -361,7 +361,7 @@ export default function UserManagement() {
                                 <button
                                     onClick={() => setUserToDelete(null)}
                                     className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
-                                    style={{borderColor: '#7D3837', color: '#7D3837'}}
+                                    style={{borderColor: '#dc2626', color: '#dc2626'}}
                                 >
                                     Annuler
                                 </button>

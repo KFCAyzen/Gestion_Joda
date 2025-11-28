@@ -1,21 +1,22 @@
 "use client";
 
 import { ReactNode } from 'react';
-import { useAuth, UserRole } from '../context/AuthContext';
+
+type UserRole = 'super_admin' | 'admin' | 'user';
 
 interface ProtectedRouteProps {
     children: ReactNode;
     requiredRole?: UserRole;
     fallback?: ReactNode;
+    user?: any;
 }
 
 export default function ProtectedRoute({ 
     children, 
     requiredRole = 'user', 
-    fallback 
+    fallback,
+    user
 }: ProtectedRouteProps) {
-    const { user, hasPermission } = useAuth();
-
     if (!user) {
         return fallback || (
             <div className="p-8 text-center">
@@ -23,6 +24,15 @@ export default function ProtectedRoute({
             </div>
         );
     }
+
+    const hasPermission = (required: UserRole): boolean => {
+        const roleHierarchy: Record<UserRole, number> = {
+            'user': 1,
+            'admin': 2,
+            'super_admin': 3
+        };
+        return roleHierarchy[user.role as UserRole] >= roleHierarchy[required];
+    };
 
     if (!hasPermission(requiredRole)) {
         return fallback || (
