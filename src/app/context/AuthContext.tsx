@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type UserRole = 'super_admin' | 'admin' | 'user';
+export type UserRole = 'student' | 'user' | 'admin' | 'super_admin';
 
 export interface User {
     id: string;
@@ -108,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const hasPermission = (requiredRole: UserRole): boolean => {
         if (!user) return false;
         const roleHierarchy: Record<UserRole, number> = {
+            'student': 0,
             'user': 1,
             'admin': 2,
             'super_admin': 3

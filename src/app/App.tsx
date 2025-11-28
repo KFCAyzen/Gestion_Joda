@@ -23,6 +23,7 @@ import ChangePasswordModal from "./components/ChangePasswordModal";
 import CheckoutAlertModal from "./components/CheckoutAlertModal";
 import ChangePassword from "./components/ChangePassword";
 import NotificationsPage from "./components/NotificationsPage";
+import StudentPortal from "./components/StudentPortal";
 
 
 function AppContent() {
@@ -155,6 +156,10 @@ function AppContent() {
                 ))}
             </>
         );
+    }
+
+    if (user?.role === 'student') {
+        return <StudentPortal user={user} onLogout={logout} />;
     }
 
     return (

@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 
-type UserRole = 'super_admin' | 'admin' | 'user';
+type UserRole = 'student' | 'user' | 'admin' | 'super_admin';
 
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -27,6 +27,7 @@ export default function ProtectedRoute({
 
     const hasPermission = (required: UserRole): boolean => {
         const roleHierarchy: Record<UserRole, number> = {
+            'student': 0,
             'user': 1,
             'admin': 2,
             'super_admin': 3

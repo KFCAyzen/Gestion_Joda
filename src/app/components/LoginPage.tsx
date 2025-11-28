@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import StudentSignup from './StudentSignup';
 
 interface LoginPageProps {
     onLoginSuccess: (user: any) => void;
@@ -18,6 +19,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showSignup, setShowSignup] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -113,6 +115,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                             background: 'rgba(255, 255, 255, 0.95)',
                             backdropFilter: 'blur(20px)'
                         }}>
+                            {showSignup ? (
+                                <StudentSignup 
+                                    onBack={() => setShowSignup(false)}
+                                    onSignupSuccess={(user, pass) => {
+                                        setUsername(user);
+                                        setPassword(pass);
+                                        setShowSignup(false);
+                                    }}
+                                />
+                            ) : (
                             <div className="max-w-sm mx-auto w-full">
                                 <div className="mb-4 lg:mb-8">
                                     <h2 className="text-xl lg:text-2xl font-light mb-1 lg:mb-2">Connexion</h2>
@@ -164,12 +176,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                         </a>
                                     </div>
                                     
-                                    <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
-                                        <strong>Comptes test:</strong><br/>
-                                        <div>user / user123</div>
-                                        <div>admin / admin123</div>
-                                        <div>superadmin / super123</div>
-                                    </div>
+
 
                                     {error && (
                                         <div className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded-xl border border-red-500/20">
@@ -188,7 +195,23 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                         {loading ? 'Connexion...' : 'Se connecter'}
                                     </button>
                                 </form>
+
+                                <div className="mt-6 text-center space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex-1 h-px bg-gray-300"></div>
+                                        <span className="text-xs text-gray-500">Espace Étudiant</span>
+                                        <div className="flex-1 h-px bg-gray-300"></div>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowSignup(true)}
+                                        className="w-full py-2.5 px-4 rounded-xl font-medium text-red-600 border-2 border-red-600 hover:bg-red-50 transition-all duration-300"
+                                    >
+                                        Se connecter en tant qu'étudiant
+                                    </button>
+                                    <p className="text-xs text-gray-500">Pas encore de compte ? Créez-en un gratuitement</p>
+                                </div>
                             </div>
+                            )}
                         </div>
                     </div>
                 </div>
