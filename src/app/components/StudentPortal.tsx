@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User } from '../context/AuthContext';
 import { loadFromFirebase, saveData } from '../utils/syncData';
+import { useNotificationContext } from '../context/NotificationContext';
 import StudentNotifications from './StudentNotifications';
 
 interface StudentPortalProps {
@@ -67,6 +68,7 @@ interface Subscription {
 }
 
 export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
+    const { showNotification } = useNotificationContext();
     const [applications, setApplications] = useState<Application[]>([]);
     const [payments, setPayments] = useState<Payment[]>([]);
     const [documents, setDocuments] = useState<Document[]>([]);
@@ -391,7 +393,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
         localStorage.setItem('billings', JSON.stringify(allPayments));
         setPayments(allPayments.filter((p: any) => p.studentId === user.id));
-        alert(`Demande envoyée ! Un employé traitera votre souscription prochainement.`);
+        showNotification('Demande envoyée ! Un employé traitera votre souscription prochainement.', 'success');
     };
 
     const isSubscribed = (serviceId: string) => {

@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { formatPrice } from "../utils/formatPrice";
+import { useNotificationContext } from "../context/NotificationContext";
 
 import { loadFromFirebase } from "../utils/syncData";
 import { DashboardData } from "../types/scholarship";
@@ -36,8 +37,10 @@ const StatCard = memo(({ stat, index, isLoading }: { stat: any; index: number; i
 StatCard.displayName = 'StatCard';
 
 export default function ScholarshipDashboard() {
+    const { showNotification } = useNotificationContext();
     const [user, setUser] = useState<any>(null);
     const [showSpinner, setShowSpinner] = useState(true);
+    const [showConfirmModal, setShowConfirmModal] = useState<{type: 'generate' | 'clear' | null}>({type: null});
     const [dashboardData, setDashboardData] = useState<DashboardData>({
         totalUniversities: 0,
         availableUniversities: 0,
@@ -201,33 +204,13 @@ export default function ScholarshipDashboard() {
                         {user?.role === 'super_admin' && (
                             <div className="flex flex-col sm:flex-row gap-2">
                             <button
-                                onClick={async () => {
-                                    if (confirm('Générer des données de test ? Cela ajoutera des étudiants, universités, candidatures et frais fictifs.')) {
-                                        const success = await generateAllScholarshipTestData();
-                                        if (success) {
-                                            alert('Données de test générées avec succès!');
-                                            loadDashboardData();
-                                        } else {
-                                            alert('Erreur lors de la génération des données');
-                                        }
-                                    }
-                                }}
+                                onClick={() => setShowConfirmModal({type: 'generate'})}
                                 className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors"
                             >
                                 Données test
                             </button>
                             <button
-                                onClick={async () => {
-                                    if (confirm('Nettoyer toutes les données ? Cette action est irréversible.')) {
-                                        const success = await clearAllScholarshipData();
-                                        if (success) {
-                                            alert('Données nettoyées avec succès!');
-                                            loadDashboardData();
-                                        } else {
-                                            alert('Erreur lors du nettoyage');
-                                        }
-                                    }
-                                }}
+                                onClick={() => setShowConfirmModal({type: 'clear'})}
                                 className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium transition-colors"
                             >
                                 Nettoyer
@@ -651,6 +634,57 @@ export default function ScholarshipDashboard() {
                     </div>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            {showConfirmModal.type && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">
+                            {showConfirmModal.type === 'generate' ? 'Générer des données de test ?' : 'Nettoyer toutes les données ?'}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-6">
+                            {showConfirmModal.type === 'generate' 
+                                ? 'Cela ajoutera des étudiants, universités, candidatures et frais fictifs.'
+                                : 'Cette action est irréversible. Toutes les données seront supprimées.'}
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowConfirmModal({type: null})}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (showConfirmModal.type === 'generate') {
+                                        const success = await generateAllScholarshipTestData();
+                                        if (success) {
+                                            showNotification('Données de test générées avec succès!', 'success');
+                                            loadDashboardData();
+                                        } else {
+                                            showNotification('Erreur lors de la génération des données', 'error');
+                                        }
+                                    } else {
+                                        const success = await clearAllScholarshipData();
+                                        if (success) {
+                                            showNotification('Données nettoyées avec succès!', 'success');
+                                            loadDashboardData();
+                                        } else {
+                                            showNotification('Erreur lors du nettoyage', 'error');
+                                        }
+                                    }
+                                    setShowConfirmModal({type: null});
+                                }}
+                                className={`flex-1 px-4 py-2 text-white rounded-lg ${
+                                    showConfirmModal.type === 'generate' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'
+                                }`}
+                            >
+                                Confirmer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

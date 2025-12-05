@@ -18,6 +18,7 @@ export default function UserManagement() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [userToDelete, setUserToDelete] = useState<string | null>(null);
+    const [userToReset, setUserToReset] = useState<{id: string, name: string} | null>(null);
 
     const rolePermissions = {
         'super_admin': [
@@ -165,19 +166,7 @@ export default function UserManagement() {
                                                     </span>
                                                     {canResetPassword(u) && (
                                                         <button
-                                                            onClick={async () => {
-                                                                if (confirm(`Réinitialiser le mot de passe de ${u.name} ? Le nouveau mot de passe sera : temp123`)) {
-                                                                    const success = await resetUserPassword(u.id);
-                                                                    if (success) {
-                                                                        addLog('Réinitialisation mot de passe', 'users', `Mot de passe réinitialisé pour: ${u.name} (@${u.username})`);
-                                                                        setSuccess(`Mot de passe réinitialisé pour ${u.name}. Nouveau mot de passe : temp123`);
-                                                                        setError('');
-                                                                    } else {
-                                                                        setError('Erreur lors de la réinitialisation du mot de passe');
-                                                                        setSuccess('');
-                                                                    }
-                                                                }
-                                                            }}
+                                                            onClick={() => setUserToReset({id: u.id, name: u.name})}
                                                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                             title="Réinitialiser le mot de passe"
                                                         >
@@ -382,6 +371,43 @@ export default function UserManagement() {
                                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base font-medium"
                                 >
                                     Supprimer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {userToReset && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">Réinitialiser le mot de passe ?</h3>
+                            <p className="text-sm text-gray-600 mb-6">
+                                Le mot de passe de <strong>{userToReset.name}</strong> sera réinitialisé à : <strong>temp123</strong>
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setUserToReset(null)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const success = await resetUserPassword(userToReset.id);
+                                        if (success) {
+                                            const u = users.find(user => user.id === userToReset.id);
+                                            if (u) addLog('Réinitialisation mot de passe', 'users', `Mot de passe réinitialisé pour: ${u.name} (@${u.username})`);
+                                            setSuccess(`Mot de passe réinitialisé pour ${userToReset.name}. Nouveau mot de passe : temp123`);
+                                            setError('');
+                                        } else {
+                                            setError('Erreur lors de la réinitialisation du mot de passe');
+                                            setSuccess('');
+                                        }
+                                        setUserToReset(null);
+                                    }}
+                                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                                >
+                                    Réinitialiser
                                 </button>
                             </div>
                         </div>

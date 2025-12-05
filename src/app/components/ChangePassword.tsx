@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { auth } from "../firebase";
+import { useNotificationContext } from "../context/NotificationContext";
 
 interface ChangePasswordProps {
     onClose: () => void;
 }
 
 export default function ChangePassword({ onClose }: ChangePasswordProps) {
+    const { showNotification } = useNotificationContext();
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -18,12 +20,12 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
         e.preventDefault();
         
         if (newPassword !== confirmPassword) {
-            alert("Les nouveaux mots de passe ne correspondent pas");
+            showNotification("Les nouveaux mots de passe ne correspondent pas", "error");
             return;
         }
 
         if (newPassword.length < 6) {
-            alert("Le nouveau mot de passe doit contenir au moins 6 caractères");
+            showNotification("Le nouveau mot de passe doit contenir au moins 6 caractères", "error");
             return;
         }
 
@@ -31,7 +33,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
         try {
             const user = auth.currentUser;
             if (!user || !user.email) {
-                alert("Utilisateur non connecté");
+                showNotification("Utilisateur non connecté", "error");
                 return;
             }
 
@@ -39,14 +41,14 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
             await reauthenticateWithCredential(user, credential);
             await updatePassword(user, newPassword);
             
-            alert("Mot de passe modifié avec succès");
+            showNotification("Mot de passe modifié avec succès", "success");
             onClose();
         } catch (error: any) {
             console.error("Erreur:", error);
             if (error.code === "auth/wrong-password") {
-                alert("Mot de passe actuel incorrect");
+                showNotification("Mot de passe actuel incorrect", "error");
             } else {
-                alert("Erreur lors de la modification du mot de passe");
+                showNotification("Erreur lors de la modification du mot de passe", "error");
             }
         } finally {
             setLoading(false);

@@ -18,6 +18,7 @@ export default function StudentManagement() {
     const { showNotification } = useNotificationContext();
     const { addLog } = useActivityLog();
     const { user } = useAuth();
+    const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
     
 
     const generateStudentId = () => {
@@ -511,19 +512,7 @@ export default function StudentManagement() {
                                         </div>
                                         {(user?.role === 'admin' || user?.role === 'super_admin') && (
                                             <button
-                                                onClick={() => {
-                                                    if (confirm(`Supprimer l'étudiant ${student.name} ?`)) {
-                                                        const updatedStudents = students.filter(s => s.id !== student.id);
-                                                        setStudents(updatedStudents);
-                                                        setFilteredStudents(updatedStudents.filter(s => 
-                                                            (searchId === '' || s.id.toLowerCase().includes(searchId.toLowerCase())) &&
-                                                            (searchName === '' || s.name.toLowerCase().includes(searchName.toLowerCase()))
-                                                        ));
-                                                        localStorage.setItem('students', JSON.stringify(updatedStudents));
-                                                        addLog('Suppression étudiant', 'students', `Étudiant supprimé: ${student.name}`);
-                                                        showNotification('Étudiant supprimé avec succès', 'success');
-                                                    }
-                                                }}
+                                                onClick={() => setStudentToDelete(student)}
                                                 className="opacity-0 group-hover:opacity-100 w-6 h-6 sm:w-8 sm:h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all"
                                                 title="Supprimer l'étudiant"
                                             >
@@ -564,6 +553,42 @@ export default function StudentManagement() {
                     )}
                 </div>
             </div>
+
+            {studentToDelete && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Supprimer l'étudiant ?</h3>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Êtes-vous sûr de vouloir supprimer <strong>{studentToDelete.name}</strong> ? Cette action est irréversible.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setStudentToDelete(null)}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const updatedStudents = students.filter(s => s.id !== studentToDelete.id);
+                                    setStudents(updatedStudents);
+                                    setFilteredStudents(updatedStudents.filter(s => 
+                                        (searchId === '' || s.id.toLowerCase().includes(searchId.toLowerCase())) &&
+                                        (searchName === '' || s.name.toLowerCase().includes(searchName.toLowerCase()))
+                                    ));
+                                    localStorage.setItem('students', JSON.stringify(updatedStudents));
+                                    addLog('Suppression étudiant', 'students', `Étudiant supprimé: ${studentToDelete.name}`);
+                                    showNotification('Étudiant supprimé avec succès', 'success');
+                                    setStudentToDelete(null);
+                                }}
+                                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                            >
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
