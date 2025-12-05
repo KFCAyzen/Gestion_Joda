@@ -266,18 +266,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                             </div>
                             ) : (
                             <div className="max-w-sm mx-auto w-full">
-                                <div className="mb-3">
-                                    <h2 className="text-lg font-light mb-1">Connexion</h2>
-                                    <p className="text-gray-600 text-xs">Accédez à votre espace</p>
+                                <div className="mb-3 sm:mb-6 lg:mb-8">
+                                    <h2 className="text-lg sm:text-2xl lg:text-3xl font-light mb-1 sm:mb-2">Connexion</h2>
+                                    <p className="text-gray-600 text-xs sm:text-sm lg:text-base">Accédez à votre espace</p>
                                 </div>
 
-                                <form onSubmit={handleSubmit} className="space-y-2.5">
+                                <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-4 lg:space-y-5">
                                     <div>
                                         <input
                                             type="text"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
-                                            className="w-full px-3 py-1.5 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all text-gray-900 placeholder-gray-500"
+                                            className="w-full px-3 py-1.5 sm:px-4 sm:py-3 lg:py-3.5 text-sm sm:text-base lg:text-base bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all text-gray-900 placeholder-gray-500"
                                             placeholder="Nom d'utilisateur"
                                             required
                                         />
@@ -288,21 +288,21 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                             type={showPassword ? "text" : "password"}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full px-3 py-1.5 pr-10 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all text-gray-900 placeholder-gray-500"
+                                            className="w-full px-3 py-1.5 sm:px-4 sm:py-3 lg:py-3.5 pr-10 sm:pr-12 text-sm sm:text-base lg:text-base bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all text-gray-900 placeholder-gray-500"
                                             placeholder="Mot de passe"
                                             required
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-red-500 transition-colors"
+                                            className="absolute right-2.5 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-red-500 transition-colors"
                                         >
                                             {showPassword ? (
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                                                 </svg>
                                             ) : (
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
@@ -311,7 +311,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                     </div>
 
                                     <div className="text-right">
-                                        <a href="#" className="text-xs text-red-400 hover:text-red-300">
+                                        <a href="#" className="text-xs sm:text-sm text-red-400 hover:text-red-300">
                                             Mot de passe oublié ?
                                         </a>
                                     </div>
@@ -319,7 +319,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
 
                                     {error && (
-                                        <div className="text-red-400 text-xs text-center bg-red-500/10 p-1.5 rounded-lg border border-red-500/20">
+                                        <div className="text-red-400 text-xs sm:text-sm text-center bg-red-500/10 p-1.5 sm:p-3 rounded-lg sm:rounded-xl border border-red-500/20">
                                             {error}
                                         </div>
                                     )}
@@ -327,7 +327,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full py-1.5 px-4 text-sm rounded-lg font-medium text-white transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full py-1.5 sm:py-3 lg:py-3.5 px-4 text-sm sm:text-base lg:text-base rounded-lg sm:rounded-xl font-medium text-white transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                                         style={{
                                             background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)'
                                         }}
@@ -336,15 +336,15 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                     </button>
                                 </form>
 
-                                <div className="mt-3 text-center space-y-2">
+                                <div className="mt-3 sm:mt-6 lg:mt-8 text-center space-y-2 sm:space-y-3">
                                     <div className="flex items-center gap-2">
                                         <div className="flex-1 h-px bg-gray-300"></div>
-                                        <span className="text-xs text-gray-500">Espace Étudiant</span>
+                                        <span className="text-xs sm:text-sm text-gray-500">Espace Étudiant</span>
                                         <div className="flex-1 h-px bg-gray-300"></div>
                                     </div>
                                     <button
                                         onClick={() => setShowStudentLogin(true)}
-                                        className="w-full py-1.5 px-3 text-xs rounded-lg font-medium text-red-600 border-2 border-red-600 hover:bg-red-50 transition-all duration-300 whitespace-nowrap"
+                                        className="w-full py-1.5 sm:py-2.5 lg:py-3 px-3 sm:px-4 text-xs sm:text-sm lg:text-base rounded-lg sm:rounded-xl font-medium text-red-600 border-2 border-red-600 hover:bg-red-50 transition-all duration-300 whitespace-nowrap"
                                     >
                                         Se connecter en tant qu'étudiant
                                     </button>
