@@ -54,13 +54,13 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
                 <h2 className="text-lg sm:text-xl font-bold mb-4" style={{color: '#dc2626'}}>
                     Modifier le mot de passe
                 </h2>
                 
-                <form onSubmit={handleChangePassword} className="space-y-4">
+                <form onSubmit={handleChangePassword} className="space-y-2 sm:space-y-3 md:space-y-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">Mot de passe actuel</label>
                         <input

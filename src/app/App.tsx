@@ -7,6 +7,7 @@ import UniversityManagement from "./components/UniversityManagement";
 import StudentManagement from "./components/StudentManagement";
 import ApplicationFeeManagement from "./components/ApplicationFeeManagement";
 import ScholarshipFileManagement from "./components/ScholarshipFileManagement";
+import ServiceRequestManagement from "./components/ServiceRequestManagement";
 
 import UserManagement from "./components/UserManagement";
 import ActivityHistory from "./components/ActivityHistory";
@@ -16,6 +17,8 @@ import { syncLocalStorageToFirebase } from "./utils/syncData";
 import { useNotification } from "./hooks/useNotification";
 import Notification from "./components/Notification";
 import { NotificationProvider } from "./context/NotificationContext";
+import { ActivityLogProvider } from "./context/ActivityLogContext";
+import { AuthProvider } from "./context/AuthContext";
 
 import LoginPage from "./components/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -104,6 +107,8 @@ function AppContent() {
                 return <ApplicationFeeManagement />;
             case "dossiers":
                 return <ScholarshipFileManagement />;
+            case "services":
+                return <ServiceRequestManagement />;
             case "users":
                 return <UserManagement />;
             case "history":
@@ -165,132 +170,145 @@ function AppContent() {
     return (
         <div className="h-screen gradient-bg flex">
             {/* Sidebar */}
-            <div className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out flex flex-col glass-sidebar`}>
+            <div className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out flex flex-col glass-sidebar`}>
                 {/* Logo */}
-                <div className="flex items-center px-6 py-8 border-b border-gray-100">
-                    <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mr-3 shadow-sm">
-                        <img src="/0.png" alt="Joda Company Logo" className="w-14 h-14 object-contain" />
+                <div className="flex items-center px-4 py-4 border-b border-gray-100">
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center mr-2 shadow-sm flex-shrink-0">
+                        <img src="/0.png" alt="Joda Company Logo" className="w-8 h-8 object-contain" />
                     </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900">Joda Company</h1>
-                        <p className="text-sm text-gray-500">Gestion des bourses</p>
+                    <div className="min-w-0">
+                        <h1 className="text-base font-bold text-gray-900 truncate">Joda Company</h1>
+                        <p className="text-xs text-gray-500 truncate">Gestion des bourses</p>
                     </div>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-4 py-6">
-                    <div className="space-y-8">
+                <nav className="flex-1 px-3 py-4 overflow-y-auto">
+                    <div className="space-y-4">
                         {/* Main Menu */}
                         <div>
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Menu Principal</h3>
+                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Menu Principal</h3>
                             <div className="space-y-1">
                                 <button
                                     onClick={() => {setCurrentPage("home"); setIsMobileMenuOpen(false);}}
-                                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                         currentPage === "home" 
                                             ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                                 >
-                                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
                                     </svg>
                                     Dashboard
                                 </button>
                                 <button
                                     onClick={() => {setCurrentPage("reservations"); setIsMobileMenuOpen(false);}}
-                                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                         currentPage === "reservations" 
                                             ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                                 >
-                                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     Candidatures
                                 </button>
                                 <button
                                     onClick={() => {setCurrentPage("chambres"); setIsMobileMenuOpen(false);}}
-                                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                         currentPage === "chambres" 
                                             ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                                 >
-                                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                     </svg>
                                     Universités
                                 </button>
                                 <button
                                     onClick={() => {setCurrentPage("clients"); setIsMobileMenuOpen(false);}}
-                                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                         currentPage === "clients" 
                                             ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                                 >
-                                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                     </svg>
                                     Étudiants
                                 </button>
                                 <button
                                     onClick={() => {setCurrentPage("facturation"); setIsMobileMenuOpen(false);}}
-                                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                         currentPage === "facturation" 
                                             ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                                 >
-                                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                     Frais
                                 </button>
                                 <button
                                     onClick={() => {setCurrentPage("dossiers"); setIsMobileMenuOpen(false);}}
-                                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                         currentPage === "dossiers" 
                                             ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                                 >
-                                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     Dossiers
+                                </button>
+                                <button
+                                    onClick={() => {setCurrentPage("services"); setIsMobileMenuOpen(false);}}
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                        currentPage === "services" 
+                                            ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                                >
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    Demandes Services
                                 </button>
                             </div>
                         </div>
 
                         {/* Tools */}
                         <div>
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Outils</h3>
+                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Outils</h3>
                             <div className="space-y-1">
                                 <button
                                     onClick={() => {setCurrentPage("performance"); setIsMobileMenuOpen(false);}}
-                                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                         currentPage === "performance" 
                                             ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                                 >
-                                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
                                     Performances
                                 </button>
                                 <button
                                     onClick={() => {setCurrentPage("notifications"); setIsMobileMenuOpen(false);}}
-                                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                         currentPage === "notifications" 
                                             ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
                                 >
-                                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-5a7.5 7.5 0 515.5-7.21" />
                                     </svg>
                                     Notifications
@@ -302,30 +320,30 @@ function AppContent() {
                         {/* Admin */}
                         {(user?.role === 'admin' || user?.role === 'super_admin') && (
                             <div>
-                                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Administration</h3>
+                                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Administration</h3>
                                 <div className="space-y-1">
                                     <button
                                         onClick={() => {setCurrentPage("users"); setIsMobileMenuOpen(false);}}
-                                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                             currentPage === "users" 
                                                 ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }`}
                                     >
-                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                         </svg>
                                         Utilisateurs
                                     </button>
                                     <button
                                         onClick={() => {setCurrentPage("history"); setIsMobileMenuOpen(false);}}
-                                        className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                             currentPage === "history" 
                                                 ? 'bg-red-50 text-red-700 border-r-2 border-red-500' 
                                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }`}
                                     >
-                                        <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                         Historique
@@ -354,21 +372,21 @@ function AppContent() {
                             </p>
                         </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                         <button
                             onClick={() => {setShowUserPasswordChange(true); setIsMobileMenuOpen(false);}}
-                            className="w-full flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                            className="w-full flex items-center px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                         >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z" />
                             </svg>
                             Changer mot de passe
                         </button>
                         <button
                             onClick={() => {logout(); setShowLogin(true); setIsMobileMenuOpen(false);}}
-                            className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="w-full flex items-center px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                             Déconnexion
@@ -407,6 +425,7 @@ function AppContent() {
                                      currentPage === "clients" ? "Étudiants" :
                                      currentPage === "facturation" ? "Frais" :
                                      currentPage === "dossiers" ? "Dossiers" :
+                                     currentPage === "services" ? "Demandes Services" :
                                      currentPage === "performance" ? "Performances" :
                                      currentPage === "notifications" ? "Notifications" :
                                      currentPage === "users" ? "Utilisateurs" :
@@ -462,5 +481,11 @@ function AppContent() {
 }
 
 export default function App() {
-    return <AppContent />;
+    return (
+        <AuthProvider>
+            <ActivityLogProvider>
+                <AppContent />
+            </ActivityLogProvider>
+        </AuthProvider>
+    );
 }

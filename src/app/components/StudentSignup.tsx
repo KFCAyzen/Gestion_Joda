@@ -79,7 +79,7 @@ export default function StudentSignup({ onBack, onSignupSuccess }: StudentSignup
                 <p className="text-gray-600 text-sm lg:text-base">Inscrivez-vous pour accéder au portail</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3 md:space-y-4">
                 <div>
                     <input
                         type="text"
@@ -144,7 +144,7 @@ export default function StudentSignup({ onBack, onSignupSuccess }: StudentSignup
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3 px-4 rounded-xl font-medium text-white transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-2 px-3 sm:py-3 sm:px-4 rounded-xl font-medium text-white transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                         background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)'
                     }}

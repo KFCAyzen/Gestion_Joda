@@ -10,9 +10,9 @@ import { generateAllScholarshipTestData, clearAllScholarshipData } from "../util
 import NewStatsCards from "./NewStatsCards";
 
 const StatCard = memo(({ stat, index, isLoading }: { stat: any; index: number; isLoading?: boolean }) => (
-    <div key={index} className={`bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 group ${isLoading ? 'animate-pulse' : ''}`}>
+    <div key={index} className={`bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 group ${isLoading ? 'animate-pulse' : ''}`}>
         <div className="flex items-start justify-between mb-4">
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                 {stat.icon}
             </div>
             <div className="text-right">
@@ -36,7 +36,7 @@ const StatCard = memo(({ stat, index, isLoading }: { stat: any; index: number; i
 StatCard.displayName = 'StatCard';
 
 export default function ScholarshipDashboard() {
-    
+    const [user, setUser] = useState<any>(null);
     const [showSpinner, setShowSpinner] = useState(true);
     const [dashboardData, setDashboardData] = useState<DashboardData>({
         totalUniversities: 0,
@@ -101,6 +101,12 @@ export default function ScholarshipDashboard() {
     }, []);
 
     useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                setUser(JSON.parse(currentUser));
+            }
+        }
         loadDashboardData();
         
         const handleDataUpdate = () => {
@@ -123,7 +129,7 @@ export default function ScholarshipDashboard() {
             subtitle: `sur ${dashboardData.totalUniversities} universités`,
             color: "from-blue-500 to-blue-600",
             change: "+12%",
-            icon: <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            icon: <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
         },
@@ -133,7 +139,7 @@ export default function ScholarshipDashboard() {
             subtitle: user?.role === 'user' ? "candidatures actives" : "nouvelles candidatures",
             color: "from-green-500 to-green-600",
             change: "+8%",
-            icon: <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            icon: <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
         },
@@ -143,7 +149,7 @@ export default function ScholarshipDashboard() {
             subtitle: user?.role === 'user' ? "frais payés" : "chiffre d'affaires",
             color: "from-purple-500 to-purple-600",
             change: "+15%",
-            icon: <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            icon: <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
         },
@@ -153,7 +159,7 @@ export default function ScholarshipDashboard() {
             subtitle: "étudiants enregistrés",
             color: "from-red-500 to-red-600",
             change: "+5%",
-            icon: <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            icon: <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
             </svg>
         }
@@ -171,9 +177,9 @@ export default function ScholarshipDashboard() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
             {/* Header with greeting */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:p-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-1">
                         Bonjour, {user?.name} 👋
@@ -236,7 +242,7 @@ export default function ScholarshipDashboard() {
 
             {/* Project Analytics */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 rounded-2xl p-6 border" style={{
+                <div className="lg:col-span-2 rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(20px)',
                     border: '1px solid rgba(220, 38, 38, 0.1)',
@@ -245,7 +251,7 @@ export default function ScholarshipDashboard() {
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">Statistiques des Candidatures</h3>
-                            <p className="text-sm text-gray-500">Évolution mensuelle</p>
+                            <p className="text-xs sm:text-sm text-gray-500">Évolution mensuelle</p>
                         </div>
                         <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-2">
@@ -329,7 +335,7 @@ export default function ScholarshipDashboard() {
                 </div>
 
                 {/* Project Progress */}
-                <div className="rounded-2xl p-6 border" style={{
+                <div className="rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(20px)',
                     border: '1px solid rgba(220, 38, 38, 0.1)',
@@ -340,7 +346,7 @@ export default function ScholarshipDashboard() {
                         <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Voir tout</button>
                     </div>
                     
-                    <div className="space-y-6">
+                    <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
                         {/* Progress Item 1 */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
@@ -410,7 +416,7 @@ export default function ScholarshipDashboard() {
             {/* Recent Applications & Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Recent Applications */}
-                <div className="rounded-2xl p-6 border" style={{
+                <div className="rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(20px)',
                     border: '1px solid rgba(220, 38, 38, 0.1)',
@@ -420,7 +426,7 @@ export default function ScholarshipDashboard() {
                         <h3 className="text-lg font-semibold text-gray-900">Candidatures Récentes</h3>
                         <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Voir tout</button>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-2 sm:space-y-3 md:space-y-4">
                         <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-xl transition-colors">
                             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                                 <span className="text-sm font-medium text-blue-600">MA</span>
@@ -470,7 +476,7 @@ export default function ScholarshipDashboard() {
                 </div>
 
                 {/* Activity Feed */}
-                <div className="rounded-2xl p-6 border" style={{
+                <div className="rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(20px)',
                     border: '1px solid rgba(220, 38, 38, 0.1)',
@@ -480,48 +486,48 @@ export default function ScholarshipDashboard() {
                         <h3 className="text-lg font-semibold text-gray-900">Activité Récente</h3>
                         <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Voir tout</button>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-2 sm:space-y-3 md:space-y-4">
                         <div className="flex items-start space-x-3">
-                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
                                 <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm text-gray-900"><span className="font-medium">Marie Dubois</span> a été acceptée à l'Université de Pékin</p>
+                                <p className="text-xs sm:text-sm text-gray-900"><span className="font-medium">Marie Dubois</span> a été acceptée à l'Université de Pékin</p>
                                 <p className="text-xs text-gray-500">Il y a 2 heures</p>
                             </div>
                         </div>
                         <div className="flex items-start space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
                                 <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm text-gray-900">Nouvelle candidature de <span className="font-medium">Thomas Petit</span></p>
+                                <p className="text-xs sm:text-sm text-gray-900">Nouvelle candidature de <span className="font-medium">Thomas Petit</span></p>
                                 <p className="text-xs text-gray-500">Il y a 3 heures</p>
                             </div>
                         </div>
                         <div className="flex items-start space-x-3">
-                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mt-0.5">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center mt-0.5">
                                 <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm text-gray-900">Paiement reçu de <span className="font-medium">Sophie Laurent</span></p>
+                                <p className="text-xs sm:text-sm text-gray-900">Paiement reçu de <span className="font-medium">Sophie Laurent</span></p>
                                 <p className="text-xs text-gray-500">Il y a 5 heures</p>
                             </div>
                         </div>
                         <div className="flex items-start space-x-3">
-                            <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mt-0.5">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 rounded-full flex items-center justify-center mt-0.5">
                                 <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm text-gray-900">Document manquant pour <span className="font-medium">Jean Martin</span></p>
+                                <p className="text-xs sm:text-sm text-gray-900">Document manquant pour <span className="font-medium">Jean Martin</span></p>
                                 <p className="text-xs text-gray-500">Il y a 1 jour</p>
                             </div>
                         </div>
@@ -532,7 +538,7 @@ export default function ScholarshipDashboard() {
             {/* Universities & Calendar */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Top Universities */}
-                <div className="lg:col-span-2 rounded-2xl p-6 border" style={{
+                <div className="lg:col-span-2 rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(20px)',
                     border: '1px solid rgba(220, 38, 38, 0.1)',
@@ -542,53 +548,53 @@ export default function ScholarshipDashboard() {
                         <h3 className="text-lg font-semibold text-gray-900">Universités Populaires</h3>
                         <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Voir toutes</button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center space-x-4 p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:p-4">
+                        <div className="flex items-center space-x-4 p-3 sm:p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-xl flex items-center justify-center">
                                 <span className="text-lg font-bold text-red-600">P</span>
                             </div>
                             <div className="flex-1">
                                 <h4 className="font-medium text-gray-900">Université de Pékin</h4>
-                                <p className="text-sm text-gray-500">24 candidatures</p>
+                                <p className="text-xs sm:text-sm text-gray-500">24 candidatures</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-sm font-medium text-green-600">85%</p>
                                 <p className="text-xs text-gray-500">Taux succès</p>
                             </div>
                         </div>
-                        <div className="flex items-center space-x-4 p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
-                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <div className="flex items-center space-x-4 p-3 sm:p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                                 <span className="text-lg font-bold text-blue-600">T</span>
                             </div>
                             <div className="flex-1">
                                 <h4 className="font-medium text-gray-900">Tsinghua</h4>
-                                <p className="text-sm text-gray-500">18 candidatures</p>
+                                <p className="text-xs sm:text-sm text-gray-500">18 candidatures</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-sm font-medium text-green-600">92%</p>
                                 <p className="text-xs text-gray-500">Taux succès</p>
                             </div>
                         </div>
-                        <div className="flex items-center space-x-4 p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
-                            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                        <div className="flex items-center space-x-4 p-3 sm:p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center">
                                 <span className="text-lg font-bold text-green-600">F</span>
                             </div>
                             <div className="flex-1">
                                 <h4 className="font-medium text-gray-900">Fudan</h4>
-                                <p className="text-sm text-gray-500">15 candidatures</p>
+                                <p className="text-xs sm:text-sm text-gray-500">15 candidatures</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-sm font-medium text-green-600">78%</p>
                                 <p className="text-xs text-gray-500">Taux succès</p>
                             </div>
                         </div>
-                        <div className="flex items-center space-x-4 p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
-                            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <div className="flex items-center space-x-4 p-3 sm:p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                                 <span className="text-lg font-bold text-purple-600">S</span>
                             </div>
                             <div className="flex-1">
                                 <h4 className="font-medium text-gray-900">Shanghai Jiao Tong</h4>
-                                <p className="text-sm text-gray-500">12 candidatures</p>
+                                <p className="text-xs sm:text-sm text-gray-500">12 candidatures</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-sm font-medium text-green-600">88%</p>
@@ -599,7 +605,7 @@ export default function ScholarshipDashboard() {
                 </div>
 
                 {/* Calendar/Deadlines */}
-                <div className="rounded-2xl p-6 border" style={{
+                <div className="rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(20px)',
                     border: '1px solid rgba(220, 38, 38, 0.1)',
@@ -609,7 +615,7 @@ export default function ScholarshipDashboard() {
                         <h3 className="text-lg font-semibold text-gray-900">Échéances</h3>
                         <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Calendrier</button>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-2 sm:space-y-3 md:space-y-4">
                         <div className="flex items-start space-x-3 p-3 bg-red-50 rounded-xl">
                             <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
                             <div className="flex-1">

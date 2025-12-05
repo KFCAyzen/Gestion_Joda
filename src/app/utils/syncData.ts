@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
 /**
@@ -114,4 +114,23 @@ export const deleteData = async (collectionName: string, id: string) => {
     // Tenter la suppression Firebase (si l'élément était synchronisé)
     // Note: La suppression Firebase nécessiterait une logique plus complexe
     // pour retrouver le document par son ID local
+};
+
+/**
+ * Mise à jour unifiée : localStorage + Firebase
+ */
+export const updateData = async (collectionName: string, id: string, updatedData: any) => {
+    const localData = JSON.parse(localStorage.getItem(collectionName) || '[]');
+    const index = localData.findIndex((item: any) => item.id === id);
+    
+    if (index !== -1) {
+        localData[index] = { ...localData[index], ...updatedData };
+        localStorage.setItem(collectionName, JSON.stringify(localData));
+    }
+    
+    try {
+        await addDoc(collection(db, collectionName), updatedData);
+    } catch (error) {
+        // Synchronisation ultérieure
+    }
 };

@@ -49,7 +49,7 @@ export default function UserManagement() {
                     Gestion des Utilisateurs
                 </h1>
 
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200">
                     <div className="border-b border-slate-200">
                         <nav className="flex flex-col sm:flex-row">
                             <button
@@ -95,14 +95,14 @@ export default function UserManagement() {
                             </div>
                         )}
                         {activeTab === 'permissions' && (
-                            <div className="space-y-4 sm:space-y-6">
+                            <div className="space-y-2 sm:space-y-3 md:space-y-4 sm:space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
                                 <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
                                     Niveaux de Permissions
                                 </h2>
                                 
                                 <div className="grid gap-4 sm:gap-6">
                                     {Object.entries(rolePermissions).map(([role, permissions]) => (
-                                        <div key={role} className="border rounded-lg p-3 sm:p-4">
+                                        <div key={role} className="border rounded-lg p-3 sm:p-3 sm:p-4">
                                             <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3" style={{color: '#dc2626'}}>
                                                 {role === 'super_admin' ? 'Super Administrateur' :
                                                  role === 'admin' ? 'Administrateur' : 'Utilisateur'}
@@ -124,12 +124,12 @@ export default function UserManagement() {
                         )}
 
                         {activeTab === 'users' && (
-                            <div className="space-y-4 sm:space-y-6">
+                            <div className="space-y-2 sm:space-y-3 md:space-y-4 sm:space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
                                 <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
                                     Comptes Utilisateurs ({users.length})
                                 </h2>
                                 
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-3 sm:p-4">
                                     <h3 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">Comptes par Défaut</h3>
                                     <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                                         <div><strong>Admin:</strong> admin / admin123</div>
@@ -137,9 +137,9 @@ export default function UserManagement() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 sm:space-y-4">
+                                <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4">
                                     {users.map((u, index) => (
-                                        <div key={`user-${u.id}-${index}-${u.username}`} className="border rounded-lg p-3 sm:p-4">
+                                        <div key={`user-${u.id}-${index}-${u.username}`} className="border rounded-lg p-3 sm:p-3 sm:p-4">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                                 <div className="flex-1">
                                                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
@@ -206,7 +206,7 @@ export default function UserManagement() {
                         )}
 
                         {activeTab === 'create' && (
-                            <div className="space-y-4 sm:space-y-6">
+                            <div className="space-y-2 sm:space-y-3 md:space-y-4 sm:space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
                                 <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
                                     Créer un Nouvel Utilisateur
                                 </h2>
@@ -220,7 +220,7 @@ export default function UserManagement() {
                                 )}
                                 
                                 <div className="bg-white border rounded-lg p-4 sm:p-6">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3 sm:p-4">
                                         <div>
                                             <label className="block text-sm font-medium mb-2" style={{color: '#dc2626'}}>
                                                 Nom d'utilisateur *
@@ -267,7 +267,7 @@ export default function UserManagement() {
                                         </div>
                                         
                                         <div className="sm:col-span-2">
-                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-3 sm:p-4">
                                                 <h4 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">Mot de passe par défaut</h4>
                                                 <p className="text-xs sm:text-sm text-blue-700">
                                                     L'utilisateur recevra le mot de passe temporaire : <strong>temp123</strong>
@@ -279,7 +279,7 @@ export default function UserManagement() {
                                         </div>
                                     </div>
                                     
-                                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-3 sm:p-4">
                                         <button
                                             onClick={async () => {
                                                 setError('');
@@ -338,11 +338,11 @@ export default function UserManagement() {
 
                 {/* Modal de confirmation de suppression */}
                 {userToDelete && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
                         <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md">
                             <div className="text-center mb-4 sm:mb-6">
-                                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                                    <svg className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 sm:w-8 sm:h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                     </svg>
                                 </div>

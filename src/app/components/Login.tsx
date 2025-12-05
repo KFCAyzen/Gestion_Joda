@@ -67,8 +67,8 @@ export default function Login({ onLogin, showNotification }: LoginProps) {
                     {/* Logo and Header */}
                     <div className="text-center mb-10">
                         <div className="flex justify-center mb-6">
-                            <div className="w-16 h-16 bg-red-500/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg border border-white/20">
-                                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-red-500/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg border border-white/20">
+                                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
                                     <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" fill="white"/>
                                 </svg>
@@ -83,7 +83,7 @@ export default function Login({ onLogin, showNotification }: LoginProps) {
                     </div>
 
                     {/* Login Form */}
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-white/90 mb-2 drop-shadow-md">
                                 Nom d'utilisateur
@@ -149,7 +149,7 @@ export default function Login({ onLogin, showNotification }: LoginProps) {
 
                         <button
                             type="submit"
-                            className="w-full flex justify-center py-3 px-4 border border-white/20 rounded-lg shadow-lg text-sm font-medium text-white bg-red-500/80 backdrop-blur-sm hover:bg-red-600/80 focus:outline-none focus:ring-2 focus:ring-red-400 transition-all duration-200"
+                            className="w-full flex justify-center py-2 px-3 sm:py-3 sm:px-4 border border-white/20 rounded-lg shadow-lg text-sm font-medium text-white bg-red-500/80 backdrop-blur-sm hover:bg-red-600/80 focus:outline-none focus:ring-2 focus:ring-red-400 transition-all duration-200"
                         >
                             Se connecter
                         </button>

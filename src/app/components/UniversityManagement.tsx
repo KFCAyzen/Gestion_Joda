@@ -246,7 +246,7 @@ export default function UniversityManagement() {
                     <h3 className="font-bold mb-4 text-lg sm:text-xl" style={{color: '#dc2626'}}>
                         {editingUniversity ? 'Modifier Université' : 'Nouvelle Université'}
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:p-4">
                         <input 
                             placeholder="Nom de l'université *" 
                             value={formData.name}
@@ -318,9 +318,9 @@ export default function UniversityManagement() {
                 </div>
             )}
             
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                <div className="p-4 sm:p-6 border-b border-slate-200">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200">
+                <div className="p-4 sm:p-4 sm:p-6 border-b border-slate-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:p-4">
                         <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
                             Universités Chinoises ({universities.length})
                         </h2>
@@ -345,7 +345,7 @@ export default function UniversityManagement() {
                 </div>
                 
                 <div className="p-4 sm:p-6">
-                    <div className="space-y-6 sm:space-y-8">
+                    <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6 sm:space-y-8">
                         {Object.keys(categories).map(category => {
                             const categoryUniversities = universities.filter(uni => uni.category === category);
                             const categoryStyle = categories[category as keyof typeof categories];
@@ -361,7 +361,7 @@ export default function UniversityManagement() {
                                             {categoryUniversities.length} université(s)
                                         </span>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:p-4">
                                         {categoryUniversities.map((university) => (
                                             <div key={university.id} className={`${categoryStyle.bgColor} p-5 rounded-xl border border-slate-200 hover:shadow-lg transition-all duration-200`}>
                                                 <div className="flex items-start justify-between mb-4">

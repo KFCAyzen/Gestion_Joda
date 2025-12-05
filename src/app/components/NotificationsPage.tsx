@@ -203,7 +203,7 @@ export default function NotificationsPage() {
                     >
                         {label}
                         {key === 'unread' && notifications.filter(n => !n.read).length > 0 && (
-                            <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                            <span className="ml-2 bg-red-500 text-white text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                                 {notifications.filter(n => !n.read).length}
                             </span>
                         )}
@@ -212,11 +212,11 @@ export default function NotificationsPage() {
             </div>
 
             {/* Liste des notifications */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200">
                 {filteredNotifications.length === 0 ? (
                     <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-5a7.5 7.5 0 015.5-7.21" />
                             </svg>
                         </div>
@@ -233,7 +233,7 @@ export default function NotificationsPage() {
                                 }`}
                                 onClick={() => markAsRead(notification.id)}
                             >
-                                <div className="flex items-start gap-4">
+                                <div className="flex items-start gap-3 sm:p-4">
                                     <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
                                         {getNotificationIcon(notification.type)}
                                     </div>

@@ -347,8 +347,8 @@ export default function PerformanceHistory() {
                 </div>
             )}
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                <div className="p-4 sm:p-6 border-b border-slate-200">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200">
+                <div className="p-4 sm:p-4 sm:p-6 border-b border-slate-200">
                     <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
                         Performances {selectedUser === 'all' ? 'Globales' : `de ${selectedUser}`}
                     </h2>
@@ -362,7 +362,7 @@ export default function PerformanceHistory() {
                             <p className="text-slate-500 text-sm sm:text-base">Aucune donnée disponible</p>
                         </div>
                     ) : (
-                        <div className="space-y-3 sm:space-y-4">
+                        <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4">
                             {dailyStats.map((day, index) => (
                                 <div key={`performance-${day.date}-${index}-${day.total}`} className="bg-slate-50 p-3 sm:p-4 rounded-lg">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3">
@@ -373,7 +373,7 @@ export default function PerformanceHistory() {
                                             {formatPrice(day.total.toString())}
                                         </span>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3 sm:p-4">
                                         <div className="bg-blue-50 p-2 sm:p-3 rounded">
                                             <p className="text-xs sm:text-sm font-medium text-blue-800">Nuitées</p>
                                             <p className="text-xs text-blue-600">{day.nuitee.count} chambres</p>

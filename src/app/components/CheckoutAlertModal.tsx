@@ -19,7 +19,16 @@ interface CheckoutAlertModalProps {
 
 export default function CheckoutAlertModal({ isOpen, onClose }: CheckoutAlertModalProps) {
     const [expiringReservations, setExpiringReservations] = useState<Reservation[]>([]);
-    
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                setUser(JSON.parse(currentUser));
+            }
+        }
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -80,8 +89,8 @@ export default function CheckoutAlertModal({ isOpen, onClose }: CheckoutAlertMod
         <div className="fixed top-0 left-0 w-full h-full flex items-start justify-center overflow-hidden pt-20" style={{zIndex: 9999, backdropFilter: 'blur(10px)', background: 'rgba(255, 255, 255, 0.1)'}}>
             <div className="bg-white/90 backdrop-blur-md rounded-xl p-6 max-w-md w-full shadow-2xl transform transition-all duration-300 scale-100 border border-white/20">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                        <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
                     </div>
