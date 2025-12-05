@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 
 import { loadFromFirebase } from "../utils/syncData";
+import { useAuth } from "../context/AuthContext";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface Notification {
@@ -20,6 +21,7 @@ interface Notification {
 
 export default function NotificationsPage() {
     
+    const { user } = useAuth();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'unread' | 'checkout' | 'actions'>('all');
