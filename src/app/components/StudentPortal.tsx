@@ -6,6 +6,9 @@ import { loadFromFirebase, saveData } from '../utils/syncData';
 import { useNotificationContext } from '../context/NotificationContext';
 import StudentNotifications from './StudentNotifications';
 import StudentDashboard from './student/StudentDashboard';
+import StudentApplicationsList from './student/StudentApplicationsList';
+import StudentPaymentsList from './student/StudentPaymentsList';
+import StudentDocumentsList from './student/StudentDocumentsList';
 
 interface StudentPortalProps {
     user: User;
@@ -496,168 +499,28 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 )}
 
                 {currentView === 'applications' && (
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                        <div className="p-4 sm:p-4 sm:p-6 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Toutes mes candidatures</h3>
-                                <button onClick={() => setCurrentView('dashboard')} className="text-xs sm:text-sm text-gray-600 hover:text-gray-900">← Retour</button>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            {applications.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <svg className="w-10 h-10 sm:w-12 sm:h-12 sm:w-16 sm:h-14 sm:h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p className="text-sm sm:text-base text-gray-500">Aucune candidature pour le moment</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5 sm:space-y-2 md:space-y-3 md:space-y-2 sm:space-y-3 md:space-y-4">
-                                    {applications.map(app => (
-                                        <div key={app.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">{app.universityName}</h4>
-                                                    <p className="text-xs sm:text-sm text-gray-600">{app.program}</p>
-                                                </div>
-                                                <span className={`px-1.5 sm:px-2 py-0.5 text-xs rounded-full ${getStatusColor(app.status)}`}>
-                                                    {app.status}
-                                                </span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                                <div>
-                                                    <p className="text-sm sm:text-base text-gray-500">Date de soumission</p>
-                                                    <p className="text-gray-900 font-medium">{app.submittedDate}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm sm:text-base text-gray-500">Dernière mise à jour</p>
-                                                    <p className="text-gray-900 font-medium">{app.lastUpdate}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <StudentApplicationsList
+                        applications={applications}
+                        onBack={() => setCurrentView('dashboard')}
+                        getStatusColor={getStatusColor}
+                    />
                 )}
 
                 {currentView === 'payments' && (
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                        <div className="p-4 sm:p-4 sm:p-6 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Historique des paiements</h3>
-                                <button onClick={() => setCurrentView('dashboard')} className="text-xs sm:text-sm text-gray-600 hover:text-gray-900">← Retour</button>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            {payments.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <svg className="w-10 h-10 sm:w-12 sm:h-12 sm:w-16 sm:h-14 sm:h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    <p className="text-sm sm:text-base text-gray-500">Aucun paiement enregistré</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5 sm:space-y-2 md:space-y-3 md:space-y-2 sm:space-y-3 md:space-y-4">
-                                    {payments.map(pay => (
-                                        <div key={pay.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">{pay.description}</h4>
-                                                    <p className="text-xs sm:text-sm text-gray-600">{pay.date}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{pay.amount.toLocaleString()} FCFA</p>
-                                                    <span className={`px-1.5 sm:px-2 py-0.5 text-xs rounded-full ${getPaymentStatusColor(pay.status)}`}>
-                                                        {pay.status}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            {pay.status === 'Payé' && (
-                                                <button
-                                                    onClick={() => generateReceipt(pay)}
-                                                    className="w-full mt-3 px-3 sm:px-4 py-2 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    Télécharger le reçu
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <StudentPaymentsList
+                        payments={payments}
+                        onBack={() => setCurrentView('dashboard')}
+                        getPaymentStatusColor={getPaymentStatusColor}
+                        onGenerateReceipt={generateReceipt}
+                    />
                 )}
 
                 {currentView === 'documents' && (
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                        <div className="p-4 sm:p-4 sm:p-6 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestion des documents</h3>
-                                <button onClick={() => setCurrentView('dashboard')} className="text-xs sm:text-sm text-gray-600 hover:text-gray-900">← Retour</button>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <h4 className="text-sm font-semibold text-blue-900 mb-3">Documents requis</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {['Passeport', 'Diplôme', 'Relevé de notes', 'Photo d\'identité', 'Lettre de motivation', 'CV'].map(docType => (
-                                        <div key={docType} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                                            <span className="text-xs sm:text-sm text-gray-700">{docType}</span>
-                                            <label className="cursor-pointer">
-                                                <input 
-                                                    type="file" 
-                                                    className="hidden" 
-                                                    onChange={(e) => handleFileUpload(e, docType)}
-                                                    accept=".pdf,.jpg,.jpeg,.png"
-                                                />
-                                                <span className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs bg-red-600 text-white rounded-md sm:rounded-lg hover:bg-red-700 transition-colors">
-                                                    {documents.find(d => d.type === docType) ? 'Remplacer' : 'Upload'}
-                                                </span>
-                                            </label>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <h4 className="text-xs sm:text-sm font-semibold text-gray-900 mb-3">Documents uploadés</h4>
-                            {documents.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <svg className="w-10 h-10 sm:w-12 sm:h-12 sm:w-16 sm:h-14 sm:h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p className="text-sm sm:text-base text-gray-500">Aucun document uploadé</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5 sm:space-y-2 md:space-y-3">
-                                    {documents.map(doc => (
-                                        <div key={doc.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-6 h-6 sm:w-8 sm:h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                        <svg className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs sm:text-sm font-semibold text-gray-900">{doc.type}</p>
-                                                        <p className="text-xs sm:text-xs sm:text-sm text-gray-500">{doc.name} • {doc.uploadDate}</p>
-                                                    </div>
-                                                </div>
-                                                <span className="px-1.5 sm:px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">
-                                                    {doc.status}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <StudentDocumentsList
+                        documents={documents}
+                        onBack={() => setCurrentView('dashboard')}
+                        onFileUpload={handleFileUpload}
+                    />
                 )}
 
                 {currentView === 'receipts' && (
