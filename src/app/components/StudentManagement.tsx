@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { saveData, loadFromFirebase } from "../utils/syncData";
 import { useNotificationContext } from "../context/NotificationContext";
 import { useActivityLog } from "../context/ActivityLogContext";
+import { useAuth } from "../context/AuthContext";
 
 import { Student } from "../types/scholarship";
 
@@ -16,6 +17,7 @@ export default function StudentManagement() {
     const [isLoading, setIsLoading] = useState(true);
     const { showNotification } = useNotificationContext();
     const { addLog } = useActivityLog();
+    const { user } = useAuth();
     
 
     const generateStudentId = () => {
