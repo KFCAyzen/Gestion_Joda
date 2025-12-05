@@ -164,7 +164,21 @@ function AppContent() {
     }
 
     if (user?.role === 'student') {
-        return <StudentPortal user={user} onLogout={logout} />;
+        return (
+            <>
+                <NotificationProvider showNotification={showNotification}>
+                    <StudentPortal user={user} onLogout={logout} />
+                </NotificationProvider>
+                {notifications.map((notification, index) => (
+                    <Notification
+                        key={`student-notification-${notification.id}-${index}`}
+                        message={notification.message}
+                        type={notification.type}
+                        onClose={() => removeNotification(notification.id)}
+                    />
+                ))}
+            </>
+        );
     }
 
     return (
