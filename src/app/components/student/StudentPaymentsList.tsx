@@ -2,6 +2,7 @@
 
 interface Payment {
     id: string;
+    studentId: string;
     description: string;
     date: string;
     amount: number;

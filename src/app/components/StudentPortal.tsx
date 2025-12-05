@@ -959,7 +959,7 @@ Document officiel généré le ${new Date().toLocaleDateString('fr-FR')}
                                     !profileData.address || 
                                     !profileData.parentName || 
                                     !profileData.parentPhone ||
-                                    (pendingService && (pendingService.id === '3' || pendingService.id === '4') && 
+                                    ((pendingService?.id === '3' || pendingService?.id === '4') && 
                                         (!uploadedDocs.passport || !uploadedDocs.diploma || !uploadedDocs.transcript || 
                                          !uploadedDocs.photo || !uploadedDocs.motivation || !uploadedDocs.cv))
                                 }
