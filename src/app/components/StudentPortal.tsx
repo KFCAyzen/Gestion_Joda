@@ -1057,7 +1057,7 @@ Document officiel généré le ${new Date().toLocaleDateString('fr-FR')}
                 )}
 
                 {currentView === 'notifications' && (
-                    <StudentNotifications />
+                    <StudentNotifications onBack={() => setCurrentView('dashboard')} />
                 )}
 
                 {currentView === 'services' && (

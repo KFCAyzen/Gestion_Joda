@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface Notification {
     id: string;
-    type: 'admin' | 'dossier' | 'paiement';
+    type: 'admin' | 'dossier' | 'paiement' | 'service';
     title: string;
     message: string;
     date: string;
@@ -12,7 +12,11 @@ interface Notification {
     priority?: 'high' | 'medium' | 'low';
 }
 
-export default function StudentNotifications() {
+interface StudentNotificationsProps {
+    onBack?: () => void;
+}
+
+export default function StudentNotifications({ onBack }: StudentNotificationsProps = {}) {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [filter, setFilter] = useState<'all' | 'admin' | 'dossier' | 'paiement'>('all');
     const [user, setUser] = useState<any>(null);
@@ -61,6 +65,24 @@ export default function StudentNotifications() {
                 priority: studentFile.status === 'approved' ? 'high' : 'medium'
             });
         }
+
+        // Notifications de demandes de service
+        const serviceRequests = JSON.parse(localStorage.getItem('serviceRequests') || '[]');
+        const studentRequests = serviceRequests.filter((r: any) => r.studentId === currentUser.id);
+        studentRequests.forEach((request: any) => {
+            if (request.status !== 'En attente de validation') {
+                const statusText = request.status === 'Approuvée' ? 'approuvée' : 'refusée';
+                allNotifications.push({
+                    id: `service-${request.id}`,
+                    type: 'service',
+                    title: `Demande de service ${statusText}`,
+                    message: `Votre demande pour "${request.serviceName}" a été ${statusText}. ${request.note ? `Note: ${request.note}` : ''}`,
+                    date: request.processedDate || request.requestDate,
+                    read: false,
+                    priority: request.status === 'Approuvée' ? 'high' : 'medium'
+                });
+            }
+        });
 
         // Notifications de paiement
         const payments = JSON.parse(localStorage.getItem('studentPayments') || '[]');
@@ -122,6 +144,12 @@ export default function StudentNotifications() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                 );
+            case 'service':
+                return (
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                );
         }
     };
 
@@ -130,6 +158,7 @@ export default function StudentNotifications() {
             case 'admin': return 'bg-blue-100 text-blue-600';
             case 'dossier': return 'bg-green-100 text-green-600';
             case 'paiement': return 'bg-purple-100 text-purple-600';
+            case 'service': return 'bg-orange-100 text-orange-600';
             default: return 'bg-gray-100 text-gray-600';
         }
     };
@@ -152,11 +181,24 @@ export default function StudentNotifications() {
         <div className="p-4 sm:p-6 space-y-2 sm:space-y-3 md:space-y-4 sm:space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-3 sm:p-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</h1>
-                    <p className="text-xs sm:text-xs sm:text-sm text-gray-600">
-                        {unreadCount > 0 ? `${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}` : 'Aucune nouvelle notification'}
-                    </p>
+                <div className="flex items-center gap-3">
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Retour"
+                        >
+                            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                    )}
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</h1>
+                        <p className="text-xs sm:text-xs sm:text-sm text-gray-600">
+                            {unreadCount > 0 ? `${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}` : 'Aucune nouvelle notification'}
+                        </p>
+                    </div>
                 </div>
                 <button
                     onClick={markAllAsRead}
@@ -172,6 +214,7 @@ export default function StudentNotifications() {
                 {[
                     { key: 'all', label: 'Toutes', count: notifications.length },
                     { key: 'admin', label: 'Annonces', count: notifications.filter(n => n.type === 'admin').length },
+                    { key: 'service', label: 'Services', count: notifications.filter(n => n.type === 'service').length },
                     { key: 'dossier', label: 'Dossiers', count: notifications.filter(n => n.type === 'dossier').length },
                     { key: 'paiement', label: 'Paiements', count: notifications.filter(n => n.type === 'paiement').length }
                 ].map(f => (
