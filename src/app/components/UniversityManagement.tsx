@@ -5,6 +5,7 @@ import { saveData, loadFromFirebase } from "../utils/syncData";
 import { useNotificationContext } from "../context/NotificationContext";
 import { formatPrice } from "../utils/formatPrice";
 import { useActivityLog } from "../context/ActivityLogContext";
+import { useAuth } from "../context/AuthContext";
 
 import { University } from "../types/scholarship";
 
@@ -15,6 +16,7 @@ export default function UniversityManagement() {
     const [isLoading, setIsLoading] = useState(true);
     const { showNotification } = useNotificationContext();
     const { addLog } = useActivityLog();
+    const { user } = useAuth();
     
 
     const [formData, setFormData] = useState({
