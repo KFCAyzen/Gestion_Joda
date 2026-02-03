@@ -41,7 +41,7 @@ const COLLECTIONS = {
   MESSAGES: 'messages'
 } as const;
 
-// Utilitaires génériques
+// Utilitaires génériques avec gestion d'erreur
 export async function createDocument<T>(collectionName: string, data: Omit<T, 'id'>): Promise<string> {
   try {
     const docRef = await addDoc(collection(db, collectionName), {
@@ -52,6 +52,21 @@ export async function createDocument<T>(collectionName: string, data: Omit<T, 'i
     return docRef.id;
   } catch (error) {
     console.error(`Error creating document in ${collectionName}:`, error);
+    // Retry once on network error
+    if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const docRef = await addDoc(collection(db, collectionName), {
+          ...data,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        });
+        return docRef.id;
+      } catch (retryError) {
+        console.error(`Retry failed for ${collectionName}:`, retryError);
+        throw retryError;
+      }
+    }
     throw error;
   }
 }
@@ -80,6 +95,11 @@ export async function getAllDocuments<T>(collectionName: string): Promise<T[]> {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
   } catch (error) {
     console.error(`Error getting all documents from ${collectionName}:`, error);
+    // Return empty array on error to prevent app crash
+    if (error.code === 'unavailable' || error.code === 'permission-denied') {
+      console.warn(`Returning empty array for ${collectionName} due to:`, error.code);
+      return [];
+    }
     return [];
   }
 }

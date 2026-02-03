@@ -20,7 +20,23 @@ try {
   throw error;
 }
 
-export const db = getFirestore(app);
+// Initialize Firestore with retry logic
+let db;
+try {
+  db = getFirestore(app);
+} catch (error) {
+  console.error('Firestore initialization error:', error);
+  // Retry once
+  setTimeout(() => {
+    try {
+      db = getFirestore(app);
+    } catch (retryError) {
+      console.error('Firestore retry failed:', retryError);
+    }
+  }, 1000);
+}
+
+export { db };
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 
