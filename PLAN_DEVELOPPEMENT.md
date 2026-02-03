@@ -2,7 +2,7 @@
 
 ## 📊 ÉTAT D'AVANCEMENT
 
-### ✅ DÉJÀ FAIT (30%)
+### ✅ DÉJÀ FAIT (40%)
 - **Authentification & Rôles** : Système complet avec 4 niveaux (student, user, admin, super_admin)
 - **Interface de base** : Layout, navigation, design responsive Tailwind CSS
 - **Gestion utilisateurs** : Création, suppression, réinitialisation des comptes
@@ -10,24 +10,23 @@
 - **Composants de base** : Dashboard, formulaires, modals, LoadingSpinner
 - **Système de permissions** : ProtectedRoute avec vérification des rôles
 - **Contextes React** : AuthContext, ActivityLogContext
+- **Gestion étudiants** : Formulaire complet avec choix de service
+- **Gestion documents** : Upload et validation des 5 documents requis
+- **Workflow dossiers** : 8 statuts avec transitions automatiques
+- **Système paiements** : 4 tranches avec calcul automatique des pénalités
+- **Cours de langues** : Module complet Mandarin/Anglais avec paiements
 
-### 🔄 PARTIELLEMENT FAIT (20%)
-- **Gestion étudiants** : Structure de base dans StudentsPage (à adapter au cahier des charges)
-- **Système de paiements** : Base existante dans BillingPage (à refactoriser pour les 4 tranches)
+### 🔄 PARTIELLEMENT FAIT (10%)
 - **Rapports** : PerformanceHistory avec export Word (à étendre)
 - **Tableau de bord** : DashBoard avec statistiques basiques (à enrichir)
 - **Interface utilisateur** : Responsive design (à compléter)
 
 ### ❌ À FAIRE (50%)
-- **Gestion des dossiers de bourses** : Workflow complet avec 8 statuts
-- **Upload/validation documents** : 5 documents requis + système de validation
-- **Système de paiements par tranches** : 4 tranches + calcul automatique des pénalités
-- **Cours de langues** : Module complet Mandarin/Anglais avec paiements
 - **Module comptabilité** : Entrées/sorties + rapports financiers
 - **Notifications & messagerie** : SMS/Email automatiques
 - **Génération PDF** : Reçus, rapports, exports avancés
 - **Workflow étudiant** : Interface dédiée avec suivi en temps réel
-- **Sécurité** : Correction des vulnérabilités détectées (credentials hardcodés, XSS)
+- **Tests & optimisation** : Tests complets et déploiement
 
 ## 🚀 PLAN DE DÉVELOPPEMENT
 
@@ -99,27 +98,27 @@
 ### **Phase 4 : Cours de Langues (2 semaines)**
 
 #### Module Mandarin (121 000 FCFA)
-- [ ] **Inscription** : 10 000 FCFA
-- [ ] **Livre** : 11 000 FCFA
-- [ ] **Tranche 1** : 50 000 FCFA
-- [ ] **Tranche 2** : 50 000 FCFA
+- [x] **Inscription** : 10 000 FCFA
+- [x] **Livre** : 11 000 FCFA
+- [x] **Tranche 1** : 50 000 FCFA
+- [x] **Tranche 2** : 50 000 FCFA
 
 #### Module Anglais (91 000 FCFA)
-- [ ] **Inscription** : 10 000 FCFA
-- [ ] **Livre** : 11 000 FCFA
-- [ ] **Tranche 1** : 30 000 FCFA
-- [ ] **Tranche 2** : 40 000 FCFA
+- [x] **Inscription** : 10 000 FCFA
+- [x] **Livre** : 11 000 FCFA
+- [x] **Tranche 1** : 30 000 FCFA
+- [x] **Tranche 2** : 40 000 FCFA
 
 #### Pénalités Spécifiques
-- [ ] **Inscription** → après 14 jours → 500 FCFA/jour
-- [ ] **Tranche 1** → après 30 jours → 1 000 FCFA/jour
-- [ ] **Tranche 2** → après 60 jours → 1 000 FCFA/jour
+- [x] **Inscription** → après 14 jours → 500 FCFA/jour
+- [x] **Tranche 1** → après 30 jours → 1 000 FCFA/jour
+- [x] **Tranche 2** → après 60 jours → 1 000 FCFA/jour
 
 #### Fonctionnalités
-- [ ] **Choix étudiant** : Procédure seule / Cours seuls / Procédure + cours
-- [ ] **Inscription et suivi** complets
-- [ ] **Upload factures** et validation
-- [ ] **Reçus PDF** automatiques
+- [x] **Choix étudiant** : Procédure seule / Cours seuls / Procédure + cours
+- [x] **Inscription et suivi** complets
+- [x] **Upload factures** et validation
+- [x] **Interface de gestion** intégrée au module étudiant
 
 ### **Phase 5 : Module Comptabilité (2 semaines)**
 

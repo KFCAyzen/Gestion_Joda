@@ -241,6 +241,98 @@ export async function getStudentCours(studentId: string): Promise<CoursLangue[]>
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CoursLangue));
 }
 
+// Créer un cours de langue avec paiements automatiques
+export async function createCoursLangueWithPayments(studentId: string, langue: 'mandarin' | 'anglais', createdBy: string): Promise<string> {
+  try {
+    const montants = langue === 'mandarin' ? {
+      INSCRIPTION: 10000,
+      LIVRE: 11000,
+      TRANCHE_1: 50000,
+      TRANCHE_2: 50000
+    } : {
+      INSCRIPTION: 10000,
+      LIVRE: 11000,
+      TRANCHE_1: 30000,
+      TRANCHE_2: 40000
+    };
+    
+    const now = new Date();
+    
+    // Créer les paiements
+    const inscriptionId = await createPayment({
+      studentId,
+      type: langue,
+      tranche: 1,
+      montant: montants.INSCRIPTION,
+      status: 'attente',
+      date_limite: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
+      penalites: 0
+    });
+    
+    const livreId = await createPayment({
+      studentId,
+      type: langue,
+      tranche: 2,
+      montant: montants.LIVRE,
+      status: 'attente',
+      date_limite: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
+      penalites: 0
+    });
+    
+    const tranche1Id = await createPayment({
+      studentId,
+      type: langue,
+      tranche: 3,
+      montant: montants.TRANCHE_1,
+      status: 'attente',
+      date_limite: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+      penalites: 0
+    });
+    
+    const tranche2Id = await createPayment({
+      studentId,
+      type: langue,
+      tranche: 4,
+      montant: montants.TRANCHE_2,
+      status: 'attente',
+      date_limite: new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000),
+      penalites: 0
+    });
+    
+    // Récupérer les paiements créés
+    const [inscription, livre, tranche1, tranche2] = await Promise.all([
+      getDocument<Payment>(COLLECTIONS.PAYMENTS, inscriptionId),
+      getDocument<Payment>(COLLECTIONS.PAYMENTS, livreId),
+      getDocument<Payment>(COLLECTIONS.PAYMENTS, tranche1Id),
+      getDocument<Payment>(COLLECTIONS.PAYMENTS, tranche2Id)
+    ]);
+    
+    // Créer le cours de langue
+    const coursId = await createCoursLangue({
+      studentId,
+      langue,
+      paiements: {
+        inscription: inscription!,
+        livre: livre!,
+        tranche1: tranche1!,
+        tranche2: tranche2!
+      },
+      inscrit_le: now,
+      statut: 'actif'
+    });
+    
+    // Mettre à jour le choix de l'étudiant
+    await updateStudent(studentId, {
+      choix: 'procedure_cours'
+    });
+    
+    return coursId;
+  } catch (error) {
+    console.error('Erreur lors de la création du cours:', error);
+    throw error;
+  }
+}
+
 // Gestion comptabilité
 export async function createEntreeComptable(entreeData: Omit<EntreeComptable, 'id' | 'createdAt'>): Promise<string> {
   return createDocument<EntreeComptable>(COLLECTIONS.ENTREES, entreeData);
