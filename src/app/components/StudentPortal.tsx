@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { User } from '../context/AuthContext';
 import { loadFromFirebase, saveData } from '../utils/syncData';
 import { useNotificationContext } from '../context/NotificationContext';
+import { sanitizeForHtml, sanitizeForExport, sanitizeEmail, sanitizePhone } from '../utils/security';
 import StudentNotifications from './StudentNotifications';
 import StudentDashboard from './student/StudentDashboard';
 import StudentApplicationsList from './student/StudentApplicationsList';
@@ -413,16 +414,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             REÇU DE PAIEMENT
             
             Date: ${payment.date}
-            Reçu N°: ${payment.id}
+            Reçu N°: ${sanitizeForExport(payment.id)}
             
             ============================================
             
-            Étudiant: ${user.name}
-            ID Étudiant: ${user.id}
+            Étudiant: ${sanitizeForExport(user.name)}
+            ID Étudiant: ${sanitizeForExport(user.id)}
             
-            Description: ${payment.description}
+            Description: ${sanitizeForExport(payment.description)}
             Montant: ${payment.amount.toLocaleString()} FCFA
-            Statut: ${payment.status}
+            Statut: ${sanitizeForExport(payment.status)}
             
             ============================================
             
@@ -437,7 +438,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Recu_${payment.id}_${user.name.replace(/\s+/g, '_')}.txt`;
+        a.download = `Recu_${sanitizeForExport(payment.id)}_${sanitizeForExport(user.name.replace(/\s+/g, '_'))}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -586,22 +587,22 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         Agence de Bourses d'Études en Chine
 ═══════════════════════════════════════════════════════
 
-REÇU N°: ${receipt.id}
+REÇU N°: ${sanitizeForExport(receipt.id)}
 DATE: ${new Date(receipt.date).toLocaleDateString('fr-FR')}
 
 ───────────────────────────────────────────────────────
 INFORMATIONS ÉTUDIANT
 ───────────────────────────────────────────────────────
-Nom: ${receipt.receivedFrom}
-${receipt.universityName ? `Université: ${receipt.universityName}` : ''}
-${receipt.program ? `Programme: ${receipt.program}` : ''}
+Nom: ${sanitizeForExport(receipt.receivedFrom)}
+${receipt.universityName ? `Université: ${sanitizeForExport(receipt.universityName)}` : ''}
+${receipt.program ? `Programme: ${sanitizeForExport(receipt.program)}` : ''}
 
 ───────────────────────────────────────────────────────
 DÉTAILS DU PAIEMENT
 ───────────────────────────────────────────────────────
-Motif: ${receipt.motif}
+Motif: ${sanitizeForExport(receipt.motif)}
 Montant: ${parseInt(receipt.amount).toLocaleString()} FCFA
-Montant en lettres: ${receipt.amountInWords}
+Montant en lettres: ${sanitizeForExport(receipt.amountInWords)}
 ${receipt.installmentNumber ? `Tranche: ${receipt.installmentNumber}/3` : ''}
 ${receipt.totalAmount ? `Montant total: ${parseInt(receipt.totalAmount).toLocaleString()} FCFA` : ''}
 
@@ -618,7 +619,7 @@ Document officiel généré le ${new Date().toLocaleDateString('fr-FR')}
                                                     const url = URL.createObjectURL(blob);
                                                     const a = document.createElement('a');
                                                     a.href = url;
-                                                    a.download = `Recu_${receipt.id}_${receipt.receivedFrom.replace(/\\s+/g, '_')}.txt`;
+                                                    a.download = `Recu_${sanitizeForExport(receipt.id)}_${sanitizeForExport(receipt.receivedFrom.replace(/\s+/g, '_'))}.txt`;
                                                     document.body.appendChild(a);
                                                     a.click();
                                                     document.body.removeChild(a);

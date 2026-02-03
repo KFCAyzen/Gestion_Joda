@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-
+import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import { useActivityLog } from '../context/ActivityLogContext';
 
 export default function UserManagement() {
-    
+    const { user, users, canCreateRole, createUser, canDeleteUser, deleteUser, canResetPassword, resetUserPassword } = useAuth();
     const { addLog } = useActivityLog();
     const [activeTab, setActiveTab] = useState('permissions');
     const [showCreateForm, setShowCreateForm] = useState(false);

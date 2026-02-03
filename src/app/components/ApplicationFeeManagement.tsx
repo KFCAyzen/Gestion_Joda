@@ -6,6 +6,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import { formatPrice } from "../utils/formatPrice";
 import { useActivityLog } from "../context/ActivityLogContext";
 import { useAuth } from "../context/AuthContext";
+import { sanitizeForHtml, sanitizeForExport } from "../utils/security";
 
 import { ApplicationFee, ScholarshipApplication } from "../types/scholarship";
 
@@ -354,19 +355,19 @@ export default function ApplicationFeeManagement() {
                             </div>
                             <div class="field">
                                 <span class="label">Reçu de</span>
-                                <div class="value">${fee.receivedFrom}</div>
+                                <div class="value">${sanitizeForHtml(fee.receivedFrom)}</div>
                             </div>
                             <div class="field">
                                 <span class="label">Motif</span>
-                                <div class="value">${fee.motif}</div>
+                                <div class="value">${sanitizeForHtml(fee.motif)}</div>
                             </div>
                             <div class="field">
                                 <span class="label">Université</span>
-                                <div class="value">${fee.universityName || 'Non spécifiée'}</div>
+                                <div class="value">${sanitizeForHtml(fee.universityName || 'Non spécifiée')}</div>
                             </div>
                             <div class="field field-full">
                                 <span class="label">Programme</span>
-                                <div class="value">${fee.program || 'Non spécifié'}</div>
+                                <div class="value">${sanitizeForHtml(fee.program || 'Non spécifié')}</div>
                             </div>
                         </div>
                         
@@ -376,7 +377,7 @@ export default function ApplicationFeeManagement() {
                         
                         <div class="field">
                             <span class="label">Montant en lettres</span>
-                            <div class="value">${fee.amountInWords}</div>
+                            <div class="value">${sanitizeForHtml(fee.amountInWords)}</div>
                         </div>
                     </div>
 
@@ -385,7 +386,7 @@ export default function ApplicationFeeManagement() {
                             <div class="signature-label">Signature de l'Étudiant</div>
                             <div style="height: 50px;"></div>
                             <div class="signature-line">
-                                ${fee.studentSignature || fee.receivedFrom}
+                                ${sanitizeForHtml(fee.studentSignature || fee.receivedFrom)}
                             </div>
                         </div>
                         <div class="signature-box">
