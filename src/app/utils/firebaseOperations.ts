@@ -43,12 +43,17 @@ const COLLECTIONS = {
 
 // Utilitaires génériques
 export async function createDocument<T>(collectionName: string, data: Omit<T, 'id'>): Promise<string> {
-  const docRef = await addDoc(collection(db, collectionName), {
-    ...data,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
-  });
-  return docRef.id;
+  try {
+    const docRef = await addDoc(collection(db, collectionName), {
+      ...data,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error(`Error creating document in ${collectionName}:`, error);
+    throw error;
+  }
 }
 
 export async function updateDocument<T>(collectionName: string, id: string, data: Partial<T>): Promise<void> {
@@ -70,8 +75,13 @@ export async function getDocument<T>(collectionName: string, id: string): Promis
 }
 
 export async function getAllDocuments<T>(collectionName: string): Promise<T[]> {
-  const querySnapshot = await getDocs(collection(db, collectionName));
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+  try {
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+  } catch (error) {
+    console.error(`Error getting all documents from ${collectionName}:`, error);
+    return [];
+  }
 }
 
 // Gestion des étudiants
