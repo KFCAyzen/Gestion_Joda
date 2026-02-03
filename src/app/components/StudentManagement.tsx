@@ -6,12 +6,15 @@ import { useAuth } from '../context/AuthContext';
 import { Student, StudentChoice } from '../types/joda';
 import { sanitizeForHtml, sanitizeEmail, sanitizePhone } from '../utils/security';
 import { PaymentGenerationService } from '../services/PaymentService';
+import LanguageCourseManagement from './LanguageCourseManagement';
 
 export default function StudentManagement() {
     const { user } = useAuth();
     const { students, loading, addStudent, editStudent } = useStudents();
     const [showForm, setShowForm] = useState(false);
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+    const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+    const [activeTab, setActiveTab] = useState<'list' | 'form' | 'courses'>('list');
     const [formData, setFormData] = useState({
         nom: '',
         prenom: '',
@@ -72,7 +75,7 @@ export default function StudentManagement() {
             passeport: { numero: '', expiration: '', document_url: '' },
             choix: 'procedure_seule'
         });
-        setShowForm(false);
+        setActiveTab('list');
         setEditingStudent(null);
     };
 
@@ -86,7 +89,12 @@ export default function StudentManagement() {
                 expiration: new Date(student.passeport.expiration).toISOString().split('T')[0]
             }
         });
-        setShowForm(true);
+        setActiveTab('form');
+    };
+
+    const handleViewCourses = (student: Student) => {
+        setSelectedStudent(student);
+        setActiveTab('courses');
     };
 
     if (loading) {
@@ -106,15 +114,31 @@ export default function StudentManagement() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-red-600">
                     Gestion des Étudiants
                 </h1>
-                <button
-                    onClick={() => setShowForm(true)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                    Nouvel Étudiant
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setActiveTab('list')}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                            activeTab === 'list' 
+                                ? 'bg-red-600 text-white' 
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                        Liste
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('form'); setEditingStudent(null); }}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                            activeTab === 'form' 
+                                ? 'bg-red-600 text-white' 
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                        Nouvel Étudiant
+                    </button>
+                </div>
             </div>
 
-            {showForm && (
+            {activeTab === 'form' && (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
                     <div className="p-6 border-b border-slate-200">
                         <h2 className="text-xl font-semibold text-slate-800">
@@ -364,7 +388,7 @@ export default function StudentManagement() {
                             </button>
                             <button
                                 type="button"
-                                onClick={resetForm}
+                                onClick={() => setActiveTab('list')}
                                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Annuler
@@ -374,13 +398,34 @@ export default function StudentManagement() {
                 </div>
             )}
 
-            {/* Liste des étudiants */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-xl font-semibold text-slate-800">
-                        Étudiants enregistrés ({students.length})
-                    </h2>
+            {activeTab === 'courses' && selectedStudent && (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
+                    <div className="p-6 border-b border-slate-200">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-semibold text-slate-800">
+                                Cours de langues - {selectedStudent.nom} {selectedStudent.prenom}
+                            </h2>
+                            <button
+                                onClick={() => setActiveTab('list')}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                            >
+                                Retour à la liste
+                            </button>
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        <LanguageCourseManagement 
+                            student={selectedStudent} 
+                            onUpdate={() => {
+                                // Recharger les données si nécessaire
+                            }}
+                        />
+                    </div>
                 </div>
+            )}
+
+            {/* Liste des étudiants */}
+            {activeTab === 'list' && (
                 
                 <div className="p-6">
                     {students.length === 0 ? (
@@ -418,18 +463,28 @@ export default function StudentManagement() {
                                         <div>📄 Passeport: {sanitizeForHtml(student.passeport.numero)}</div>
                                     </div>
                                     
-                                    <button
-                                        onClick={() => handleEdit(student)}
-                                        className="w-full px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                                    >
-                                        Modifier
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleEdit(student)}
+                                            className="flex-1 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                        >
+                                            Modifier
+                                        </button>
+                                        {(student.choix === 'cours_seuls' || student.choix === 'procedure_cours') && (
+                                            <button
+                                                onClick={() => handleViewCourses(student)}
+                                                className="flex-1 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                                            >
+                                                Cours
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
-            </div>
+            )}
         </div>
     );
 }
