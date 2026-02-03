@@ -44,7 +44,7 @@
 
 #### Priorité 2 : Refactoring du modèle de données
 - [x] **Interfaces TypeScript** pour tous les modules du cahier des charges
-- [ ] **Structure Firebase** adaptée aux nouveaux besoins
+- [x] **Structure Firebase** adaptée aux nouveaux besoins
 - [ ] **Migration des données** existantes vers le nouveau modèle
 
 ### **Phase 2 : Gestion des Dossiers de Bourses (3 semaines)**
@@ -192,9 +192,9 @@
 3. ✅ **Sanitiser les inputs** pour éviter les attaques XSS
 
 ### 🎯 Important (Semaine suivante)
-1. **Refactoriser le modèle de données** pour correspondre au cahier des charges
-2. **Créer les interfaces TypeScript** pour tous les modules
-3. **Adapter la structure Firebase** aux nouveaux besoins
+1. ✅ **Refactoriser le modèle de données** pour correspondre au cahier des charges
+2. ✅ **Créer les interfaces TypeScript** pour tous les modules
+3. ✅ **Adapter la structure Firebase** aux nouveaux besoins
 
 ### 📈 Moyen terme (2-4 semaines)
 1. **Implémenter le module de gestion des dossiers** (cœur métier)
