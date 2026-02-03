@@ -1,17 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    domains: ['firebasestorage.googleapis.com'],
+    formats: ['image/webp', 'image/avif'],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
   experimental: {
-    optimizePackageImports: ['react', 'react-dom']
-  },
-  reactStrictMode: false,
-  eslint: {
-    ignoreDuringBuilds: true
-  },
-  typescript: {
-    ignoreBuildErrors: true
-  },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production'
+    optimizeCss: true,
+    optimizePackageImports: ['@tailwindcss/forms']
   }
 }
 
