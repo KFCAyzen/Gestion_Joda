@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { loadFromFirebase } from "../utils/syncData";
-
+import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -23,6 +23,7 @@ interface DailyStats {
 }
 
 export default function PerformanceHistory() {
+    const { user } = useAuth();
     const [bills, setBills] = useState<Bill[]>([]);
     const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
     const [selectedUser, setSelectedUser] = useState<string>('all');
@@ -307,6 +308,14 @@ export default function PerformanceHistory() {
         printWindow.focus();
         printWindow.print();
     };
+
+    if (!user) {
+        return (
+            <div className="p-8 text-center">
+                <p className="text-gray-600">Vous devez être connecté pour accéder à cette page.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">
