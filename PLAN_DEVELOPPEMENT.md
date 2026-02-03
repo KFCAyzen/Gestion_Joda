@@ -80,21 +80,21 @@
 ### **Phase 3 : Système de Paiements par Tranches (2 semaines)**
 
 #### 4 Tranches de Paiement Bourse
-- [ ] **Tranche 1** : 100 000 FCFA - Inscription
-- [ ] **Tranche 2** : 500 000 FCFA - Dépôt des dossiers
-- [ ] **Tranche 3** : 1 000 000 FCFA - Admission
-- [ ] **Tranche 4** : 1 390 000 FCFA - Visa
+- [x] **Tranche 1** : 100 000 FCFA - Inscription
+- [x] **Tranche 2** : 500 000 FCFA - Dépôt des dossiers
+- [x] **Tranche 3** : 1 000 000 FCFA - Admission
+- [x] **Tranche 4** : 1 390 000 FCFA - Visa
 
 #### Système de Pénalités
-- [ ] **Calcul automatique** : 10 000 FCFA par jour après 3 jours de retard
-- [ ] **Dates limites** automatiques
-- [ ] **Notifications** de retard
+- [x] **Calcul automatique** : 10 000 FCFA par jour après 3 jours de retard
+- [x] **Dates limites** automatiques
+- [x] **Notifications** de retard
 
 #### Fonctionnalités
-- [ ] **Upload facture** par l'étudiant
-- [ ] **Validation agent** des paiements
-- [ ] **Statuts** : payé / attente / retard
-- [ ] **Génération reçus PDF** automatique
+- [x] **Upload facture** par l'étudiant
+- [x] **Validation agent** des paiements
+- [x] **Statuts** : payé / attente / retard
+- [x] **Génération reçus PDF** automatique
 
 ### **Phase 4 : Cours de Langues (2 semaines)**
 
