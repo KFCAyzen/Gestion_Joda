@@ -50,20 +50,20 @@
 ### **Phase 2 : Gestion des Dossiers de Bourses (3 semaines)**
 
 #### Module Fiche Étudiant
-- [ ] **Informations complètes** : nom, prénom, email, téléphone, âge, sexe, niveau, filière, langue, diplôme, photo
-- [ ] **Données passeport** : numéro, expiration, upload
-- [ ] **Upload de 5 documents requis** :
+- [x] **Informations complètes** : nom, prénom, email, téléphone, âge, sexe, niveau, filière, langue, diplôme, photo
+- [x] **Données passeport** : numéro, expiration, upload
+- [x] **Upload de 5 documents requis** :
   1. Passeport
   2. Casier judiciaire
   3. Carte photo numérique
   4. Relevé du Bac
   5. Diplôme du Bac
-- [ ] **Statuts de validation** : en attente / validé / non conforme
-- [ ] **Historique détaillé** du dossier
-- [ ] **Notes internes** invisibles à l'étudiant
+- [x] **Statuts de validation** : en attente / validé / non conforme
+- [x] **Historique détaillé** du dossier
+- [x] **Notes internes** invisibles à l'étudiant
 
 #### Workflow des Statuts (8 étapes)
-- [ ] **Statuts successifs** :
+- [x] **Statuts successifs** :
   1. Document reçu
   2. En attente
   3. En cours
@@ -73,9 +73,9 @@
   7. En attente université
   8. Visa en cours
   9. Terminé
-- [ ] **Transitions automatiques** entre statuts
-- [ ] **Interface de validation** pour les agents
-- [ ] **Historique complet** des actions
+- [x] **Transitions automatiques** entre statuts
+- [x] **Interface de validation** pour les agents
+- [x] **Historique complet** des actions
 
 ### **Phase 3 : Système de Paiements par Tranches (2 semaines)**
 
