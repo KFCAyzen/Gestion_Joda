@@ -176,7 +176,7 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                     </div>
                     <div class="info-row">
                         <span class="info-label">Date de paiement :</span>
-                        <span class="info-value">${payment.dateValidation ? new Date(payment.dateValidation).toLocaleDateString('fr-FR') : 'En attente'}</span>
+                        <span class="info-value">${payment.validatedAt ? new Date((payment.validatedAt as any)?.toDate?.() || payment.validatedAt).toLocaleDateString('fr-FR') : 'En attente'}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Mode de paiement :</span>
@@ -184,7 +184,7 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                     </div>
                     <div class="info-row">
                         <span class="info-label">Validé par :</span>
-                        <span class="info-value">${payment.validePar || 'En attente de validation'}</span>
+                        <span class="info-value">${payment.validatedBy || 'En attente de validation'}</span>
                     </div>
                 </div>
                 

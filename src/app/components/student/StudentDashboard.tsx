@@ -143,7 +143,7 @@ export default function StudentDashboard({
                     items={applications.slice(0, 3)}
                     emptyMessage="Aucune candidature pour le moment"
                     onViewAll={() => onViewChange('applications')}
-                    renderItem={(app) => (
+                    renderItem={(app: Application) => (
                         <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg">
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{app.universityName}</p>
@@ -161,7 +161,7 @@ export default function StudentDashboard({
                     items={payments.slice(0, 3)}
                     emptyMessage="Aucun paiement enregistré"
                     onViewAll={() => onViewChange('payments')}
-                    renderItem={(pay) => (
+                    renderItem={(pay: Payment) => (
                         <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg">
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{pay.description}</p>
@@ -182,7 +182,7 @@ export default function StudentDashboard({
                     items={documents.slice(0, 3)}
                     emptyMessage="Aucun document uploadé"
                     onViewAll={() => onViewChange('documents')}
-                    renderItem={(doc) => (
+                    renderItem={(doc: Document) => (
                         <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg">
                             <div className="flex items-center gap-2">
                                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +203,7 @@ export default function StudentDashboard({
                     items={subscriptions.slice(0, 2)}
                     emptyMessage="Aucun service souscrit"
                     onViewAll={() => onViewChange('services')}
-                    renderItem={(sub) => (
+                    renderItem={(sub: Subscription) => (
                         <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg">
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{sub.serviceName}</p>
@@ -221,7 +221,7 @@ export default function StudentDashboard({
                     items={employeeReceipts.slice(0, 2)}
                     emptyMessage="Aucun reçu disponible"
                     onViewAll={() => onViewChange('receipts')}
-                    renderItem={(receipt) => (
+                    renderItem={(receipt: any) => (
                         <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg">
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">Reçu {receipt.id}</p>
@@ -237,7 +237,7 @@ export default function StudentDashboard({
                     items={serviceRequests.slice(0, 2)}
                     emptyMessage="Aucune demande"
                     onViewAll={() => onViewChange('requests')}
-                    renderItem={(req) => (
+                    renderItem={(req: any) => (
                         <div className="p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg">
                             <div className="flex items-center justify-between mb-1">
                                 <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{req.serviceName}</p>

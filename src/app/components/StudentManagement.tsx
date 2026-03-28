@@ -30,7 +30,7 @@ export default function StudentManagement() {
         passeport: {
             numero: '',
             expiration: '',
-            document_url: ''
+            document_url: undefined as string | undefined
         },
         choix: 'procedure_seule' as StudentChoice
     });
@@ -82,12 +82,23 @@ export default function StudentManagement() {
     const handleEdit = (student: Student) => {
         setEditingStudent(student);
         setFormData({
-            ...student,
+            nom: student.nom,
+            prenom: student.prenom,
+            email: student.email,
+            telephone: student.telephone,
             age: student.age.toString(),
+            sexe: student.sexe,
+            niveau: student.niveau,
+            filiere: student.filiere,
+            langue: student.langue,
+            diplome_acquis: student.diplome_acquis,
+            photo: student.photo || '',
             passeport: {
-                ...student.passeport,
-                expiration: new Date(student.passeport.expiration).toISOString().split('T')[0]
-            }
+                numero: student.passeport.numero,
+                expiration: new Date(student.passeport.expiration).toISOString().split('T')[0],
+                document_url: student.passeport.document_url || undefined
+            },
+            choix: student.choix
         });
         setActiveTab('form');
     };

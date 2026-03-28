@@ -3,7 +3,6 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
-  deleteDoc, 
   getDocs, 
   getDoc, 
   query, 
@@ -23,12 +22,10 @@ import {
   EntreeComptable, 
   SortieComptable,
   Notification,
-  Message,
   DossierStatus,
   PaymentStatus
 } from '../types/joda';
 
-// Collections Firebase
 const COLLECTIONS = {
   STUDENTS: 'students',
   DOCUMENTS: 'documents', 
@@ -41,7 +38,6 @@ const COLLECTIONS = {
   MESSAGES: 'messages'
 } as const;
 
-// Utilitaires génériques avec gestion d'erreur
 export async function createDocument<T>(collectionName: string, data: Omit<T, 'id'>): Promise<string> {
   try {
     const docRef = await addDoc(collection(db, collectionName), {
@@ -50,365 +46,209 @@ export async function createDocument<T>(collectionName: string, data: Omit<T, 'i
       updatedAt: Timestamp.now()
     });
     return docRef.id;
-  } catch (error) {
-    console.error(`Error creating document in ${collectionName}:`, error);
-    // Retry once on network error
-    if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const docRef = await addDoc(collection(db, collectionName), {
-          ...data,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
-        });
-        return docRef.id;
-      } catch (retryError) {
-        console.error(`Retry failed for ${collectionName}:`, retryError);
-        throw retryError;
-      }
+  } catch (err: any) {
+    if (err?.code === 'unavailable' || err?.code === 'deadline-exceeded') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const docRef = await addDoc(collection(db, collectionName), {
+        ...data,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+      return docRef.id;
     }
-    throw error;
+    throw err;
   }
 }
 
 export async function updateDocument<T>(collectionName: string, id: string, data: Partial<T>): Promise<void> {
   const docRef = doc(db, collectionName, id);
-  await updateDoc(docRef, {
-    ...data,
-    updatedAt: Timestamp.now()
-  });
+  await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() } as any);
 }
 
 export async function getDocument<T>(collectionName: string, id: string): Promise<T | null> {
   const docRef = doc(db, collectionName, id);
   const docSnap = await getDoc(docRef);
-  
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as T;
-  }
+  if (docSnap.exists()) return { id: docSnap.id, ...docSnap.data() } as T;
   return null;
 }
 
 export async function getAllDocuments<T>(collectionName: string): Promise<T[]> {
   try {
     const querySnapshot = await getDocs(collection(db, collectionName));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
-  } catch (error) {
-    console.error(`Error getting all documents from ${collectionName}:`, error);
-    // Return empty array on error to prevent app crash
-    if (error.code === 'unavailable' || error.code === 'permission-denied') {
-      console.warn(`Returning empty array for ${collectionName} due to:`, error.code);
-      return [];
-    }
+    return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as T));
+  } catch {
     return [];
   }
 }
 
-// Gestion des étudiants
+// Étudiants
 export async function createStudent(studentData: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  return createDocument<Student>(COLLECTIONS.STUDENTS, studentData);
+  return createDocument<Student>(COLLECTIONS.STUDENTS, studentData as Omit<Student, 'id'>);
 }
-
 export async function updateStudent(id: string, data: Partial<Student>): Promise<void> {
   return updateDocument<Student>(COLLECTIONS.STUDENTS, id, data);
 }
-
 export async function getStudent(id: string): Promise<Student | null> {
   return getDocument<Student>(COLLECTIONS.STUDENTS, id);
 }
-
 export async function getAllStudents(): Promise<Student[]> {
   return getAllDocuments<Student>(COLLECTIONS.STUDENTS);
 }
-
 export async function getStudentsByChoice(choice: Student['choix']): Promise<Student[]> {
   const q = query(collection(db, COLLECTIONS.STUDENTS), where('choix', '==', choice));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Student));
 }
 
-// Gestion des documents
+// Documents
 export async function createStudentDocument(docData: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  return createDocument<Document>(COLLECTIONS.DOCUMENTS, docData);
+  return createDocument<Document>(COLLECTIONS.DOCUMENTS, docData as Omit<Document, 'id'>);
 }
-
 export async function updateDocumentStatus(id: string, status: Document['status'], validatedBy?: string, rejectionReason?: string): Promise<void> {
-  const updateData: Partial<Document> = { 
+  return updateDocument<Document>(COLLECTIONS.DOCUMENTS, id, {
     status,
     validatedAt: status === 'valide' ? new Date() : undefined,
     validatedBy: status === 'valide' ? validatedBy : undefined,
     rejectionReason: status === 'non_conforme' ? rejectionReason : undefined
-  };
-  return updateDocument<Document>(COLLECTIONS.DOCUMENTS, id, updateData);
+  });
 }
-
 export async function getStudentDocuments(studentId: string): Promise<Document[]> {
   const q = query(collection(db, COLLECTIONS.DOCUMENTS), where('studentId', '==', studentId));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Document));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Document));
 }
 
-// Gestion des dossiers de bourses
+// Dossiers de bourses
 export async function createDossierBourse(dossierData: Omit<DossierBourse, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  return createDocument<DossierBourse>(COLLECTIONS.DOSSIERS, dossierData);
+  return createDocument<DossierBourse>(COLLECTIONS.DOSSIERS, dossierData as Omit<DossierBourse, 'id'>);
 }
-
 export async function updateDossierStatus(id: string, newStatus: DossierStatus, performedBy: string, description: string): Promise<void> {
   const dossier = await getDocument<DossierBourse>(COLLECTIONS.DOSSIERS, id);
   if (!dossier) throw new Error('Dossier non trouvé');
-
-  const historyEntry = {
-    id: Date.now().toString(),
-    action: `Changement de statut vers ${newStatus}`,
-    status: newStatus,
-    description,
-    performedBy,
-    performedAt: new Date()
-  };
-
-  const updatedHistorique = [...dossier.historique, historyEntry];
-
   return updateDocument<DossierBourse>(COLLECTIONS.DOSSIERS, id, {
     status: newStatus,
-    historique: updatedHistorique
+    historique: [...dossier.historique, {
+      id: Date.now().toString(),
+      action: `Changement de statut vers ${newStatus}`,
+      status: newStatus,
+      description,
+      performedBy,
+      performedAt: new Date()
+    }]
   });
 }
-
 export async function getDossiersByStatus(status: DossierStatus): Promise<DossierBourse[]> {
   const q = query(collection(db, COLLECTIONS.DOSSIERS), where('status', '==', status));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DossierBourse));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as DossierBourse));
 }
 
-// Gestion des paiements
+// Paiements
 export async function createPayment(paymentData: Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  return createDocument<Payment>(COLLECTIONS.PAYMENTS, paymentData);
+  return createDocument<Payment>(COLLECTIONS.PAYMENTS, paymentData as Omit<Payment, 'id'>);
 }
-
 export async function updatePaymentStatus(id: string, status: PaymentStatus, validatedBy?: string): Promise<void> {
-  const updateData: Partial<Payment> = {
+  return updateDocument<Payment>(COLLECTIONS.PAYMENTS, id, {
     status,
     validatedBy: status === 'paye' ? validatedBy : undefined,
     validatedAt: status === 'paye' ? new Date() : undefined,
     date_paiement: status === 'paye' ? new Date() : undefined
-  };
-  return updateDocument<Payment>(COLLECTIONS.PAYMENTS, id, updateData);
+  });
 }
-
 export async function getStudentPayments(studentId: string): Promise<Payment[]> {
-  const q = query(
-    collection(db, COLLECTIONS.PAYMENTS), 
-    where('studentId', '==', studentId),
-    orderBy('tranche', 'asc')
-  );
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment));
+  const q = query(collection(db, COLLECTIONS.PAYMENTS), where('studentId', '==', studentId), orderBy('tranche', 'asc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Payment));
 }
-
 export async function getOverduePayments(): Promise<Payment[]> {
-  const today = new Date();
-  const q = query(
-    collection(db, COLLECTIONS.PAYMENTS),
-    where('status', '==', 'attente'),
-    where('date_limite', '<', today)
-  );
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment));
+  const q = query(collection(db, COLLECTIONS.PAYMENTS), where('status', '==', 'attente'), where('date_limite', '<', new Date()));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Payment));
 }
-
-// Calcul automatique des pénalités
 export async function calculatePenalties(): Promise<void> {
   const overduePayments = await getOverduePayments();
   const batch = writeBatch(db);
-
   overduePayments.forEach(payment => {
-    const today = new Date();
-    const dueDate = new Date(payment.date_limite);
-    const daysLate = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    
+    const raw = payment.date_limite as any;
+    const dueDate = raw?.toDate ? raw.toDate() : new Date(raw);
+    const daysLate = Math.floor((Date.now() - dueDate.getTime()) / 86400000);
     let penaltyAmount = 0;
-    if (payment.type === 'bourse' && daysLate > 3) {
-      penaltyAmount = (daysLate - 3) * 10000; // 10k par jour après 3 jours
-    } else if (payment.type === 'mandarin' || payment.type === 'anglais') {
-      if (payment.tranche === 1 && daysLate > 14) {
-        penaltyAmount = (daysLate - 14) * 500; // 500 par jour après 14 jours
-      } else if (payment.tranche > 1 && daysLate > 30) {
-        penaltyAmount = (daysLate - 30) * 1000; // 1000 par jour après 30 jours
-      }
-    }
-
+    if (payment.type === 'bourse' && daysLate > 3) penaltyAmount = (daysLate - 3) * 10000;
+    else if ((payment.type === 'mandarin' || payment.type === 'anglais') && payment.tranche === 1 && daysLate > 14) penaltyAmount = (daysLate - 14) * 500;
+    else if ((payment.type === 'mandarin' || payment.type === 'anglais') && payment.tranche > 1 && daysLate > 30) penaltyAmount = (daysLate - 30) * 1000;
     if (penaltyAmount !== payment.penalites) {
-      const docRef = doc(db, COLLECTIONS.PAYMENTS, payment.id);
-      batch.update(docRef, { 
-        penalites: penalityAmount,
-        status: 'retard' as PaymentStatus,
-        updatedAt: Timestamp.now()
-      });
+      batch.update(doc(db, COLLECTIONS.PAYMENTS, payment.id), { penalites: penaltyAmount, status: 'retard' as PaymentStatus, updatedAt: Timestamp.now() });
     }
   });
-
   await batch.commit();
 }
 
-// Gestion des cours de langues
+// Cours de langues
 export async function createCoursLangue(coursData: Omit<CoursLangue, 'id'>): Promise<string> {
   return createDocument<CoursLangue>(COLLECTIONS.COURS_LANGUES, coursData);
 }
-
 export async function getStudentCours(studentId: string): Promise<CoursLangue[]> {
   const q = query(collection(db, COLLECTIONS.COURS_LANGUES), where('studentId', '==', studentId));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CoursLangue));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as CoursLangue));
+}
+export async function createCoursLangueWithPayments(studentId: string, langue: 'mandarin' | 'anglais', _createdBy: string): Promise<string> {
+  const montants = langue === 'mandarin'
+    ? { INSCRIPTION: 10000, LIVRE: 11000, TRANCHE_1: 50000, TRANCHE_2: 50000 }
+    : { INSCRIPTION: 10000, LIVRE: 11000, TRANCHE_1: 30000, TRANCHE_2: 40000 };
+  const now = new Date();
+  const [inscriptionId, livreId, tranche1Id, tranche2Id] = await Promise.all([
+    createPayment({ studentId, type: langue, tranche: 1, montant: montants.INSCRIPTION, status: 'attente', date_limite: new Date(now.getTime() + 14 * 86400000), penalites: 0 }),
+    createPayment({ studentId, type: langue, tranche: 2, montant: montants.LIVRE, status: 'attente', date_limite: new Date(now.getTime() + 14 * 86400000), penalites: 0 }),
+    createPayment({ studentId, type: langue, tranche: 3, montant: montants.TRANCHE_1, status: 'attente', date_limite: new Date(now.getTime() + 30 * 86400000), penalites: 0 }),
+    createPayment({ studentId, type: langue, tranche: 4, montant: montants.TRANCHE_2, status: 'attente', date_limite: new Date(now.getTime() + 60 * 86400000), penalites: 0 }),
+  ]);
+  const [inscription, livre, tranche1, tranche2] = await Promise.all([
+    getDocument<Payment>(COLLECTIONS.PAYMENTS, inscriptionId),
+    getDocument<Payment>(COLLECTIONS.PAYMENTS, livreId),
+    getDocument<Payment>(COLLECTIONS.PAYMENTS, tranche1Id),
+    getDocument<Payment>(COLLECTIONS.PAYMENTS, tranche2Id),
+  ]);
+  const coursId = await createCoursLangue({ studentId, langue, paiements: { inscription: inscription!, livre: livre!, tranche1: tranche1!, tranche2: tranche2! }, inscrit_le: now, statut: 'actif' });
+  await updateStudent(studentId, { choix: 'procedure_cours' });
+  return coursId;
 }
 
-// Créer un cours de langue avec paiements automatiques
-export async function createCoursLangueWithPayments(studentId: string, langue: 'mandarin' | 'anglais', createdBy: string): Promise<string> {
-  try {
-    const montants = langue === 'mandarin' ? {
-      INSCRIPTION: 10000,
-      LIVRE: 11000,
-      TRANCHE_1: 50000,
-      TRANCHE_2: 50000
-    } : {
-      INSCRIPTION: 10000,
-      LIVRE: 11000,
-      TRANCHE_1: 30000,
-      TRANCHE_2: 40000
-    };
-    
-    const now = new Date();
-    
-    // Créer les paiements
-    const inscriptionId = await createPayment({
-      studentId,
-      type: langue,
-      tranche: 1,
-      montant: montants.INSCRIPTION,
-      status: 'attente',
-      date_limite: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
-      penalites: 0
-    });
-    
-    const livreId = await createPayment({
-      studentId,
-      type: langue,
-      tranche: 2,
-      montant: montants.LIVRE,
-      status: 'attente',
-      date_limite: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
-      penalites: 0
-    });
-    
-    const tranche1Id = await createPayment({
-      studentId,
-      type: langue,
-      tranche: 3,
-      montant: montants.TRANCHE_1,
-      status: 'attente',
-      date_limite: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
-      penalites: 0
-    });
-    
-    const tranche2Id = await createPayment({
-      studentId,
-      type: langue,
-      tranche: 4,
-      montant: montants.TRANCHE_2,
-      status: 'attente',
-      date_limite: new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000),
-      penalites: 0
-    });
-    
-    // Récupérer les paiements créés
-    const [inscription, livre, tranche1, tranche2] = await Promise.all([
-      getDocument<Payment>(COLLECTIONS.PAYMENTS, inscriptionId),
-      getDocument<Payment>(COLLECTIONS.PAYMENTS, livreId),
-      getDocument<Payment>(COLLECTIONS.PAYMENTS, tranche1Id),
-      getDocument<Payment>(COLLECTIONS.PAYMENTS, tranche2Id)
-    ]);
-    
-    // Créer le cours de langue
-    const coursId = await createCoursLangue({
-      studentId,
-      langue,
-      paiements: {
-        inscription: inscription!,
-        livre: livre!,
-        tranche1: tranche1!,
-        tranche2: tranche2!
-      },
-      inscrit_le: now,
-      statut: 'actif'
-    });
-    
-    // Mettre à jour le choix de l'étudiant
-    await updateStudent(studentId, {
-      choix: 'procedure_cours'
-    });
-    
-    return coursId;
-  } catch (error) {
-    console.error('Erreur lors de la création du cours:', error);
-    throw error;
-  }
-}
-
-// Gestion comptabilité
+// Comptabilité
 export async function createEntreeComptable(entreeData: Omit<EntreeComptable, 'id' | 'createdAt'>): Promise<string> {
-  return createDocument<EntreeComptable>(COLLECTIONS.ENTREES, entreeData);
+  return createDocument<EntreeComptable>(COLLECTIONS.ENTREES, entreeData as Omit<EntreeComptable, 'id'>);
 }
-
 export async function createSortieComptable(sortieData: Omit<SortieComptable, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  return createDocument<SortieComptable>(COLLECTIONS.SORTIES, sortieData);
+  return createDocument<SortieComptable>(COLLECTIONS.SORTIES, sortieData as Omit<SortieComptable, 'id'>);
 }
-
 export async function getEntreesByPeriod(startDate: Date, endDate: Date): Promise<EntreeComptable[]> {
-  const q = query(
-    collection(db, COLLECTIONS.ENTREES),
-    where('date', '>=', startDate),
-    where('date', '<=', endDate),
-    orderBy('date', 'desc')
-  );
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EntreeComptable));
+  const q = query(collection(db, COLLECTIONS.ENTREES), where('date', '>=', startDate), where('date', '<=', endDate), orderBy('date', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as EntreeComptable));
 }
-
 export async function getSortiesByPeriod(startDate: Date, endDate: Date): Promise<SortieComptable[]> {
-  const q = query(
-    collection(db, COLLECTIONS.SORTIES),
-    where('date', '>=', startDate),
-    where('date', '<=', endDate),
-    orderBy('date', 'desc')
-  );
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SortieComptable));
+  const q = query(collection(db, COLLECTIONS.SORTIES), where('date', '>=', startDate), where('date', '<=', endDate), orderBy('date', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as SortieComptable));
 }
 
-// Gestion des notifications
+// Notifications
 export async function createNotification(notifData: Omit<Notification, 'id' | 'createdAt'>): Promise<string> {
-  return createDocument<Notification>(COLLECTIONS.NOTIFICATIONS, notifData);
+  return createDocument<Notification>(COLLECTIONS.NOTIFICATIONS, notifData as Omit<Notification, 'id'>);
 }
-
 export async function getUserNotifications(userId: string): Promise<Notification[]> {
-  const q = query(
-    collection(db, COLLECTIONS.NOTIFICATIONS),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc'),
-    limit(50)
-  );
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+  const q = query(collection(db, COLLECTIONS.NOTIFICATIONS), where('userId', '==', userId), orderBy('createdAt', 'desc'), limit(50));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
 }
-
 export async function markNotificationAsRead(id: string): Promise<void> {
   return updateDocument<Notification>(COLLECTIONS.NOTIFICATIONS, id, { read: true });
 }
 
-// Utilitaires de statistiques
+// Statistiques
 export async function getStudentStats() {
   const students = await getAllStudents();
   const dossiers = await getAllDocuments<DossierBourse>(COLLECTIONS.DOSSIERS);
-  
   return {
     totalStudents: students.length,
     byChoice: {

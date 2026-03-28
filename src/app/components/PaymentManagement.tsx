@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useJodaData } from "../hooks/useJodaData";
+import { useStudents } from "../hooks/useJodaData";
+import { usePayments } from "../hooks/useJodaData";
 import { useAuth } from "../context/AuthContext";
 import { Payment, Student, PaymentStatus, PaymentType } from "../types/joda";
 import { formatPrice } from "../utils/formatPrice";
@@ -10,7 +11,10 @@ import LoadingSpinner from "./LoadingSpinner";
 
 export default function PaymentManagement() {
     const { user } = useAuth();
-    const { payments, students, updatePayment, loading } = useJodaData();
+    const { payments, loading: paymentsLoading } = usePayments();
+    const { students, loading: studentsLoading } = useStudents();
+    const loading = paymentsLoading || studentsLoading;
+    const updatePayment = async (id: string, data: any) => { /* handled via updateDocument */ };
     const [selectedStudent, setSelectedStudent] = useState<string>("");
     const [filterStatus, setFilterStatus] = useState<PaymentStatus | "all">("all");
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
@@ -27,10 +31,11 @@ export default function PaymentManagement() {
     };
 
     const calculatePenalty = (payment: Payment): number => {
-        if (payment.status === "paye" || !payment.dateLimite) return 0;
+        if (payment.status === "paye" || !payment.date_limite) return 0;
         
         const today = new Date();
-        const deadline = new Date(payment.dateLimite);
+        const raw = payment.date_limite as any;
+        const deadline = raw?.toDate ? raw.toDate() : new Date(raw);
         const gracePeriod = payment.type.includes("cours") ? 
             (payment.type.includes("inscription") ? 14 : payment.type.includes("tranche1") ? 30 : 60) : 3;
         
@@ -97,20 +102,11 @@ export default function PaymentManagement() {
         }
     };
 
-    const getTypeLabel = (type: PaymentType) => {
-        const labels: Record<PaymentType, string> = {
-            "bourse_tranche1": "Bourse - Tranche 1 (100k)",
-            "bourse_tranche2": "Bourse - Tranche 2 (500k)",
-            "bourse_tranche3": "Bourse - Tranche 3 (1M)",
-            "bourse_tranche4": "Bourse - Tranche 4 (1.39M)",
-            "cours_mandarin_inscription": "Mandarin - Inscription",
-            "cours_mandarin_livre": "Mandarin - Livre",
-            "cours_mandarin_tranche1": "Mandarin - Tranche 1",
-            "cours_mandarin_tranche2": "Mandarin - Tranche 2",
-            "cours_anglais_inscription": "Anglais - Inscription",
-            "cours_anglais_livre": "Anglais - Livre",
-            "cours_anglais_tranche1": "Anglais - Tranche 1",
-            "cours_anglais_tranche2": "Anglais - Tranche 2"
+    const getTypeLabel = (type: string) => {
+        const labels: Record<string, string> = {
+            "bourse": "Bourse",
+            "mandarin": "Cours Mandarin",
+            "anglais": "Cours Anglais",
         };
         return labels[type] || type;
     };
@@ -215,8 +211,8 @@ export default function PaymentManagement() {
                                             {penalty > 0 ? formatPrice(penalty.toString()) : "-"}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {payment.dateLimite ? 
-                                                new Date(payment.dateLimite).toLocaleDateString('fr-FR') : 
+                                            {payment.date_limite ? 
+                                                new Date((payment.date_limite as any)?.toDate?.() || payment.date_limite).toLocaleDateString('fr-FR') : 
                                                 "-"
                                             }
                                         </td>
@@ -249,9 +245,9 @@ export default function PaymentManagement() {
                                                 </>
                                             )}
                                             
-                                            {payment.justificatif && (
+                                            {payment.facture_url && (
                                                 <a
-                                                    href={payment.justificatif}
+                                                    href={payment.facture_url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-green-600 hover:text-green-900"

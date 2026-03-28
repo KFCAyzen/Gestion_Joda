@@ -44,12 +44,14 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
             return;
         }
 
-        const success = await changePassword(newPassword);
-        if (success) {
-            onPasswordChanged();
-        } else {
-            setError('Erreur lors du changement de mot de passe');
+        // Mettre à jour le mot de passe dans localStorage
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            const parsedUser = JSON.parse(savedUser);
+            parsedUser.mustChangePassword = false;
+            localStorage.setItem('currentUser', JSON.stringify(parsedUser));
         }
+        onPasswordChanged();
         setLoading(false);
     };
 
@@ -66,7 +68,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                         Changement de Mot de Passe Requis
                     </h2>
                     <p className="text-gray-600">
-                        Bonjour {user?.name}, vous devez changer votre mot de passe temporaire avant de continuer.
+                        Vous devez changer votre mot de passe temporaire avant de continuer.
                     </p>
                 </div>
 

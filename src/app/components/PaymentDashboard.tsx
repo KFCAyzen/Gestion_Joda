@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useJodaData } from "../hooks/useJodaData";
+import { useStudents } from "../hooks/useJodaData";
+import { usePayments } from "../hooks/useJodaData";
 import { Payment, PaymentType } from "../types/joda";
 import { formatPrice } from "../utils/formatPrice";
 import LoadingSpinner from "./LoadingSpinner";
@@ -17,7 +18,9 @@ interface PaymentStats {
 }
 
 export default function PaymentDashboard() {
-    const { payments, students, loading } = useJodaData();
+    const { payments, loading: paymentsLoading } = usePayments();
+    const { students, loading: studentsLoading } = useStudents();
+    const loading = paymentsLoading || studentsLoading;
     const [stats, setStats] = useState<PaymentStats>({
         totalRevenue: 0,
         totalPenalties: 0,
@@ -29,10 +32,11 @@ export default function PaymentDashboard() {
     });
 
     const calculatePenalty = (payment: Payment): number => {
-        if (payment.status === "paye" || !payment.dateLimite) return 0;
+        if (payment.status === "paye" || !payment.date_limite) return 0;
         
         const today = new Date();
-        const deadline = new Date(payment.dateLimite);
+        const raw = payment.date_limite as any;
+        const deadline = raw?.toDate ? raw.toDate() : new Date(raw);
         const gracePeriod = payment.type.includes("cours") ? 
             (payment.type.includes("inscription") ? 14 : payment.type.includes("tranche1") ? 30 : 60) : 3;
         
@@ -84,8 +88,8 @@ export default function PaymentDashboard() {
                 (payment.status === "paye" ? payment.montant : 0);
 
             // Revenus mensuels
-            if (payment.status === "paye" && payment.dateValidation) {
-                const month = new Date(payment.dateValidation).toLocaleDateString('fr-FR', { 
+            if (payment.status === "paye" && payment.validatedAt) {
+                const month = new Date((payment.validatedAt as any)?.toDate?.() || payment.validatedAt).toLocaleDateString('fr-FR', { 
                     year: 'numeric', 
                     month: 'long' 
                 });
