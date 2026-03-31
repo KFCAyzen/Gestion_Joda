@@ -1,977 +1,391 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User } from '../context/AuthContext';
-import { loadFromFirebase, saveData } from '../utils/syncData';
 import { useNotificationContext } from '../context/NotificationContext';
-import { sanitizeForHtml, sanitizeForExport, sanitizeEmail, sanitizePhone } from '../utils/security';
+import { sanitizeForHtml, sanitizeForExport } from '../utils/security';
 import StudentNotifications from './StudentNotifications';
 import StudentDashboard from './student/StudentDashboard';
-import StudentApplicationsList from './student/StudentApplicationsList';
 import StudentPaymentsList from './student/StudentPaymentsList';
 import StudentDocumentsList from './student/StudentDocumentsList';
+import {
+  getAllDocuments,
+  getStudentPayments,
+  getStudentDocuments,
+  createStudentDocument,
+  updatePaymentStatus,
+} from '../utils/firebaseOperations';
+import { Payment, Document, DossierBourse } from '../types/joda';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface StudentPortalProps {
-    user: User;
-    onLogout: () => void;
+  user: User;
+  onLogout: () => void;
 }
 
-interface Application {
-    id: string;
-    studentId: string;
-    universityName: string;
-    program: string;
-    status: string;
-    submittedDate: string;
-    lastUpdate: string;
+function toDate(val: any): Date {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  if (val?.toDate) return val.toDate();
+  return new Date(val);
 }
 
-interface Payment {
-    id: string;
-    studentId: string;
-    amount: number;
-    status: string;
-    date: string;
-    description: string;
+function formatMontant(n: number) {
+  return n.toLocaleString('fr-FR') + ' FCFA';
 }
 
-interface Document {
-    id: string;
-    studentId: string;
-    name: string;
-    type: string;
-    uploadDate: string;
-    status: string;
-    file?: string;
-}
+const STATUS_COLORS: Record<string, string> = {
+  paye: 'bg-green-100 text-green-700',
+  attente: 'bg-yellow-100 text-yellow-700',
+  retard: 'bg-red-100 text-red-700',
+  valide: 'bg-green-100 text-green-700',
+  en_attente: 'bg-yellow-100 text-yellow-700',
+  non_conforme: 'bg-red-100 text-red-700',
+  document_recu: 'bg-blue-100 text-blue-700',
+  en_cours: 'bg-purple-100 text-purple-700',
+  admission_validee: 'bg-green-100 text-green-700',
+  admission_rejetee: 'bg-red-100 text-red-700',
+  visa_en_cours: 'bg-teal-100 text-teal-700',
+  termine: 'bg-gray-100 text-gray-700',
+};
 
-interface StudentFile {
-    id: string;
-    studentId: string;
-    completionRate: number;
-    missingDocuments: string[];
-    status: string;
-}
+const DOSSIER_LABELS: Record<string, string> = {
+  document_recu: 'Documents reçus',
+  en_attente: 'En attente',
+  en_cours: 'En cours',
+  document_manquant: 'Document manquant',
+  admission_validee: 'Admission validée',
+  admission_rejetee: 'Admission rejetée',
+  en_attente_universite: 'En attente université',
+  visa_en_cours: 'Visa en cours',
+  termine: 'Terminé',
+};
 
-interface Service {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    duration: string;
-    icon: string;
-}
-
-interface Subscription {
-    id: string;
-    studentId: string;
-    serviceId: string;
-    serviceName: string;
-    status: string;
-    startDate: string;
-    price: number;
-}
+type View = 'dashboard' | 'payments' | 'documents' | 'dossier' | 'notifications';
 
 export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
-    const { showNotification } = useNotificationContext();
-    const [applications, setApplications] = useState<Application[]>([]);
-    const [payments, setPayments] = useState<Payment[]>([]);
-    const [documents, setDocuments] = useState<Document[]>([]);
-    const [studentFile, setStudentFile] = useState<StudentFile | null>(null);
-    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-    const [currentView, setCurrentView] = useState('dashboard');
-    const [uploadingDoc, setUploadingDoc] = useState(false);
-    const [showProfileForm, setShowProfileForm] = useState(false);
-    const [pendingService, setPendingService] = useState<Service | null>(null);
-    const [profileData, setProfileData] = useState({
-        phone: '',
-        address: '',
-        dateOfBirth: '',
-        nationality: '',
-        parentName: '',
-        parentPhone: '',
-        education: ''
-    });
-    const [uploadedDocs, setUploadedDocs] = useState<{[key: string]: File | null}>({
-        passport: null,
-        diploma: null,
-        transcript: null,
-        photo: null,
-        motivation: null,
-        cv: null
-    });
-    const [employeeReceipts, setEmployeeReceipts] = useState<any[]>([]);
-    const [serviceRequests, setServiceRequests] = useState<any[]>([]);
+  const { showNotification } = useNotificationContext();
+  const [view, setView] = useState<View>('dashboard');
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [dossier, setDossier] = useState<DossierBourse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
-    const availableServices: Service[] = [
-        {
-            id: '1',
-            name: 'Cours de Mandarin',
-            description: 'Cours intensifs de chinois mandarin avec professeurs natifs - Paiement en 2 tranches',
-            price: 110000,
-            duration: '3 mois',
-            icon: 'language'
-        },
-        {
-            id: '2',
-            name: 'Cours d\'Anglais',
-            description: 'Cours intensifs d\'anglais avec professeurs qualifiés - Paiement en 2 tranches',
-            price: 80000,
-            duration: '3 mois',
-            icon: 'english'
-        },
-        {
-            id: '3',
-            name: 'Procédure de Bourse',
-            description: 'Accompagnement complet pour votre demande de bourse - Paiement en 3 tranches',
-            price: 2990000,
-            duration: 'Jusqu\'à obtention visa',
-            icon: 'scholarship'
-        },
-        {
-            id: '4',
-            name: 'Combo Complet',
-            description: 'Cours de Mandarin + Procédure de Bourse - Tarif avantageux',
-            price: 2800000,
-            duration: 'Jusqu\'à obtention visa',
-            icon: 'combo'
-        }
-    ];
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [pays, docs, dossiers] = await Promise.all([
+        getStudentPayments(user.id),
+        getStudentDocuments(user.id),
+        getAllDocuments<DossierBourse>('dossiers_bourses'),
+      ]);
+      setPayments(pays);
+      setDocuments(docs);
+      const myDossier = dossiers.find(d => d.studentId === user.id) || null;
+      setDossier(myDossier);
+    } finally {
+      setLoading(false);
+    }
+  }, [user.id]);
 
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const allApplications = JSON.parse(localStorage.getItem('reservations') || '[]');
-            const studentApps = allApplications.filter((app: any) => app.studentId === user.id);
-            setApplications(studentApps);
+  useEffect(() => { load(); }, [load]);
 
-            const allPayments = JSON.parse(localStorage.getItem('billings') || '[]');
-            const studentPayments = allPayments.filter((pay: any) => pay.studentId === user.id);
-            setPayments(studentPayments);
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, docType: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const storageRef = ref(storage, `documents/${user.id}/${docType}_${Date.now()}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      await createStudentDocument({
+        studentId: user.id,
+        type: docType as any,
+        status: 'en_attente',
+        url,
+        uploadedAt: new Date(),
+      });
+      showNotification('Document uploadé avec succès', 'success');
+      await load();
+    } catch {
+      showNotification('Erreur lors de l\'upload', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
 
-            const allDocuments = JSON.parse(localStorage.getItem('studentDocuments') || '[]');
-            const studentDocs = allDocuments.filter((doc: any) => doc.studentId === user.id);
-            setDocuments(studentDocs);
+  const generateReceipt = (payment: Payment) => {
+    const content = `
+JODA COMPANY - REÇU DE PAIEMENT
+================================
+Étudiant : ${sanitizeForExport(user.name)}
+Tranche   : ${payment.tranche}
+Type      : ${payment.type}
+Montant   : ${formatMontant(payment.montant)}
+Statut    : ${payment.status}
+Date      : ${payment.validatedAt ? toDate(payment.validatedAt).toLocaleDateString('fr-FR') : '-'}
+================================
+Joda Company — contact@joda.cm
+    `.trim();
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Recu_${sanitizeForExport(user.name.replace(/\s+/g, '_'))}_T${payment.tranche}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
-            const allFiles = JSON.parse(localStorage.getItem('dossiers') || '[]');
-            const studentFileData = allFiles.find((file: any) => file.studentId === user.id);
-            setStudentFile(studentFileData || null);
+  // Calcul solvabilité
+  const totalDu = payments.reduce((s, p) => s + p.montant, 0);
+  const totalPaye = payments.filter(p => p.status === 'paye').reduce((s, p) => s + p.montant, 0);
+  const solvency = totalDu > 0 ? Math.round((totalPaye / totalDu) * 100) : 100;
 
-            const allSubscriptions = JSON.parse(localStorage.getItem('studentSubscriptions') || '[]');
-            const studentSubs = allSubscriptions.filter((sub: any) => sub.studentId === user.id);
-            setSubscriptions(studentSubs);
-        }
-        loadEmployeeReceipts();
-        loadServiceRequests();
-    }, [user.id]);
+  // Données pour StudentDashboard (format compatible)
+  const dashPayments = payments.map(p => ({
+    id: p.id,
+    studentId: p.studentId,
+    description: `Tranche ${p.tranche} — ${p.type}`,
+    date: toDate(p.date_limite).toLocaleDateString('fr-FR'),
+    amount: p.montant,
+    status: p.status === 'paye' ? 'Payé' : p.status === 'retard' ? 'En retard' : 'En attente',
+  }));
 
-    const loadEmployeeReceipts = async () => {
-        try {
-            const fees = await loadFromFirebase('applicationFees');
-            if (Array.isArray(fees) && user?.name) {
-                setEmployeeReceipts(fees.filter((f: any) => f.receivedFrom === user.name));
-            }
-        } catch (error) {
-            console.warn('Erreur chargement reçus:', error);
-        }
-    };
+  const dashDocuments = documents.map(d => ({
+    id: d.id,
+    name: d.type,
+    type: d.type,
+    uploadDate: d.uploadedAt ? toDate(d.uploadedAt).toLocaleDateString('fr-FR') : '-',
+    status: d.status === 'valide' ? 'Validé' : d.status === 'non_conforme' ? 'Non conforme' : 'En attente',
+  }));
 
-    const loadServiceRequests = async () => {
-        try {
-            const requests = await loadFromFirebase('serviceRequests');
-            if (Array.isArray(requests) && user?.id) {
-                setServiceRequests(requests.filter((r: any) => r.studentId === user.id));
-            }
-        } catch (error) {
-            console.warn('Erreur chargement demandes:', error);
-        }
-    };
+  const dashFile = dossier ? {
+    id: dossier.id,
+    studentId: dossier.studentId,
+    completionRate: Math.round((documents.filter(d => d.status === 'valide').length / 5) * 100),
+    missingDocuments: [],
+    status: DOSSIER_LABELS[dossier.status] || dossier.status,
+  } : null;
 
-    const getStatusColor = (status: string) => {
-        switch(status) {
-            case 'Acceptée': return 'bg-green-100 text-green-700';
-            case 'En cours': return 'bg-blue-100 text-blue-700';
-            case 'En attente': return 'bg-yellow-100 text-yellow-700';
-            case 'Refusée': return 'bg-red-100 text-red-700';
-            default: return 'bg-gray-100 text-gray-700';
-        }
-    };
+  const navItems: { key: View; label: string; icon: string }[] = [
+    { key: 'dashboard',     label: 'Tableau de bord', icon: '🏠' },
+    { key: 'payments',      label: 'Paiements',        icon: '💳' },
+    { key: 'documents',     label: 'Documents',        icon: '📄' },
+    { key: 'dossier',       label: 'Mon dossier',      icon: '📋' },
+    { key: 'notifications', label: 'Notifications',    icon: '🔔' },
+  ];
 
-    const getPaymentStatusColor = (status: string) => {
-        switch(status) {
-            case 'Payé': return 'bg-green-100 text-green-700';
-            case 'En attente': return 'bg-yellow-100 text-yellow-700';
-            case 'Échoué': return 'bg-red-100 text-red-700';
-            default: return 'bg-gray-100 text-gray-700';
-        }
-    };
-
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, docType: string) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setUploadingDoc(true);
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-            const newDoc: Document = {
-                id: Date.now().toString(),
-                studentId: user.id,
-                name: file.name,
-                type: docType,
-                uploadDate: new Date().toLocaleDateString('fr-FR'),
-                status: 'En attente de validation',
-                file: reader.result as string
-            };
-
-            const allDocs = JSON.parse(localStorage.getItem('studentDocuments') || '[]');
-            allDocs.push(newDoc);
-            localStorage.setItem('studentDocuments', JSON.stringify(allDocs));
-            setDocuments([...documents, newDoc]);
-            setUploadingDoc(false);
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const calculateSolvency = () => {
-        const totalDue = payments.reduce((sum, p) => sum + p.amount, 0);
-        const totalPaid = payments.filter(p => p.status === 'Payé').reduce((sum, p) => sum + p.amount, 0);
-        return totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 100;
-    };
-
-    const checkProfileComplete = () => {
-        if (typeof window !== 'undefined') {
-            const students = JSON.parse(localStorage.getItem('clients') || '[]');
-            const studentProfile = students.find((s: any) => s.id === user.id || s.username === user.username);
-            return studentProfile && studentProfile.phone && studentProfile.address;
-        }
-        return false;
-    };
-
-    const handleSubscribe = (service: Service) => {
-        if (!checkProfileComplete()) {
-            setPendingService(service);
-            setShowProfileForm(true);
-            return;
-        }
-        processSubscription(service);
-    };
-
-    const handleDocUpload = (docType: string, file: File) => {
-        setUploadedDocs(prev => ({ ...prev, [docType]: file }));
-    };
-
-    const handleProfileSubmit = async () => {
-        if (typeof window !== 'undefined') {
-            const students = JSON.parse(localStorage.getItem('clients') || '[]');
-            const existingIndex = students.findIndex((s: any) => s.id === user.id || s.username === user.username);
-            
-            const studentData = {
-                id: user.id,
-                name: user.name,
-                username: user.username,
-                email: (user as any).email || '',
-                ...profileData,
-                registrationDate: new Date().toLocaleDateString('fr-FR')
-            };
-
-            if (existingIndex >= 0) {
-                students[existingIndex] = { ...students[existingIndex], ...studentData };
-            } else {
-                students.push(studentData);
-            }
-
-            localStorage.setItem('clients', JSON.stringify(students));
-
-            // Upload documents if service is scholarship-related
-            if (pendingService && (pendingService.id === '3' || pendingService.id === '4')) {
-                const allDocs = JSON.parse(localStorage.getItem('studentDocuments') || '[]');
-                const docTypes = {
-                    passport: 'Passeport',
-                    diploma: 'Diplôme',
-                    transcript: 'Relevé de notes',
-                    photo: 'Photo d\'identité',
-                    motivation: 'Lettre de motivation',
-                    cv: 'CV'
-                };
-
-                for (const [key, file] of Object.entries(uploadedDocs)) {
-                    if (file) {
-                        const reader = new FileReader();
-                        await new Promise((resolve) => {
-                            reader.onload = () => {
-                                const newDoc: Document = {
-                                    id: `${Date.now()}-${key}`,
-                                    studentId: user.id,
-                                    name: file.name,
-                                    type: docTypes[key as keyof typeof docTypes],
-                                    uploadDate: new Date().toLocaleDateString('fr-FR'),
-                                    status: 'En attente de validation',
-                                    file: reader.result as string
-                                };
-                                allDocs.push(newDoc);
-                                resolve(true);
-                            };
-                            reader.readAsDataURL(file);
-                        });
-                    }
-                }
-                localStorage.setItem('studentDocuments', JSON.stringify(allDocs));
-                setDocuments(allDocs.filter((d: any) => d.studentId === user.id));
-            }
-
-            setShowProfileForm(false);
-            
-            if (pendingService) {
-                processSubscription(pendingService);
-                setPendingService(null);
-            }
-        }
-    };
-
-    const processSubscription = async (service: Service) => {
-        const newSubscription: Subscription = {
-            id: Date.now().toString(),
-            studentId: user.id,
-            serviceId: service.id,
-            serviceName: service.name,
-            status: 'En attente de validation',
-            startDate: new Date().toLocaleDateString('fr-FR'),
-            price: service.price
-        };
-
-        await saveData('serviceRequests', {
-            ...newSubscription,
-            studentName: user.name,
-            studentEmail: (user as any).email || '',
-            requestDate: new Date().toISOString(),
-            processedBy: null,
-            processedDate: null
-        });
-
-        const allSubs = JSON.parse(localStorage.getItem('studentSubscriptions') || '[]');
-        allSubs.push(newSubscription);
-        localStorage.setItem('studentSubscriptions', JSON.stringify(allSubs));
-        setSubscriptions([...subscriptions, newSubscription]);
-
-        let paymentTranches: {amount: number, description: string}[] = [];
-
-        if (service.id === '1') {
-            paymentTranches = [
-                { amount: 10000, description: `${service.name} - Inscription` },
-                { amount: 50000, description: `${service.name} - Tranche 1` },
-                { amount: 50000, description: `${service.name} - Tranche 2` }
-            ];
-        } else if (service.id === '2') {
-            paymentTranches = [
-                { amount: 10000, description: `${service.name} - Inscription` },
-                { amount: 30000, description: `${service.name} - Tranche 1` },
-                { amount: 40000, description: `${service.name} - Tranche 2` }
-            ];
-        } else if (service.id === '3') {
-            paymentTranches = [
-                { amount: 100000, description: `${service.name} - Inscription` },
-                { amount: 500000, description: `${service.name} - Dépôt de dossier` },
-                { amount: 1000000, description: `${service.name} - Après Admission` },
-                { amount: 1390000, description: `${service.name} - Après obtention visa` }
-            ];
-        } else if (service.id === '4') {
-            paymentTranches = [
-                { amount: 100000, description: `${service.name} - Inscription` },
-                { amount: 500000, description: `${service.name} - Dépôt de dossier` },
-                { amount: 1000000, description: `${service.name} - Après Admission` },
-                { amount: 1200000, description: `${service.name} - Après obtention visa` }
-            ];
-        }
-
-        const allPayments = JSON.parse(localStorage.getItem('billings') || '[]');
-        paymentTranches.forEach((tranche, index) => {
-            const newPayment: Payment = {
-                id: `${Date.now()}-${index}`,
-                studentId: user.id,
-                amount: tranche.amount,
-                status: index === 0 ? 'En attente' : 'Non exigible',
-                date: new Date().toLocaleDateString('fr-FR'),
-                description: tranche.description
-            };
-            allPayments.push(newPayment);
-        });
-
-        localStorage.setItem('billings', JSON.stringify(allPayments));
-        setPayments(allPayments.filter((p: any) => p.studentId === user.id));
-        showNotification('Demande envoyée ! Un employé traitera votre souscription prochainement.', 'success');
-    };
-
-    const isSubscribed = (serviceId: string) => {
-        return subscriptions.some(sub => sub.serviceId === serviceId && sub.status !== 'Annulé');
-    };
-
-    const generateReceipt = (payment: Payment) => {
-        const receiptContent = `
-            JODA COMPANY
-            Agence de Voyage - Bourses d'Études en Chine
-            ============================================
-            
-            REÇU DE PAIEMENT
-            
-            Date: ${payment.date}
-            Reçu N°: ${sanitizeForExport(payment.id)}
-            
-            ============================================
-            
-            Étudiant: ${sanitizeForExport(user.name)}
-            ID Étudiant: ${sanitizeForExport(user.id)}
-            
-            Description: ${sanitizeForExport(payment.description)}
-            Montant: ${payment.amount.toLocaleString()} FCFA
-            Statut: ${sanitizeForExport(payment.status)}
-            
-            ============================================
-            
-            Merci pour votre confiance!
-            
-            Pour toute question, contactez-nous:
-            Email: jodacompany2@gmail.com
-            Tél: +237 659 199 216
-        `;
-        
-        const blob = new Blob([receiptContent], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Recu_${sanitizeForExport(payment.id)}_${sanitizeForExport(user.name.replace(/\s+/g, '_'))}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white shadow-sm border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-14 sm:h-16">
-                        <div className="flex items-center gap-2">
-                            <img src="/0.png" alt="Joda Company" className="w-10 h-10 sm:w-12 sm:h-12" />
-                            <div>
-                                <h1 className="text-sm sm:text-base md:text-lg font-bold text-gray-900">Portail Étudiant</h1>
-                                <p className="text-xs sm:text-xs sm:text-sm text-gray-500">Bienvenue, {user.name}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 sm:gap-3">
-                            <button
-                                onClick={() => setCurrentView('notifications')}
-                                className="p-1.5 sm:p-2 text-gray-600 hover:text-red-600 transition-colors relative"
-                                title="Notifications"
-                            >
-                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg>
-                            </button>
-                            <button
-                                onClick={onLogout}
-                                className="p-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded-md sm:rounded-lg hover:bg-red-700 transition-colors"
-                                title="Déconnexion"
-                            >
-                                <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                                <span className="hidden sm:inline text-sm">Déconnexion</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
-            <main className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-6 md:py-8">
-                {currentView === 'dashboard' && (
-                    <StudentDashboard
-                        applications={applications}
-                        payments={payments}
-                        documents={documents}
-                        subscriptions={subscriptions}
-                        employeeReceipts={employeeReceipts}
-                        serviceRequests={serviceRequests}
-                        studentFile={studentFile}
-                        solvency={calculateSolvency()}
-                        onViewChange={setCurrentView}
-                        getStatusColor={getStatusColor}
-                        getPaymentStatusColor={getPaymentStatusColor}
-                    />
-                )}
-
-                {currentView === 'applications' && (
-                    <StudentApplicationsList
-                        applications={applications}
-                        onBack={() => setCurrentView('dashboard')}
-                        getStatusColor={getStatusColor}
-                    />
-                )}
-
-                {currentView === 'payments' && (
-                    <StudentPaymentsList
-                        payments={payments}
-                        onBack={() => setCurrentView('dashboard')}
-                        getPaymentStatusColor={getPaymentStatusColor}
-                        onGenerateReceipt={generateReceipt}
-                    />
-                )}
-
-                {currentView === 'documents' && (
-                    <StudentDocumentsList
-                        documents={documents}
-                        onBack={() => setCurrentView('dashboard')}
-                        onFileUpload={handleFileUpload}
-                    />
-                )}
-
-                {currentView === 'receipts' && (
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                        <div className="p-4 sm:p-4 sm:p-6 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">Mes Reçus Officiels</h3>
-                                <button onClick={() => setCurrentView('dashboard')} className="text-xs sm:text-sm text-gray-600 hover:text-gray-900">← Retour</button>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            {employeeReceipts.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <div className="w-16 h-14 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 md:mb-4">
-                                        <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <p className="text-sm sm:text-base text-gray-500">Aucun reçu disponible</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5 sm:space-y-2 md:space-y-3 md:space-y-2 sm:space-y-3 md:space-y-4">
-                                    {employeeReceipts.map((receipt) => (
-                                        <div key={receipt.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">Reçu N° {receipt.id}</h4>
-                                                    <p className="text-sm text-sm sm:text-base text-gray-500">Date: {new Date(receipt.date).toLocaleDateString('fr-FR')}</p>
-                                                </div>
-                                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                                    {receipt.motif}
-                                                </span>
-                                            </div>
-                                            <div className="space-y-2 mb-2 sm:mb-3 md:mb-4">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-600">Montant:</span>
-                                                    <span className="font-bold text-red-600">{parseInt(receipt.amount).toLocaleString()} FCFA</span>
-                                                </div>
-                                                {receipt.universityName && (
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-gray-600">Université:</span>
-                                                        <span className="font-medium">{receipt.universityName}</span>
-                                                    </div>
-                                                )}
-                                                {receipt.program && (
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-gray-600">Programme:</span>
-                                                        <span className="font-medium">{receipt.program}</span>
-                                                    </div>
-                                                )}
-                                                {receipt.installmentNumber && (
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-gray-600">Tranche:</span>
-                                                        <span className="font-medium">{receipt.installmentNumber}/3</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    const content = `
-═══════════════════════════════════════════════════════
-              JODA COMPANY - REÇU DE PAIEMENT
-        Agence de Bourses d'Études en Chine
-═══════════════════════════════════════════════════════
-
-REÇU N°: ${sanitizeForExport(receipt.id)}
-DATE: ${new Date(receipt.date).toLocaleDateString('fr-FR')}
-
-───────────────────────────────────────────────────────
-INFORMATIONS ÉTUDIANT
-───────────────────────────────────────────────────────
-Nom: ${sanitizeForExport(receipt.receivedFrom)}
-${receipt.universityName ? `Université: ${sanitizeForExport(receipt.universityName)}` : ''}
-${receipt.program ? `Programme: ${sanitizeForExport(receipt.program)}` : ''}
-
-───────────────────────────────────────────────────────
-DÉTAILS DU PAIEMENT
-───────────────────────────────────────────────────────
-Motif: ${sanitizeForExport(receipt.motif)}
-Montant: ${parseInt(receipt.amount).toLocaleString()} FCFA
-Montant en lettres: ${sanitizeForExport(receipt.amountInWords)}
-${receipt.installmentNumber ? `Tranche: ${receipt.installmentNumber}/3` : ''}
-${receipt.totalAmount ? `Montant total: ${parseInt(receipt.totalAmount).toLocaleString()} FCFA` : ''}
-
-───────────────────────────────────────────────────────
-Joda Company
-Douala, Cameroun
-Tél: +237 123 456 789
-Email: contact@gestion-joda.cm
-═══════════════════════════════════════════════════════
-Document officiel généré le ${new Date().toLocaleDateString('fr-FR')}
-═══════════════════════════════════════════════════════
-                                                    `.trim();
-                                                    const blob = new Blob([content], { type: 'text/plain' });
-                                                    const url = URL.createObjectURL(blob);
-                                                    const a = document.createElement('a');
-                                                    a.href = url;
-                                                    a.download = `Recu_${sanitizeForExport(receipt.id)}_${sanitizeForExport(receipt.receivedFrom.replace(/\s+/g, '_'))}.txt`;
-                                                    document.body.appendChild(a);
-                                                    a.click();
-                                                    document.body.removeChild(a);
-                                                    URL.revokeObjectURL(url);
-                                                }}
-                                                className="w-full px-4 py-2 bg-red-600 text-white rounded-md sm:rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center gap-2"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                Télécharger le reçu
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {currentView === 'requests' && (
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200">
-                        <div className="p-4 sm:p-4 sm:p-6 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">Mes demandes de services</h3>
-                                <button onClick={() => setCurrentView('dashboard')} className="text-xs sm:text-sm text-gray-600 hover:text-gray-900">← Retour</button>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            {serviceRequests.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <div className="w-16 h-14 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 md:mb-4">
-                                        <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                        </svg>
-                                    </div>
-                                    <p className="text-sm sm:text-base text-gray-500">Aucune demande</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5 sm:space-y-2 md:space-y-3 md:space-y-2 sm:space-y-3 md:space-y-4">
-                                    {serviceRequests.map(req => (
-                                        <div key={req.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">{req.serviceName}</h4>
-                                                    <p className="text-sm text-sm sm:text-base text-gray-500">Demande du {new Date(req.requestDate).toLocaleDateString('fr-FR')}</p>
-                                                </div>
-                                                <span className={`px-1.5 sm:px-2 py-0.5 text-xs rounded-full ${getPaymentStatusColor(req.status)}`}>
-                                                    {req.status}
-                                                </span>
-                                            </div>
-                                            <div className="space-y-2 mb-3">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-600">Prix:</span>
-                                                    <span className="font-bold text-red-600">{req.price.toLocaleString()} FCFA</span>
-                                                </div>
-                                            </div>
-                                            {req.note && (
-                                                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                                    <p className="text-xs font-semibold text-blue-900 mb-1">Réponse de l'agence:</p>
-                                                    <p className="text-sm text-blue-800">{req.note}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {currentView === 'notifications' && (
-                    <StudentNotifications userId={user?.id || ""} onBack={() => setCurrentView('dashboard')} />
-                )}
-
-                {currentView === 'services' && (
-                    <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
-                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Services disponibles</h3>
-                                <button onClick={() => setCurrentView('dashboard')} className="text-xs sm:text-sm text-gray-600 hover:text-gray-900">← Retour</button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
-                                {availableServices.map(service => (
-                                    <div key={service.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                                        <div className="flex items-start justify-between mb-2 sm:mb-3 md:mb-4">
-                                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                                                {service.icon === 'language' && (
-                                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                                                    </svg>
-                                                )}
-                                                {service.icon === 'scholarship' && (
-                                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                                    </svg>
-                                                )}
-                                                {service.icon === 'english' && (
-                                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                                                    </svg>
-                                                )}
-                                                {service.icon === 'combo' && (
-                                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                                    </svg>
-                                                )}
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="text-lg sm:text-xl font-bold text-red-600">{service.price.toLocaleString()}</span>
-                                                <span className="text-xs sm:text-sm text-gray-600 ml-1">FCFA</span>
-                                            </div>
-                                        </div>
-                                        <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{service.name}</h4>
-                                        <p className="text-xs sm:text-sm text-gray-600 mb-3">{service.description}</p>
-                                        {service.id === '1' && (
-                                            <div className="mb-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                                                <div>• Inscription: 10 000 FCFA</div>
-                                                <div>• Tranche 1: 50 000 FCFA</div>
-                                                <div>• Tranche 2: 50 000 FCFA</div>
-                                            </div>
-                                        )}
-                                        {service.id === '2' && (
-                                            <div className="mb-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                                                <div>• Inscription: 10 000 FCFA</div>
-                                                <div>• Tranche 1: 30 000 FCFA</div>
-                                                <div>• Tranche 2: 40 000 FCFA</div>
-                                            </div>
-                                        )}
-                                        {service.id === '3' && (
-                                            <div className="mb-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                                                <div>• Inscription: 100 000 FCFA</div>
-                                                <div>• Dépôt dossier: 500 000 FCFA</div>
-                                                <div>• Après Admission: 1 000 000 FCFA</div>
-                                                <div>• Après visa: 1 390 000 FCFA</div>
-                                            </div>
-                                        )}
-                                        {service.id === '4' && (
-                                            <div className="mb-3 p-2 bg-green-50 rounded text-xs text-green-700">
-                                                <div className="font-semibold mb-1">✨ Économisez 300 000 FCFA !</div>
-                                                <div>• Inscription: 100 000 FCFA</div>
-                                                <div>• Dépôt dossier: 500 000 FCFA</div>
-                                                <div>• Après Admission: 1 000 000 FCFA</div>
-                                                <div>• Après visa: 1 200 000 FCFA</div>
-                                            </div>
-                                        )}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs sm:text-xs sm:text-sm text-gray-500">Durée: {service.duration}</span>
-                                            <button
-                                                onClick={() => handleSubscribe(service)}
-                                                disabled={isSubscribed(service.id)}
-                                                className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-md sm:rounded-lg transition-colors ${
-                                                    isSubscribed(service.id)
-                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                        : 'bg-red-600 text-white hover:bg-red-700'
-                                                }`}
-                                            >
-                                                {isSubscribed(service.id) ? 'Déjà souscrit' : 'Souscrire'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3 md:mb-4">Mes souscriptions</h3>
-                            {subscriptions.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <svg className="w-10 h-10 sm:w-12 sm:h-12 sm:w-16 sm:h-14 sm:h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                    </svg>
-                                    <p className="text-sm sm:text-base text-gray-500">Aucune souscription active</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5 sm:space-y-2 md:space-y-3">
-                                    {subscriptions.map(sub => (
-                                        <div key={sub.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-base sm:text-lg font-semibold text-gray-900">{sub.serviceName}</h4>
-                                                    <p className="text-xs sm:text-sm text-gray-600">Souscrit le {sub.startDate}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-xl font-bold text-gray-900">{sub.price.toLocaleString()} FCFA</p>
-                                                    <span className={`px-1.5 sm:px-2 py-0.5 text-xs rounded-full ${getPaymentStatusColor(sub.status)}`}>
-                                                        {sub.status}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </main>
-
-            {showProfileForm && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-2xl max-w-full sm:max-w-full sm:max-w-lg md:max-w-xl md:max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-4 sm:p-4 sm:p-6 border-b border-gray-200">
-                            <h3 className="text-xl font-semibold text-gray-900">Complétez votre profil</h3>
-                            <p className="text-xs sm:text-sm text-gray-600 mt-1">Veuillez remplir ces informations avant de souscrire</p>
-                        </div>
-                        <div className="p-6 space-y-1.5 sm:space-y-2 md:space-y-3 md:space-y-2 sm:space-y-3 md:space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:p-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label>
-                                    <input
-                                        type="tel"
-                                        value={profileData.phone}
-                                        onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date de naissance *</label>
-                                    <input
-                                        type="date"
-                                        value={profileData.dateOfBirth}
-                                        onChange={(e) => setProfileData({...profileData, dateOfBirth: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nationalité *</label>
-                                    <input
-                                        type="text"
-                                        value={profileData.nationality}
-                                        onChange={(e) => setProfileData({...profileData, nationality: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Niveau d'études *</label>
-                                    <select
-                                        value={profileData.education}
-                                        onChange={(e) => setProfileData({...profileData, education: e.target.value})}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                        required
-                                    >
-                                        <option value="">Sélectionnez</option>
-                                        <option value="Baccalauréat">Baccalauréat</option>
-                                        <option value="Licence">Licence</option>
-                                        <option value="Master">Master</option>
-                                        <option value="Doctorat">Doctorat</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Adresse complète *</label>
-                                <textarea
-                                    value={profileData.address}
-                                    onChange={(e) => setProfileData({...profileData, address: e.target.value})}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                    rows={2}
-                                    required
-                                />
-                            </div>
-                            <div className="border-t border-gray-200 pt-4 mt-4">
-                                <h4 className="text-xs sm:text-sm font-semibold text-gray-900 mb-3">Informations du parent/tuteur</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:p-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
-                                        <input
-                                            type="text"
-                                            value={profileData.parentName}
-                                            onChange={(e) => setProfileData({...profileData, parentName: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone *</label>
-                                        <input
-                                            type="tel"
-                                            value={profileData.parentPhone}
-                                            onChange={(e) => setProfileData({...profileData, parentPhone: e.target.value})}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {pendingService && (pendingService.id === '3' || pendingService.id === '4') && (
-                                <div className="border-t border-gray-200 pt-4 mt-4">
-                                    <h4 className="text-xs sm:text-sm font-semibold text-gray-900 mb-3">Documents requis pour la bourse</h4>
-                                    <p className="text-xs text-gray-600 mb-3">Veuillez uploader les documents suivants (formats acceptés: PDF, JPG, PNG)</p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {[
-                                            { key: 'passport', label: 'Passeport *' },
-                                            { key: 'diploma', label: 'Diplôme *' },
-                                            { key: 'transcript', label: 'Relevé de notes *' },
-                                            { key: 'photo', label: 'Photo d\'identité *' },
-                                            { key: 'motivation', label: 'Lettre de motivation *' },
-                                            { key: 'cv', label: 'CV *' }
-                                        ].map(doc => (
-                                            <div key={doc.key} className="border border-gray-200 rounded-lg p-3">
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">{doc.label}</label>
-                                                <input
-                                                    type="file"
-                                                    accept=".pdf,.jpg,.jpeg,.png"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (file) handleDocUpload(doc.key, file);
-                                                    }}
-                                                    className="w-full text-xs sm:text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                                                />
-                                                {uploadedDocs[doc.key as keyof typeof uploadedDocs] && (
-                                                    <p className="text-xs text-green-600 mt-1">✓ {uploadedDocs[doc.key as keyof typeof uploadedDocs]?.name}</p>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-4 sm:p-4 sm:p-6 border-t border-gray-200 flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setShowProfileForm(false);
-                                    setPendingService(null);
-                                }}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                Annuler
-                            </button>
-                            <button
-                                onClick={handleProfileSubmit}
-                                disabled={
-                                    !profileData.phone || 
-                                    !profileData.address || 
-                                    !profileData.parentName || 
-                                    !profileData.parentPhone ||
-                                    ((pendingService?.id === '3' || pendingService?.id === '4') && 
-                                        (!uploadedDocs.passport || !uploadedDocs.diploma || !uploadedDocs.transcript || 
-                                         !uploadedDocs.photo || !uploadedDocs.motivation || !uploadedDocs.cv))
-                                }
-                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md sm:rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Enregistrer et continuer
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
+      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/0.png" alt="Joda" className="w-8 h-8" />
+            <div>
+              <p className="text-sm font-bold text-gray-900">Portail Étudiant</p>
+              <p className="text-xs text-gray-500">{sanitizeForHtml(user.name)}</p>
+            </div>
+          </div>
+          <button onClick={onLogout} className="px-3 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700">
+            Déconnexion
+          </button>
         </div>
-    );
+        {/* Nav tabs */}
+        <div className="max-w-5xl mx-auto px-4 flex gap-1 overflow-x-auto pb-0">
+          {navItems.map(item => (
+            <button
+              key={item.key}
+              onClick={() => setView(item.key)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
+                view === item.key
+                  ? 'border-red-500 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span>{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <main className="max-w-5xl mx-auto px-4 py-6">
+        {loading ? (
+          <div className="text-center py-16 text-gray-400">Chargement...</div>
+        ) : (
+          <>
+            {view === 'dashboard' && (
+              <StudentDashboard
+                applications={[]}
+                payments={dashPayments}
+                documents={dashDocuments}
+                subscriptions={[]}
+                employeeReceipts={[]}
+                serviceRequests={[]}
+                studentFile={dashFile}
+                solvency={solvency}
+                onViewChange={(v) => setView(v as View)}
+                getStatusColor={(s) => STATUS_COLORS[s] || 'bg-gray-100 text-gray-700'}
+                getPaymentStatusColor={(s) => STATUS_COLORS[s.toLowerCase()] || 'bg-gray-100 text-gray-700'}
+              />
+            )}
+
+            {view === 'payments' && (
+              <div className="space-y-4">
+                {/* Résumé */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                    <p className="text-xs text-gray-500">Total dû</p>
+                    <p className="font-bold text-gray-900">{formatMontant(totalDu)}</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                    <p className="text-xs text-gray-500">Payé</p>
+                    <p className="font-bold text-green-600">{formatMontant(totalPaye)}</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                    <p className="text-xs text-gray-500">Solvabilité</p>
+                    <p className="font-bold text-blue-600">{solvency}%</p>
+                  </div>
+                </div>
+
+                <StudentPaymentsList
+                  payments={dashPayments}
+                  onBack={() => setView('dashboard')}
+                  getPaymentStatusColor={(s) => STATUS_COLORS[s.toLowerCase()] || 'bg-gray-100 text-gray-700'}
+                  onGenerateReceipt={(p) => {
+                    const original = payments.find(pay => pay.id === p.id);
+                    if (original) generateReceipt(original);
+                  }}
+                />
+
+                {/* Upload facture */}
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Uploader une preuve de paiement</h4>
+                  <div className="space-y-2">
+                    {payments.filter(p => p.status !== 'paye').map(p => (
+                      <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-700">Tranche {p.tranche} — {formatMontant(p.montant)}</span>
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setUploading(true);
+                              try {
+                                const storageRef = ref(storage, `factures/${user.id}/${p.id}_${Date.now()}`);
+                                await uploadBytes(storageRef, file);
+                                const url = await getDownloadURL(storageRef);
+                                await updatePaymentStatus(p.id, 'attente');
+                                showNotification('Facture uploadée, en attente de validation', 'success');
+                                await load();
+                              } catch {
+                                showNotification('Erreur upload', 'error');
+                              } finally {
+                                setUploading(false);
+                              }
+                            }}
+                          />
+                          <span className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            {uploading ? '...' : 'Upload'}
+                          </span>
+                        </label>
+                      </div>
+                    ))}
+                    {payments.filter(p => p.status !== 'paye').length === 0 && (
+                      <p className="text-sm text-gray-400 text-center py-4">Tous les paiements sont validés ✓</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {view === 'documents' && (
+              <StudentDocumentsList
+                documents={dashDocuments}
+                onBack={() => setView('dashboard')}
+                onFileUpload={handleFileUpload}
+              />
+            )}
+
+            {view === 'dossier' && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900">Mon dossier de bourse</h3>
+                  <button onClick={() => setView('dashboard')} className="text-sm text-gray-500 hover:text-gray-700">← Retour</button>
+                </div>
+
+                {!dossier ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <p className="text-4xl mb-2">📋</p>
+                    <p>Aucun dossier créé pour le moment</p>
+                    <p className="text-sm mt-1">Contactez l'agence pour démarrer votre dossier</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Statut */}
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                      <span className="text-2xl">📋</span>
+                      <div>
+                        <p className="text-sm text-gray-500">Statut actuel</p>
+                        <span className={`px-3 py-1 text-sm font-medium rounded-full ${STATUS_COLORS[dossier.status] || 'bg-gray-100 text-gray-700'}`}>
+                          {DOSSIER_LABELS[dossier.status] || dossier.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progression documents */}
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">Documents validés</span>
+                        <span className="font-semibold">{documents.filter(d => d.status === 'valide').length} / 5</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-red-500 h-2 rounded-full transition-all"
+                          style={{ width: `${Math.round((documents.filter(d => d.status === 'valide').length / 5) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Historique */}
+                    {dossier.historique.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3">Historique des actions</h4>
+                        <div className="space-y-2">
+                          {dossier.historique.slice().reverse().map((entry, i) => (
+                            <div key={i} className="flex gap-3 text-sm">
+                              <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-gray-700">{entry.description}</p>
+                                <p className="text-xs text-gray-400">{toDate(entry.performedAt).toLocaleDateString('fr-FR')}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {view === 'notifications' && (
+              <StudentNotifications
+                userId={user.id}
+                onBack={() => setView('dashboard')}
+              />
+            )}
+          </>
+        )}
+      </main>
+    </div>
+  );
 }
