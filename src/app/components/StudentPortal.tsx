@@ -692,7 +692,7 @@ Document officiel généré le ${new Date().toLocaleDateString('fr-FR')}
                 )}
 
                 {currentView === 'notifications' && (
-                    <StudentNotifications onBack={() => setCurrentView('dashboard')} />
+                    <StudentNotifications userId={user?.id || ""} onBack={() => setCurrentView('dashboard')} />
                 )}
 
                 {currentView === 'services' && (
