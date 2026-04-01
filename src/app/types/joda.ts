@@ -1,6 +1,6 @@
 // Types pour le système de gestion Joda Company
 
-export type UserRole = 'student' | 'agent' | 'admin' | 'supervisor';
+export type UserRole = 'student' | 'agent' | 'admin' | 'supervisor' | 'user' | 'super_admin';
 
 export type DocumentType = 'passeport' | 'casier_judiciaire' | 'carte_photo' | 'releve_bac' | 'diplome_bac';
 
@@ -99,6 +99,7 @@ export interface DossierBourse {
 // Interface Historique du Dossier
 export interface DossierHistoryEntry {
   id: string;
+  dossierId?: string;
   action: string;
   status: DossierStatus;
   description: string;

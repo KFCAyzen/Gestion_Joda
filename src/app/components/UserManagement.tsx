@@ -13,7 +13,9 @@ export default function UserManagement() {
     const [formData, setFormData] = useState({
         username: '',
         name: '',
-        role: 'user' as 'admin' | 'user'
+        email: '',
+        password: 'temp123',
+        role: 'user' as 'admin' | 'user' | 'agent' | 'student'
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -282,6 +284,8 @@ export default function UserManagement() {
                                                 const success = await createUser({
                                                     username: formData.username,
                                                     name: formData.name,
+                                                    email: formData.email,
+                                                    password: formData.password,
                                                     role: formData.role
                                                 });
                                                 
@@ -291,6 +295,8 @@ export default function UserManagement() {
                                                     setFormData({
                                                         username: '',
                                                         name: '',
+                                                        email: '',
+                                                        password: 'temp123',
                                                         role: 'user'
                                                     });
                                                 } else {
@@ -308,6 +314,8 @@ export default function UserManagement() {
                                                 setFormData({
                                                     username: '',
                                                     name: '',
+                                                    email: '',
+                                                    password: 'temp123',
                                                     role: 'user'
                                                 });
                                                 setError('');
