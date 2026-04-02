@@ -1,49 +1,118 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
-import { useActivityLog } from '../context/ActivityLogContext';
+import { supabase } from '../supabase';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+
+interface DbUser {
+    id: string;
+    username: string;
+    email: string;
+    role: string;
+    name: string;
+    must_change_password: boolean;
+    created_at: string;
+}
 
 export default function UserManagement() {
-    const { user, users, canCreateRole, createUser, canDeleteUser, deleteUser, canResetPassword, resetUserPassword } = useAuth();
-    const { addLog } = useActivityLog();
-    const [activeTab, setActiveTab] = useState('permissions');
-    const [showCreateForm, setShowCreateForm] = useState(false);
+    const { user: currentUser, canCreateRole, canDeleteUser } = useAuth();
+    const [activeTab, setActiveTab] = useState('users');
+    const [dbUsers, setDbUsers] = useState<DbUser[]>([]);
+    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         username: '',
         name: '',
         email: '',
-        password: 'temp123',
-        role: 'user' as 'admin' | 'user' | 'agent' | 'student'
+        password: 'Temp123!',
+        role: 'student'
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [userToDelete, setUserToDelete] = useState<string | null>(null);
-    const [userToReset, setUserToReset] = useState<{id: string, name: string} | null>(null);
 
-    const rolePermissions = {
-        'super_admin': [
-            'Accès complet au système',
-            'Gestion des utilisateurs',
-            'Configuration système',
-            'Sauvegarde et restauration',
-            'Tous les modules (Dashboard, Réservations, Chambres, Clients, Facturation)'
-        ],
-        'admin': [
-            'Gestion des réservations',
-            'Gestion des chambres',
-            'Gestion des clients',
-            'Génération de rapports',
-            'Accès aux modules principaux'
-        ],
-        'user': [
-            'Consultation du dashboard',
-            'Création de réservations',
-            'Consultation des clients',
-            'Impression des reçus'
-        ]
+    const loadUsers = async () => {
+        setLoading(true);
+        try {
+            const { data } = await supabase
+                .from('users')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (data) setDbUsers(data);
+        } catch (err) {
+            console.error('Erreur:', err);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    useEffect(() => { loadUsers(); }, []);
+
+    const handleCreateUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        try {
+            const { data, error: authError } = await supabase.auth.signUp({
+                email: formData.email,
+                password: formData.password,
+                options: { data: { username: formData.username, name: formData.name, role: formData.role } }
+            });
+
+            if (authError) { setError(authError.message); return; }
+
+            if (data.user) {
+                const { error: dbError } = await supabase.from('users').insert({
+                    id: data.user.id,
+                    email: formData.email,
+                    username: formData.username,
+                    name: formData.name,
+                    role: formData.role,
+                    password_hash: 'managed_by_supabase_auth',
+                    must_change_password: false
+                });
+
+                if (dbError) { setError(dbError.message); return; }
+                setSuccess('Utilisateur créé!');
+                setFormData({ username: '', name: '', email: '', password: 'Temp123!', role: 'student' });
+                loadUsers();
+            }
+        } catch (err: any) { setError(err.message); }
+    };
+
+    const handleDeleteUser = async (userId: string) => {
+        try {
+            const { error } = await supabase.from('users').delete().eq('id', userId);
+            if (error) setError(error.message);
+            else { setSuccess('Utilisateur supprimé'); loadUsers(); }
+        } catch (err: any) { setError(err.message); }
+        setUserToDelete(null);
+    };
+
+    const rolePermissions: Record<string, string[]> = {
+        'super_admin': ['Accès complet', 'Gestion utilisateurs', 'Configuration'],
+        'admin': [' Gestion modules', 'Rapports'],
+        'agent': ['Gestion dossiers', 'Paiements', 'Suivi étudiants'],
+        'student': ['Consultation', 'Paiements', 'Documents']
+    };
+
+    const getRoleLabel = (role: string) => ({
+        'super_admin': 'Super Admin', 'admin': 'Admin', 'agent': 'Agent', 'student': 'Étudiant'
+    }[role] || role);
 
     return (
         <ProtectedRoute requiredRole="admin">
@@ -52,371 +121,109 @@ export default function UserManagement() {
                     Gestion des Utilisateurs
                 </h1>
 
-                <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200">
-                    <div className="border-b border-slate-200">
+                <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border">
+                    <div className="border-b">
                         <nav className="flex flex-col sm:flex-row">
-                            <button
-                                onClick={() => setActiveTab('permissions')}
-                                className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base ${
-                                    activeTab === 'permissions'
-                                        ? 'border-b-2 text-blue-600'
-                                        : 'text-slate-600 hover:text-slate-800'
-                                }`}
-                                style={{borderColor: activeTab === 'permissions' ? '#dc2626' : 'transparent'}}
-                            >
-                                Permissions
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('users')}
-                                className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base ${
-                                    activeTab === 'users'
-                                        ? 'border-b-2 text-blue-600'
-                                        : 'text-slate-600 hover:text-slate-800'
-                                }`}
-                                style={{borderColor: activeTab === 'users' ? '#dc2626' : 'transparent'}}
-                            >
-                                Utilisateurs
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('create')}
-                                className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base ${
-                                    activeTab === 'create'
-                                        ? 'border-b-2 text-blue-600'
-                                        : 'text-slate-600 hover:text-slate-800'
-                                }`}
-                                style={{borderColor: activeTab === 'create' ? '#dc2626' : 'transparent'}}
-                            >
-                                Créer Utilisateur
-                            </button>
+                            {['users', 'permissions', 'create'].map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-4 sm:px-6 py-3 font-medium text-sm ${
+                                        activeTab === tab ? 'border-b-2' : 'text-gray-600'
+                                    }`}
+                                    style={{borderColor: activeTab === tab ? '#dc2626' : 'transparent'}}
+                                >
+                                    {tab === 'users' ? `Utilisateurs (${dbUsers.length})` : tab === 'permissions' ? 'Permissions' : 'Créer'}
+                                </button>
+                            ))}
                         </nav>
                     </div>
 
                     <div className="p-4 sm:p-6">
-                        {!canCreateRole('user') && (
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-                                <p className="text-gray-800 text-sm sm:text-base">Vous n'avez pas les permissions pour créer des utilisateurs.</p>
-                            </div>
-                        )}
-                        {activeTab === 'permissions' && (
-                            <div className="space-y-2 sm:space-y-3 md:space-y-4 sm:space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
-                                <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
-                                    Niveaux de Permissions
-                                </h2>
-                                
-                                <div className="grid gap-4 sm:gap-6">
-                                    {Object.entries(rolePermissions).map(([role, permissions]) => (
-                                        <div key={role} className="border rounded-lg p-3 sm:p-3 sm:p-4">
-                                            <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3" style={{color: '#dc2626'}}>
-                                                {role === 'super_admin' ? 'Super Administrateur' :
-                                                 role === 'admin' ? 'Administrateur' : 'Utilisateur'}
-                                            </h3>
-                                            <ul className="space-y-1 sm:space-y-2">
-                                                {permissions.map((permission, index) => (
-                                                    <li key={index} className="flex items-start gap-2">
-                                                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                        <span className="text-slate-700 text-sm sm:text-base">{permission}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        {error && <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>}
+                        {success && <div className="mb-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">{success}</div>}
 
                         {activeTab === 'users' && (
-                            <div className="space-y-2 sm:space-y-3 md:space-y-4 sm:space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
-                                <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
-                                    Comptes Utilisateurs ({users.length})
-                                </h2>
-                                
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-3 sm:p-4">
-                                    <h3 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">Comptes par Défaut</h3>
-                                    <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
-                                        <div><strong>Admin:</strong> admin / admin123</div>
-                                        <div><strong>Utilisateur:</strong> user / user123</div>
-                                    </div>
-                                </div>
+                            loading ? <div className="text-center py-8">Chargement...</div> : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Nom</TableHead><TableHead>Email</TableHead><TableHead>Rôle</TableHead><TableHead>Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {dbUsers.map(u => (
+                                            <TableRow key={u.id}>
+                                                <TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-gray-500">@{u.username}</div></TableCell>
+                                                <TableCell>{u.email}</TableCell>
+                                                <TableCell><Badge variant={u.role === 'super_admin' || u.role === 'admin' ? 'destructive' : 'default'}>{getRoleLabel(u.role)}</Badge></TableCell>
+                                                <TableCell>
+                                                    {currentUser?.role === 'super_admin' && u.id !== currentUser.id && (
+                                                        <Button variant="destructive" size="sm" onClick={() => setUserToDelete(u.id)}>Supprimer</Button>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )
+                        )}
 
-                                <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4">
-                                    {users.map((u, index) => (
-                                        <div key={`user-${u.id}-${index}-${u.username}`} className="border rounded-lg p-3 sm:p-3 sm:p-4">
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                                <div className="flex-1">
-                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                                                        <div>
-                                                            <h4 className="font-semibold text-sm sm:text-base">{u.name}</h4>
-                                                            <p className="text-xs sm:text-sm text-slate-600">@{u.username}</p>
-                                                        </div>
-                                                        {u.mustChangePassword && (
-                                                            <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs self-start">
-                                                                Mot de passe à changer
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2 sm:gap-3">
-                                                    <span className={`px-2 py-1 rounded text-xs ${
-                                                        u.role === 'super_admin' ? 'bg-red-100 text-red-800 sm:text-red-800 text-red-800' :
-                                                        u.role === 'admin' ? 'bg-red-100 text-red-800 sm:text-red-800 text-red-800' :
-                                                        'bg-green-100 text-green-800 sm:text-green-800 text-red-800'
-                                                    }`}>
-                                                        {u.role === 'super_admin' ? 'Super Admin' :
-                                                         u.role === 'admin' ? 'Admin' : 'Utilisateur'}
-                                                    </span>
-                                                    {canResetPassword(u) && (
-                                                        <button
-                                                            onClick={() => setUserToReset({id: u.id, name: u.name})}
-                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Réinitialiser le mot de passe"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                                                            </svg>
-                                                        </button>
-                                                    )}
-                                                    {canDeleteUser(u) && (
-                                                        <button
-                                                            onClick={() => setUserToDelete(u.id)}
-                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Supprimer l'utilisateur"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                        {activeTab === 'permissions' && (
+                            <div className="grid gap-4 md:grid-cols-2">
+                                {Object.entries(rolePermissions).map(([role, perms]) => (
+                                    <Card key={role}>
+                                        <CardHeader><CardTitle>{getRoleLabel(role)}</CardTitle></CardHeader>
+                                        <CardContent>
+                                            <ul className="space-y-2">
+                                                {perms.map((p, i) => <li key={i} className="flex items-center gap-2"><span className="text-green-500">✓</span>{p}</li>)}
+                                            </ul>
+                                        </CardContent>
+                                    </Card>
+                                ))}
                             </div>
                         )}
 
                         {activeTab === 'create' && (
-                            <div className="space-y-2 sm:space-y-3 md:space-y-4 sm:space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
-                                <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
-                                    Créer un Nouvel Utilisateur
-                                </h2>
-                                
-                                {(error || success) && (
-                                    <div className={`border rounded-lg p-3 sm:p-4 text-sm sm:text-base ${
-                                        error ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'
-                                    }`}>
-                                        {error || success}
-                                    </div>
-                                )}
-                                
-                                <div className="bg-white border rounded-lg p-4 sm:p-6">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3 sm:p-4">
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2" style={{color: '#dc2626'}}>
-                                                Nom d'utilisateur *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formData.username}
-                                                onChange={(e) => setFormData({...formData, username: e.target.value})}
-                                                className="w-full p-3 border rounded-lg"
-                                                style={{borderColor: '#dc2626'}}
-                                                placeholder="nom_utilisateur"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2" style={{color: '#dc2626'}}>
-                                                Nom complet *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                                className="w-full p-3 border rounded-lg"
-                                                style={{borderColor: '#dc2626'}}
-                                                placeholder="Nom Prénom"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-sm font-medium mb-2" style={{color: '#dc2626'}}>
-                                                Rôle *
-                                            </label>
-                                            <select
-                                                value={formData.role}
-                                                onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'user'})}
-                                                className="w-full p-3 border rounded-lg"
-                                                style={{borderColor: '#dc2626'}}
-                                            >
-                                                <option value="user">Utilisateur</option>
-                                                {user?.role === 'super_admin' && (
-                                                    <option value="admin">Administrateur</option>
-                                                )}
-                                            </select>
-                                        </div>
-                                        
-                                        <div className="sm:col-span-2">
-                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-3 sm:p-4">
-                                                <h4 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">Mot de passe par défaut</h4>
-                                                <p className="text-xs sm:text-sm text-blue-700">
-                                                    L'utilisateur recevra le mot de passe temporaire : <strong>temp123</strong>
-                                                </p>
-                                                <p className="text-xs text-blue-600 mt-1">
-                                                    Il devra le changer lors de sa première connexion.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-3 sm:p-4">
-                                        <button
-                                            onClick={async () => {
-                                                setError('');
-                                                setSuccess('');
-                                                
-                                                if (!formData.username || !formData.name) {
-                                                    setError('Le nom d\'utilisateur et le nom complet sont obligatoires');
-                                                    return;
-                                                }
-                                                
-                                                const success = await createUser({
-                                                    username: formData.username,
-                                                    name: formData.name,
-                                                    email: formData.email,
-                                                    password: formData.password,
-                                                    role: formData.role
-                                                });
-                                                
-                                                if (success) {
-                                                    addLog('Création utilisateur', 'users', `Utilisateur créé: ${formData.name} (@${formData.username}) - Rôle: ${formData.role}`);
-                                                    setSuccess('Utilisateur créé avec succès! Mot de passe temporaire : temp123');
-                                                    setFormData({
-                                                        username: '',
-                                                        name: '',
-                                                        email: '',
-                                                        password: 'temp123',
-                                                        role: 'user'
-                                                    });
-                                                } else {
-                                                    setError('Erreur: nom d\'utilisateur déjà existant ou permissions insuffisantes');
-                                                }
-                                            }}
-                                            className="px-4 sm:px-6 py-3 text-white rounded-lg hover:opacity-90 text-sm sm:text-base font-medium"
-                                            style={{backgroundColor: '#dc2626'}}
-                                        >
-                                            Créer l'utilisateur
-                                        </button>
-                                        
-                                        <button
-                                            onClick={() => {
-                                                setFormData({
-                                                    username: '',
-                                                    name: '',
-                                                    email: '',
-                                                    password: 'temp123',
-                                                    role: 'user'
-                                                });
-                                                setError('');
-                                                setSuccess('');
-                                            }}
-                                            className="px-4 sm:px-6 py-3 border rounded-lg hover:bg-gray-50 text-sm sm:text-base font-medium"
-                                            style={{borderColor: '#dc2626', color: '#dc2626'}}
-                                        >
-                                            Annuler
-                                        </button>
-                                    </div>
+                            <form onSubmit={handleCreateUser} className="max-w-md space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Nom d'utilisateur *</label>
+                                    <Input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} placeholder="nom_utilisateur" required />
                                 </div>
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Nom complet *</label>
+                                    <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Nom Prénom" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Email *</label>
+                                    <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="email@exemple.com" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Rôle *</label>
+                                    <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full p-3 border rounded-lg">
+                                        <option value="student">Étudiant</option>
+                                        <option value="agent">Agent</option>
+                                        {currentUser?.role === 'super_admin' && <option value="admin">Admin</option>}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Mot de passe *</label>
+                                    <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                                </div>
+                                <Button type="submit" className="w-full">Créer l'utilisateur</Button>
+                            </form>
                         )}
                     </div>
                 </div>
 
-                {/* Modal de confirmation de suppression */}
                 {userToDelete && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-                        <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md">
-                            <div className="text-center mb-4 sm:mb-6">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 sm:w-8 sm:h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-2">
-                                    Confirmer la suppression
-                                </h3>
-                                <p className="text-slate-600 text-sm sm:text-base">
-                                    Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{users.find(u => u.id === userToDelete)?.name}</strong> ?
-                                </p>
-                                <p className="text-xs sm:text-sm text-red-600 mt-2">
-                                    Cette action est irréversible.
-                                </p>
-                            </div>
-                            
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button
-                                    onClick={() => setUserToDelete(null)}
-                                    className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
-                                    style={{borderColor: '#dc2626', color: '#dc2626'}}
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        const userToDeleteData = users.find(u => u.id === userToDelete);
-                                        const success = await deleteUser(userToDelete);
-                                        if (success && userToDeleteData) {
-                                            addLog('Suppression utilisateur', 'users', `Utilisateur supprimé: ${userToDeleteData.name} (@${userToDeleteData.username})`);
-                                            setSuccess('Utilisateur supprimé avec succès');
-                                            setError('');
-                                        } else {
-                                            setError('Erreur lors de la suppression');
-                                            setSuccess('');
-                                        }
-                                        setUserToDelete(null);
-                                    }}
-                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base font-medium"
-                                >
-                                    Supprimer
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {userToReset && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl p-6 max-w-md w-full">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Réinitialiser le mot de passe ?</h3>
-                            <p className="text-sm text-gray-600 mb-6">
-                                Le mot de passe de <strong>{userToReset.name}</strong> sera réinitialisé à : <strong>temp123</strong>
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setUserToReset(null)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        const success = await resetUserPassword(userToReset.id);
-                                        if (success) {
-                                            const u = users.find(user => user.id === userToReset.id);
-                                            if (u) addLog('Réinitialisation mot de passe', 'users', `Mot de passe réinitialisé pour: ${u.name} (@${u.username})`);
-                                            setSuccess(`Mot de passe réinitialisé pour ${userToReset.name}. Nouveau mot de passe : temp123`);
-                                            setError('');
-                                        } else {
-                                            setError('Erreur lors de la réinitialisation du mot de passe');
-                                            setSuccess('');
-                                        }
-                                        setUserToReset(null);
-                                    }}
-                                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-                                >
-                                    Réinitialiser
-                                </button>
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg max-w-sm">
+                            <h3 className="text-lg font-semibold mb-4">Confirmer la suppression</h3>
+                            <p className="mb-4">Voulez-vous supprimer cet utilisateur?</p>
+                            <div className="flex gap-2 justify-end">
+                                <Button variant="outline" onClick={() => setUserToDelete(null)}>Annuler</Button>
+                                <Button variant="destructive" onClick={() => handleDeleteUser(userToDelete)}>Supprimer</Button>
                             </div>
                         </div>
                     </div>
