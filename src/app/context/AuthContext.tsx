@@ -45,7 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Charger les utilisateurs au démarrage
     useEffect(() => {
-        refreshUsers();
         checkCurrentUser();
     }, []);
 
@@ -55,13 +54,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
                 // Récupérer les infos utilisateur depuis la table users
-                const { data: userData } = await supabase
+                const { data: userData, error: userError } = await supabase
                     .from('users')
                     .select('*')
                     .eq('id', session.user.id)
                     .single();
                 
-                if (userData) {
+                if (userError) {
+                    console.error('Erreur récupération user:', userError.message);
+                    
+                    // Si l'utilisateur n'existe pas dans la table users, le créer
+                    if (userError.message.includes('No rows')) {
+                        const { error: insertError } = await supabase.from('users').insert({
+                            id: session.user.id,
+                            email: session.user.email,
+                            username: session.user.email?.split('@')[0] || 'user',
+                            name: session.user.email?.split('@')[0] || 'User',
+                            role: 'student',
+                            password_hash: 'managed_by_supabase_auth',
+                            must_change_password: false
+                        });
+                        
+                        if (insertError) {
+                            console.error('Erreur création user:', insertError.message);
+                        } else {
+                            // Recharger les données
+                            const { data: newUserData } = await supabase
+                                .from('users')
+                                .select('*')
+                                .eq('id', session.user.id)
+                                .single();
+                            
+                            if (newUserData) {
+                                setUser({
+                                    id: newUserData.id,
+                                    username: newUserData.username,
+                                    role: newUserData.role,
+                                    name: newUserData.name,
+                                    email: newUserData.email,
+                                    mustChangePassword: newUserData.must_change_password
+                                });
+                            }
+                        }
+                    }
+                } else if (userData) {
                     setUser({
                         id: userData.id,
                         username: userData.username,
@@ -87,7 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .select('id, username, email, role, name, must_change_password')
                 .order('created_at', { ascending: false });
             
-            if (error) throw error;
+            if (error) {
+                console.error('Erreur refreshUsers - Détails:', error.message, error.details, error.hint);
+                return;
+            }
             
             if (data) {
                 setUsers(data.map(u => ({
@@ -99,8 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     mustChangePassword: u.must_change_password
                 })));
             }
-        } catch (error) {
-            console.error('Erreur chargement utilisateurs:', error);
+        } catch (error: any) {
+            console.error('Erreur chargement utilisateurs:', error?.message || error);
         }
     };
 
@@ -120,13 +159,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (authData.user) {
                 // Récupérer les infos utilisateur
-                const { data: userData } = await supabase
+                const { data: userData, error: userError } = await supabase
                     .from('users')
                     .select('*')
                     .eq('id', authData.user.id)
                     .single();
 
-                if (userData) {
+                // Si l'utilisateur n'existe pas dans la table users, le créer
+                if (userError && userError.message.includes('No rows')) {
+                    const { error: insertError } = await supabase.from('users').insert({
+                        id: authData.user.id,
+                        email: authData.user.email,
+                        username: authData.user.email?.split('@')[0] || 'user',
+                        name: authData.user.email?.split('@')[0] || 'User',
+                        role: 'student',
+                        password_hash: 'managed_by_supabase_auth',
+                        must_change_password: false
+                    });
+
+                    if (insertError) {
+                        console.error('Erreur création user:', insertError.message);
+                        return false;
+                    }
+
+                    // Recharger les données
+                    const { data: newUserData } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('id', authData.user.id)
+                        .single();
+
+                    if (newUserData) {
+                        const currentUser: AuthUser = {
+                            id: newUserData.id,
+                            username: newUserData.username,
+                            role: newUserData.role,
+                            name: newUserData.name,
+                            email: newUserData.email,
+                            mustChangePassword: newUserData.must_change_password
+                        };
+                        setUser(currentUser);
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        return true;
+                    }
+                } else if (userData) {
+                    console.log('✅ UserData loaded:', userData);
+                    
                     const currentUser: AuthUser = {
                         id: userData.id,
                         username: userData.username,
@@ -137,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     };
                     
                     setUser(currentUser);
+                    console.log('✅ User set in context:', currentUser);
                     
                     // Sauvegarder dans localStorage comme backup
                     if (typeof window !== 'undefined') {
@@ -146,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     return true;
                 }
             }
+            console.log('❌ No user data returned');
             return false;
         } catch (error) {
             console.error('Erreur login:', error);

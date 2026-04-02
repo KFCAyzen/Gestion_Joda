@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import StudentSignup from './StudentSignup';
+import { supabase } from '../supabase';
+import { useAuth } from '../context/AuthContext';
 
 interface LoginPageProps {
     onLoginSuccess: (user: any) => void;
@@ -14,6 +16,7 @@ const ACCOUNTS = {
 };
 
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
+    const { login: authLogin } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -31,42 +34,91 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         setLoading(true);
         setError('');
 
-        if (typeof window !== 'undefined') {
-            const systemUsers = localStorage.getItem('systemUsers');
-            const systemPasswords = localStorage.getItem('systemPasswords');
-            
-            if (systemUsers && systemPasswords) {
-                try {
-                    const users = JSON.parse(systemUsers);
-                    const passwords = JSON.parse(systemPasswords);
+        try {
+            // Authentification avec Supabase
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: username,
+                password: password
+            });
+
+            if (authError) {
+                // Fallback aux comptes locaux si Supabase échoue
+                if (typeof window !== 'undefined') {
+                    const systemUsers = localStorage.getItem('systemUsers');
+                    const systemPasswords = localStorage.getItem('systemPasswords');
                     
-                    const user = users.find((u: any) => u.username === username);
-                    if (user && passwords[username] === password) {
-                        if (user.role === 'student') {
-                            setError('Les étudiants doivent utiliser l\'espace étudiant');
-                            setLoading(false);
-                            return;
+                    if (systemUsers && systemPasswords) {
+                        try {
+                            const users = JSON.parse(systemUsers);
+                            const passwords = JSON.parse(systemPasswords);
+                            
+                            const user = users.find((u: any) => u.username === username);
+                            if (user && passwords[username] === password) {
+                                if (user.role === 'student') {
+                                    setError('Les étudiants doivent utiliser l\'espace étudiant');
+                                    setLoading(false);
+                                    return;
+                                }
+                                localStorage.setItem('currentUser', JSON.stringify(user));
+                                onLoginSuccess(user);
+                                setLoading(false);
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing auth data:', e);
                         }
-                        localStorage.setItem('currentUser', JSON.stringify(user));
-                        onLoginSuccess(user);
-                        setLoading(false);
-                        return;
                     }
-                } catch (e) {
-                    console.error('Error parsing auth data:', e);
+                    
+                    const account = ACCOUNTS[username as keyof typeof ACCOUNTS];
+                    if (account && account.password === password) {
+                        const { password: _, ...userWithoutPassword } = account;
+                        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+                        onLoginSuccess(userWithoutPassword);
+                    } else {
+                        setError('Nom d\'utilisateur ou mot de passe incorrect');
+                    }
+                }
+                setLoading(false);
+                return;
+            }
+
+            // Si auth réussit, récupérer les infos utilisateur
+            if (authData.user) {
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', authData.user.id)
+                    .single();
+
+                let finalUser = userData;
+
+                if (userError) {
+                    // Créer l'utilisateur s'il n'existe pas
+                    const { data: newUser, error: insertError } = await supabase.from('users').insert({
+                        id: authData.user.id,
+                        email: authData.user.email,
+                        username: username,
+                        name: username,
+                        role: 'student',
+                        password_hash: 'managed_by_supabase_auth',
+                        must_change_password: false
+                    }).select().single();
+
+                    if (!insertError && newUser) {
+                        finalUser = newUser;
+                    }
+                }
+
+                if (finalUser) {
+                    localStorage.setItem('currentUser', JSON.stringify(finalUser));
+                    onLoginSuccess(finalUser);
                 }
             }
-            
-            // Fallback aux comptes par défaut
-            const account = ACCOUNTS[username as keyof typeof ACCOUNTS];
-            if (account && account.password === password) {
-                const { password: _, ...userWithoutPassword } = account;
-                localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-                onLoginSuccess(userWithoutPassword);
-            } else {
-                setError('Nom d\'utilisateur ou mot de passe incorrect');
-            }
+        } catch (err: any) {
+            console.error('Login error:', err);
+            setError('Une erreur est survenue lors de la connexion');
         }
+        
         setLoading(false);
     };
 
@@ -274,11 +326,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                 <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-4 lg:space-y-5">
                                     <div>
                                         <input
-                                            type="text"
+                                            type="email"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
                                             className="w-full px-3 py-1.5 sm:px-4 sm:py-3 lg:py-3.5 text-sm sm:text-base lg:text-base bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all text-gray-900 placeholder-gray-500"
-                                            placeholder="Nom d'utilisateur"
+                                            placeholder="Email"
                                             required
                                         />
                                     </div>

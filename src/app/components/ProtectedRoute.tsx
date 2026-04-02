@@ -1,9 +1,17 @@
 "use client";
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-type UserRole = 'student' | 'user' | 'admin' | 'super_admin';
+type UserRole = 'student' | 'user' | 'agent' | 'admin' | 'supervisor' | 'super_admin';
+
+interface User {
+    id: string;
+    username: string;
+    role: UserRole;
+    name: string;
+    mustChangePassword?: boolean;
+}
 
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -17,8 +25,37 @@ export default function ProtectedRoute({
     fallback
 }: ProtectedRouteProps) {
     const { user, hasPermission } = useAuth();
+    const [localUser, setLocalUser] = useState<User | null | undefined>(undefined);
     
-    if (!user) {
+    // Check localStorage as fallback - synchronously
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                try {
+                    setLocalUser(JSON.parse(savedUser));
+                } catch (e) {
+                    localStorage.removeItem('currentUser');
+                }
+            } else {
+                setLocalUser(null);
+            }
+        }
+    }, []);
+
+    // If still loading user from localStorage, show loading
+    if (localUser === undefined) {
+        return (
+            <div className="p-8 text-center">
+                <div className="text-gray-500">Chargement...</div>
+            </div>
+        );
+    }
+    
+    // Use either AuthContext user or localStorage user
+    const currentUser = user || localUser;
+    
+    if (!currentUser) {
         return fallback || (
             <div className="p-8 text-center">
                 <p className="text-gray-600">Vous devez être connecté pour accéder à cette page.</p>
@@ -26,7 +63,26 @@ export default function ProtectedRoute({
         );
     }
 
-    if (!hasPermission(requiredRole)) {
+    // Check permission
+    const checkPermission = () => {
+        if (!currentUser) return false;
+        
+        const roleHierarchy: Record<UserRole, number> = {
+            'student': 0,
+            'user': 1,
+            'agent': 2,
+            'supervisor': 3,
+            'admin': 4,
+            'super_admin': 5
+        };
+        
+        const userRole = currentUser.role as UserRole;
+        const requiredRoleNum = roleHierarchy[requiredRole as UserRole] || 0;
+        
+        return roleHierarchy[userRole] >= requiredRoleNum;
+    };
+
+    if (!checkPermission()) {
         return fallback || (
             <div className="p-8 text-center">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
