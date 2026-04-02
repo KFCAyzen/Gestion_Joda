@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import { supabase } from '../supabase';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
     Table,
@@ -16,6 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DbUser {
     id: string;
@@ -185,33 +187,84 @@ export default function UserManagement() {
                         )}
 
                         {activeTab === 'create' && (
-                            <form onSubmit={handleCreateUser} className="max-w-md space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Nom d'utilisateur *</label>
-                                    <Input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} placeholder="nom_utilisateur" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Nom complet *</label>
-                                    <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Nom Prénom" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Email *</label>
-                                    <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="email@exemple.com" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Rôle *</label>
-                                    <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full p-3 border rounded-lg">
-                                        <option value="student">Étudiant</option>
-                                        <option value="agent">Agent</option>
-                                        {currentUser?.role === 'super_admin' && <option value="admin">Admin</option>}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Mot de passe *</label>
-                                    <Input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
-                                </div>
-                                <Button type="submit" className="w-full">Créer l'utilisateur</Button>
-                            </form>
+                            <Card className="max-w-lg">
+                                <CardHeader>
+                                    <CardTitle>Créer un Nouvel Utilisateur</CardTitle>
+                                    <CardDescription>
+                                        L'utilisateur recevra un email pour confirmer son compte
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleCreateUser} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="username">Nom d'utilisateur *</Label>
+                                            <Input 
+                                                id="username"
+                                                value={formData.username} 
+                                                onChange={e => setFormData({...formData, username: e.target.value})} 
+                                                placeholder="nom_utilisateur" 
+                                                required 
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="name">Nom complet *</Label>
+                                            <Input 
+                                                id="name"
+                                                value={formData.name} 
+                                                onChange={e => setFormData({...formData, name: e.target.value})} 
+                                                placeholder="Nom Prénom" 
+                                                required 
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="email">Email *</Label>
+                                            <Input 
+                                                id="email"
+                                                type="email" 
+                                                value={formData.email} 
+                                                onChange={e => setFormData({...formData, email: e.target.value})} 
+                                                placeholder="email@exemple.com" 
+                                                required 
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="role">Rôle *</Label>
+                                            <Select value={formData.role} onValueChange={v => setFormData({...formData, role: v || 'student'})}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Sélectionner un rôle" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="student">Étudiant</SelectItem>
+                                                    <SelectItem value="agent">Agent</SelectItem>
+                                                    {currentUser?.role === 'super_admin' && (
+                                                        <>
+                                                            <SelectItem value="supervisor">Superviseur</SelectItem>
+                                                            <SelectItem value="admin">Administrateur</SelectItem>
+                                                            <SelectItem value="super_admin">Super Administrateur</SelectItem>
+                                                        </>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="password">Mot de passe temporaire *</Label>
+                                            <Input 
+                                                id="password"
+                                                type="password" 
+                                                value={formData.password} 
+                                                onChange={e => setFormData({...formData, password: e.target.value})} 
+                                                required 
+                                            />
+                                            <p className="text-xs text-gray-500">
+                                                L'utilisateur devra changer son mot de passe à la première connexion
+                                            </p>
+                                        </div>
+                                        <Button type="submit" className="w-full">
+                                            Créer l'utilisateur
+                                        </Button>
+                                    </form>
+                                </CardContent>
+                            </Card>
                         )}
                     </div>
                 </div>
