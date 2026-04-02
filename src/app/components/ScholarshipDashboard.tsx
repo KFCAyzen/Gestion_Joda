@@ -9,29 +9,23 @@ import { loadFromFirebase } from "../utils/syncData";
 import { DashboardData } from "../types/scholarship";
 import { generateAllScholarshipTestData, clearAllScholarshipData } from "../utils/scholarshipData";
 import NewStatsCards from "./NewStatsCards";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const StatCard = memo(({ stat, index, isLoading }: { stat: any; index: number; isLoading?: boolean }) => (
-    <div key={index} className={`bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 group ${isLoading ? 'animate-pulse' : ''}`}>
-        <div className="flex items-start justify-between mb-4">
-            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+    <Card key={index} className={isLoading ? 'animate-pulse' : ''}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
                 {stat.icon}
             </div>
-            <div className="text-right">
-                <div className="text-2xl font-bold text-slate-800">
-                    {isLoading ? (
-                        <div className="w-16 h-6 bg-slate-200 rounded animate-pulse"></div>
-                    ) : (
-                        stat.value
-                    )}
-                </div>
-                <div className={`text-xs font-medium bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
-                    {stat.change}
-                </div>
-            </div>
-        </div>
-        <h3 className="text-sm font-semibold text-slate-600 mb-1">{stat.title}</h3>
-        <p className="text-xs text-slate-400">{stat.subtitle}</p>
-    </div>
+        </CardHeader>
+        <CardContent>
+            <div className="text-2xl font-bold">{isLoading ? '...' : stat.value}</div>
+            <p className={`text-xs ${stat.color} bg-clip-text text-transparent`}>
+                {stat.subtitle}
+            </p>
+        </CardContent>
+    </Card>
 ));
 
 StatCard.displayName = 'StatCard';

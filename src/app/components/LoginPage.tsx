@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import StudentSignup from './StudentSignup';
 import { supabase } from '../supabase';
 import { useAuth } from '../context/AuthContext';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 interface LoginPageProps {
     onLoginSuccess: (user: any) => void;
