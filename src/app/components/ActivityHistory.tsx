@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from 'react';
-
 import { useActivityLog } from '../context/ActivityLogContext';
 import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import LoadingSpinner from './LoadingSpinner';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ActivityHistory() {
-    
     const { logs, getUserLogs, getModuleLogs } = useActivityLog();
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('all');
@@ -70,11 +77,14 @@ export default function ActivityHistory() {
             filteredLogs = getModuleLogs(selectedModule as any);
         }
 
-        // Filtrer selon les permissions (si nécessaire)
-        // Note: users array should be loaded from context or props if needed
-
-        return filteredLogs.slice(0, 100); // Limiter à 100 entrées
+        return filteredLogs.slice(0, 100);
     };
+
+    const tabs = [
+        { id: 'all', label: 'Toutes les activités' },
+        { id: 'user', label: 'Par utilisateur' },
+        { id: 'module', label: 'Par module' }
+    ];
 
     return (
         <ProtectedRoute requiredRole="admin">
@@ -83,125 +93,83 @@ export default function ActivityHistory() {
                     Historique des Activités
                 </h1>
 
-                <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200">
-                    <div className="border-b border-slate-200">
+                <Card>
+                    <CardHeader className="border-b">
                         <nav className="flex flex-col sm:flex-row">
-                            <button
-                                onClick={() => {setActiveTab('all'); setIsLoading(true); setTimeout(() => setIsLoading(false), 500);}}
-                                className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base ${
-                                    activeTab === 'all'
-                                        ? 'border-b-2 text-blue-600'
-                                        : 'text-slate-600 hover:text-slate-800'
-                                }`}
-                                style={{borderColor: activeTab === 'all' ? '#dc2626' : 'transparent'}}
-                            >
-                                Toutes les activités
-                            </button>
-                            <button
-                                onClick={() => {setActiveTab('user'); setIsLoading(true); setTimeout(() => setIsLoading(false), 500);}}
-                                className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base ${
-                                    activeTab === 'user'
-                                        ? 'border-b-2 text-blue-600'
-                                        : 'text-slate-600 hover:text-slate-800'
-                                }`}
-                                style={{borderColor: activeTab === 'user' ? '#dc2626' : 'transparent'}}
-                            >
-                                Par utilisateur
-                            </button>
-                            <button
-                                onClick={() => {setActiveTab('module'); setIsLoading(true); setTimeout(() => setIsLoading(false), 500);}}
-                                className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base ${
-                                    activeTab === 'module'
-                                        ? 'border-b-2 text-blue-600'
-                                        : 'text-slate-600 hover:text-slate-800'
-                                }`}
-                                style={{borderColor: activeTab === 'module' ? '#dc2626' : 'transparent'}}
-                            >
-                                Par module
-                            </button>
-                        </nav>
-                    </div>
-
-                    <div className="p-4 sm:p-6">
-                        {/* Filtres */}
-                        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 sm:gap-3 sm:p-4">
-                            {activeTab === 'user' && (
-                                <select
-                                    value={selectedUser}
-                                    onChange={(e) => setSelectedUser(e.target.value)}
-                                    className="px-3 sm:px-4 py-2 border rounded-lg text-sm sm:text-base"
-                                    style={{borderColor: '#dc2626'}}
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => {
+                                        setActiveTab(tab.id);
+                                        setIsLoading(true);
+                                        setTimeout(() => setIsLoading(false), 500);
+                                    }}
+                                    className={`px-4 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base ${
+                                        activeTab === tab.id
+                                            ? 'border-b-2 text-blue-600'
+                                            : 'text-slate-600 hover:text-slate-800'
+                                    }`}
+                                    style={{borderColor: activeTab === tab.id ? '#dc2626' : 'transparent'}}
                                 >
-                                    <option value="">Sélectionner un utilisateur</option>
-                                    {/* Users list should be loaded from Firebase if needed */}
-                                </select>
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </nav>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3">
+                            {activeTab === 'user' && (
+                                <Select value={selectedUser} onValueChange={(value) => setSelectedUser(value || '')}>
+                                    <SelectTrigger className="w-full sm:w-[250px]">
+                                        <SelectValue placeholder="Sélectionner un utilisateur" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="user">User</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             )}
                             
                             {activeTab === 'module' && (
-                                <select
-                                    value={selectedModule}
-                                    onChange={(e) => setSelectedModule(e.target.value)}
-                                    className="px-3 sm:px-4 py-2 border rounded-lg text-sm sm:text-base"
-                                    style={{borderColor: '#dc2626'}}
-                                >
-                                    <option value="">Sélectionner un module</option>
-                                    <option value="clients">Clients</option>
-                                    <option value="reservations">Réservations</option>
-                                    <option value="bills">Factures</option>
-                                    <option value="rooms">Chambres</option>
-                                    <option value="users">Utilisateurs</option>
-                                </select>
+                                <Select value={selectedModule} onValueChange={(value) => setSelectedModule(value || '')}>
+                                    <SelectTrigger className="w-full sm:w-[250px]">
+                                        <SelectValue placeholder="Sélectionner un module" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="clients">Clients</SelectItem>
+                                        <SelectItem value="reservations">Réservations</SelectItem>
+                                        <SelectItem value="bills">Factures</SelectItem>
+                                        <SelectItem value="rooms">Chambres</SelectItem>
+                                        <SelectItem value="users">Utilisateurs</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             )}
                         </div>
 
-                        {/* Liste des activités */}
                         {isLoading ? (
                             <LoadingSpinner size="md" text="Chargement des activités..." />
                         ) : (
-                        <div className="space-y-2 sm:space-y-3">
-                            {getFilteredLogs().length === 0 ? (
-                                <div className="text-center py-8 sm:py-12">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 sm:w-16 sm:h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg className="w-5 h-5 sm:w-6 sm:h-6 sm:w-8 sm:h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <p className="text-slate-500 text-base sm:text-lg font-medium">Aucune activité trouvée</p>
-                                </div>
-                            ) : (
-                                getFilteredLogs().map((log, index) => (
-                                    <div key={`log-${log.id}-${index}-${log.timestamp}`} className="border rounded-lg p-3 sm:p-4 hover:bg-slate-50 transition-colors">
-                                        <div className="flex items-start gap-2 sm:gap-3">
-                                            <div className="w-5 h-5 sm:w-6 sm:h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 flex-shrink-0">
-                                                {getActionIcon(log.module)}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                                                    <span className="font-semibold text-slate-800 text-sm sm:text-base">{log.action}</span>
-                                                    <span className="bg-slate-100 text-slate-600 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs self-start">
-                                                        {log.module}
-                                                    </span>
-                                                </div>
-                                                <p className="text-slate-600 text-xs sm:text-sm mb-2 break-words">{log.details}</p>
-                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs text-slate-500">
-                                                    <span className="truncate">Par: {log.username}</span>
-                                                    <span className="text-xs">{formatTimestamp(log.timestamp)}</span>
-                                                </div>
-                                            </div>
+                            <div className="space-y-3">
+                                {getFilteredLogs().map((log, index) => (
+                                    <div key={`log-${log.id}-${index}`} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+                                        <div className="mt-1 text-slate-600">
+                                            {getActionIcon(log.module)}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm text-slate-800">{log.action}</p>
+                                            <p className="text-xs text-slate-500">
+                                                {log.username} • {log.module} • {formatTimestamp(log.timestamp)}
+                                            </p>
                                         </div>
                                     </div>
-                                ))
-                            )}
-                        </div>
-                        )}
-
-                        {!isLoading && getFilteredLogs().length >= 100 && (
-                            <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-slate-500">
-                                Affichage des 100 activités les plus récentes
+                                ))}
+                                {getFilteredLogs().length === 0 && (
+                                    <p className="text-center text-slate-500 py-8">Aucune activité trouvée</p>
+                                )}
                             </div>
                         )}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </ProtectedRoute>
     );

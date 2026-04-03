@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface LoginProps {
     onLogin: () => void;
@@ -27,7 +30,6 @@ export default function Login({ onLogin, showNotification }: LoginProps) {
             return;
         }
 
-        // Identifiants par défaut (à remplacer par une vraie authentification)
         if (formData.username === "admin" && formData.password === "admin123") {
             showNotification("Connexion réussie!", "success");
             onLogin();
@@ -42,7 +44,6 @@ export default function Login({ onLogin, showNotification }: LoginProps) {
             backgroundSize: 'cover',
             backgroundPosition: 'center'
         }}>
-            {/* Left Side - Content */}
             <div className="hidden lg:flex lg:w-1/2 relative z-10">
                 <div className="flex flex-col justify-center items-center p-12 text-center">
                     <div className="mb-8">
@@ -61,10 +62,8 @@ export default function Login({ onLogin, showNotification }: LoginProps) {
                 </div>
             </div>
 
-            {/* Right Side - Login Form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
                 <div className="w-full max-w-md backdrop-blur-2xl rounded-2xl p-8 border border-white/20 shadow-2xl">
-                    {/* Logo and Header */}
                     <div className="text-center mb-10">
                         <div className="flex justify-center mb-6">
                             <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-red-500/80 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg border border-white/20">
@@ -82,31 +81,26 @@ export default function Login({ onLogin, showNotification }: LoginProps) {
                         </p>
                     </div>
 
-                    {/* Login Form */}
-                    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-white/90 mb-2 drop-shadow-md">
-                                Nom d'utilisateur
-                            </label>
-                            <input
+                            <Label className="text-white/90 mb-2">Nom d'utilisateur</Label>
+                            <Input
                                 type="text"
                                 value={formData.username}
                                 onChange={(e) => setFormData({...formData, username: e.target.value})}
-                                className="w-full px-4 py-3 border border-white/30 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 transition-colors bg-white/20 backdrop-blur-sm focus:bg-white/30 text-white placeholder-white/60"
+                                className="bg-white/20 border-white/30 text-white placeholder-white/60"
                                 placeholder="admin"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-white/90 mb-2 drop-shadow-md">
-                                Mot de passe
-                            </label>
+                            <Label className="text-white/90 mb-2">Mot de passe</Label>
                             <div className="relative">
-                                <input
+                                <Input
                                     type={showPassword ? "text" : "password"}
                                     value={formData.password}
                                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                    className="w-full px-4 py-3 pr-12 border border-white/30 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400 transition-colors bg-white/20 backdrop-blur-sm focus:bg-white/30 text-white placeholder-white/60"
+                                    className="bg-white/20 border-white/30 text-white placeholder-white/60 pr-12"
                                     placeholder="admin123"
                                 />
                                 <button
@@ -147,15 +141,14 @@ export default function Login({ onLogin, showNotification }: LoginProps) {
                             </div>
                         </div>
 
-                        <button
+                        <Button
                             type="submit"
-                            className="w-full flex justify-center py-2 px-3 sm:py-3 sm:px-4 border border-white/20 rounded-lg shadow-lg text-sm font-medium text-white bg-red-500/80 backdrop-blur-sm hover:bg-red-600/80 focus:outline-none focus:ring-2 focus:ring-red-400 transition-all duration-200"
+                            className="w-full bg-red-500/80 hover:bg-red-600/80"
                         >
                             Se connecter
-                        </button>
+                        </Button>
                     </form>
 
-                    {/* Test Credentials */}
                     <div className="mt-8 p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
                         <p className="text-sm font-medium text-white/90 mb-2">Identifiants de test :</p>
                         <div className="space-y-1">
