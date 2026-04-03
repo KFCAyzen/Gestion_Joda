@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Student {
     id: string;
@@ -191,34 +198,22 @@ export default function ApplicationManagement() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label style={{color: '#dc2626'}}>Étudiant *</Label>
-                                <select
-                                    value={formData.studentId}
-                                    onChange={(e) => setFormData({...formData, studentId: e.target.value})}
-                                    className="w-full p-3 border rounded-lg"
-                                >
-                                    <option value="">Sélectionner un étudiant</option>
-                                    {students.map(student => (
-                                        <option key={student.id} value={student.id}>
-                                            {student.prenom} {student.nom}
-                                        </option>
-                                    ))}
-                                </select>
+                                <Select value={formData.studentId || ''} onValueChange={(v) => setFormData({...formData, studentId: v || ''})}>
+                                    <SelectTrigger><SelectValue placeholder="Sélectionner un étudiant" /></SelectTrigger>
+                                    <SelectContent>
+                                        {students.map(s => <SelectItem key={s.id} value={s.id}>{s.prenom} {s.nom}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
                                 <Label style={{color: '#dc2626'}}>Université *</Label>
-                                <select
-                                    value={formData.universityId}
-                                    onChange={(e) => setFormData({...formData, universityId: e.target.value})}
-                                    className="w-full p-3 border rounded-lg"
-                                >
-                                    <option value="">Sélectionner une université</option>
-                                    {universities.map(university => (
-                                        <option key={university.id} value={university.id}>
-                                            {university.nom} ({university.code})
-                                        </option>
-                                    ))}
-                                </select>
+                                <Select value={formData.universityId || ''} onValueChange={(v) => setFormData({...formData, universityId: v || ''})}>
+                                    <SelectTrigger><SelectValue placeholder="Sélectionner une université" /></SelectTrigger>
+                                    <SelectContent>
+                                        {universities.map(u => <SelectItem key={u.id} value={u.id}>{u.nom} ({u.code})</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
@@ -232,45 +227,42 @@ export default function ApplicationManagement() {
 
                             <div className="space-y-2">
                                 <Label style={{color: '#dc2626'}}>Niveau d'études</Label>
-                                <select
-                                    value={formData.studyLevel}
-                                    onChange={(e) => setFormData({...formData, studyLevel: e.target.value})}
-                                    className="w-full p-3 border rounded-lg"
-                                >
-                                    <option value="Licence">Licence</option>
-                                    <option value="Master">Master</option>
-                                    <option value="Doctorat">Doctorat</option>
-                                </select>
+                                <Select value={formData.studyLevel || 'Licence'} onValueChange={(v) => setFormData({...formData, studyLevel: v || 'Licence'})}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Licence">Licence</SelectItem>
+                                        <SelectItem value="Master">Master</SelectItem>
+                                        <SelectItem value="Doctorat">Doctorat</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
                                 <Label style={{color: '#dc2626'}}>Niveau chinois</Label>
-                                <select
-                                    value={formData.languageLevel}
-                                    onChange={(e) => setFormData({...formData, languageLevel: e.target.value})}
-                                    className="w-full p-3 border rounded-lg"
-                                >
-                                    <option value="Débutant">Débutant</option>
-                                    <option value="HSK 1">HSK 1</option>
-                                    <option value="HSK 2">HSK 2</option>
-                                    <option value="HSK 3">HSK 3</option>
-                                    <option value="HSK 4">HSK 4</option>
-                                    <option value="HSK 5">HSK 5</option>
-                                    <option value="HSK 6">HSK 6</option>
-                                </select>
+                                <Select value={formData.languageLevel || 'HSK 3'} onValueChange={(v) => setFormData({...formData, languageLevel: v || 'HSK 3'})}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Débutant">Débutant</SelectItem>
+                                        <SelectItem value="HSK 1">HSK 1</SelectItem>
+                                        <SelectItem value="HSK 2">HSK 2</SelectItem>
+                                        <SelectItem value="HSK 3">HSK 3</SelectItem>
+                                        <SelectItem value="HSK 4">HSK 4</SelectItem>
+                                        <SelectItem value="HSK 5">HSK 5</SelectItem>
+                                        <SelectItem value="HSK 6">HSK 6</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
                                 <Label style={{color: '#dc2626'}}>Type de bourse</Label>
-                                <select
-                                    value={formData.scholarshipType}
-                                    onChange={(e) => setFormData({...formData, scholarshipType: e.target.value})}
-                                    className="w-full p-3 border rounded-lg"
-                                >
-                                    <option value="Complète">Bourse complète</option>
-                                    <option value="Partielle">Bourse partielle</option>
-                                    <option value="Aucune">Aucune bourse</option>
-                                </select>
+                                <Select value={formData.scholarshipType || 'Complète'} onValueChange={(v) => setFormData({...formData, scholarshipType: v || 'Complète'})}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Complète">Bourse complète</SelectItem>
+                                        <SelectItem value="Partielle">Bourse partielle</SelectItem>
+                                        <SelectItem value="Aucune">Aucune bourse</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 
@@ -330,19 +322,18 @@ export default function ApplicationManagement() {
                                         </div>
 
                                         <div className="flex gap-2">
-                                            <select
-                                                value={application.status}
-                                                onChange={(e) => updateApplicationStatus(application.id, e.target.value)}
-                                                className="text-xs font-medium px-2 py-1 rounded border"
-                                            >
-                                                <option value="document_recu">Document reçu</option>
-                                                <option value="en_attente">En attente</option>
-                                                <option value="en_cours">En cours</option>
-                                                <option value="document_manquant">Document manquant</option>
-                                                <option value="admission_validee">Acceptée</option>
-                                                <option value="admission_rejetee">Refusée</option>
-                                                <option value="termine">Terminé</option>
-                                            </select>
+                                            <Select value={application.status} onValueChange={(v) => updateApplicationStatus(application.id, v || application.status)}>
+                                                <SelectTrigger className="text-xs font-medium w-[180px]"><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="document_recu">Document reçu</SelectItem>
+                                                    <SelectItem value="en_attente">En attente</SelectItem>
+                                                    <SelectItem value="en_cours">En cours</SelectItem>
+                                                    <SelectItem value="document_manquant">Document manquant</SelectItem>
+                                                    <SelectItem value="admission_validee">Acceptée</SelectItem>
+                                                    <SelectItem value="admission_rejetee">Refusée</SelectItem>
+                                                    <SelectItem value="termine">Terminé</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                 );

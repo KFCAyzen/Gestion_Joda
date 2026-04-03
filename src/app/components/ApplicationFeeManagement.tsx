@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface ApplicationFee {
     id: string;
@@ -158,18 +165,18 @@ export default function ApplicationFeeManagement() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label style={{color: '#dc2626'}}>Étudiant *</Label>
-                                <select
-                                    value={formData.studentId}
-                                    onChange={(e) => setFormData({...formData, studentId: e.target.value})}
-                                    className="w-full p-3 border rounded-lg"
-                                >
-                                    <option value="">Sélectionner un étudiant</option>
-                                    {students.map(student => (
-                                        <option key={student.id} value={student.id}>
-                                            {student.prenom} {student.nom}
-                                        </option>
-                                    ))}
-                                </select>
+                                <Select value={formData.studentId || ''} onValueChange={(value) => setFormData({...formData, studentId: value || ''})}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionner un étudiant" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {students.map(student => (
+                                            <SelectItem key={student.id} value={student.id}>
+                                                {student.prenom} {student.nom}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
@@ -184,15 +191,16 @@ export default function ApplicationFeeManagement() {
 
                             <div className="space-y-2">
                                 <Label style={{color: '#dc2626'}}>Motif</Label>
-                                <select
-                                    value={formData.motif}
-                                    onChange={(e) => setFormData({...formData, motif: e.target.value})}
-                                    className="w-full p-3 border rounded-lg"
-                                >
-                                    {MOTIFS.map(motif => (
-                                        <option key={motif} value={motif}>{motif}</option>
-                                    ))}
-                                </select>
+                                <Select value={formData.motif || MOTIFS[0]} onValueChange={(value) => setFormData({...formData, motif: value || MOTIFS[0]})}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionner" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {MOTIFS.map(motif => (
+                                            <SelectItem key={motif} value={motif}>{motif}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
