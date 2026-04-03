@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
-import { auth } from "../firebase";
+import { supabase } from "../supabase";
 import { useNotificationContext } from "../context/NotificationContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ChangePasswordProps {
     onClose: () => void;
@@ -31,25 +34,31 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
 
         setLoading(true);
         try {
-            const user = auth.currentUser;
-            if (!user || !user.email) {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
                 showNotification("Utilisateur non connecté", "error");
                 return;
             }
 
-            const credential = EmailAuthProvider.credential(user.email, currentPassword);
-            await reauthenticateWithCredential(user, credential);
-            await updatePassword(user, newPassword);
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+            
+            if (error) {
+                if (error.message.includes("weak")) {
+                    showNotification("Le mot de passe doit contenir au moins 6 caractères", "error");
+                } else {
+                    showNotification("Erreur lors de la modification du mot de passe: " + error.message, "error");
+                }
+                return;
+            }
             
             showNotification("Mot de passe modifié avec succès", "success");
             onClose();
         } catch (error: any) {
             console.error("Erreur:", error);
-            if (error.code === "auth/wrong-password") {
-                showNotification("Mot de passe actuel incorrect", "error");
-            } else {
-                showNotification("Erreur lors de la modification du mot de passe", "error");
-            }
+            showNotification("Erreur lors de la modification du mot de passe", "error");
         } finally {
             setLoading(false);
         }
@@ -57,68 +66,70 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-            <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
-                <h2 className="text-lg sm:text-xl font-bold mb-4" style={{color: '#dc2626'}}>
-                    Modifier le mot de passe
-                </h2>
-                
-                <form onSubmit={handleChangePassword} className="space-y-2 sm:space-y-3 md:space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-1">Mot de passe actuel</label>
-                        <input
-                            type="password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            required
-                            className="w-full p-2 sm:p-3 border rounded text-sm sm:text-base"
-                            style={{borderColor: '#dc2626'}}
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium mb-1">Nouveau mot de passe</label>
-                        <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            required
-                            className="w-full p-2 sm:p-3 border rounded text-sm sm:text-base"
-                            style={{borderColor: '#dc2626'}}
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium mb-1">Confirmer le nouveau mot de passe</label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                            className="w-full p-2 sm:p-3 border rounded text-sm sm:text-base"
-                            style={{borderColor: '#dc2626'}}
-                        />
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="flex-1 px-4 py-2 text-white rounded text-sm sm:text-base font-medium"
-                            style={{backgroundColor: '#dc2626'}}
-                        >
-                            {loading ? "Modification..." : "Modifier"}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-2 border rounded text-sm sm:text-base"
-                            style={{borderColor: '#dc2626', color: '#dc2626'}}
-                        >
-                            Annuler
-                        </button>
-                    </div>
-                </form>
-            </div>
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle style={{color: '#dc2626'}}>
+                        Modifier le mot de passe
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleChangePassword} className="space-y-4">
+                        <div>
+                            <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+                            <Input
+                                id="currentPassword"
+                                type="password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                required
+                                style={{borderColor: '#dc2626'}}
+                            />
+                        </div>
+                        
+                        <div>
+                            <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                            <Input
+                                id="newPassword"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                                style={{borderColor: '#dc2626'}}
+                            />
+                        </div>
+                        
+                        <div>
+                            <Label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</Label>
+                            <Input
+                                id="confirmPassword"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                style={{borderColor: '#dc2626'}}
+                            />
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row gap-2 pt-4">
+                            <Button
+                                type="submit"
+                                disabled={loading}
+                                style={{backgroundColor: '#dc2626'}}
+                            >
+                                {loading ? "Modification..." : "Modifier"}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onClose}
+                                style={{borderColor: '#dc2626', color: '#dc2626'}}
+                            >
+                                Annuler
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
 }

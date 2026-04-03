@@ -12,8 +12,6 @@ import ServiceRequestManagement from "./components/ServiceRequestManagement";
 import UserManagement from "./components/UserManagement";
 import ActivityHistory from "./components/ActivityHistory";
 import PerformanceHistory from "./components/PerformanceHistory";
-// import { useActivityLog } from "./context/ActivityLogContext";
-import { syncLocalStorageToFirebase } from "./utils/syncData";
 import { useNotification } from "./hooks/useNotification";
 import Notification from "./components/Notification";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -23,11 +21,10 @@ import { AuthProvider } from "./context/AuthContext";
 import LoginPage from "./components/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChangePasswordModal from "./components/ChangePasswordModal";
-import CheckoutAlertModal from "./components/CheckoutAlertModal";
-import ChangePassword from "./components/ChangePassword";
 import NotificationsPage from "./components/NotificationsPage";
 import StudentPortal from "./components/StudentPortal";
 import AccountingPage from "./components/AccountingPage";
+import ChangePassword from "./components/ChangePassword";
 
 
 function AppContent() {
@@ -36,28 +33,10 @@ function AppContent() {
     const { notifications, showNotification, removeNotification } = useNotification();
     const [user, setUser] = useState<any>(null);
     const [isLoaded, setIsLoaded] = useState(false);
-    // useActivityLog();
     const [showLogin, setShowLogin] = useState(true);
     const [showPasswordChange, setShowPasswordChange] = useState(false);
-    const [showCheckoutAlert, setShowCheckoutAlert] = useState(false);
     const [showUserPasswordChange, setShowUserPasswordChange] = useState(false);
-    
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                try {
-                    const parsedUser = JSON.parse(savedUser);
-                    setUser(parsedUser);
-                    setShowLogin(false);
-                } catch (e) {
-                    localStorage.removeItem('currentUser');
-                }
-            }
-        }
-        setIsLoaded(true);
-    }, []);
-    
+
     const logout = () => {
         setUser(null);
         if (typeof window !== 'undefined') {
@@ -74,25 +53,6 @@ function AppContent() {
             setShowPasswordChange(false);
         }
     }, [user]);
-
-
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            syncLocalStorageToFirebase();
-            const syncInterval = setInterval(() => {
-                syncLocalStorageToFirebase();
-            }, 30000);
-            const handleBeforeUnload = () => {
-                syncLocalStorageToFirebase();
-            };
-            window.addEventListener('beforeunload', handleBeforeUnload);
-            return () => {
-                clearInterval(syncInterval);
-                window.removeEventListener('beforeunload', handleBeforeUnload);
-            };
-        }
-    }, []);
 
     const renderPage = () => {
         switch (currentPage) {
@@ -119,18 +79,12 @@ function AppContent() {
             case "notifications":
                 return <NotificationsPage />;
             case "comptabilite":
-                return <AccountingPage user={user} />;
+                return <AccountingPage />;
             default:
                 return <ScholarshipDashboard />;
         }
     };
 
-    if (!isLoaded) {
-        return <div className="fixed inset-0 bg-black flex items-center justify-center">
-            <div className="text-white">Chargement...</div>
-        </div>;
-    }
-    
     if (showLogin || !user) {
         return (
             <>
@@ -506,11 +460,6 @@ function AppContent() {
             ))}
 
             {/* Modals */}
-            <CheckoutAlertModal 
-                isOpen={showCheckoutAlert} 
-                onClose={() => setShowCheckoutAlert(false)} 
-            />
-            
             {showUserPasswordChange && (
                 <ChangePassword onClose={() => setShowUserPasswordChange(false)} />
             )}

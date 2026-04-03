@@ -1,11 +1,10 @@
 "use client";
 
-
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { formatPrice } from "../utils/formatPrice";
 import { useNotificationContext } from "../context/NotificationContext";
-
-import { loadFromFirebase } from "../utils/syncData";
+import { supabase } from "../supabase";
+import { useAuth } from "../context/AuthContext";
 import { DashboardData } from "../types/scholarship";
 import { generateAllScholarshipTestData, clearAllScholarshipData } from "../utils/scholarshipData";
 import NewStatsCards from "./NewStatsCards";
@@ -32,7 +31,7 @@ StatCard.displayName = 'StatCard';
 
 export default function ScholarshipDashboard() {
     const { showNotification } = useNotificationContext();
-    const [user, setUser] = useState<any>(null);
+    const { user: authUser } = useAuth();
     const [showSpinner, setShowSpinner] = useState(true);
     const [showConfirmModal, setShowConfirmModal] = useState<{type: 'generate' | 'clear' | null}>({type: null});
     const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -48,44 +47,35 @@ export default function ScholarshipDashboard() {
 
     const loadDashboardData = useCallback(async () => {
         try {
-            const [universities, applications, students, fees] = await Promise.all([
-                loadFromFirebase('universities'),
-                loadFromFirebase('applications'),
-                loadFromFirebase('students'),
-                loadFromFirebase('applicationFees')
-            ]);
-
             const today = new Date().toISOString().split('T')[0];
             
-            const todayApplications = Array.isArray(applications) 
-                ? applications.filter(app => app.applicationDate === today).length 
-                : 0;
+            const [universitiesRes, studentsRes, applicationsRes] = await Promise.all([
+                supabase.from('universities').select('id, active'),
+                supabase.from('students').select('id'),
+                supabase.from('dossier_bourses').select('id, status, created_at')
+            ]);
+
+            const universities = universitiesRes.data || [];
+            const students = studentsRes.data || [];
+            const applications = applicationsRes.data || [];
             
-            const todayRevenue = Array.isArray(fees)
-                ? fees.filter(fee => fee.date === today)
-                       .reduce((sum, fee) => sum + parseInt(fee.amount || '0'), 0)
-                : 0;
+            const todayApplications = applications.filter((app: any) => {
+                const created = app.created_at?.split('T')[0];
+                return created === today;
+            }).length;
+            
+            const todayRevenue = 0;
 
-            const acceptedApplications = Array.isArray(applications)
-                ? applications.filter(app => app.status === 'Acceptée').length
-                : 0;
-
-            const pendingApplications = Array.isArray(applications)
-                ? applications.filter(app => app.status === 'En attente' || app.status === 'En cours').length
-                : 0;
-
-            const rejectedApplications = Array.isArray(applications)
-                ? applications.filter(app => app.status === 'Refusée').length
-                : 0;
+            const acceptedApplications = applications.filter((app: any) => app.status === 'admission_validee').length;
+            const pendingApplications = applications.filter((app: any) => ['document_recu', 'en_attente', 'en_cours'].includes(app.status)).length;
+            const rejectedApplications = applications.filter((app: any) => app.status === 'admission_rejetee').length;
 
             setDashboardData({
-                totalUniversities: Array.isArray(universities) ? universities.length : 0,
-                availableUniversities: Array.isArray(universities) 
-                    ? universities.filter(uni => uni.status === 'Disponible').length 
-                    : 0,
+                totalUniversities: universities.length,
+                availableUniversities: universities.filter((uni: any) => uni.active).length,
                 todayApplications,
                 todayRevenue,
-                totalStudents: Array.isArray(students) ? students.length : 0,
+                totalStudents: students.length,
                 acceptedApplications,
                 pendingApplications,
                 rejectedApplications
@@ -98,12 +88,6 @@ export default function ScholarshipDashboard() {
     }, []);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const currentUser = localStorage.getItem('currentUser');
-            if (currentUser) {
-                setUser(JSON.parse(currentUser));
-            }
-        }
         loadDashboardData();
         
         const handleDataUpdate = () => {
@@ -131,9 +115,9 @@ export default function ScholarshipDashboard() {
             </svg>
         },
         {
-            title: user?.role === 'user' ? "Mes Candidatures" : "Candidatures Aujourd'hui",
+            title: authUser?.role === 'student' ? "Mes Candidatures" : "Candidatures Aujourd'hui",
             value: dashboardData.todayApplications.toString(),
-            subtitle: user?.role === 'user' ? "candidatures actives" : "nouvelles candidatures",
+            subtitle: authUser?.role === 'student' ? "candidatures actives" : "nouvelles candidatures",
             color: "from-green-500 to-green-600",
             change: "+8%",
             icon: <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,9 +125,9 @@ export default function ScholarshipDashboard() {
             </svg>
         },
         {
-            title: user?.role === 'user' ? "Mes Frais" : "Revenus du Jour",
+            title: authUser?.role === 'student' ? "Mes Frais" : "Revenus du Jour",
             value: formatPrice(dashboardData.todayRevenue.toString()),
-            subtitle: user?.role === 'user' ? "frais payés" : "chiffre d'affaires",
+            subtitle: authUser?.role === 'student' ? "frais payés" : "chiffre d'affaires",
             color: "from-purple-500 to-purple-600",
             change: "+15%",
             icon: <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +144,7 @@ export default function ScholarshipDashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
             </svg>
         }
-    ], [dashboardData, user?.role]);
+    ], [dashboardData, authUser?.role]);
 
     if (showSpinner) {
         return (
@@ -179,7 +163,7 @@ export default function ScholarshipDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:p-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                        Bonjour, {user?.name} 👋
+                        Bonjour, {authUser?.name || 'Utilisateur'} 👋
                     </h1>
                     <p className="text-gray-500">
                         Voici un aperçu de vos candidatures de bourses d'études aujourd'hui
@@ -195,7 +179,7 @@ export default function ScholarshipDashboard() {
                         </svg>
                         Actualiser
                     </button>
-                        {user?.role === 'super_admin' && (
+                        {authUser?.role === 'super_admin' && (
                             <div className="flex flex-col sm:flex-row gap-2">
                             <button
                                 onClick={() => setShowConfirmModal({type: 'generate'})}

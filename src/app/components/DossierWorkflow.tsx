@@ -1,11 +1,36 @@
 "use client";
 
-import React from 'react';
-import { useState } from 'react';
-import { useDossiersBourses } from '../hooks/useJodaData';
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../supabase';
 import { useAuth } from '../context/AuthContext';
-import { DossierBourse, DossierStatus } from '../types/joda';
-import { sanitizeForHtml } from '../utils/security';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+interface DossierBourse {
+    id: string;
+    student_id: string;
+    status: string;
+    notes_internes: string;
+    university_id: string;
+    assigned_to: string;
+    created_at: string;
+    updated_at: string;
+}
+
+interface DossierHistory {
+    id: string;
+    dossier_id: string;
+    action: string;
+    status: string;
+    description: string;
+    performed_by: string;
+    performed_at: string;
+}
+
+type DossierStatus = 'document_recu' | 'en_attente' | 'en_cours' | 'document_manquant' | 'admission_validee' | 'admission_rejetee' | 'en_attente_universite' | 'visa_en_cours' | 'termine';
 
 const DOSSIER_STATUSES: { 
     status: DossierStatus; 
@@ -14,74 +39,21 @@ const DOSSIER_STATUSES: {
     description: string;
     nextStatuses: DossierStatus[];
 }[] = [
-    {
-        status: 'document_recu',
-        label: 'Document reçu',
-        color: 'bg-blue-100 text-blue-800',
-        description: 'Les documents ont été reçus et sont en cours de vérification',
-        nextStatuses: ['en_attente', 'document_manquant']
-    },
-    {
-        status: 'en_attente',
-        label: 'En attente',
-        color: 'bg-yellow-100 text-yellow-800',
-        description: 'Dossier en attente de traitement',
-        nextStatuses: ['en_cours', 'document_manquant']
-    },
-    {
-        status: 'en_cours',
-        label: 'En cours',
-        color: 'bg-purple-100 text-purple-800',
-        description: 'Dossier en cours de traitement par l\'équipe',
-        nextStatuses: ['admission_validee', 'admission_rejetee', 'document_manquant']
-    },
-    {
-        status: 'document_manquant',
-        label: 'Document manquant',
-        color: 'bg-orange-100 text-orange-800',
-        description: 'Des documents sont manquants ou non conformes',
-        nextStatuses: ['document_recu', 'en_attente']
-    },
-    {
-        status: 'admission_validee',
-        label: 'Admission validée',
-        color: 'bg-green-100 text-green-800',
-        description: 'L\'admission a été validée par l\'université',
-        nextStatuses: ['en_attente_universite', 'visa_en_cours']
-    },
-    {
-        status: 'admission_rejetee',
-        label: 'Admission rejetée',
-        color: 'bg-red-100 text-red-800',
-        description: 'L\'admission a été rejetée par l\'université',
-        nextStatuses: ['en_attente', 'en_cours'] // Possibilité de repostuler
-    },
-    {
-        status: 'en_attente_universite',
-        label: 'En attente université',
-        color: 'bg-indigo-100 text-indigo-800',
-        description: 'En attente de confirmation de l\'université',
-        nextStatuses: ['visa_en_cours', 'admission_rejetee']
-    },
-    {
-        status: 'visa_en_cours',
-        label: 'Visa en cours',
-        color: 'bg-teal-100 text-teal-800',
-        description: 'Procédure de visa en cours',
-        nextStatuses: ['termine']
-    },
-    {
-        status: 'termine',
-        label: 'Terminé',
-        color: 'bg-green-200 text-green-900',
-        description: 'Dossier terminé avec succès',
-        nextStatuses: []
-    }
+    { status: 'document_recu', label: 'Document reçu', color: 'bg-blue-100 text-blue-800', description: 'Les documents ont été reçus', nextStatuses: ['en_attente', 'document_manquant'] },
+    { status: 'en_attente', label: 'En attente', color: 'bg-yellow-100 text-yellow-800', description: 'Dossier en attente', nextStatuses: ['en_cours', 'document_manquant'] },
+    { status: 'en_cours', label: 'En cours', color: 'bg-purple-100 text-purple-800', description: 'En cours de traitement', nextStatuses: ['admission_validee', 'admission_rejetee', 'document_manquant'] },
+    { status: 'document_manquant', label: 'Document manquant', color: 'bg-orange-100 text-orange-800', description: 'Documents manquants', nextStatuses: ['document_recu', 'en_attente'] },
+    { status: 'admission_validee', label: 'Admission validée', color: 'bg-green-100 text-green-800', description: 'Admission validée', nextStatuses: ['en_attente_universite', 'visa_en_cours'] },
+    { status: 'admission_rejetee', label: 'Admission rejetée', color: 'bg-red-100 text-red-800', description: 'Admission rejetée', nextStatuses: ['en_attente', 'en_cours'] },
+    { status: 'en_attente_universite', label: 'En attente université', color: 'bg-indigo-100 text-indigo-800', description: 'En attente université', nextStatuses: ['visa_en_cours', 'admission_rejetee'] },
+    { status: 'visa_en_cours', label: 'Visa en cours', color: 'bg-teal-100 text-teal-800', description: 'Visa en cours', nextStatuses: ['termine'] },
+    { status: 'termine', label: 'Terminé', color: 'bg-green-200 text-green-900', description: 'Terminé', nextStatuses: [] }
 ];
 
 export default function DossierWorkflow() {
     const { user } = useAuth();
-    const { dossiers, loading, loadDossiersByStatus, changeDossierStatus } = useDossiersBourses();
+    const [dossiers, setDossiers] = useState<DossierBourse[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState<DossierStatus>('en_attente');
     const [statusChangeModal, setStatusChangeModal] = useState<{
         dossier: DossierBourse;
@@ -89,69 +61,58 @@ export default function DossierWorkflow() {
         description: string;
     } | null>(null);
 
+    const loadDossiersByStatus = useCallback(async (status: DossierStatus) => {
+        setLoading(true);
+        const { data } = await supabase
+            .from('dossier_bourses')
+            .select('*')
+            .eq('status', status)
+            .order('created_at', { ascending: false });
+        if (data) setDossiers(data);
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        loadDossiersByStatus(selectedStatus);
+    }, [selectedStatus, loadDossiersByStatus]);
+
     const handleStatusChange = async () => {
-        if (!statusChangeModal) return;
+        if (!statusChangeModal || !user) return;
 
-        const success = await changeDossierStatus(
-            statusChangeModal.dossier.id,
-            statusChangeModal.newStatus,
-            user?.username || 'system',
-            statusChangeModal.description
-        );
+        await supabase.from('dossier_bourses').update({
+            status: statusChangeModal.newStatus,
+            updated_at: new Date().toISOString()
+        }).eq('id', statusChangeModal.dossier.id);
 
-        if (success) {
-            await loadDossiersByStatus(selectedStatus);
-            setStatusChangeModal(null);
-        }
+        await supabase.from('dossier_history').insert({
+            dossier_id: statusChangeModal.dossier.id,
+            action: 'status_change',
+            status: statusChangeModal.newStatus,
+            description: statusChangeModal.description,
+            performed_by: user.id
+        });
+
+        await loadDossiersByStatus(selectedStatus);
+        setStatusChangeModal(null);
     };
 
-    const getStatusConfig = (status: DossierStatus) => {
+    const getStatusConfig = (status: string) => {
         return DOSSIER_STATUSES.find(s => s.status === status);
     };
 
-    const getStatusIcon = (status: DossierStatus) => {
+    const getStatusIcon = (status: string) => {
         switch (status) {
-            case 'document_recu':
-                return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>;
-            case 'en_attente':
-                return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>;
-            case 'en_cours':
-                return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>;
-            case 'document_manquant':
-                return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>;
-            case 'admission_validee':
-                return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>;
-            case 'admission_rejetee':
-                return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>;
-            case 'visa_en_cours':
-                return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>;
-            case 'termine':
-                return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>;
-            default:
-                return null;
+            case 'document_recu': return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
+            case 'en_attente': return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+            case 'en_cours': return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
+            case 'document_manquant': return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>;
+            case 'admission_validee': return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+            case 'admission_rejetee': return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+            case 'visa_en_cours': return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
+            case 'termine': return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
+            default: return null;
         }
     };
-
-    // Charger les dossiers quand le statut sélectionné change
-    React.useEffect(() => {
-        loadDossiersByStatus(selectedStatus);
-    }, [selectedStatus, loadDossiersByStatus]);
 
     if (loading) {
         return (
@@ -171,19 +132,20 @@ export default function DossierWorkflow() {
                     Workflow des Dossiers de Bourses
                 </h1>
                 <p className="text-gray-600">
-                    Gérez le suivi des dossiers d'étudiants à travers les différentes étapes du processus
+                    Gérez le suivi des dossiers d'étudiants à travers les différentes étapes
                 </p>
             </div>
 
-            {/* Filtres par statut */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
-                <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-lg font-semibold text-slate-800 mb-4">Filtrer par statut</h2>
+            <Card className="mb-6">
+                <CardHeader>
+                    <CardTitle>Filtrer par statut</CardTitle>
+                </CardHeader>
+                <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                         {DOSSIER_STATUSES.map((statusConfig) => (
                             <button
                                 key={statusConfig.status}
-                                onClick={() => setSelectedStatus(statusConfig.status)}
+                                onClick={() => setSelectedStatus(statusConfig.status as DossierStatus)}
                                 className={`p-3 rounded-lg border-2 transition-all ${
                                     selectedStatus === statusConfig.status
                                         ? 'border-red-500 bg-red-50'
@@ -202,23 +164,16 @@ export default function DossierWorkflow() {
                             </button>
                         ))}
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
-            {/* Liste des dossiers */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-xl font-semibold text-slate-800">
-                        Dossiers - {getStatusConfig(selectedStatus)?.label} ({dossiers.length})
-                    </h2>
-                </div>
-                
-                <div className="p-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Dossiers - {getStatusConfig(selectedStatus)?.label} ({dossiers.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
                     {dossiers.length === 0 ? (
                         <div className="text-center py-12">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                {getStatusIcon(selectedStatus)}
-                            </div>
                             <p className="text-gray-500">Aucun dossier avec ce statut</p>
                         </div>
                     ) : (
@@ -228,66 +183,39 @@ export default function DossierWorkflow() {
                                     <div className="flex items-start justify-between mb-4">
                                         <div>
                                             <h3 className="font-semibold text-gray-900 mb-1">
-                                                Dossier #{sanitizeForHtml(dossier.id)}
+                                                Dossier #{dossier.id.slice(0, 8)}
                                             </h3>
                                             <p className="text-sm text-gray-600">
-                                                Étudiant ID: {sanitizeForHtml(dossier.studentId)}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                                Assigné à: {sanitizeForHtml(dossier.assignedTo || 'Non assigné')}
+                                                Étudiant ID: {dossier.student_id?.slice(0, 8)}
                                             </p>
                                         </div>
-                                        
-                                        <div className="flex items-center gap-2">
-                                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusConfig(dossier.status)?.color}`}>
-                                                {getStatusConfig(dossier.status)?.label}
-                                            </div>
-                                        </div>
+                                        <Badge className={getStatusConfig(dossier.status)?.color}>
+                                            {getStatusConfig(dossier.status)?.label}
+                                        </Badge>
                                     </div>
 
-                                    {/* Notes internes */}
                                     {dossier.notes_internes && user?.role !== 'student' && (
                                         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                             <p className="text-sm font-medium text-yellow-800 mb-1">Notes internes :</p>
-                                            <p className="text-sm text-yellow-700">{sanitizeForHtml(dossier.notes_internes)}</p>
+                                            <p className="text-sm text-yellow-700">{dossier.notes_internes}</p>
                                         </div>
                                     )}
 
-                                    {/* Historique récent */}
-                                    {dossier.historique.length > 0 && (
-                                        <div className="mb-4">
-                                            <h4 className="text-sm font-medium text-gray-700 mb-2">Dernières actions :</h4>
-                                            <div className="space-y-2">
-                                                {dossier.historique.slice(-3).map((entry, index) => (
-                                                    <div key={index} className="flex items-start gap-3 text-sm">
-                                                        <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
-                                                        <div>
-                                                            <p className="text-gray-900">{sanitizeForHtml(entry.description)}</p>
-                                                            <p className="text-gray-500 text-xs">
-                                                                {new Date(entry.performedAt).toLocaleDateString('fr-FR')} par {sanitizeForHtml(entry.performedBy)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Actions possibles */}
                                     {user?.role !== 'student' && (
                                         <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
                                             {getStatusConfig(dossier.status)?.nextStatuses.map((nextStatus) => (
-                                                <button
+                                                <Button
                                                     key={nextStatus}
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={() => setStatusChangeModal({
                                                         dossier,
                                                         newStatus: nextStatus,
                                                         description: ''
                                                     })}
-                                                    className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors"
                                                 >
                                                     → {getStatusConfig(nextStatus)?.label}
-                                                </button>
+                                                </Button>
                                             ))}
                                         </div>
                                     )}
@@ -295,10 +223,9 @@ export default function DossierWorkflow() {
                             ))}
                         </div>
                     )}
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
-            {/* Modal de changement de statut */}
             {statusChangeModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
@@ -307,46 +234,29 @@ export default function DossierWorkflow() {
                                 Changer le statut du dossier
                             </h3>
                         </div>
-                        
                         <div className="p-6">
-                            <div className="mb-4">
-                                <p className="text-gray-600 mb-2">
-                                    Passer de <span className="font-semibold">{getStatusConfig(statusChangeModal.dossier.status)?.label}</span> à <span className="font-semibold">{getStatusConfig(statusChangeModal.newStatus)?.label}</span>
-                                </p>
-                            </div>
-                            
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Description de l'action *
-                                </label>
-                                <textarea
+                            <p className="text-gray-600 mb-4">
+                                Passer de <span className="font-semibold">{getStatusConfig(statusChangeModal.dossier.status)?.label}</span> à <span className="font-semibold">{getStatusConfig(statusChangeModal.newStatus)?.label}</span>
+                            </p>
+                            <div className="space-y-2">
+                                <Label>Description de l'action *</Label>
+                                <Input
                                     value={statusChangeModal.description}
                                     onChange={(e) => setStatusChangeModal({
                                         ...statusChangeModal,
                                         description: e.target.value
                                     })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                    rows={3}
-                                    placeholder="Décrivez la raison de ce changement de statut..."
-                                    required
+                                    placeholder="Décrivez la raison de ce changement..."
                                 />
                             </div>
                         </div>
-                        
                         <div className="p-6 border-t border-gray-200 flex gap-3">
-                            <button
-                                onClick={() => setStatusChangeModal(null)}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
+                            <Button variant="outline" onClick={() => setStatusChangeModal(null)} className="flex-1">
                                 Annuler
-                            </button>
-                            <button
-                                onClick={handleStatusChange}
-                                disabled={!statusChangeModal.description.trim()}
-                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
+                            </Button>
+                            <Button onClick={handleStatusChange} disabled={!statusChangeModal.description.trim()} className="flex-1">
                                 Confirmer
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

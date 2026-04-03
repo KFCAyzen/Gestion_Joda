@@ -199,6 +199,33 @@ ALTER TABLE sorties_comptables ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
+-- Table Bills (performances/historique)
+CREATE TABLE IF NOT EXISTS bills (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE NOT NULL,
+  amount INTEGER NOT NULL,
+  motif VARCHAR(20) CHECK (motif IN ('Repos', 'Nuitée')),
+  created_by VARCHAR(100),
+  received_from VARCHAR(255),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index for bills
+CREATE INDEX IF NOT EXISTS idx_bills_date ON bills(date);
+CREATE INDEX IF NOT EXISTS idx_bills_created_by ON bills(created_by);
+
+-- Enable RLS for bills
+ALTER TABLE bills ENABLE ROW LEVEL SECURITY;
+
+-- Politique RLS pour les bills
+CREATE POLICY "bills_access_policy" ON bills
+  FOR ALL
+  USING (
+    created_by = (SELECT username FROM users WHERE id = auth.uid() LIMIT 1)
+    OR EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('admin', 'supervisor'))
+  );
+
 -- Politique RLS pour les étudiants (accès par user_id ou agent/admin)
 CREATE POLICY "students_access_policy" ON students
   FOR ALL
