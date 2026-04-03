@@ -3,6 +3,7 @@
 import { Payment, Student } from "../types/joda";
 import { formatPrice } from "../utils/formatPrice";
 import { sanitizeForHtml } from "../utils/security";
+import { Button } from "@/components/ui/button";
 
 interface ReceiptGeneratorProps {
     payment: Payment;
@@ -301,21 +302,21 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                 </div>
                 
                 <div className="flex justify-end space-x-3">
-                    <button
+                    <Button
+                        variant="outline"
                         onClick={onClose}
-                        className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                         Annuler
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => {
                             generatePDF();
                             onClose();
                         }}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        className="bg-red-600 hover:bg-red-700"
                     >
                         Générer le reçu
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

@@ -10,6 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Table,
     TableBody,
     TableCell,
@@ -278,15 +285,15 @@ export default function StudentManagement() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="sexe">Sexe *</Label>
-                                        <select 
-                                            id="sexe"
-                                            value={formData.sexe} 
-                                            onChange={e => setFormData({...formData, sexe: e.target.value})}
-                                            className="w-full p-2 border rounded-md"
-                                        >
-                                            <option value="M">Homme</option>
-                                            <option value="F">Femme</option>
-                                        </select>
+                                        <Select value={formData.sexe || 'M'} onValueChange={(value) => setFormData({...formData, sexe: value || 'M'})}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Sélectionner" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="M">Homme</SelectItem>
+                                                <SelectItem value="F">Femme</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="niveau">Niveau d'études *</Label>
@@ -325,16 +332,16 @@ export default function StudentManagement() {
                                     </div>
                                     <div className="space-y-2 sm:col-span-2">
                                         <Label htmlFor="choix">Choix de procedure</Label>
-                                        <select 
-                                            id="choix"
-                                            value={formData.choix} 
-                                            onChange={e => setFormData({...formData, choix: e.target.value})}
-                                            className="w-full p-2 border rounded-md"
-                                        >
-                                            <option value="procedure_seule">Procedure seule</option>
-                                            <option value="procedure_cours">Procedure + Cours</option>
-                                            <option value="cours_seuls">Cours seuls</option>
-                                        </select>
+                                        <Select value={formData.choix || 'procedure_seule'} onValueChange={(value) => setFormData({...formData, choix: value || 'procedure_seule'})}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Sélectionner" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="procedure_seule">Procedure seule</SelectItem>
+                                                <SelectItem value="procedure_cours">Procedure + Cours</SelectItem>
+                                                <SelectItem value="cours_seuls">Cours seuls</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </div>
                                 <div className="flex gap-2 justify-end pt-4">
