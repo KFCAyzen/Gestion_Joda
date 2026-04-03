@@ -2,6 +2,14 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ScholarshipFile {
   id: string;
@@ -250,26 +258,27 @@ export default function ScholarshipFileManagement() {
             <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input
+            <Input
               type="text"
               placeholder="Rechercher par nom, université ou programme..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+              className="pl-10 bg-white/80 backdrop-blur-sm"
             />
           </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-6 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all min-w-[200px]"
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="incomplete">Incomplet</option>
-            <option value="pending">En attente</option>
-            <option value="review">En révision</option>
-            <option value="approved">Approuvé</option>
-            <option value="rejected">Rejeté</option>
-          </select>
+          <Select value={filterStatus || 'all'} onValueChange={(v) => setFilterStatus(v || 'all')}>
+            <SelectTrigger className="w-[200px] bg-white/80 backdrop-blur-sm">
+              <SelectValue placeholder="Tous les statuts" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              <SelectItem value="incomplete">Incomplet</SelectItem>
+              <SelectItem value="pending">En attente</SelectItem>
+              <SelectItem value="review">En révision</SelectItem>
+              <SelectItem value="approved">Approuvé</SelectItem>
+              <SelectItem value="rejected">Rejeté</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
