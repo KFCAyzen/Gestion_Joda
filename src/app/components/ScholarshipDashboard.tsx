@@ -9,6 +9,7 @@ import { DashboardData } from "../types/scholarship";
 import { generateAllScholarshipTestData, clearAllScholarshipData } from "../utils/scholarshipData";
 import NewStatsCards from "./NewStatsCards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const StatCard = memo(({ stat, index, isLoading }: { stat: any; index: number; isLoading?: boolean }) => (
     <Card key={index} className={isLoading ? 'animate-pulse' : ''}>
@@ -170,29 +171,33 @@ export default function ScholarshipDashboard() {
                     </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                    <button
+                    <Button
+                        variant="outline"
                         onClick={loadDashboardData}
-                        className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition-colors flex items-center"
+                        className="flex items-center"
                     >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         Actualiser
-                    </button>
+                    </Button>
                         {authUser?.role === 'super_admin' && (
                             <div className="flex flex-col sm:flex-row gap-2">
-                            <button
+                            <Button
+                                variant="default"
                                 onClick={() => setShowConfirmModal({type: 'generate'})}
-                                className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors"
+                                className="bg-blue-500 hover:bg-blue-600"
+                                size="sm"
                             >
                                 Données test
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="destructive"
                                 onClick={() => setShowConfirmModal({type: 'clear'})}
-                                className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium transition-colors"
+                                size="sm"
                             >
                                 Nettoyer
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>
@@ -304,7 +309,7 @@ export default function ScholarshipDashboard() {
                 }}>
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-gray-900">Suivi des Objectifs</h3>
-                        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Voir tout</button>
+                        <Button variant="link" className="text-sm p-0 h-auto text-blue-600">Voir tout</Button>
                     </div>
                     
                     <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
@@ -385,7 +390,7 @@ export default function ScholarshipDashboard() {
                 }}>
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-gray-900">Candidatures Récentes</h3>
-                        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Voir tout</button>
+                        <Button variant="link" className="text-sm p-0 h-auto text-blue-600">Voir tout</Button>
                     </div>
                     <div className="space-y-2 sm:space-y-3 md:space-y-4">
                         <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-xl transition-colors">
@@ -445,7 +450,7 @@ export default function ScholarshipDashboard() {
                 }}>
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-gray-900">Activité Récente</h3>
-                        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Voir tout</button>
+                        <Button variant="link" className="text-sm p-0 h-auto text-blue-600">Voir tout</Button>
                     </div>
                     <div className="space-y-2 sm:space-y-3 md:space-y-4">
                         <div className="flex items-start space-x-3">
@@ -507,7 +512,7 @@ export default function ScholarshipDashboard() {
                 }}>
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-gray-900">Universités Populaires</h3>
-                        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Voir toutes</button>
+                        <Button variant="link" className="text-sm p-0 h-auto text-blue-600">Voir toutes</Button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:p-4">
                         <div className="flex items-center space-x-4 p-3 sm:p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors">
@@ -574,7 +579,7 @@ export default function ScholarshipDashboard() {
                 }}>
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-gray-900">Échéances</h3>
-                        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Calendrier</button>
+                        <Button variant="link" className="text-sm p-0 h-auto text-blue-600">Calendrier</Button>
                     </div>
                     <div className="space-y-2 sm:space-y-3 md:space-y-4">
                         <div className="flex items-start space-x-3 p-3 bg-red-50 rounded-xl">
@@ -626,13 +631,15 @@ export default function ScholarshipDashboard() {
                                 : 'Cette action est irréversible. Toutes les données seront supprimées.'}
                         </p>
                         <div className="flex gap-3">
-                            <button
+                            <Button
+                                variant="outline"
                                 onClick={() => setShowConfirmModal({type: null})}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                                className="flex-1"
                             >
                                 Annuler
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant={showConfirmModal.type === 'generate' ? 'default' : 'destructive'}
                                 onClick={async () => {
                                     if (showConfirmModal.type === 'generate') {
                                         const success = await generateAllScholarshipTestData();
@@ -653,12 +660,10 @@ export default function ScholarshipDashboard() {
                                     }
                                     setShowConfirmModal({type: null});
                                 }}
-                                className={`flex-1 px-4 py-2 text-white rounded-lg ${
-                                    showConfirmModal.type === 'generate' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-red-500 hover:bg-red-600'
-                                }`}
+                                className="flex-1"
                             >
                                 Confirmer
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
