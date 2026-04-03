@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 interface NotificationProps {
     message: string;
@@ -62,17 +63,19 @@ export default function Notification({ message, type, onClose }: NotificationPro
             <div className={`flex items-center gap-3 p-4 rounded-lg border shadow-lg max-w-sm ${getStyles()}`}>
                 {getIcon()}
                 <p className="text-sm font-medium flex-1">{message}</p>
-                <button
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                         setIsVisible(false);
                         setTimeout(onClose, 300);
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 p-1 h-auto"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                </button>
+                </Button>
             </div>
         </div>
     );
