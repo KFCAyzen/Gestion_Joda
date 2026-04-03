@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Geist } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils";
+import { QueryProvider } from "./lib/providers/query-provider";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <body className={inter.className} suppressHydrationWarning>
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
       </body>
     </html>
   )
