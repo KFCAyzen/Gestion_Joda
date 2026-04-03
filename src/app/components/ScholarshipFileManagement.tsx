@@ -471,25 +471,20 @@ export default function ScholarshipFileManagement() {
                       </svg>
                       <label>Statut du dossier</label>
                     </div>
-                    <select
-                      value={selectedFile.status}
-                      onChange={(e) => {
-                        const newStatus = e.target.value as ScholarshipFile['status'];
-                        setFiles(files.map(f => 
-                          f.id === selectedFile.id 
-                            ? { ...f, status: newStatus, lastUpdate: new Date().toISOString().split('T')[0] }
-                            : f
-                        ));
-                        setSelectedFile({ ...selectedFile, status: newStatus });
-                      }}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 font-medium"
-                    >
-                      <option value="incomplete">Incomplet</option>
-                      <option value="pending">En attente</option>
-                      <option value="review">En révision</option>
-                      <option value="approved">Approuvé</option>
-                      <option value="rejected">Rejeté</option>
-                    </select>
+                    <Select value={selectedFile.status} onValueChange={(v) => {
+                      const newStatus = (v || 'pending') as ScholarshipFile['status'];
+                      setFiles(files.map(f => f.id === selectedFile.id ? { ...f, status: newStatus, lastUpdate: new Date().toISOString().split('T')[0] } : f));
+                      setSelectedFile({ ...selectedFile, status: newStatus });
+                    }}>
+                      <SelectTrigger className="w-full bg-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="incomplete">Incomplet</SelectItem>
+                        <SelectItem value="pending">En attente</SelectItem>
+                        <SelectItem value="review">En révision</SelectItem>
+                        <SelectItem value="approved">Approuvé</SelectItem>
+                        <SelectItem value="rejected">Rejeté</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
