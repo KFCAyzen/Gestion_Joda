@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 interface Application {
     id: string;
     universityName: string;
@@ -21,7 +23,7 @@ export default function StudentApplicationsList({ applications, onBack, getStatu
             <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900">Toutes mes candidatures</h3>
-                    <button onClick={onBack} className="text-xs sm:text-sm text-gray-600 hover:text-gray-900">← Retour</button>
+                    <Button variant="link" onClick={onBack} className="text-xs sm:text-sm p-0 h-auto text-gray-600">← Retour</Button>
                 </div>
             </div>
             <div className="p-6">

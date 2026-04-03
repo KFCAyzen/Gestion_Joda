@@ -1,6 +1,7 @@
 "use client";
 
 import StudentStatsCard from './StudentStatsCard';
+import { Button } from "@/components/ui/button";
 
 interface Application {
     id: string;
@@ -259,7 +260,7 @@ function DashboardCard({ title, items, emptyMessage, onViewAll, renderItem }: an
         <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-3 sm:p-4 md:p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
                 <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">{title}</h3>
-                <button onClick={onViewAll} className="text-xs sm:text-sm text-red-600 hover:text-red-700">Voir tout</button>
+                <Button variant="link" onClick={onViewAll} className="text-xs sm:text-sm p-0 h-auto text-red-600">Voir tout</Button>
             </div>
             <div className="space-y-1.5 sm:space-y-2 md:space-y-3">
                 {items.length === 0 ? (

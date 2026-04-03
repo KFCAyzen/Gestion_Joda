@@ -1,5 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 interface Document {
     id: string;
     type: string;
@@ -22,7 +25,7 @@ export default function StudentDocumentsList({ documents, onBack, onFileUpload }
             <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestion des documents</h3>
-                    <button onClick={onBack} className="text-xs sm:text-sm text-gray-600 hover:text-gray-900">← Retour</button>
+                    <Button variant="link" onClick={onBack} className="text-xs sm:text-sm p-0 h-auto text-gray-600">← Retour</Button>
                 </div>
             </div>
             <div className="p-6">
@@ -33,7 +36,7 @@ export default function StudentDocumentsList({ documents, onBack, onFileUpload }
                             <div key={docType} className="flex items-center justify-between p-3 bg-white rounded-lg">
                                 <span className="text-xs sm:text-sm text-gray-700">{docType}</span>
                                 <label className="cursor-pointer">
-                                    <input 
+                                    <Input 
                                         type="file" 
                                         className="hidden" 
                                         onChange={(e) => onFileUpload(e, docType)}
