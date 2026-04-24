@@ -44,8 +44,14 @@ export default function Notification({ message, type, onClose }: NotificationPro
             animate="animate"
             exit="exit"
         >
-            <div className={`relative flex items-start gap-3 p-4 rounded-xl border shadow-xl overflow-hidden ${cfg.bg} ${cfg.border}`}>
-                {cfg.icon}
+            <div className={`relative flex items-start gap-3 p-4 rounded-xl border shadow-2xl overflow-hidden ${cfg.bg} ${cfg.border}`}>
+                <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 18, delay: 0.1 }}
+                >
+                    {cfg.icon}
+                </motion.div>
                 <p className={`text-sm font-medium flex-1 ${cfg.text}`}>{message}</p>
                 <motion.button
                     onClick={onClose}
