@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toastVariants } from "../utils/animations";
 
 interface NotificationProps {
     message: string;
@@ -9,74 +10,63 @@ interface NotificationProps {
     onClose: () => void;
 }
 
+const CONFIG = {
+    success: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', bar: 'bg-green-500', icon: (
+        <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+    )},
+    error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', bar: 'bg-red-500', icon: (
+        <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    )},
+    info: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', bar: 'bg-blue-500', icon: (
+        <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    )},
+};
+
 export default function Notification({ message, type, onClose }: NotificationProps) {
-    const [isVisible, setIsVisible] = useState(false);
+    const cfg = CONFIG[type];
 
     useEffect(() => {
-        setIsVisible(true);
-        const timer = setTimeout(() => {
-            setIsVisible(false);
-            setTimeout(onClose, 300);
-        }, 4000);
-
-        return () => clearTimeout(timer);
+        const t = setTimeout(onClose, 4000);
+        return () => clearTimeout(t);
     }, [onClose]);
 
-    const getStyles = () => {
-        switch (type) {
-            case 'success':
-                return 'bg-green-50 border-green-200 text-green-800';
-            case 'error':
-                return 'bg-red-50 border-red-200 text-red-800';
-            default:
-                return 'bg-blue-50 border-blue-200 text-blue-800';
-        }
-    };
-
-    const getIcon = () => {
-        switch (type) {
-            case 'success':
-                return (
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                );
-            case 'error':
-                return (
-                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                );
-            default:
-                return (
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                );
-        }
-    };
-
     return (
-        <div className={`fixed top-4 right-4 z-50 transition-all duration-300 ${
-            isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-        }`}>
-            <div className={`flex items-center gap-3 p-4 rounded-lg border shadow-lg max-w-sm ${getStyles()}`}>
-                {getIcon()}
-                <p className="text-sm font-medium flex-1">{message}</p>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                        setIsVisible(false);
-                        setTimeout(onClose, 300);
-                    }}
-                    className="text-gray-400 hover:text-gray-600 p-1 h-auto"
+        <motion.div
+            className="fixed top-4 right-4 z-[9999] max-w-sm w-full"
+            variants={toastVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+        >
+            <div className={`relative flex items-start gap-3 p-4 rounded-xl border shadow-xl overflow-hidden ${cfg.bg} ${cfg.border}`}>
+                {cfg.icon}
+                <p className={`text-sm font-medium flex-1 ${cfg.text}`}>{message}</p>
+                <motion.button
+                    onClick={onClose}
+                    className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                    whileHover={{ scale: 1.2, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    transition={{ duration: 0.15 }}
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                </Button>
+                </motion.button>
+
+                {/* Barre de progression */}
+                <motion.div
+                    className={`absolute bottom-0 left-0 h-0.5 ${cfg.bar}`}
+                    initial={{ width: "100%" }}
+                    animate={{ width: "0%" }}
+                    transition={{ duration: 4, ease: "linear" }}
+                />
             </div>
-        </div>
+        </motion.div>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { formatPrice } from "../utils/formatPrice";
 import { useNotificationContext } from "../context/NotificationContext";
 import { supabase } from "../supabase";
@@ -10,8 +11,10 @@ import { generateAllScholarshipTestData, clearAllScholarshipData } from "../util
 import NewStatsCards from "./NewStatsCards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { staggerContainer, staggerItem, scaleIn, slideUp, overlayVariants, buttonTap } from "../utils/animations";
 
 const StatCard = memo(({ stat, index, isLoading }: { stat: any; index: number; isLoading?: boolean }) => (
+    <motion.div variants={staggerItem} whileHover={{ y: -4, boxShadow: '0 12px 28px rgba(0,0,0,0.12)' }} transition={{ duration: 0.2 }}>
     <Card key={index} className={isLoading ? 'animate-pulse' : ''}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
@@ -26,6 +29,7 @@ const StatCard = memo(({ stat, index, isLoading }: { stat: any; index: number; i
             </p>
         </CardContent>
     </Card>
+    </motion.div>
 ));
 
 StatCard.displayName = 'StatCard';
@@ -159,9 +163,12 @@ export default function ScholarshipDashboard() {
     }
 
     return (
-        <div className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6">
-            {/* Header with greeting */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:p-4">
+        <motion.div
+            className="space-y-3 sm:space-y-2 sm:space-y-3 md:space-y-4 md:space-y-6"
+            variants={staggerContainer} initial="initial" animate="animate"
+        >
+            {/* Header */}
+            <motion.div variants={slideUp} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:p-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-1">
                         Bonjour, {authUser?.name || 'Utilisateur'} 👋
@@ -201,13 +208,15 @@ export default function ScholarshipDashboard() {
                         </div>
                     )}
                 </div>
-            </div>
+            </motion.div>
 
             {/* Main Stats Cards */}
-            <NewStatsCards dashboardData={dashboardData} />
+            <motion.div variants={staggerItem}>
+                <NewStatsCards dashboardData={dashboardData} />
+            </motion.div>
 
             {/* Project Analytics */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <motion.div variants={staggerItem} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(20px)',
@@ -377,10 +386,10 @@ export default function ScholarshipDashboard() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Recent Applications & Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div variants={staggerItem} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Recent Applications */}
                 <div className="rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
@@ -499,10 +508,10 @@ export default function ScholarshipDashboard() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Universities & Calendar */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <motion.div variants={staggerItem} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Top Universities */}
                 <div className="lg:col-span-2 rounded-2xl p-4 sm:p-6 border" style={{
                     background: 'rgba(255, 255, 255, 0.9)',
@@ -616,12 +625,19 @@ export default function ScholarshipDashboard() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Confirmation Modal */}
+            <AnimatePresence>
             {showConfirmModal.type && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                <motion.div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    variants={overlayVariants} initial="initial" animate="animate" exit="exit"
+                >
+                    <motion.div
+                        className="bg-white rounded-xl p-6 max-w-md w-full"
+                        variants={scaleIn} initial="initial" animate="animate" exit="exit"
+                    >
                         <h3 className="text-lg font-bold text-gray-900 mb-4">
                             {showConfirmModal.type === 'generate' ? 'Générer des données de test ?' : 'Nettoyer toutes les données ?'}
                         </h3>
@@ -665,9 +681,10 @@ export default function ScholarshipDashboard() {
                                 Confirmer
                             </Button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
-        </div>
+            </AnimatePresence>
+        </motion.div>
     );
 }
