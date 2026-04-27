@@ -21,6 +21,7 @@ interface Student {
     id: string;
     nom: string;
     prenom: string;
+    email?: string;
 }
 
 interface University {
@@ -70,7 +71,7 @@ export default function ApplicationManagement() {
         try {
             const [applicationsRes, studentsRes, universitiesRes] = await Promise.all([
                 supabase.from("dossier_bourses").select("*").order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom"),
+                supabase.from("students").select("id, nom, prenom, email"),
                 supabase.from("universities").select("id, nom, active").eq("active", true),
             ]);
 
@@ -95,9 +96,9 @@ export default function ApplicationManagement() {
         }
 
         try {
-            const { error } = await supabase.from("dossier_bourses").insert({
+            const { data: dossier, error } = await supabase.from("dossier_bourses").insert({
                 student_id: formData.studentId,
-                status: "document_recu",
+                status: "en_attente_documents",
                 desired_program: formData.desiredProgram,
                 study_level: formData.studyLevel,
                 language_level: formData.languageLevel,
@@ -105,9 +106,44 @@ export default function ApplicationManagement() {
                 notes_internes: `Programme: ${formData.desiredProgram}, Niveau: ${formData.studyLevel}, Langue: ${formData.languageLevel}, Bourse: ${formData.scholarshipType}`,
                 university_id: formData.universityId,
                 assigned_to: user?.id,
-            });
+            }).select().single();
 
-            if (!error) {
+            if (!error && dossier) {
+                // Récupérer l'user_id de l'étudiant pour la notif
+                const { data: studentUser } = await supabase
+                    .from("students")
+                    .select("created_by")
+                    .eq("id", formData.studentId)
+                    .single();
+
+                const university = universities.find(u => u.id === formData.universityId);
+                const student = students.find(s => s.id === formData.studentId);
+
+                if (studentUser?.created_by) {
+                    await supabase.from("notifications").insert({
+                        user_id: studentUser.created_by,
+                        type: "mise_a_jour_dossier",
+                        titre: "Nouvelle candidature créée",
+                        message: `Votre dossier de candidature pour ${university?.nom || "une université"} (${formData.desiredProgram}) a été ouvert. Veuillez uploader vos documents pour faire avancer votre dossier.`,
+                        read: false,
+                    });
+                }
+
+                if (student?.email) {
+                    fetch("/api/send-application", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            studentName: `${student.prenom} ${student.nom}`,
+                            studentEmail: student.email,
+                            universityName: university?.nom,
+                            desiredProgram: formData.desiredProgram,
+                            studyLevel: formData.studyLevel,
+                            scholarshipType: formData.scholarshipType,
+                        }),
+                    }).catch(err => console.warn("Email candidature:", err));
+                }
+
                 showNotification("Candidature enregistrée avec succès !", "success");
                 setShowForm(false);
                 setFormData({
@@ -120,6 +156,8 @@ export default function ApplicationManagement() {
                     applicationFee: "",
                 });
                 await loadData();
+            } else if (error) {
+                showNotification("Erreur lors de l'enregistrement", "error");
             }
         } catch (error) {
             showNotification("Erreur lors de l'enregistrement", "error");
