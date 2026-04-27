@@ -88,14 +88,26 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [documents, setDocuments] = useState<Document[]>([]);
     const [dossier, setDossier] = useState<DossierBourse | null>(null);
     const [loading, setLoading] = useState(true);
+    const [studentId, setStudentId] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
         try {
+            // Récupérer l'ID étudiant depuis la table students via created_by
+            const { data: studentData } = await supabase
+                .from("students")
+                .select("id")
+                .eq("created_by", user.id)
+                .single();
+
+            const sid = studentData?.id;
+            if (!sid) { setLoading(false); return; }
+            setStudentId(sid);
+
             const [pays, docs, dossiers] = await Promise.all([
-                supabase.from("payments").select("*").eq("student_id", user.id).order("created_at", { ascending: false }),
-                supabase.from("documents").select("*").eq("student_id", user.id).order("created_at", { ascending: false }),
-                supabase.from("dossier_bourses").select("*").eq("student_id", user.id).order("created_at", { ascending: false }).limit(1),
+                supabase.from("payments").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
+                supabase.from("documents").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
+                supabase.from("dossier_bourses").select("*").eq("student_id", sid).order("created_at", { ascending: false }).limit(1),
             ]);
             setPayments(pays.data || []);
             setDocuments(docs.data || []);
