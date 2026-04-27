@@ -30,7 +30,7 @@ export function proxy(request: NextRequest) {
     
     // Routes publiques qui ne nécessitent pas d'authentification
     const publicRoutes = ['/', '/login', '/signup', '/forgot-password', '/reset-password'];
-    const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/api/auth');
+    const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith('/api/auth') || pathname.startsWith('/api/');
     
     // Si la route est publique, laisser passer
     if (isPublicRoute) {

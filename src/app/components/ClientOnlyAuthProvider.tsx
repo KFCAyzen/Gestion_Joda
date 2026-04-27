@@ -23,7 +23,7 @@ interface AuthContextType {
     changePassword: (newPassword: string) => Promise<boolean>;
     deleteUser: (userId: string) => Promise<boolean>;
     canDeleteUser: (targetUser: User) => boolean;
-    resetUserPassword: (userId: string) => Promise<boolean>;
+    resetUserPassword: (userId: string, newPassword: string) => Promise<boolean>;
     canResetPassword: (targetUser: User) => boolean;
     isLoaded: boolean;
 }
@@ -93,7 +93,7 @@ export function ClientOnlyAuthProvider({ children }: { children: ReactNode }) {
     const changePassword = async (): Promise<boolean> => false;
     const deleteUser = async (): Promise<boolean> => false;
     const canDeleteUser = (): boolean => false;
-    const resetUserPassword = async (): Promise<boolean> => false;
+    const resetUserPassword = async (_userId: string, _newPassword: string): Promise<boolean> => false;
     const canResetPassword = (): boolean => false;
 
     return (
