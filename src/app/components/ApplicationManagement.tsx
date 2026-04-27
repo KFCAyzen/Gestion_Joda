@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import { useNotificationContext } from "../context/NotificationContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ interface ScholarshipApplication {
 
 export default function ApplicationManagement() {
     const { user } = useAuth();
+    const { showNotification } = useNotificationContext();
     const [showForm, setShowForm] = useState(false);
     const [applications, setApplications] = useState<ScholarshipApplication[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
@@ -88,7 +90,7 @@ export default function ApplicationManagement() {
 
     const handleSaveApplication = async () => {
         if (!formData.studentId || !formData.universityId || !formData.desiredProgram) {
-            alert("Veuillez remplir tous les champs obligatoires");
+            showNotification("Veuillez remplir tous les champs obligatoires", "error");
             return;
         }
 
@@ -106,7 +108,7 @@ export default function ApplicationManagement() {
             });
 
             if (!error) {
-                alert("Candidature enregistrée avec succès !");
+                showNotification("Candidature enregistrée avec succès !", "success");
                 setShowForm(false);
                 setFormData({
                     studentId: "",
@@ -120,7 +122,7 @@ export default function ApplicationManagement() {
                 await loadData();
             }
         } catch (error) {
-            alert("Erreur lors de l'enregistrement");
+            showNotification("Erreur lors de l'enregistrement", "error");
         }
     };
 

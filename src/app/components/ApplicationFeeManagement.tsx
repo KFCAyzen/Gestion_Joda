@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
+import { useNotificationContext } from "../context/NotificationContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ const MOTIFS = ["Inscription", "Frais de dossier", "Cours de langue", "Autre"];
 
 export default function ApplicationFeeManagement() {
     const { user } = useAuth();
+    const { showNotification } = useNotificationContext();
     const [fees, setFees] = useState<ApplicationFee[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +83,7 @@ export default function ApplicationFeeManagement() {
 
     const handleSaveFee = async () => {
         if (!formData.studentId || !formData.amount) {
-            alert("Veuillez remplir tous les champs obligatoires");
+            showNotification("Veuillez remplir tous les champs obligatoires", "error");
             return;
         }
 
@@ -100,7 +102,7 @@ export default function ApplicationFeeManagement() {
             });
 
             if (!error) {
-                alert("Frais enregistrés avec succès !");
+                showNotification("Frais enregistrés avec succès !", "success");
                 setShowForm(false);
                 setFormData({
                     studentId: "",
@@ -111,7 +113,7 @@ export default function ApplicationFeeManagement() {
                 await loadData();
             }
         } catch {
-            alert("Erreur lors de l'enregistrement");
+            showNotification("Erreur lors de l'enregistrement", "error");
         }
     };
 
