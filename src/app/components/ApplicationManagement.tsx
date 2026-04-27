@@ -212,7 +212,13 @@ export default function ApplicationManagement() {
                             <div className="space-y-2">
                                 <Label style={{ color: "#dc2626" }}>Étudiant *</Label>
                                 <Select value={formData.studentId || ""} onValueChange={(v) => setFormData({ ...formData, studentId: v || "" })}>
-                                    <SelectTrigger><SelectValue placeholder="Sélectionner un étudiant" /></SelectTrigger>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionner un étudiant">
+                                            {formData.studentId
+                                                ? (() => { const s = students.find(s => s.id === formData.studentId); return s ? `${s.prenom} ${s.nom}` : "Sélectionner un étudiant"; })()
+                                                : "Sélectionner un étudiant"}
+                                        </SelectValue>
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {students.map((s) => (
                                             <SelectItem key={s.id} value={s.id}>{s.prenom} {s.nom}</SelectItem>
@@ -224,7 +230,13 @@ export default function ApplicationManagement() {
                             <div className="space-y-2">
                                 <Label style={{ color: "#dc2626" }}>Université *</Label>
                                 <Select value={formData.universityId || ""} onValueChange={(v) => setFormData({ ...formData, universityId: v || "" })}>
-                                    <SelectTrigger><SelectValue placeholder="Sélectionner une université" /></SelectTrigger>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sélectionner une université">
+                                            {formData.universityId
+                                                ? (() => { const u = universities.find(u => u.id === formData.universityId); return u ? u.nom : "Sélectionner une université"; })()
+                                                : "Sélectionner une université"}
+                                        </SelectValue>
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {universities.map((u) => (
                                             <SelectItem key={u.id} value={u.id}>{u.nom}</SelectItem>

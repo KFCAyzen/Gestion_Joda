@@ -240,7 +240,7 @@ function AppContent() {
     }, [currentPage, currentSection]);
 
     useEffect(() => {
-        if (user && user.mustChangePassword) {
+        if (user && user.mustChangePassword && user.role !== 'student') {
             setShowPasswordChange(true);
         } else {
             setShowPasswordChange(false);
@@ -248,18 +248,23 @@ function AppContent() {
     }, [user]);
 
     useEffect(() => {
-        if (typeof window === "undefined") {
-            return;
-        }
-
+        if (typeof window === "undefined") return;
         const savedUser = localStorage.getItem("currentUser");
-        if (!savedUser) {
-            return;
-        }
-
+        if (!savedUser) return;
         try {
-            setUser(JSON.parse(savedUser));
-            setShowLogin(false);
+            const parsed = JSON.parse(savedUser);
+            // Vérifier must_change_password depuis Supabase pour éviter les faux positifs
+            supabase.from('users').select('must_change_password').eq('id', parsed.id).single()
+                .then(({ data }) => {
+                    const fresh = { ...parsed, mustChangePassword: data?.must_change_password ?? false };
+                    localStorage.setItem('currentUser', JSON.stringify(fresh));
+                    setUser(fresh);
+                    setShowLogin(false);
+                })
+                .catch(() => {
+                    setUser(parsed);
+                    setShowLogin(false);
+                });
         } catch {
             localStorage.removeItem("currentUser");
         }

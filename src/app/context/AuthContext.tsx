@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 role: newUserData.role,
                                 name: newUserData.name,
                                 email: newUserData.email,
-                                mustChangePassword: newUserData.must_change_password
+                                mustChangePassword: newUserData.must_change_password === true
                             });
                         }
                     }
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         role: userData.role,
                         name: userData.name,
                         email: userData.email,
-                        mustChangePassword: userData.must_change_password
+                        mustChangePassword: userData.must_change_password === true
                     });
                 }
             }
@@ -222,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         role: userData.role,
                         name: userData.name,
                         email: userData.email,
-                        mustChangePassword: userData.must_change_password
+                        mustChangePassword: userData.must_change_password === true
                     };
                     setUser(currentUser);
                     if (typeof window !== 'undefined') {
