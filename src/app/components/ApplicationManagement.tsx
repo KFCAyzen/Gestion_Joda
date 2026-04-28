@@ -98,7 +98,7 @@ export default function ApplicationManagement() {
         try {
             const { data: dossier, error } = await supabase.from("dossier_bourses").insert({
                 student_id: formData.studentId,
-                status: "en_attente_documents",
+                status: "document_manquant",
                 desired_program: formData.desiredProgram,
                 study_level: formData.studyLevel,
                 language_level: formData.languageLevel,
@@ -191,7 +191,7 @@ export default function ApplicationManagement() {
             case "en_cours":
                 return "En cours";
             case "document_manquant":
-                return "Document manquant";
+                return "En attente de documents";
             case "admission_validee":
                 return "Acceptée";
             case "admission_rejetee":

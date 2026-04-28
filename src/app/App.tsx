@@ -122,12 +122,6 @@ const menuSections: MenuSection[] = [
                 label: "Performances",
                 icon: <TrendingUp className={iconClassName} />,
             },
-            {
-                id: "notifications",
-                label: "Notifications",
-                badge: "3",
-                icon: <Bell className={iconClassName} />,
-            },
         ],
     },
     {
@@ -520,6 +514,15 @@ function AppContent() {
                             </div>
                         </div>
                         <div className="flex items-center space-x-4">
+                            <button
+                                onClick={() => navigateToPage("notifications")}
+                                className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                                <Bell className="w-5 h-5" />
+                                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-[10px] font-bold text-white shadow-[0_4px_12px_rgba(239,68,68,0.4)]">
+                                    3
+                                </span>
+                            </button>
                             <div className="app-status-pill hidden md:flex">
                                 <ShieldUser className="w-3.5 h-3.5 text-emerald-600" />
                                 En ligne

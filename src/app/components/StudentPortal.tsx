@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
+import DocumentUpload from "./DocumentUpload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +72,7 @@ const DOSSIER_LABELS: Record<string, string> = {
     document_recu: "Documents reçus",
     en_attente: "En attente",
     en_cours: "En cours",
-    document_manquant: "Document manquant",
+    document_manquant: "En attente de documents",
     admission_validee: "Admission validée",
     admission_rejetee: "Admission rejetée",
     en_attente_universite: "En attente université",
@@ -89,7 +90,6 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [dossier, setDossier] = useState<DossierBourse | null>(null);
     const [loading, setLoading] = useState(true);
     const [studentId, setStudentId] = useState<string | null>(null);
-
     const load = useCallback(async () => {
         setLoading(true);
         try {
@@ -279,37 +279,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 )}
 
                 {view === "documents" && (
-                    <Card className="joda-surface border-0 shadow-none">
-                        <CardHeader>
-                            <CardTitle>Mes Documents</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {documents.length === 0 ? (
-                                <p className="py-8 text-center text-gray-500">Aucun document</p>
-                            ) : (
-                                <div className="space-y-3">
-                                    {documents.map((doc) => (
-                                        <div key={doc.id} className="joda-surface-muted flex items-center justify-between p-4">
-                                            <div>
-                                                <p className="font-medium">{doc.type}</p>
-                                                <p className="text-sm text-gray-500">
-                                                    Uploadé le {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString("fr-FR") : "-"}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {doc.url && (
-                                                    <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
-                                                        Voir
-                                                    </a>
-                                                )}
-                                                <Badge className={STATUS_COLORS[doc.status]}>{getDocumentStatusLabel(doc.status)}</Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <DocumentUpload studentId={studentId} onDocumentUploaded={load} />
                 )}
 
                 {view === "dossier" && (
