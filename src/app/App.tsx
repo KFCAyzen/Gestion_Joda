@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
     Bell,
-    BookOpenText,
     Building2,
     ChevronDown,
     FileArchive,
@@ -27,7 +26,6 @@ import UniversityManagement from "./components/UniversityManagement";
 import StudentManagement from "./components/StudentManagement";
 import ApplicationFeeManagement from "./components/ApplicationFeeManagement";
 import ScholarshipFileManagement from "./components/ScholarshipFileManagement";
-import ServiceRequestManagement from "./components/ServiceRequestManagement";
 import UserManagement from "./components/UserManagement";
 import ActivityHistory from "./components/ActivityHistory";
 import PerformanceHistory from "./components/PerformanceHistory";
@@ -52,7 +50,6 @@ type PageId =
     | "clients"
     | "facturation"
     | "dossiers"
-    | "services"
     | "users"
     | "history"
     | "performance"
@@ -82,7 +79,6 @@ const pageDescriptions: Record<PageId, string> = {
     clients: "Pilotage des étudiants et de leurs profils",
     facturation: "Gestion des frais et paiements associés",
     dossiers: "Suivi des dossiers de bourse",
-    services: "Traitement des demandes de services",
     users: "Administration des comptes utilisateurs",
     history: "Historique des activités et actions",
     performance: "Indicateurs et performances de l'équipe",
@@ -97,7 +93,6 @@ const pageComponents: Record<PageId, ReactNode> = {
     clients: <StudentManagement />,
     facturation: <ApplicationFeeManagement />,
     dossiers: <ScholarshipFileManagement />,
-    services: <ServiceRequestManagement />,
     users: <UserManagement />,
     history: <ActivityHistory />,
     performance: <PerformanceHistory />,
@@ -142,11 +137,6 @@ const menuSections: MenuSection[] = [
                 id: "dossiers",
                 label: "Dossiers",
                 icon: <FileArchive className={iconClassName} />,
-            },
-            {
-                id: "services",
-                label: "Demandes Services",
-                icon: <BookOpenText className={iconClassName} />,
             },
         ],
     },
