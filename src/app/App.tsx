@@ -244,8 +244,7 @@ function AppContent() {
                     localStorage.setItem('currentUser', JSON.stringify(fresh));
                     setUser(fresh);
                     setShowLogin(false);
-                })
-                .catch(() => {
+                }, () => {
                     setUser(parsed);
                     setShowLogin(false);
                 });
