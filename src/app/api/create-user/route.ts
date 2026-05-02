@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
             <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#dc2626;border-radius:8px;">
-                  <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}"
+                  <a href="https://gestion-joda.vercel.app"
                      style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
                     Se connecter →
                   </a>
