@@ -17,6 +17,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import SearchBar from "./SearchBar";
+import FilterSelect from "./FilterSelect";
 
 interface ApplicationFee {
     id: string;
@@ -46,6 +48,8 @@ export default function ApplicationFeeManagement() {
     const [students, setStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
 
     const [formData, setFormData] = useState({
         studentId: "",
@@ -142,6 +146,14 @@ export default function ApplicationFeeManagement() {
                 return status;
         }
     };
+
+    const filteredFees = fees.filter((fee) => {
+        const student = students.find((s) => s.id === fee.student_id);
+        const studentName = student ? `${student.prenom} ${student.nom}`.toLowerCase() : "";
+        const matchesSearch = studentName.includes(searchTerm.toLowerCase()) || fee.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === "all" || fee.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
 
     if (isLoading) {
         return (
@@ -243,18 +255,35 @@ export default function ApplicationFeeManagement() {
             <Card className="joda-surface border-0 shadow-none">
                 <CardHeader>
                     <div className="flex items-center justify-between">
-                        <CardTitle>Liste des Paiements ({fees.length})</CardTitle>
+                        <CardTitle>Liste des Paiements ({filteredFees.length})</CardTitle>
                         <Button variant="outline" onClick={loadData}>Actualiser</Button>
+                    </div>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <SearchBar
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            placeholder="Rechercher par étudiant ou ID..."
+                        />
+                        <FilterSelect
+                            label="Statut"
+                            value={statusFilter}
+                            onChange={setStatusFilter}
+                            options={[
+                                { value: "paye", label: "Payé" },
+                                { value: "attente", label: "En attente" },
+                                { value: "retard", label: "En retard" },
+                            ]}
+                        />
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {fees.length === 0 ? (
+                    {filteredFees.length === 0 ? (
                         <div className="py-12 text-center">
                             <p className="text-slate-500">Aucun paiement pour le moment</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {fees.map((fee) => {
+                            {filteredFees.map((fee) => {
                                 const student = students.find((s) => s.id === fee.student_id);
 
                                 return (

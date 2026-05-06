@@ -31,6 +31,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import SearchBar from "./SearchBar";
+import FilterSelect from "./FilterSelect";
+import ActionButtons from "./ActionButtons";
 
 interface Student {
     id: string;
@@ -390,21 +393,21 @@ export default function StudentManagement() {
                                         <CardTitle>Liste des Étudiants</CardTitle>
                                     </div>
                                     <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
-                                        <Input
+                                        <SearchBar
                                             value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            onChange={setSearchTerm}
                                             placeholder="Rechercher par nom, email, téléphone, filière..."
                                         />
-                                        <Select value={genderFilter} onValueChange={(value) => setGenderFilter(value || "all")}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Filtrer par sexe" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Tous les profils</SelectItem>
-                                                <SelectItem value="M">Hommes</SelectItem>
-                                                <SelectItem value="F">Femmes</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <FilterSelect
+                                            label="Sexe"
+                                            value={genderFilter}
+                                            onChange={setGenderFilter}
+                                            options={[
+                                                { value: "M", label: "Hommes" },
+                                                { value: "F", label: "Femmes" },
+                                            ]}
+                                            placeholder="Tous les profils"
+                                        />
                                     </div>
                                 </CardHeader>
                                 <CardContent>

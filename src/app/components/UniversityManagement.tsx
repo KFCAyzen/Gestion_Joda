@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
@@ -17,6 +17,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import SearchBar from "./SearchBar";
+import FilterSelect from "./FilterSelect";
+import ActionButtons from "./ActionButtons";
 
 interface University {
     id: string;
@@ -47,6 +50,9 @@ export default function UniversityManagement() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"list" | "form">("list");
     const [editingUni, setEditingUni] = useState<University | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [cityFilter, setCityFilter] = useState("all");
     const [formData, setFormData] = useState({
         nom: "",
         code: "",
@@ -140,6 +146,22 @@ export default function UniversityManagement() {
     const canEdit = user?.role === "agent" || user?.role === "admin" || user?.role === "super_admin";
     const canDelete = user?.role === "admin" || user?.role === "super_admin";
 
+    const cities = useMemo(() => {
+        const uniqueCities = [...new Set(universities.map(u => u.ville))];
+        return uniqueCities.map(city => ({ value: city, label: city }));
+    }, [universities]);
+
+    const filteredUniversities = useMemo(() => {
+        return universities.filter((u) => {
+            const matchesSearch = u.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                u.ville.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                u.programme.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? u.active : !u.active);
+            const matchesCity = cityFilter === "all" || u.ville === cityFilter;
+            return matchesSearch && matchesStatus && matchesCity;
+        });
+    }, [universities, searchTerm, statusFilter, cityFilter]);
+
     return (
         <ProtectedRoute requiredRole="user">
             <div className="space-y-6 p-4 sm:p-6">
@@ -168,12 +190,34 @@ export default function UniversityManagement() {
                 {activeTab === "list" && (
                     <Card className="joda-surface border-0 shadow-none">
                         <CardHeader>
-                            <CardTitle>Universités Partenaires ({universities.length})</CardTitle>
+                            <CardTitle>Universités Partenaires ({filteredUniversities.length})</CardTitle>
                             <CardDescription>
                                 Vue d'ensemble des destinations actives et des programmes proposés.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
+                            <div className="mb-6 grid gap-4 sm:grid-cols-3">
+                                <SearchBar
+                                    value={searchTerm}
+                                    onChange={setSearchTerm}
+                                    placeholder="Rechercher par nom, ville, programme..."
+                                />
+                                <FilterSelect
+                                    label="Statut"
+                                    value={statusFilter}
+                                    onChange={setStatusFilter}
+                                    options={[
+                                        { value: "active", label: "Active" },
+                                        { value: "inactive", label: "Inactive" },
+                                    ]}
+                                />
+                                <FilterSelect
+                                    label="Ville"
+                                    value={cityFilter}
+                                    onChange={setCityFilter}
+                                    options={cities}
+                                />
+                            </div>
                             {loading ? (
                                 <div className="py-8 text-center text-slate-500">Chargement...</div>
                             ) : (
@@ -188,7 +232,7 @@ export default function UniversityManagement() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {universities.map((u) => (
+                                        {filteredUniversities.map((u) => (
                                             <TableRow key={u.id}>
                                                 <TableCell>
                                                     <div className="font-medium">{u.nom}</div>
@@ -205,44 +249,33 @@ export default function UniversityManagement() {
                                                 </TableCell>
                                                 {canEdit && (
                                                     <TableCell>
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => handleToggle(u.id, u.active)}
-                                                            >
-                                                                {u.active ? "Désactiver" : "Activer"}
-                                                            </Button>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    setEditingUni(u);
-                                                                    setFormData({
-                                                                        nom: u.nom,
-                                                                        code: (u as any).code || "",
-                                                                        pays: u.pays,
-                                                                        ville: u.ville,
-                                                                        programme: u.programme,
-                                                                        niveau_etude: u.niveau_etude,
-                                                                        criteres_admission: u.criteres_admission,
-                                                                        active: u.active,
-                                                                    });
-                                                                    setActiveTab("form");
-                                                                }}
-                                                            >
-                                                                Modifier
-                                                            </Button>
-                                                            {canDelete && (
+                                                        <ActionButtons
+                                                            onEdit={() => {
+                                                                setEditingUni(u);
+                                                                setFormData({
+                                                                    nom: u.nom,
+                                                                    code: (u as any).code || "",
+                                                                    pays: u.pays,
+                                                                    ville: u.ville,
+                                                                    programme: u.programme,
+                                                                    niveau_etude: u.niveau_etude,
+                                                                    criteres_admission: u.criteres_admission,
+                                                                    active: u.active,
+                                                                });
+                                                                setActiveTab("form");
+                                                            }}
+                                                            onDelete={canDelete ? () => handleDelete(u.id) : undefined}
+                                                            showDelete={canDelete}
+                                                            customActions={
                                                                 <Button
-                                                                    variant="destructive"
+                                                                    variant="outline"
                                                                     size="sm"
-                                                                    onClick={() => handleDelete(u.id)}
+                                                                    onClick={() => handleToggle(u.id, u.active)}
                                                                 >
-                                                                    Supprimer
+                                                                    {u.active ? "Désactiver" : "Activer"}
                                                                 </Button>
-                                                            )}
-                                                        </div>
+                                                            }
+                                                        />
                                                     </TableCell>
                                                 )}
                                             </TableRow>
