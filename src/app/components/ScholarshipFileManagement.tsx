@@ -42,6 +42,8 @@ export default function ScholarshipFileManagement() {
     const [isLoading, setIsLoading] = useState(true);
     const [notes, setNotes] = useState("");
 
+    const canDelete = user?.role === "admin" || user?.role === "super_admin";
+
     const loadData = async () => {
         setIsLoading(true);
         try {
@@ -407,16 +409,18 @@ export default function ScholarshipFileManagement() {
                                         </Select>
                                     </div>
 
-                                    <div className="mt-6">
-                                        <Button
-                                            variant="destructive"
-                                            className="w-full"
-                                            onClick={() => deleteFile(selectedFile.id)}
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Supprimer le dossier
-                                        </Button>
-                                    </div>
+                                    {canDelete && (
+                                        <div className="mt-6">
+                                            <Button
+                                                variant="destructive"
+                                                className="w-full"
+                                                onClick={() => deleteFile(selectedFile.id)}
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Supprimer le dossier
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="joda-surface">

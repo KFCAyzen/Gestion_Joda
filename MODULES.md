@@ -4,10 +4,29 @@
 
 | Rôle | Accès |
 |---|---|
-| `super_admin` | Accès complet à tous les modules + gestion utilisateurs + purge données |
-| `admin` | Tous les modules sauf configuration système |
-| `agent` | Opérations, dossiers, paiements, comptabilité |
-| `student` | Portail étudiant uniquement (lecture de son propre dossier) |
+| `super_admin` | Accès complet à tous les modules + gestion utilisateurs + monitoring stockage + purge données |
+| `admin` | Tous les modules sauf monitoring stockage. Peut créer/modifier/supprimer étudiants, candidatures, universités, valider paiements, gérer comptabilité |
+| `agent` | **Accès limité** : Consultation (Dashboard, Étudiants, Candidatures, Dossiers, Universités, Frais). Peut créer/modifier étudiants et candidatures. **Pas de suppression, pas de gestion utilisateurs, pas de comptabilité** |
+| `student` | Portail étudiant uniquement (lecture de son propre dossier + upload documents) |
+
+---
+
+## Matrice des permissions détaillée
+
+| Module | super_admin | admin | agent | student |
+|---|---|---|---|---|
+| **Dashboard** | ✅ Lecture | ✅ Lecture | ✅ Lecture | ❌ |
+| **Étudiants** | ✅ CRUD complet | ✅ CRUD complet | ✅ Créer/Modifier<br>❌ Supprimer | ❌ |
+| **Candidatures** | ✅ CRUD complet | ✅ CRUD complet | ✅ Créer/Modifier<br>✅ Changer statut<br>❌ Supprimer | ❌ |
+| **Dossiers** | ✅ CRUD complet | ✅ CRUD complet | ✅ Lecture<br>✅ Changer statut<br>✅ Ajouter notes<br>❌ Supprimer | ❌ |
+| **Universités** | ✅ CRUD complet | ✅ CRUD complet | ✅ Lecture uniquement | ❌ |
+| **Frais** | ✅ CRUD complet | ✅ CRUD complet | ✅ Lecture uniquement | ❌ |
+| **Comptabilité** | ✅ CRUD complet | ✅ CRUD complet | ❌ Aucun accès | ❌ |
+| **Utilisateurs** | ✅ CRUD complet | ✅ Créer/Lire<br>❌ Supprimer | ❌ Aucun accès | ❌ |
+| **Historique** | ✅ Lecture | ✅ Lecture | ❌ Aucun accès | ❌ |
+| **Performances** | ✅ Lecture | ✅ Lecture | ✅ Lecture | ❌ |
+| **Monitoring Stockage** | ✅ Lecture | ❌ | ❌ | ❌ |
+| **Portail Étudiant** | ❌ | ❌ | ❌ | ✅ Accès complet |
 
 ---
 

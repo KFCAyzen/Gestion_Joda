@@ -315,6 +315,10 @@ export default function StudentManagement() {
         currentUser?.role === "admin" ||
         currentUser?.role === "super_admin" ||
         currentUser?.role === "agent";
+    
+    const canDelete =
+        currentUser?.role === "admin" ||
+        currentUser?.role === "super_admin";
 
     return (
         <>
@@ -470,16 +474,18 @@ export default function StudentManagement() {
                                                                         >
                                                                             Modifier
                                                                         </Button>
-                                                                        <Button
-                                                                            variant="destructive"
-                                                                            size="sm"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setStudentToDelete(student);
-                                                                            }}
-                                                                        >
-                                                                            Supprimer
-                                                                        </Button>
+                                                                        {canDelete && (
+                                                                            <Button
+                                                                                variant="destructive"
+                                                                                size="sm"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setStudentToDelete(student);
+                                                                                }}
+                                                                            >
+                                                                                Supprimer
+                                                                            </Button>
+                                                                        )}
                                                                     </>
                                                                 )}
                                                             </div>
@@ -554,7 +560,9 @@ export default function StudentManagement() {
                                     {canEdit && (
                                         <>
                                             <Button variant="outline" onClick={() => { openEditForm(selectedStudent); setSelectedStudent(null); }}>Modifier</Button>
-                                            <Button variant="destructive" onClick={() => { setStudentToDelete(selectedStudent); setSelectedStudent(null); }}>Supprimer</Button>
+                                            {canDelete && (
+                                                <Button variant="destructive" onClick={() => { setStudentToDelete(selectedStudent); setSelectedStudent(null); }}>Supprimer</Button>
+                                            )}
                                         </>
                                     )}
                                     <Button onClick={() => setSelectedStudent(null)}>Fermer</Button>

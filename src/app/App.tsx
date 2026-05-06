@@ -164,7 +164,7 @@ const menuSections: MenuSection[] = [
     {
         id: "finance",
         label: "Finance",
-        roles: ["agent", "admin", "super_admin"],
+        roles: ["admin", "super_admin"],
         items: [
             {
                 id: "comptabilite",

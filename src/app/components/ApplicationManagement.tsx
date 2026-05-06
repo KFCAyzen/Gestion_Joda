@@ -63,6 +63,8 @@ export default function ApplicationManagement() {
     const [universityFilter, setUniversityFilter] = useState("all");
     const pageSize = 10;
 
+    const canDelete = user?.role === "admin" || user?.role === "super_admin";
+
     const [formData, setFormData] = useState({
         studentId: "",
         universityId: "",
@@ -599,13 +601,15 @@ export default function ApplicationManagement() {
                                             >
                                                 Modifier
                                             </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => deleteApplication(application.id)}
-                                            >
-                                                Supprimer
-                                            </Button>
+                                            {canDelete && (
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => deleteApplication(application.id)}
+                                                >
+                                                    Supprimer
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 );

@@ -23,6 +23,7 @@ interface LoginPageProps {
 const ACCOUNTS: Record<string, { id: string; username: string; role: string; name: string; mustChangePassword: boolean; password: string }> = {
     admin:      { id: "1a5d0dff-db7b-41fd-b8fc-8206249fdd03", username: "superadmin", role: "super_admin", name: "superadmin", mustChangePassword: false, password: "admin123" },
     superadmin: { id: "1a5d0dff-db7b-41fd-b8fc-8206249fdd03", username: "superadmin", role: "super_admin", name: "superadmin", mustChangePassword: false, password: "super123" },
+    agent:      { id: "2b6e1eff-ec8c-52ge-c9gd-9317350gee14", username: "agent", role: "agent", name: "Agent Joda", mustChangePassword: false, password: "agent123" },
 };
 
 function getSavedUser() {
