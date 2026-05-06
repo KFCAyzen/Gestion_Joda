@@ -164,6 +164,21 @@ export default function ApplicationManagement() {
         }
     };
 
+    const deleteApplication = async (applicationId: string) => {
+        if (!confirm("Êtes-vous sûr de vouloir supprimer cette candidature ?")) return;
+
+        try {
+            const { error } = await supabase.from("dossier_bourses").delete().eq("id", applicationId);
+            if (error) throw error;
+
+            showNotification("Candidature supprimée", "success");
+            await loadData();
+        } catch (error) {
+            console.error("Erreur suppression:", error);
+            showNotification("Erreur lors de la suppression", "error");
+        }
+    };
+
     const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
         await supabase.from("dossier_bourses").update({ status: newStatus }).eq("id", applicationId);
         loadData();
@@ -401,6 +416,13 @@ export default function ApplicationManagement() {
                                                     <SelectItem value="termine">Terminé</SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => deleteApplication(application.id)}
+                                            >
+                                                Supprimer
+                                            </Button>
                                         </div>
                                     </div>
                                 );

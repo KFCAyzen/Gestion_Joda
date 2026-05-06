@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { compressImage, formatFileSize } from "../utils/imageCompression";
+import { FILE_LIMITS, validateFile } from "../utils/fileValidation";
 
 const REQUIRED_DOCS = [
     { key: "passeport", label: "Passeport", description: "Copie des pages d'identité" },
@@ -48,15 +50,42 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
 
     const handleUpload = async (key: DocKey, file: File) => {
         if (!studentId) return;
+        
+        // Validation initiale du fichier
+        const validation = validateFile(file);
+        if (!validation.valid) {
+            alert(validation.error);
+            return;
+        }
+
         setUploading(key);
         try {
-            const ext = file.name.split(".").pop();
+            // Compresser si c'est une image
+            let fileToUpload = file;
+            if (file.type.startsWith('image/')) {
+                try {
+                    fileToUpload = await compressImage(file, FILE_LIMITS.MAX_FILE_SIZE_MB);
+                    console.log(`Image compressée: ${formatFileSize(file.size)} → ${formatFileSize(fileToUpload.size)}`);
+                } catch (err) {
+                    console.error('Erreur compression:', err);
+                    // Continuer avec le fichier original si la compression échoue
+                }
+            }
+
+            // Validation finale après compression
+            const finalValidation = validateFile(fileToUpload);
+            if (!finalValidation.valid) {
+                alert(finalValidation.error);
+                return;
+            }
+
+            const ext = fileToUpload.name.split(".").pop();
             const path = `documents/${studentId}/${key}_${Date.now()}.${ext}`;
 
             // Upload dans Supabase Storage
             const { error: storageError } = await supabase.storage
                 .from("student-documents")
-                .upload(path, file, { upsert: true });
+                .upload(path, fileToUpload, { upsert: true });
 
             if (storageError) throw storageError;
 
@@ -98,6 +127,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             }
         } catch (err) {
             console.error("Erreur upload:", err);
+            alert("Erreur lors de l'upload du fichier. Veuillez réessayer.");
         } finally {
             setUploading(null);
         }
@@ -113,6 +143,16 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
 
     return (
         <div className="space-y-6">
+            {/* Info sur la compression */}
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                <p className="font-medium">📋 Informations importantes :</p>
+                <ul className="mt-2 ml-4 list-disc space-y-1 text-xs">
+                    <li>Taille maximale par fichier : <strong>{FILE_LIMITS.MAX_FILE_SIZE_MB} MB</strong></li>
+                    <li>Les images sont automatiquement compressées</li>
+                    <li>Formats acceptés : <strong>{FILE_LIMITS.ALLOWED_EXTENSIONS.join(', ')}</strong></li>
+                </ul>
+            </div>
+
             {/* Barre de progression */}
             <Card className="joda-surface border-0 shadow-none">
                 <CardContent className="pt-6">
@@ -177,7 +217,11 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                             className="hidden"
                                             onChange={e => {
                                                 const file = e.target.files?.[0];
-                                                if (file) handleUpload(doc.key, file);
+                                                if (file) {
+                                                    // Afficher la taille du fichier
+                                                    console.log(`Fichier sélectionné: ${file.name} (${formatFileSize(file.size)})`);
+                                                    handleUpload(doc.key, file);
+                                                }
                                                 e.target.value = "";
                                             }}
                                         />
