@@ -62,9 +62,14 @@
 - [x] student/StudentPaymentsList.tsx existe
 - [x] DocumentUpload intégré
 
-### 13. Historique & Performances
-- [x] ActivityHistory.tsx existe
+### 13. Logs Activités & Performances
+- [x] ActivityLogsPage.tsx existe et compile
+- [x] Accessible uniquement aux admins
+- [x] Filtres par rôle, type d'activité, période
+- [x] Pagination 20 logs/page
 - [x] PerformanceHistory.tsx existe
+- [ ] Table activity_logs créée dans Supabase
+- [ ] Logs intégrés dans les composants (StudentManagement, etc.)
 
 ## ✅ Optimisations Implémentées
 

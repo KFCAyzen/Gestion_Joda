@@ -23,7 +23,7 @@
 | **Frais** | ✅ CRUD complet | ✅ CRUD complet | ✅ Lecture uniquement | ❌ |
 | **Comptabilité** | ✅ CRUD complet | ✅ CRUD complet | ❌ Aucun accès | ❌ |
 | **Utilisateurs** | ✅ CRUD complet | ✅ Créer/Lire<br>❌ Supprimer | ❌ Aucun accès | ❌ |
-| **Historique** | ✅ Lecture | ✅ Lecture | ❌ Aucun accès | ❌ |
+| **Logs Activités** | ✅ Lecture | ✅ Lecture | ❌ Aucun accès | ❌ |
 | **Performances** | ✅ Lecture | ✅ Lecture | ✅ Lecture | ❌ |
 | **Monitoring Stockage** | ✅ Lecture | ❌ | ❌ | ❌ |
 | **Portail Étudiant** | ❌ | ❌ | ❌ | ✅ Accès complet |
@@ -375,13 +375,62 @@
 
 ---
 
-## 11. HISTORIQUE D'ACTIVITÉ
+## 11. LOGS D'ACTIVITÉS (Admin uniquement)
 
 ### Composant
-- `ActivityHistory.tsx`
+- `ActivityLogsPage.tsx`
+
+### Table Supabase
+- `activity_logs`
+
+### Fonctionnalités
+- **Traçabilité complète** des actions sensibles effectuées par les agents
+- **Statistiques** : total activités, actions agents, actions admins, aujourd'hui
+- **Filtres avancés** :
+  - Recherche par utilisateur ou action
+  - Filtre par rôle (agent, admin, super_admin)
+  - Filtre par type d'activité (création, modification, suppression)
+  - Filtre par période (aujourd'hui, 7 jours, 30 jours)
+- **Pagination** : 20 logs par page
+- **Détails JSON** expandables pour chaque log
+- **Badges colorés** par rôle et type d'activité
+
+### Types d'activités tracées (24 types)
+- Étudiants : création, modification, suppression
+- Candidatures : création, modification, suppression, changement statut
+- Dossiers : modification, suppression, changement statut
+- Universités : création, modification, suppression
+- Paiements : création, modification, validation
+- Comptabilité : entrées, sorties
+- Documents : validation, rejet
+- Utilisateurs : création, modification, suppression
+- Connexion/Déconnexion
+
+### Structure d'un log
+```typescript
+{
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_role: string;
+  activity_type: ActivityType;
+  entity_type: string;
+  entity_id: string | null;
+  description: string;
+  metadata?: Record<string, any>;
+  ip_address?: string;
+  created_at: string;
+}
+```
 
 ### Accès
-- `admin`, `super_admin` uniquement
+- `admin`, `super_admin` : voient tous les logs
+- `agent` : voit uniquement ses propres logs (via RLS)
+
+### Utilitaire
+- **Fichier** : `utils/activityLogger.ts`
+- **Fonction** : `logActivity(userId, userName, userRole, activityType, entityType, entityId, description, metadata?)`
+- **Fonction** : `getActivityLogs(filters?)` → récupère les logs avec filtres
 
 ---
 
@@ -487,7 +536,8 @@
 | `universities` | Universités partenaires chinoises |
 | `documents` | Documents soumis par les étudiants |
 | `dossier_bourses` | Dossiers de candidature à une bourse |
-| `dossier_history` | Historique des changements de statut des dossiers |
+| `dossier_history` | Historique des changements de statut des dossiers (fonctionnalité métier) |
+| `activity_logs` | Logs d'audit des actions sensibles (traçabilité admin) |
 | `payments` | Paiements et frais |
 | `cours_langues` | Inscriptions aux cours de langues |
 | `entrees_comptables` | Entrées financières |
@@ -505,7 +555,7 @@
 | Opérations | Candidatures, Étudiants, Dossiers | Tous |
 | Ressources | Universités, Frais | Tous |
 | Finance | Comptabilité | `agent`, `admin`, `super_admin` |
-| Administration | Utilisateurs, Historique | `admin`, `super_admin` |
+| Administration | Utilisateurs, Logs Activités | `admin`, `super_admin` |
 | Système | **Stockage** (monitoring) | `super_admin` uniquement |
 
 ---
