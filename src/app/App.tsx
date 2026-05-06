@@ -28,13 +28,11 @@ import StudentManagement from "./components/StudentManagement";
 import ApplicationFeeManagement from "./components/ApplicationFeeManagement";
 import ScholarshipFileManagement from "./components/ScholarshipFileManagement";
 import UserManagement from "./components/UserManagement";
-import ActivityHistory from "./components/ActivityHistory";
 import PerformanceHistory from "./components/PerformanceHistory";
 import StorageMonitoring from "./components/StorageMonitoring";
 import { useNotification } from "./hooks/useNotification";
 import Notification from "./components/Notification";
 import { NotificationProvider } from "./context/NotificationContext";
-import { ActivityLogProvider } from "./context/ActivityLogContext";
 import { AuthProvider } from "./context/AuthContext";
 import LoginPage from "./components/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -54,7 +52,6 @@ type PageId =
     | "facturation"
     | "dossiers"
     | "users"
-    | "history"
     | "performance"
     | "notifications"
     | "comptabilite"
@@ -85,7 +82,6 @@ const pageDescriptions: Record<PageId, string> = {
     facturation: "Gestion des frais et paiements associés",
     dossiers: "Suivi des dossiers de bourse",
     users: "Administration des comptes utilisateurs",
-    history: "Historique des activités et actions",
     performance: "Indicateurs et performances de l'équipe",
     notifications: "Centre de notifications et alertes",
     comptabilite: "Suivi comptable et financier",
@@ -101,7 +97,6 @@ const pageComponents: Record<PageId, ReactNode> = {
     facturation: <ApplicationFeeManagement />,
     dossiers: <ScholarshipFileManagement />,
     users: <UserManagement />,
-    history: <ActivityHistory />,
     performance: <PerformanceHistory />,
     notifications: <NotificationsPage />,
     comptabilite: <AccountingPage />,
@@ -191,11 +186,6 @@ const menuSections: MenuSection[] = [
                 id: "activity_logs",
                 label: "Logs Activités",
                 icon: <FileClock className={iconClassName} />,
-            },
-            {
-                id: "history",
-                label: "Historique",
-                icon: <SquareChartGantt className={iconClassName} />,
             },
         ],
     },
@@ -601,9 +591,7 @@ function AppContent() {
 export default function App() {
     return (
         <AuthProvider>
-            <ActivityLogProvider>
-                <AppContent />
-            </ActivityLogProvider>
+            <AppContent />
         </AuthProvider>
     );
 }
