@@ -392,7 +392,7 @@ export default function StudentManagement() {
                                     <div>
                                         <CardTitle>Liste des Étudiants</CardTitle>
                                     </div>
-                                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+                                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
                                         <SearchBar
                                             value={searchTerm}
                                             onChange={setSearchTerm}

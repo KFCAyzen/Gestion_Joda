@@ -185,7 +185,7 @@ export default function UniversityManagement() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="mb-6 grid gap-4 sm:grid-cols-3">
+                            <div className="mb-6 grid gap-4 sm:grid-cols-3 sm:items-end">
                                 <SearchBar
                                     value={searchTerm}
                                     onChange={setSearchTerm}

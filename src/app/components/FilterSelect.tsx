@@ -30,7 +30,7 @@ export default function FilterSelect({ label, value, onChange, options, placehol
                 <SelectTrigger className="w-full">
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
-                <SelectContent className="max-w-none">
+                <SelectContent className="max-w-none" position="popper" sideOffset={4}>
                     <SelectItem value="all">{placeholder}</SelectItem>
                     {options.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
