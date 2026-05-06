@@ -14,6 +14,7 @@ import {
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import { SearchBar, FilterSelect, PageHeader, LoadingState, StatsCard } from "./shared";
 
 interface ScholarshipFile {
     id: string;
@@ -222,14 +223,7 @@ export default function ScholarshipFileManagement() {
     });
 
     if (isLoading) {
-        return (
-            <div className="flex min-h-[400px] items-center justify-center">
-                <div className="text-center">
-                    <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-red-600" />
-                    <p className="text-slate-600">Chargement des dossiers...</p>
-                </div>
-            </div>
-        );
+        return <LoadingState message="Chargement des dossiers..." />;
     }
 
     return (
@@ -266,28 +260,23 @@ export default function ScholarshipFileManagement() {
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                    <div className="relative flex-1">
-                        <Input
-                            type="text"
-                            placeholder="Rechercher par nom, université ou programme..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-white/80 pl-4"
-                        />
-                    </div>
-                    <Select value={filterStatus || "all"} onValueChange={(v) => setFilterStatus(v || "all")}>
-                        <SelectTrigger className="w-[200px] bg-white/80">
-                            <SelectValue placeholder="Tous les statuts" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Tous les statuts</SelectItem>
-                            <SelectItem value="document_manquant">Documents manquants</SelectItem>
-                            <SelectItem value="en_attente">En attente</SelectItem>
-                            <SelectItem value="en_cours">En cours</SelectItem>
-                            <SelectItem value="admission_validee">Approuvé</SelectItem>
-                            <SelectItem value="admission_rejetee">Rejeté</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <SearchBar
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        placeholder="Rechercher par nom, université ou programme..."
+                    />
+                    <FilterSelect
+                        label="Statut"
+                        value={filterStatus}
+                        onChange={setFilterStatus}
+                        options={[
+                            { value: "document_manquant", label: "Documents manquants" },
+                            { value: "en_attente", label: "En attente" },
+                            { value: "en_cours", label: "En cours" },
+                            { value: "admission_validee", label: "Approuvé" },
+                            { value: "admission_rejetee", label: "Rejeté" },
+                        ]}
+                    />
                 </div>
             </div>
 

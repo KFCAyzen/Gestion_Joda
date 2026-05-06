@@ -6,9 +6,6 @@ import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
     Table,
     TableBody,
@@ -17,9 +14,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import SearchBar from "./SearchBar";
-import FilterSelect from "./FilterSelect";
-import ActionButtons from "./ActionButtons";
+import { SearchBar, FilterSelect, ActionButtons, PageHeader, LoadingState, EmptyState, StatusBadge, FormField } from "./shared";
+import { Building2 } from "lucide-react";
 
 interface University {
     id: string;
@@ -165,27 +161,20 @@ export default function UniversityManagement() {
     return (
         <ProtectedRoute requiredRole="user">
             <div className="space-y-6 p-4 sm:p-6">
-                <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                            Réseau partenaires
-                        </p>
-                        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                            Gestion des Universités
-                        </h1>
-                        <p className="mt-1 text-sm text-slate-500">
-                            Administre le catalogue des universités et leur disponibilité.
-                        </p>
-                    </div>
-                    <div className="flex gap-2">
-                        {canEdit && universities.length === 0 && (
-                            <Button variant="outline" onClick={handleSeed}>
-                                Ajouter les prédéfinies
-                            </Button>
-                        )}
-                        {canEdit && <Button onClick={() => setActiveTab("form")}>+ Université</Button>}
-                    </div>
-                </div>
+                <PageHeader
+                    eyebrow="Réseau partenaires"
+                    title="Gestion des Universités"
+                    description="Administre le catalogue des universités et leur disponibilité."
+                    action={canEdit ? {
+                        label: "+ Université",
+                        onClick: () => setActiveTab("form")
+                    } : undefined}
+                    secondaryAction={canEdit && universities.length === 0 ? {
+                        label: "Ajouter les prédéfinies",
+                        onClick: handleSeed,
+                        variant: "outline"
+                    } : undefined}
+                />
 
                 {activeTab === "list" && (
                     <Card className="joda-surface border-0 shadow-none">
@@ -219,7 +208,17 @@ export default function UniversityManagement() {
                                 />
                             </div>
                             {loading ? (
-                                <div className="py-8 text-center text-slate-500">Chargement...</div>
+                                <LoadingState message="Chargement des universités..." />
+                            ) : filteredUniversities.length === 0 ? (
+                                <EmptyState
+                                    icon={Building2}
+                                    title="Aucune université trouvée"
+                                    description="Ajustez les filtres ou ajoutez une nouvelle université."
+                                    action={canEdit ? {
+                                        label: "Ajouter une université",
+                                        onClick: () => setActiveTab("form")
+                                    } : undefined}
+                                />
                             ) : (
                                 <Table>
                                     <TableHeader>
@@ -243,9 +242,7 @@ export default function UniversityManagement() {
                                                     <div className="text-sm">{u.programme}</div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant={u.active ? "default" : "secondary"}>
-                                                        {u.active ? "Active" : "Inactive"}
-                                                    </Badge>
+                                                    <StatusBadge status={u.active ? "active" : "inactive"} />
                                                 </TableCell>
                                                 {canEdit && (
                                                     <TableCell>
@@ -295,33 +292,56 @@ export default function UniversityManagement() {
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="nom">Nom de l'Université *</Label>
-                                        <Input id="nom" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} required />
+                                    <FormField
+                                        label="Nom de l'Université"
+                                        id="nom"
+                                        value={formData.nom}
+                                        onChange={(value) => setFormData({ ...formData, nom: value })}
+                                        required
+                                    />
+                                    <FormField
+                                        label="Code (ex: PKU)"
+                                        id="code"
+                                        value={formData.code}
+                                        onChange={(value) => setFormData({ ...formData, code: value.toUpperCase() })}
+                                        placeholder="PKU"
+                                    />
+                                    <FormField
+                                        label="Pays"
+                                        id="pays"
+                                        value={formData.pays}
+                                        onChange={(value) => setFormData({ ...formData, pays: value })}
+                                        required
+                                    />
+                                    <FormField
+                                        label="Ville"
+                                        id="ville"
+                                        value={formData.ville}
+                                        onChange={(value) => setFormData({ ...formData, ville: value })}
+                                        required
+                                    />
+                                    <FormField
+                                        label="Niveau d'études"
+                                        id="niveau"
+                                        value={formData.niveau_etude}
+                                        onChange={(value) => setFormData({ ...formData, niveau_etude: value })}
+                                        placeholder="Licence, Master, Doctorat"
+                                    />
+                                    <div className="sm:col-span-2">
+                                        <FormField
+                                            label="Programmes"
+                                            id="programme"
+                                            value={formData.programme}
+                                            onChange={(value) => setFormData({ ...formData, programme: value })}
+                                        />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="code">Code (ex: PKU)</Label>
-                                        <Input id="code" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })} placeholder="PKU" maxLength={10} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="pays">Pays *</Label>
-                                        <Input id="pays" value={formData.pays} onChange={(e) => setFormData({ ...formData, pays: e.target.value })} required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="ville">Ville *</Label>
-                                        <Input id="ville" value={formData.ville} onChange={(e) => setFormData({ ...formData, ville: e.target.value })} required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="niveau">Niveau d'études</Label>
-                                        <Input id="niveau" value={formData.niveau_etude} onChange={(e) => setFormData({ ...formData, niveau_etude: e.target.value })} placeholder="Licence, Master, Doctorat" />
-                                    </div>
-                                    <div className="space-y-2 sm:col-span-2">
-                                        <Label htmlFor="programme">Programmes</Label>
-                                        <Input id="programme" value={formData.programme} onChange={(e) => setFormData({ ...formData, programme: e.target.value })} />
-                                    </div>
-                                    <div className="space-y-2 sm:col-span-2">
-                                        <Label htmlFor="criteres">Critères d'admission</Label>
-                                        <Input id="criteres" value={formData.criteres_admission} onChange={(e) => setFormData({ ...formData, criteres_admission: e.target.value })} />
+                                    <div className="sm:col-span-2">
+                                        <FormField
+                                            label="Critères d'admission"
+                                            id="criteres"
+                                            value={formData.criteres_admission}
+                                            onChange={(value) => setFormData({ ...formData, criteres_admission: value })}
+                                        />
                                     </div>
                                 </div>
                                 <div className="flex justify-end gap-2 pt-4">

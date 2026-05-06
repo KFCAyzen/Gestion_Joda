@@ -17,8 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import SearchBar from "./SearchBar";
-import FilterSelect from "./FilterSelect";
+import { SearchBar, FilterSelect, PageHeader, LoadingState, ErrorMessage, StatusBadge } from "./shared";
 
 interface ApplicationFee {
     id: string;
@@ -156,32 +155,20 @@ export default function ApplicationFeeManagement() {
     });
 
     if (isLoading) {
-        return (
-            <div className="flex min-h-[400px] items-center justify-center">
-                <div className="text-center">
-                    <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
-                    <p className="text-slate-600">Chargement des frais...</p>
-                </div>
-            </div>
-        );
+        return <LoadingState message="Chargement des frais..." />;
     }
 
     return (
         <div className="space-y-6 p-4 sm:p-6 lg:p-8">
-            <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                        Suivi paiements
-                    </p>
-                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Gestion des Frais de Candidature</h1>
-                    <p className="mt-1 text-sm text-slate-500">
-                        Enregistre et consulte les paiements liés aux procédures de bourse.
-                    </p>
-                </div>
-                <Button onClick={() => setShowForm(true)} style={{ backgroundColor: "#dc2626" }}>
-                    Nouveau Paiement
-                </Button>
-            </div>
+            <PageHeader
+                eyebrow="Suivi paiements"
+                title="Gestion des Frais de Candidature"
+                description="Enregistre et consulte les paiements liés aux procédures de bourse."
+                action={{
+                    label: "Nouveau Paiement",
+                    onClick: () => setShowForm(true)
+                }}
+            />
 
             {showForm && (
                 <Card className="joda-surface border-0 shadow-none">
@@ -300,9 +287,7 @@ export default function ApplicationFeeManagement() {
                                             <p className="text-lg font-bold" style={{ color: "#dc2626" }}>
                                                 {formatPrice(fee.montant?.toString() || "0")}
                                             </p>
-                                            <Badge className={getStatusColor(fee.status)}>
-                                                {getStatusLabel(fee.status)}
-                                            </Badge>
+                                            <StatusBadge status={fee.status} />
                                         </div>
                                     </div>
                                 );
