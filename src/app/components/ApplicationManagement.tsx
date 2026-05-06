@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import Pagination from "./Pagination";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,8 @@ export default function ApplicationManagement() {
     const [students, setStudents] = useState<Student[]>([]);
     const [universities, setUniversities] = useState<University[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
 
     const [formData, setFormData] = useState({
         studentId: "",
@@ -78,12 +81,21 @@ export default function ApplicationManagement() {
             setApplications(applicationsRes.data || []);
             setStudents(studentsRes.data || []);
             setUniversities(universitiesRes.data || []);
+            setCurrentPage(1); // Reset page on reload
         } catch (error) {
             console.warn("Erreur chargement données:", error);
         } finally {
             setIsLoading(false);
         }
     };
+
+    // Pagination
+    const totalPages = Math.ceil(applications.length / pageSize);
+    const paginatedApplications = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        return applications.slice(start, end);
+    }, [applications, currentPage, pageSize]);
 
     useEffect(() => {
         loadData();
@@ -373,8 +385,9 @@ export default function ApplicationManagement() {
                             <p className="text-slate-500">Aucune candidature pour le moment</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                            {applications.map((application) => {
+                        <>
+                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                {paginatedApplications.map((application) => {
                                 const student = students.find((s) => s.id === application.student_id);
                                 const university = universities.find((u) => u.id === application.university_id);
 
@@ -426,8 +439,18 @@ export default function ApplicationManagement() {
                                         </div>
                                     </div>
                                 );
-                            })}
-                        </div>
+                                })}
+                            </div>
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                                hasNextPage={currentPage < totalPages}
+                                hasPrevPage={currentPage > 1}
+                                totalCount={applications.length}
+                                pageSize={pageSize}
+                            />
+                        </>
                     )}
                 </CardContent>
             </Card>

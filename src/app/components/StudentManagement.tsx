@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
+import Pagination from "./Pagination";
 import {
     buildStudentAuthEmail,
     buildStudentUsername,
@@ -77,6 +78,8 @@ export default function StudentManagement() {
     const [searchTerm, setSearchTerm] = useState("");
     const [genderFilter, setGenderFilter] = useState("all");
     const [formData, setFormData] = useState(emptyFormData);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 20;
 
     useEffect(() => {
         if (typeof window === "undefined") {
@@ -134,6 +137,19 @@ export default function StudentManagement() {
             return matchesSearch && matchesGender;
         });
     }, [genderFilter, searchTerm, students]);
+
+    // Pagination
+    const totalPages = Math.ceil(filteredStudents.length / pageSize);
+    const paginatedStudents = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        return filteredStudents.slice(start, end);
+    }, [filteredStudents, currentPage, pageSize]);
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, genderFilter]);
 
     const stats = useMemo(() => {
         return {
@@ -398,19 +414,20 @@ export default function StudentManagement() {
                                             </p>
                                         </div>
                                     ) : (
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Nom</TableHead>
-                                                    <TableHead>Email</TableHead>
-                                                    <TableHead>Téléphone</TableHead>
-                                                    <TableHead>Niveau</TableHead>
-                                                    <TableHead>Formation</TableHead>
-                                                    <TableHead>Actions</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {filteredStudents.map((student) => (
+                                        <>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Nom</TableHead>
+                                                        <TableHead>Email</TableHead>
+                                                        <TableHead>Téléphone</TableHead>
+                                                        <TableHead>Niveau</TableHead>
+                                                        <TableHead>Formation</TableHead>
+                                                        <TableHead>Actions</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {paginatedStudents.map((student) => (
                                                     <TableRow
                                                         key={student.id}
                                                         className="cursor-default"
@@ -468,9 +485,19 @@ export default function StudentManagement() {
                                                             </div>
                                                         </TableCell>
                                                     </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                            <Pagination
+                                                currentPage={currentPage}
+                                                totalPages={totalPages}
+                                                onPageChange={setCurrentPage}
+                                                hasNextPage={currentPage < totalPages}
+                                                hasPrevPage={currentPage > 1}
+                                                totalCount={filteredStudents.length}
+                                                pageSize={pageSize}
+                                            />
+                                        </>
                                     )}
                                 </CardContent>
                             </Card>

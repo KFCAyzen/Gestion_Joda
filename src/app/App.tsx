@@ -6,6 +6,7 @@ import {
     Bell,
     Building2,
     ChevronDown,
+    Database,
     FileArchive,
     FileClock,
     GraduationCap,
@@ -29,6 +30,7 @@ import ScholarshipFileManagement from "./components/ScholarshipFileManagement";
 import UserManagement from "./components/UserManagement";
 import ActivityHistory from "./components/ActivityHistory";
 import PerformanceHistory from "./components/PerformanceHistory";
+import StorageMonitoring from "./components/StorageMonitoring";
 import { useNotification } from "./hooks/useNotification";
 import Notification from "./components/Notification";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -54,7 +56,8 @@ type PageId =
     | "history"
     | "performance"
     | "notifications"
-    | "comptabilite";
+    | "comptabilite"
+    | "storage";
 
 type UserRole = "student" | "agent" | "admin" | "super_admin" | "user";
 
@@ -84,6 +87,7 @@ const pageDescriptions: Record<PageId, string> = {
     performance: "Indicateurs et performances de l'équipe",
     notifications: "Centre de notifications et alertes",
     comptabilite: "Suivi comptable et financier",
+    storage: "Monitoring du stockage et de la base de données",
 };
 
 const pageComponents: Record<PageId, ReactNode> = {
@@ -98,6 +102,7 @@ const pageComponents: Record<PageId, ReactNode> = {
     performance: <PerformanceHistory />,
     notifications: <NotificationsPage />,
     comptabilite: <AccountingPage />,
+    storage: <StorageMonitoring />,
 };
 
 const iconClassName = "w-4 h-4 flex-shrink-0";
@@ -182,6 +187,18 @@ const menuSections: MenuSection[] = [
                 id: "history",
                 label: "Historique",
                 icon: <SquareChartGantt className={iconClassName} />,
+            },
+        ],
+    },
+    {
+        id: "systeme",
+        label: "Système",
+        roles: ["super_admin"],
+        items: [
+            {
+                id: "storage",
+                label: "Stockage",
+                icon: <Database className={iconClassName} />,
             },
         ],
     },
