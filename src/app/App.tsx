@@ -43,6 +43,7 @@ import NotificationsPage from "./components/NotificationsPage";
 import StudentPortal from "./components/StudentPortal";
 import AccountingPage from "./components/AccountingPage";
 import ChangePassword from "./components/ChangePassword";
+import ActivityLogsPage from "./components/ActivityLogsPage";
 import { supabase } from "./supabase";
 
 type PageId =
@@ -57,7 +58,8 @@ type PageId =
     | "performance"
     | "notifications"
     | "comptabilite"
-    | "storage";
+    | "storage"
+    | "activity_logs";
 
 type UserRole = "student" | "agent" | "admin" | "super_admin" | "user";
 
@@ -88,6 +90,7 @@ const pageDescriptions: Record<PageId, string> = {
     notifications: "Centre de notifications et alertes",
     comptabilite: "Suivi comptable et financier",
     storage: "Monitoring du stockage et de la base de données",
+    activity_logs: "Logs des activités sensibles des agents",
 };
 
 const pageComponents: Record<PageId, ReactNode> = {
@@ -103,6 +106,7 @@ const pageComponents: Record<PageId, ReactNode> = {
     notifications: <NotificationsPage />,
     comptabilite: <AccountingPage />,
     storage: <StorageMonitoring />,
+    activity_logs: <ActivityLogsPage />,
 };
 
 const iconClassName = "w-4 h-4 flex-shrink-0";
@@ -182,6 +186,11 @@ const menuSections: MenuSection[] = [
                 id: "users",
                 label: "Utilisateurs",
                 icon: <Users className={iconClassName} />,
+            },
+            {
+                id: "activity_logs",
+                label: "Logs Activités",
+                icon: <FileClock className={iconClassName} />,
             },
             {
                 id: "history",
