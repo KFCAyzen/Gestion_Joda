@@ -107,6 +107,7 @@
 ### Fonctionnalités
 - Liste avec recherche (nom, email, téléphone, filière, niveau)
 - Filtre par sexe (Tous / Homme / Femme)
+- **Pagination** : 20 étudiants par page
 - Statistiques : total, femmes, hommes, profils avec langue
 - Modale "Détails" pour consulter la fiche complète
 - Création d'un étudiant avec création automatique d'un compte Auth
@@ -141,8 +142,11 @@
 
 ### Fonctionnalités
 - Liste de toutes les candidatures avec statut
+- **Pagination** : 10 candidatures par page
 - Création d'une nouvelle candidature
 - Changement de statut en ligne (select)
+- Suppression de candidature avec confirmation
+- Envoi automatique d'email à l'étudiant lors de la création
 
 ### Statuts disponibles
 | Statut | Label |
@@ -161,7 +165,14 @@
 1. Sélection étudiant (depuis `students`)
 2. Sélection université (depuis `universities` actives)
 3. Saisie programme souhaité, niveau d'études, niveau chinois, type de bourse
-4. Insertion dans `dossier_bourses` avec `status = document_recu`
+4. Insertion dans `dossier_bourses` avec `status = document_manquant`
+5. Création d'une notification pour l'étudiant
+6. Envoi d'un email via `/api/send-application` avec :
+   - Nom de l'université
+   - Programme souhaité
+   - Niveau d'études
+   - Type de bourse
+   - Liste des 5 documents requis
 
 ---
 
@@ -170,29 +181,34 @@
 ### Composant
 - `ScholarshipFileManagement.tsx`
 
-### Données
-- Actuellement en mémoire locale (données de démonstration)
-- Prévu : synchronisation avec `dossier_bourses` + `documents`
+### Table Supabase
+- `dossier_bourses` (avec jointures sur `students` et `universities`)
 
 ### Fonctionnalités
-- Vue kanban/cards des dossiers avec priorité (haute/moyenne/faible)
-- Barre de complétion des documents (%)
-- Checklist des 8 documents requis :
-  - Passeport
-  - Casier judiciaire
-  - Photo d'identité
-  - Relevé de notes
-  - Diplôme
-  - Lettre de motivation
-  - Lettre de recommandation
-  - Certificat HSK
+- Liste des dossiers avec informations étudiant et université
 - Changement de statut du dossier
-- Notes et commentaires de suivi
+- Ajout/modification de notes internes
+- Suppression de dossier avec confirmation
 - Recherche par nom, université, programme
 - Filtre par statut
+- **Pagination** : 10 dossiers par page
 
 ### Statuts dossier
-`incomplete` → `pending` → `review` → `approved` / `rejected`
+- `document_manquant` — En attente de documents
+- `document_recu` — Documents reçus
+- `en_attente` — En attente de traitement
+- `en_cours` — Dossier en cours de traitement
+- `admission_validee` — Admission acceptée
+- `admission_rejetee` — Admission refusée
+- `en_attente_universite` — En attente réponse université
+- `visa_en_cours` — Visa en cours
+- `termine` — Dossier terminé
+
+### Flow CRUD
+1. **Chargement** : `loadData()` récupère depuis `dossier_bourses` avec jointures
+2. **Mise à jour statut** : `updateStatus(id, newStatus)` met à jour le statut
+3. **Mise à jour notes** : `updateNotes(id, notes)` sauvegarde les notes internes
+4. **Suppression** : `deleteFile(id)` supprime avec confirmation
 
 ---
 
@@ -386,13 +402,29 @@
 - `student/StudentDocumentsList.tsx`
 - `student/StudentPaymentsList.tsx`
 - `student/StudentStatsCard.tsx`
+- `DocumentUpload.tsx` — Upload de documents avec compression automatique
 
 ### Fonctionnalités
 - Vue personnelle de l'étudiant sur son dossier
 - Suivi de ses candidatures
 - Suivi de ses paiements
-- Consultation de ses documents
+- Upload de documents avec :
+  - **Compression automatique des images** (max 2 MB)
+  - **Validation stricte de taille** (max 2 MB par fichier)
+  - Formats acceptés : PDF, JPG, PNG
+  - Barre de progression de complétion
+  - Statut de validation par document
 - Notifications personnelles
+
+### Documents requis
+1. Passeport (copie des pages d'identité)
+2. Casier judiciaire (bulletin n°3 de moins de 3 mois)
+3. Photo d'identité (photo récente fond blanc)
+4. Relevé de notes (derniers relevés officiels)
+5. Diplôme (diplôme le plus élevé obtenu)
+6. Lettre de motivation (rédigée en français ou anglais)
+7. Lettre de recommandation (d'un professeur ou employeur)
+8. Certificat HSK (si disponible - optionnel)
 
 ### Accès
 - `student` uniquement (interface séparée du dashboard admin)
@@ -422,6 +454,8 @@
 | `/api/delete-user` | DELETE | Supprime un compte Auth + entrée `users` | Service Role Key |
 | `/api/reset-password` | POST | Réinitialise le mot de passe d'un utilisateur | Service Role Key |
 | `/api/send-welcome` | POST | Envoie l'email de bienvenue | Service Role Key |
+| `/api/send-application` | POST | Envoie l'email de demande de documents à l'étudiant | Service Role Key |
+| `/api/validate-file` | POST | Valide un fichier côté serveur (type, taille, nom) | Service Role Key |
 
 ---
 
@@ -448,8 +482,92 @@
 
 | Section | Modules | Rôles |
 |---|---|---|
-| Pilotage | Dashboard, Performances, Notifications | Tous |
-| Opérations | Candidatures, Étudiants, Dossiers, Demandes Services | Tous |
+| Pilotage | Dashboard, Performances | Tous |
+| Opérations | Candidatures, Étudiants, Dossiers | Tous |
 | Ressources | Universités, Frais | Tous |
 | Finance | Comptabilité | `agent`, `admin`, `super_admin` |
 | Administration | Utilisateurs, Historique | `admin`, `super_admin` |
+| Système | **Stockage** (monitoring) | `super_admin` uniquement |
+
+---
+
+## 15. MONITORING DU STOCKAGE (Super Admin)
+
+### Composant
+- `StorageMonitoring.tsx`
+
+### Fonctionnalités
+- **Barre de progression** de l'utilisation du stockage (500 MB max plan gratuit)
+- **Alertes automatiques** :
+  - Warning à 400 MB (80%)
+  - Critique à 450 MB (90%)
+- **Statistiques détaillées** :
+  - Total de fichiers uploadés
+  - Taille moyenne par fichier
+  - Limite par fichier (2 MB)
+  - Espace restant disponible
+- **Statistiques de la base de données** :
+  - Nombre d'étudiants
+  - Nombre de candidatures
+  - Nombre de documents
+  - Nombre d'universités
+  - Nombre d'utilisateurs
+- **Recommandations d'optimisation** :
+  - Compression automatique activée
+  - Validation stricte en place
+  - Pagination activée
+  - Conseil de passage au plan Pro
+- Bouton "Actualiser" pour rafraîchir les données
+- Affichage de la dernière mise à jour
+
+### Accès
+- `super_admin` uniquement
+
+### Objectif
+- Surveiller l'utilisation du stockage Supabase
+- Anticiper le passage au plan Pro (25$/mois)
+- Éviter une base en lecture seule
+
+---
+
+## 16. OPTIMISATIONS DE STOCKAGE
+
+### Compression d'Images
+- **Fichier** : `utils/imageCompression.ts`
+- **Fonction** : `compressImage(file, maxSizeMB, maxWidthOrHeight, quality)`
+- **Fonctionnalités** :
+  - Compression automatique des images JPEG/PNG
+  - Redimensionnement si > 1920px
+  - Qualité ajustable (80% par défaut)
+  - Réduction récursive jusqu'à 2 MB max
+  - Logs de compression (avant → après)
+
+### Validation de Fichiers
+- **Fichier** : `utils/fileValidation.ts`
+- **Configuration** : `FILE_LIMITS`
+  - Taille max : 2 MB
+  - Types MIME autorisés : PDF, JPEG, PNG
+  - Extensions autorisées : .pdf, .jpg, .jpeg, .png
+- **Fonction** : `validateFile(file)` → `{ valid: boolean, error?: string }`
+- **Validation** :
+  - Côté client (avant upload)
+  - Côté serveur (API `/api/validate-file`)
+  - Nom de fichier sécurisé (regex)
+
+### Pagination
+- **Hook** : `hooks/usePagination.ts`
+- **Composant** : `components/Pagination.tsx`
+- **Implémentation** :
+  - StudentManagement : 20 étudiants/page
+  - ApplicationManagement : 10 candidatures/page
+  - ScholarshipFileManagement : 10 dossiers/page (prévu)
+- **Fonctionnalités** :
+  - Navigation page suivante/précédente
+  - Affichage "X à Y sur Z résultats"
+  - Reset automatique lors des filtres
+  - Responsive (mobile + desktop)
+
+### Impact
+- **Avant optimisations** : ~50-100 étudiants sur plan gratuit
+- **Après optimisations** : ~200-300 étudiants sur plan gratuit
+- **Réduction taille moyenne** : 3-5 MB → 1-1.5 MB par fichier

@@ -52,11 +52,15 @@ export default function ApplicationManagement() {
     const { user } = useAuth();
     const { showNotification } = useNotificationContext();
     const [showForm, setShowForm] = useState(false);
+    const [editingApplication, setEditingApplication] = useState<ScholarshipApplication | null>(null);
     const [applications, setApplications] = useState<ScholarshipApplication[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [universities, setUniversities] = useState<University[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [universityFilter, setUniversityFilter] = useState("all");
     const pageSize = 10;
 
     const [formData, setFormData] = useState({
@@ -90,12 +94,34 @@ export default function ApplicationManagement() {
     };
 
     // Pagination
-    const totalPages = Math.ceil(applications.length / pageSize);
+    const filteredApplications = useMemo(() => {
+        return applications.filter((app) => {
+            const student = students.find(s => s.id === app.student_id);
+            const university = universities.find(u => u.id === app.university_id);
+            
+            const matchesSearch = searchTerm === "" || 
+                `${student?.prenom} ${student?.nom} ${university?.nom} ${app.desired_program} ${app.study_level}`
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase());
+            
+            const matchesStatus = statusFilter === "all" || app.status === statusFilter;
+            const matchesUniversity = universityFilter === "all" || app.university_id === universityFilter;
+            
+            return matchesSearch && matchesStatus && matchesUniversity;
+        });
+    }, [applications, students, universities, searchTerm, statusFilter, universityFilter]);
+
+    const totalPages = Math.ceil(filteredApplications.length / pageSize);
     const paginatedApplications = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
         const end = start + pageSize;
-        return applications.slice(start, end);
-    }, [applications, currentPage, pageSize]);
+        return filteredApplications.slice(start, end);
+    }, [filteredApplications, currentPage, pageSize]);
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, universityFilter]);
 
     useEffect(() => {
         loadData();
@@ -108,6 +134,39 @@ export default function ApplicationManagement() {
         }
 
         try {
+            if (editingApplication) {
+                // Mode modification
+                const { error } = await supabase.from("dossier_bourses").update({
+                    desired_program: formData.desiredProgram,
+                    study_level: formData.studyLevel,
+                    language_level: formData.languageLevel,
+                    scholarship_type: formData.scholarshipType,
+                    notes_internes: `Programme: ${formData.desiredProgram}, Niveau: ${formData.studyLevel}, Langue: ${formData.languageLevel}, Bourse: ${formData.scholarshipType}`,
+                    university_id: formData.universityId,
+                }).eq("id", editingApplication.id);
+
+                if (error) {
+                    showNotification("Erreur lors de la modification", "error");
+                    return;
+                }
+
+                showNotification("Candidature modifiée avec succès !", "success");
+                setShowForm(false);
+                setEditingApplication(null);
+                setFormData({
+                    studentId: "",
+                    universityId: "",
+                    desiredProgram: "",
+                    studyLevel: "Licence",
+                    languageLevel: "HSK 3",
+                    scholarshipType: "Complete",
+                    applicationFee: "",
+                });
+                await loadData();
+                return;
+            }
+
+            // Mode création
             const { data: dossier, error } = await supabase.from("dossier_bourses").insert({
                 student_id: formData.studentId,
                 status: "document_manquant",
@@ -158,6 +217,7 @@ export default function ApplicationManagement() {
 
                 showNotification("Candidature enregistrée avec succès !", "success");
                 setShowForm(false);
+                setEditingApplication(null);
                 setFormData({
                     studentId: "",
                     universityId: "",
@@ -174,6 +234,20 @@ export default function ApplicationManagement() {
         } catch (error) {
             showNotification("Erreur lors de l'enregistrement", "error");
         }
+    };
+
+    const openEditForm = (application: ScholarshipApplication) => {
+        setEditingApplication(application);
+        setFormData({
+            studentId: application.student_id,
+            universityId: application.university_id,
+            desiredProgram: application.desired_program,
+            studyLevel: application.study_level,
+            languageLevel: application.language_level,
+            scholarshipType: application.scholarship_type,
+            applicationFee: "",
+        });
+        setShowForm(true);
     };
 
     const deleteApplication = async (applicationId: string) => {
@@ -259,7 +333,19 @@ export default function ApplicationManagement() {
                         Crée, visualise et fais progresser les dossiers de candidature.
                     </p>
                 </div>
-                <Button onClick={() => setShowForm(true)} style={{ backgroundColor: "#dc2626" }}>
+                <Button onClick={() => {
+                    setEditingApplication(null);
+                    setFormData({
+                        studentId: "",
+                        universityId: "",
+                        desiredProgram: "",
+                        studyLevel: "Licence",
+                        languageLevel: "HSK 3",
+                        scholarshipType: "Complete",
+                        applicationFee: "",
+                    });
+                    setShowForm(true);
+                }} style={{ backgroundColor: "#dc2626" }}>
                     Nouvelle Candidature
                 </Button>
             </div>
@@ -267,16 +353,24 @@ export default function ApplicationManagement() {
             {showForm && (
                 <Card className="joda-surface border-0 shadow-none">
                     <CardHeader>
-                        <CardTitle style={{ color: "#dc2626" }}>Nouvelle Candidature de Bourse</CardTitle>
+                        <CardTitle style={{ color: "#dc2626" }}>
+                            {editingApplication ? "Modifier la Candidature" : "Nouvelle Candidature de Bourse"}
+                        </CardTitle>
                         <CardDescription>
-                            Renseigne les informations essentielles pour ouvrir un nouveau dossier.
+                            {editingApplication 
+                                ? "Modifiez les informations de la candidature."
+                                : "Renseigne les informations essentielles pour ouvrir un nouveau dossier."}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             <div className="space-y-2">
                                 <Label style={{ color: "#dc2626" }}>Étudiant *</Label>
-                                <Select value={formData.studentId || ""} onValueChange={(v) => setFormData({ ...formData, studentId: v || "" })}>
+                                <Select 
+                                    value={formData.studentId || ""} 
+                                    onValueChange={(v) => setFormData({ ...formData, studentId: v || "" })}
+                                    disabled={!!editingApplication}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Sélectionner un étudiant">
                                             {formData.studentId
@@ -362,9 +456,21 @@ export default function ApplicationManagement() {
 
                         <div className="mt-6 flex gap-3">
                             <Button onClick={handleSaveApplication} style={{ backgroundColor: "#dc2626" }}>
-                                Enregistrer
+                                {editingApplication ? "Modifier" : "Enregistrer"}
                             </Button>
-                            <Button variant="outline" onClick={() => setShowForm(false)}>
+                            <Button variant="outline" onClick={() => {
+                                setShowForm(false);
+                                setEditingApplication(null);
+                                setFormData({
+                                    studentId: "",
+                                    universityId: "",
+                                    desiredProgram: "",
+                                    studyLevel: "Licence",
+                                    languageLevel: "HSK 3",
+                                    scholarshipType: "Complete",
+                                    applicationFee: "",
+                                });
+                            }}>
                                 Annuler
                             </Button>
                         </div>
@@ -374,15 +480,72 @@ export default function ApplicationManagement() {
 
             <Card className="joda-surface border-0 shadow-none">
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle>Liste des Candidatures ({applications.length})</CardTitle>
+                    <div className="flex items-center justify-between mb-4">
+                        <CardTitle>Liste des Candidatures ({filteredApplications.length})</CardTitle>
                         <Button variant="outline" onClick={loadData}>Actualiser</Button>
+                    </div>
+                    
+                    {/* Barre de recherche et filtres */}
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_200px_200px]">
+                        <Input
+                            placeholder="Rechercher par nom, université, programme..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        
+                        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filtrer par statut" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Tous les statuts</SelectItem>
+                                <SelectItem value="document_manquant">Document manquant</SelectItem>
+                                <SelectItem value="document_recu">Document reçu</SelectItem>
+                                <SelectItem value="en_attente">En attente</SelectItem>
+                                <SelectItem value="en_cours">En cours</SelectItem>
+                                <SelectItem value="admission_validee">Acceptée</SelectItem>
+                                <SelectItem value="admission_rejetee">Refusée</SelectItem>
+                                <SelectItem value="en_attente_universite">En attente université</SelectItem>
+                                <SelectItem value="visa_en_cours">Visa en cours</SelectItem>
+                                <SelectItem value="termine">Terminé</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        
+                        <Select value={universityFilter} onValueChange={(v) => setUniversityFilter(v || "all")}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filtrer par université" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Toutes les universités</SelectItem>
+                                {universities.map((u) => (
+                                    <SelectItem key={u.id} value={u.id}>{u.nom}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {applications.length === 0 ? (
+                    {filteredApplications.length === 0 ? (
                         <div className="py-12 text-center">
-                            <p className="text-slate-500">Aucune candidature pour le moment</p>
+                            <p className="text-slate-500">
+                                {applications.length === 0 
+                                    ? "Aucune candidature pour le moment" 
+                                    : "Aucune candidature ne correspond aux filtres"}
+                            </p>
+                            {(searchTerm || statusFilter !== "all" || universityFilter !== "all") && (
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="mt-4"
+                                    onClick={() => {
+                                        setSearchTerm("");
+                                        setStatusFilter("all");
+                                        setUniversityFilter("all");
+                                    }}
+                                >
+                                    Réinitialiser les filtres
+                                </Button>
+                            )}
                         </div>
                     ) : (
                         <>
@@ -430,6 +593,13 @@ export default function ApplicationManagement() {
                                                 </SelectContent>
                                             </Select>
                                             <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => openEditForm(application)}
+                                            >
+                                                Modifier
+                                            </Button>
+                                            <Button
                                                 variant="destructive"
                                                 size="sm"
                                                 onClick={() => deleteApplication(application.id)}
@@ -447,7 +617,7 @@ export default function ApplicationManagement() {
                                 onPageChange={setCurrentPage}
                                 hasNextPage={currentPage < totalPages}
                                 hasPrevPage={currentPage > 1}
-                                totalCount={applications.length}
+                                totalCount={filteredApplications.length}
                                 pageSize={pageSize}
                             />
                         </>
