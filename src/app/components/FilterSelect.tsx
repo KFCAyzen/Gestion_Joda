@@ -27,10 +27,10 @@ export default function FilterSelect({ label, value, onChange, options, placehol
         <div className="space-y-2">
             <Label className="text-xs font-medium text-slate-600">{label}</Label>
             <Select value={value} onValueChange={(val) => onChange(val || "all")}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-none">
                     <SelectItem value="all">{placeholder}</SelectItem>
                     {options.map((option) => (
                         <SelectItem key={option.value} value={option.value}>

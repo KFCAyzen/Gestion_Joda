@@ -6,6 +6,7 @@ import { getActivityLogs, ACTIVITY_LABELS, ActivityType } from "../utils/activit
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { SearchBar, FilterSelect, LoadingState, EmptyState } from "./shared";
 import Pagination from "./Pagination";
 
@@ -185,12 +186,15 @@ export default function ActivityLogsPage() {
 
         <Card className="joda-surface border-0 shadow-none">
           <CardContent className="space-y-4 pt-6">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px_280px_200px]">
-              <SearchBar
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder="Rechercher par utilisateur, action..."
-              />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px_320px_200px]">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-slate-600 invisible">Recherche</Label>
+                <SearchBar
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  placeholder="Rechercher par utilisateur, action..."
+                />
+              </div>
               <FilterSelect
                 label="Rôle"
                 value={roleFilter}

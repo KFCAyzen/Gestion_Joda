@@ -204,7 +204,13 @@ const menuSections: MenuSection[] = [
 ];
 
 function AppContent() {
-    const [currentPage, setCurrentPage] = useState<PageId>("home");
+    const [currentPage, setCurrentPage] = useState<PageId>(() => {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem("currentPage");
+            return (saved as PageId) || "home";
+        }
+        return "home";
+    });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { notifications, showNotification, removeNotification } = useNotification();
     const [user, setUser] = useState<any>(null);
@@ -289,6 +295,9 @@ function AppContent() {
 
     const navigateToPage = (page: PageId) => {
         setCurrentPage(page);
+        if (typeof window !== "undefined") {
+            localStorage.setItem("currentPage", page);
+        }
         setIsMobileMenuOpen(false);
     };
 

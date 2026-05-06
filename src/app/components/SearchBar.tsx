@@ -11,8 +11,8 @@ interface SearchBarProps {
 
 export default function SearchBar({ value, onChange, placeholder = "Rechercher..." }: SearchBarProps) {
     return (
-        <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="relative flex items-center">
+            <Search className="absolute left-3 h-4 w-4 text-slate-400 pointer-events-none" />
             <Input
                 type="text"
                 placeholder={placeholder}
