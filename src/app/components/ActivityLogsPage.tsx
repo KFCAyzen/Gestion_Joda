@@ -57,24 +57,24 @@ export default function ActivityLogsPage() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [activityFilter, setActivityFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>("tout");
+  const [activityFilter, setActivityFilter] = useState<string>("tout");
+  const [dateFilter, setDateFilter] = useState<string>("tout");
 
   const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
       const filters: any = {};
 
-      if (roleFilter !== "all") {
+      if (roleFilter !== "tout") {
         filters.userRole = roleFilter;
       }
 
-      if (activityFilter !== "all") {
+      if (activityFilter !== "tout") {
         filters.activityType = activityFilter;
       }
 
-      if (dateFilter !== "all") {
+      if (dateFilter !== "tout") {
         const now = new Date();
         if (dateFilter === "today") {
           filters.startDate = new Date(now.setHours(0, 0, 0, 0)).toISOString();
@@ -185,7 +185,7 @@ export default function ActivityLogsPage() {
 
         <Card className="joda-surface border-0 shadow-none">
           <CardContent className="space-y-4 pt-6">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px_280px_200px]">
               <SearchBar
                 value={searchTerm}
                 onChange={setSearchTerm}
@@ -196,7 +196,7 @@ export default function ActivityLogsPage() {
                 value={roleFilter}
                 onChange={setRoleFilter}
                 options={[
-                  { value: "all", label: "Tous les rôles" },
+                  { value: "tout", label: "Tous les rôles" },
                   { value: "agent", label: "Agents" },
                   { value: "admin", label: "Admins" },
                   { value: "super_admin", label: "Super Admins" },
@@ -207,7 +207,7 @@ export default function ActivityLogsPage() {
                 value={activityFilter}
                 onChange={setActivityFilter}
                 options={[
-                  { value: "all", label: "Toutes les actions" },
+                  { value: "tout", label: "Toutes les actions" },
                   { value: "student_create", label: "Création étudiant" },
                   { value: "student_update", label: "Modification étudiant" },
                   { value: "student_delete", label: "Suppression étudiant" },
@@ -223,7 +223,7 @@ export default function ActivityLogsPage() {
                 value={dateFilter}
                 onChange={setDateFilter}
                 options={[
-                  { value: "all", label: "Toutes les dates" },
+                  { value: "tout", label: "Toutes les dates" },
                   { value: "today", label: "Aujourd'hui" },
                   { value: "week", label: "7 derniers jours" },
                   { value: "month", label: "30 derniers jours" },
@@ -236,14 +236,14 @@ export default function ActivityLogsPage() {
                 title="Aucun log d'activité trouvé"
                 description="Ajustez les filtres pour voir plus de résultats"
                 action={
-                  searchTerm || roleFilter !== "all" || activityFilter !== "all"
+                  searchTerm || roleFilter !== "tout" || activityFilter !== "tout"
                     ? {
                         label: "Réinitialiser les filtres",
                         onClick: () => {
                           setSearchTerm("");
-                          setRoleFilter("all");
-                          setActivityFilter("all");
-                          setDateFilter("all");
+                          setRoleFilter("tout");
+                          setActivityFilter("tout");
+                          setDateFilter("tout");
                         },
                       }
                     : undefined
