@@ -7,6 +7,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { executeBatch } from "../utils/dbOperations";
 
 type FilterType =
     | "all"
@@ -67,9 +68,14 @@ export default function NotificationsPage() {
             if (!payments) return;
 
             const today = new Date();
-            for (const payment of payments.slice(0, 10)) {
+            const overduePayments = payments.slice(0, 10).filter(payment => {
                 const dueDate = new Date(payment.date_limite);
-                if (today > dueDate) {
+                return today > dueDate;
+            });
+
+            await executeBatch(
+                overduePayments,
+                async (payment) => {
                     await supabase.from("notifications").insert({
                         user_id: payment.student_id,
                         type: "retard_paiement",
@@ -77,8 +83,11 @@ export default function NotificationsPage() {
                         message: `Tranche ${payment.tranche} en retard - ${payment.penalites.toLocaleString("fr-FR")} FCFA de pénalités`,
                         read: false,
                     });
-                }
-            }
+                },
+                2,
+                200
+            );
+            
             await load();
         } catch {
             // silencieux
@@ -98,7 +107,14 @@ export default function NotificationsPage() {
 
     const markAllAsRead = async () => {
         const unread = notifications.filter((n) => !n.read);
-        await Promise.all(unread.map((n) => supabase.from("notifications").update({ read: true }).eq("id", n.id)));
+        await executeBatch(
+            unread,
+            async (n) => {
+                await supabase.from("notifications").update({ read: true }).eq("id", n.id);
+            },
+            3,
+            150
+        );
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     };
 

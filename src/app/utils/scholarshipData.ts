@@ -96,12 +96,11 @@ export const generateStudentTestData = async (): Promise<boolean> => {
 // Fonction principale pour générer toutes les données de test
 export const generateAllScholarshipTestData = async (): Promise<boolean> => {
     try {
-        const results = await Promise.all([
-            generateUniversityTestData(),
-            generateStudentTestData()
-        ]);
+        const univ = await generateUniversityTestData();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const students = await generateStudentTestData();
 
-        return results.every(result => result === true);
+        return univ && students;
     } catch (error) {
         console.error('Erreur génération données complètes:', error);
         return false;
@@ -111,8 +110,9 @@ export const generateAllScholarshipTestData = async (): Promise<boolean> => {
 // Fonction pour nettoyer toutes les données
 export const clearAllScholarshipData = async (): Promise<boolean> => {
     try {
-        // Supprimer les données de test (celles créées par 'system')
+        // Supprimer les données de test (celles créées par 'system') de manière séquentielle
         await supabase.from('universities').delete().eq('created_by', 'system');
+        await new Promise(resolve => setTimeout(resolve, 100));
         await supabase.from('students').delete().eq('created_by', 'system');
         
         return true;

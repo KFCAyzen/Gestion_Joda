@@ -5,6 +5,7 @@ import { supabase } from "../supabase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { executeBatch } from "../utils/dbOperations";
 
 interface Notification {
     id: string;
@@ -59,7 +60,14 @@ export default function StudentNotifications({ user, onBack }: Props) {
 
     const markAllAsRead = async () => {
         const unread = notifications.filter((n) => !n.read);
-        await Promise.all(unread.map((n) => supabase.from("notifications").update({ read: true }).eq("id", n.id)));
+        await executeBatch(
+            unread,
+            async (n) => {
+                await supabase.from("notifications").update({ read: true }).eq("id", n.id);
+            },
+            3,
+            150
+        );
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     };
 
