@@ -137,10 +137,11 @@ export default function UniversityManagement() {
         setActiveTab("list");
     };
 
-    const canEdit = user?.role === "admin" || user?.role === "super_admin";
+    const canEdit = user?.role === "agent" || user?.role === "admin" || user?.role === "super_admin";
+    const canDelete = user?.role === "admin" || user?.role === "super_admin";
 
     return (
-        <ProtectedRoute requiredRole="admin">
+        <ProtectedRoute requiredRole="user">
             <div className="space-y-6 p-4 sm:p-6">
                 <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -232,13 +233,15 @@ export default function UniversityManagement() {
                                                             >
                                                                 Modifier
                                                             </Button>
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={() => handleDelete(u.id)}
-                                                            >
-                                                                Supprimer
-                                                            </Button>
+                                                            {canDelete && (
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(u.id)}
+                                                                >
+                                                                    Supprimer
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </TableCell>
                                                 )}
