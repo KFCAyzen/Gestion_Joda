@@ -1,5 +1,7 @@
 // Service de base de données Supabase
 import { supabase } from '../supabase';
+
+type DbUpdate = Record<string, string | number | boolean | null | undefined>;
 import type { 
   User, Student, Document, DossierBourse, DossierHistoryEntry,
   Payment, CoursLangue, EntreeComptable, SortieComptable, Notification 
@@ -143,7 +145,7 @@ export async function getStudentById(id: string) {
 
 // Mettre à jour un étudiant
 export async function updateStudent(id: string, updates: Partial<Student>) {
-  const updateData: any = { updated_at: new Date().toISOString() };
+  const updateData: DbUpdate = { updated_at: new Date().toISOString() };
   
   if (updates.nom) updateData.nom = updates.nom;
   if (updates.prenom) updateData.prenom = updates.prenom;
@@ -220,7 +222,7 @@ export async function getDocumentsByStudent(studentId: string) {
 
 // Mettre à jour un document
 export async function updateDocument(id: string, updates: Partial<Document>) {
-  const updateData: any = { updated_at: new Date().toISOString() };
+  const updateData: DbUpdate = { updated_at: new Date().toISOString() };
   
   if (updates.status) updateData.status = updates.status;
   if (updates.url) updateData.url = updates.url;
@@ -294,7 +296,7 @@ export async function getDossierBourseByStudentId(studentId: string) {
 
 // Mettre à jour un dossier de bourse
 export async function updateDossierBourse(id: string, updates: Partial<DossierBourse>) {
-  const updateData: any = { updated_at: new Date().toISOString() };
+  const updateData: DbUpdate = { updated_at: new Date().toISOString() };
   
   if (updates.status) updateData.status = updates.status;
   if (updates.notes_internes) updateData.notes_internes = updates.notes_internes;
@@ -396,7 +398,7 @@ export async function getPaymentsByStudent(studentId: string) {
 
 // Mettre à jour un paiement
 export async function updatePayment(id: string, updates: Partial<Payment>) {
-  const updateData: any = { updated_at: new Date().toISOString() };
+  const updateData: DbUpdate = { updated_at: new Date().toISOString() };
   
   if (updates.status) updateData.status = updates.status;
   if (updates.date_paiement) updateData.date_paiement = updates.date_paiement.toString();
@@ -459,7 +461,7 @@ export async function getCoursLanguesByStudent(studentId: string) {
 
 // Mettre à jour un cours de langue
 export async function updateCoursLangue(id: string, updates: Partial<CoursLangue>) {
-  const updateData: any = { updated_at: new Date().toISOString() };
+  const updateData: DbUpdate = { updated_at: new Date().toISOString() };
   
   if (updates.statut) updateData.statut = updates.statut;
 

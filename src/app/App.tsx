@@ -1,3 +1,6 @@
+// Ce fichier est conservé comme référence uniquement.
+// L'application utilise désormais le App Router : src/app/(app)/layout.tsx
+// Ce composant n'est plus importé ni utilisé.
 "use client";
 
 import type { ReactNode } from "react";
@@ -313,12 +316,7 @@ function AppContent() {
     if (showLogin || !user) {
         return (
             <>
-                <LoginPage
-                    onLoginSuccess={(loggedUser) => {
-                        setUser(loggedUser);
-                        setShowLogin(false);
-                    }}
-                />
+                <LoginPage />
                 {notifications.map((notification, index) => (
                     <Notification
                         key={`login-notification-${notification.id}-${index}`}

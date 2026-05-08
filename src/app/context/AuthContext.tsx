@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../supabase';
-import type { User as JodaUser } from '../types/joda';
+import { createClient } from '../lib/supabase/client';
+
+const supabase = createClient();
 
 export type UserRole = 'student' | 'agent' | 'admin' | 'supervisor' | 'user' | 'super_admin';
 
@@ -129,15 +130,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const persistAuthenticatedUser = (dbUser: any): boolean => {
+    const persistAuthenticatedUser = (dbUser: Record<string, unknown>): boolean => {
         if (!dbUser) return false;
         const currentUser: AuthUser = {
-            id: dbUser.id,
-            username: dbUser.username,
-            role: dbUser.role,
-            name: dbUser.name,
-            email: dbUser.email,
-            mustChangePassword: dbUser.must_change_password
+            id: dbUser.id as string,
+            username: dbUser.username as string,
+            role: dbUser.role as UserRole,
+            name: dbUser.name as string,
+            email: dbUser.email as string,
+            mustChangePassword: dbUser.must_change_password === true,
         };
         setUser(currentUser);
         if (typeof window !== 'undefined') {
@@ -148,9 +149,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (email: string, password: string): Promise<boolean> => {
         try {
+            console.log('🔐 Tentative de connexion:', email);
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
             if (authError) {
+                console.error('❌ Erreur auth:', authError.message);
                 if (authError.message !== 'Invalid login credentials') {
                     console.error('Erreur auth:', authError.message);
                 }
@@ -181,11 +184,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             if (authData.user) {
+                console.log('✅ Auth réussie, récupération user DB...');
                 const { data: userData, error: userError } = await supabase
                     .from('users')
                     .select('*')
                     .eq('id', authData.user.id)
                     .single();
+
+                console.log('userData:', userData);
+                console.log('userError:', userError);
 
                 if (userError && userError.message.includes('No rows')) {
                     const { error: insertError } = await supabase.from('users').insert({
@@ -216,6 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         return true;
                     }
                 } else if (userData) {
+                    console.log('✅ User trouvé, création session...');
                     const currentUser: AuthUser = {
                         id: userData.id,
                         username: userData.username,
@@ -224,16 +232,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         email: userData.email,
                         mustChangePassword: userData.must_change_password === true
                     };
+                    console.log('currentUser:', currentUser);
                     setUser(currentUser);
                     if (typeof window !== 'undefined') {
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     }
+                    console.log('✅ Connexion réussie!');
                     return true;
                 }
             }
+            console.log('❌ Connexion échouée - aucune donnée utilisateur');
             return false;
         } catch (error) {
-            console.error('Erreur login:', error);
+            console.error('❌ Erreur login (catch):', error);
             return false;
         }
     };
@@ -334,7 +345,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const changePassword = async (userId: string, newPassword: string): Promise<boolean> => {
+    const changePassword = async (userId: string, _newPassword: string): Promise<boolean> => {
         try {
             const { error } = await supabase
                 .from('users')

@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport Comptable — Gestion des Bourses</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f1623;
+    --ink-light: #3a4356;
+    --paper: #f7f5f0;
+    --paper-dark: #ede9e1;
+    --accent: #1a4f8a;
+    --accent-light: #e8f0fb;
+    --green: #1a6b45;
+    --green-light: #e6f4ed;
+    --red: #8b1a1a;
+    --red-light: #fdeaea;
+    --gold: #b8860b;
+    --gold-light: #fdf6e3;
+    --border: #d0ccc3;
+    --shadow: rgba(15,22,35,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ─── PRINT BUTTON (masqué à l'impression) ─── */
+  .no-print {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 40px;
+    background: var(--ink);
+  }
+  .btn-print, .btn-export {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: opacity 0.2s;
+  }
+  .btn-print { background: var(--paper); color: var(--ink); }
+  .btn-export { background: var(--accent); color: #fff; }
+  .btn-print:hover, .btn-export:hover { opacity: 0.85; }
+
+  /* ─── PAGE WRAPPER ─── */
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 48px 64px;
+    background: #fff;
+    min-height: 100vh;
+  }
+
+  /* ─── EN-TÊTE ─── */
+  .header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 24px;
+    padding-bottom: 28px;
+    border-bottom: 3px solid var(--ink);
+    margin-bottom: 32px;
+  }
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-mark {
+    width: 48px; height: 48px;
+    background: var(--accent);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-mark svg { width: 28px; height: 28px; fill: #fff; }
+  .org-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .org-sub {
+    font-size: 11px;
+    color: var(--ink-light);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .header-meta {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-light);
+    line-height: 1.8;
+  }
+  .header-meta strong {
+    display: block;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  /* ─── TITRE DU RAPPORT ─── */
+  .report-title-block {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .report-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .report-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .report-period {
+    font-size: 13px;
+    color: var(--ink-light);
+    margin-top: 6px;
+  }
+
+  /* ─── BLOC INFOS ─── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+  .info-cell {
+    background: var(--paper);
+    padding: 14px 18px;
+  }
+  .info-cell-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 4px;
+  }
+  .info-cell-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* ─── SECTION HEADING ─── */
+  .section {
+    margin-bottom: 40px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .section-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  /* ─── KPI CARDS ─── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kpi-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.blue::before { background: var(--accent); }
+  .kpi-card.green::before { background: var(--green); }
+  .kpi-card.red::before { background: var(--red); }
+  .kpi-card.gold::before { background: var(--gold); }
+
+  .kpi-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-light);
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .kpi-sub {
+    font-size: 10px;
+    color: var(--ink-light);
+  }
+  .kpi-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-top: 4px;
+  }
+  .badge-up { background: var(--green-light); color: var(--green); }
+  .badge-down { background: var(--red-light); color: var(--red); }
+  .badge-neutral { background: var(--gold-light); color: var(--gold); }
+
+  /* ─── TABLES ─── */
+  .table-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead tr {
+    background: var(--ink);
+    color: #fff;
+  }
+  thead th {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+  }
+  thead th.right { text-align: right; }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(even) { background: var(--paper); }
+  tbody tr:hover { background: var(--accent-light); }
+  tbody td {
+    padding: 9px 14px;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  tbody td.mono {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+  tbody td.right { text-align: right; }
+  tbody td.bold { font-weight: 600; }
+  tfoot tr {
+    background: var(--paper-dark);
+    border-top: 2px solid var(--ink);
+  }
+  tfoot td {
+    padding: 10px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  tfoot td.right { text-align: right; }
+
+  /* STATUS BADGES */
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 10px;
+  }
+  .status::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .status.payé { background: var(--green-light); color: var(--green); }
+  .status.payé::before { background: var(--green); }
+  .status.en-attente { background: var(--gold-light); color: var(--gold); }
+  .status.en-attente::before { background: var(--gold); }
+  .status.annulé { background: var(--red-light); color: var(--red); }
+  .status.annulé::before { background: var(--red); }
+
+  /* ─── BILAN COMPTABLE ─── */
+  .bilan-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .bilan-col-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    font-weight: 500;
+  }
+  .bilan-actif .bilan-col-title { background: var(--accent); color: #fff; }
+  .bilan-passif .bilan-col-title { background: var(--ink); color: #fff; }
+
+  /* ─── GRAPHIQUE BARRE (CSS only) ─── */
+  .chart-wrap {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .chart-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-light);
+    margin-bottom: 16px;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 80px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .bar-label { font-size: 11px; color: var(--ink); }
+  .bar-track {
+    height: 10px;
+    background: var(--paper-dark);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: var(--accent);
+    transition: width 0.6s ease;
+  }
+  .bar-fill.green { background: var(--green); }
+  .bar-fill.red { background: var(--red); }
+  .bar-fill.gold { background: var(--gold); }
+  .bar-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    text-align: right;
+    color: var(--ink);
+  }
+
+  /* ─── NOTES / OBSERVATIONS ─── */
+  .notes-box {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+    padding: 16px 20px;
+    background: var(--accent-light);
+    margin-bottom: 20px;
+  }
+  .notes-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .notes-text {
+    font-size: 12px;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+
+  /* ─── SIGNATURES ─── */
+  .signatures {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+  .sig-block { text-align: center; }
+  .sig-line {
+    border-bottom: 1px solid var(--ink);
+    height: 48px;
+    margin-bottom: 8px;
+  }
+  .sig-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .sig-role {
+    font-size: 10px;
+    color: var(--ink-light);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── PIED DE PAGE ─── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-light);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .page-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-light);
+  }
+
+  /* ─── PRINT ─── */
+  @media print {
+    .no-print { display: none; }
+    body { background: #fff; }
+    .page { padding: 24px 32px; }
+    .kpi-grid { grid-template-columns: repeat(4,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Barre d'actions (masquée à l'impression) -->
+<div class="no-print">
+  <button class="btn-export" onclick="window.print()">⬇ Exporter PDF</button>
+  <button class="btn-print" onclick="window.print()">🖨 Imprimer</button>
+</div>
+
+<div class="page">
+
+  <!-- ══ EN-TÊTE ══ -->
+  <div class="header">
+    <div class="header-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M12 3L2 9l10 6 10-6-10-6zM2 15l10 6 10-6M2 12l10 6 10-6"/></svg>
+      </div>
+      <div>
+        <div class="org-name">Université de {{NOM_UNIVERSITÉ}}</div>
+        <div class="org-sub">Service des Bourses & Aides Étudiantes</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <strong>RAPPORT COMPTABLE</strong>
+      N° <span style="font-family:'DM Mono',monospace;">{{REF_RAPPORT}}</span><br>
+      Exercice : {{ANNEE_EXERCICE}}<br>
+      Émis le : {{DATE_EMISSION}}<br>
+      Statut : <span style="color:var(--green);font-weight:600;">{{STATUT}}</span>
+    </div>
+  </div>
+
+  <!-- ══ TITRE ══ -->
+  <div class="report-title-block">
+    <div class="report-label">Document Comptable Officiel</div>
+    <div class="report-title">Rapport Comptable Complet — Gestion des Bourses Étudiantes</div>
+    <div class="report-period">Période : {{PERIODE_DEBUT}} au {{PERIODE_FIN}} &nbsp;|&nbsp; Exercice Budgétaire {{ANNEE_EXERCICE}}</div>
+  </div>
+
+  <!-- ══ INFOS GÉNÉRALES ══ -->
+  <div class="info-grid">
+    <div class="info-cell">
+      <div class="info-cell-label">Responsable Comptable</div>
+      <div class="info-cell-value">{{NOM_COMPTABLE}}</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">Département / UFR</div>
+      <div class="info-cell-value">{{DEPARTEMENT}}</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">Code Budgétaire</div>
+      <div class="info-cell-value" style="font-family:'DM Mono',monospace;">{{CODE_BUDGET}}</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">Nombre de Bénéficiaires</div>
+      <div class="info-cell-value">{{NB_BENEFICIAIRES}} étudiants</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">Source de Financement</div>
+      <div class="info-cell-value">{{SOURCE_FINANCEMENT}}</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-cell-label">Devise</div>
+      <div class="info-cell-value">{{DEVISE}} ({{CODE_DEVISE}})</div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 1 : INDICATEURS CLÉS ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Indicateurs Clés de la Période</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-label">Budget Alloué</div>
+        <div class="kpi-value">{{BUDGET_ALLOUE}}</div>
+        <div class="kpi-sub">Dotation initiale</div>
+        <span class="kpi-badge badge-neutral">100%</span>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Total Décaissé</div>
+        <div class="kpi-value">{{TOTAL_DECAISSE}}</div>
+        <div class="kpi-sub">Bourses versées</div>
+        <span class="kpi-badge badge-up">▲ {{TAUX_DECAISSEMENT}}%</span>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">Solde Restant</div>
+        <div class="kpi-value">{{SOLDE_RESTANT}}</div>
+        <div class="kpi-sub">Non consommé</div>
+        <span class="kpi-badge badge-down">{{PCT_RESTANT}}%</span>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-label">Montant Moyen/Étud.</div>
+        <div class="kpi-value">{{MONTANT_MOYEN}}</div>
+        <div class="kpi-sub">Par bénéficiaire</div>
+        <span class="kpi-badge badge-neutral">Moy.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 2 : RÉPARTITION PAR CATÉGORIE ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Répartition par Catégorie de Bourse</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Catégorie de Bourse</th>
+            <th>Nb. Bénéficiaires</th>
+            <th class="right">Montant Unitaire</th>
+            <th class="right">Total Engagé</th>
+            <th class="right">Total Versé</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">BSC-001</td>
+            <td class="bold">Bourse sur Critères Sociaux</td>
+            <td>{{NB_BCS}}</td>
+            <td class="mono right">{{MNT_UNIT_BCS}}</td>
+            <td class="mono right">{{TOTAL_ENGAGE_BCS}}</td>
+            <td class="mono right">{{TOTAL_VERSE_BCS}}</td>
+            <td><span class="status payé">Payé</span></td>
+          </tr>
+          <tr>
+            <td class="mono">BEX-002</td>
+            <td class="bold">Bourse d'Excellence</td>
+            <td>{{NB_BEX}}</td>
+            <td class="mono right">{{MNT_UNIT_BEX}}</td>
+            <td class="mono right">{{TOTAL_ENGAGE_BEX}}</td>
+            <td class="mono right">{{TOTAL_VERSE_BEX}}</td>
+            <td><span class="status payé">Payé</span></td>
+          </tr>
+          <tr>
+            <td class="mono">BMO-003</td>
+            <td class="bold">Bourse de Mobilité</td>
+            <td>{{NB_BMO}}</td>
+            <td class="mono right">{{MNT_UNIT_BMO}}</td>
+            <td class="mono right">{{TOTAL_ENGAGE_BMO}}</td>
+            <td class="mono right">{{TOTAL_VERSE_BMO}}</td>
+            <td><span class="status en-attente">En attente</span></td>
+          </tr>
+          <tr>
+            <td class="mono">BRE-004</td>
+            <td class="bold">Bourse de Recherche</td>
+            <td>{{NB_BRE}}</td>
+            <td class="mono right">{{MNT_UNIT_BRE}}</td>
+            <td class="mono right">{{TOTAL_ENGAGE_BRE}}</td>
+            <td class="mono right">{{TOTAL_VERSE_BRE}}</td>
+            <td><span class="status payé">Payé</span></td>
+          </tr>
+          <tr>
+            <td class="mono">BUR-005</td>
+            <td class="bold">Aide d'Urgence</td>
+            <td>{{NB_BUR}}</td>
+            <td class="mono right">{{MNT_UNIT_BUR}}</td>
+            <td class="mono right">{{TOTAL_ENGAGE_BUR}}</td>
+            <td class="mono right">{{TOTAL_VERSE_BUR}}</td>
+            <td><span class="status annulé">Annulé</span></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" style="font-weight:700;">TOTAL GÉNÉRAL</td>
+            <td class="mono">{{TOTAL_NB}}</td>
+            <td class="right">—</td>
+            <td class="mono right" style="font-weight:700;">{{TOTAL_ENGAGE}}</td>
+            <td class="mono right" style="font-weight:700;">{{TOTAL_VERSE}}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Graphique par catégorie -->
+    <div class="chart-wrap">
+      <div class="chart-title">Répartition budgétaire par catégorie (%)</div>
+      <div class="bar-row">
+        <div class="bar-label">Critères Sociaux</div>
+        <div class="bar-track"><div class="bar-fill" style="width:{{PCT_BCS}}%"></div></div>
+        <div class="bar-amount">{{PCT_BCS}}%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Excellence</div>
+        <div class="bar-track"><div class="bar-fill green" style="width:{{PCT_BEX}}%"></div></div>
+        <div class="bar-amount">{{PCT_BEX}}%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Mobilité</div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:{{PCT_BMO}}%"></div></div>
+        <div class="bar-amount">{{PCT_BMO}}%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Recherche</div>
+        <div class="bar-track"><div class="bar-fill" style="width:{{PCT_BRE}}%"></div></div>
+        <div class="bar-amount">{{PCT_BRE}}%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Aide d'Urgence</div>
+        <div class="bar-track"><div class="bar-fill red" style="width:{{PCT_BUR}}%"></div></div>
+        <div class="bar-amount">{{PCT_BUR}}%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 3 : JOURNAL DES OPÉRATIONS ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Journal des Opérations Comptables</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>N° Pièce</th>
+            <th>Date</th>
+            <th>Libellé</th>
+            <th>Compte</th>
+            <th class="right">Débit</th>
+            <th class="right">Crédit</th>
+            <th class="right">Solde</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">{{PIECE_001}}</td>
+            <td>{{DATE_OP_001}}</td>
+            <td>Dotation initiale — Budget annuel bourses</td>
+            <td class="mono">{{COMPTE_001}}</td>
+            <td class="mono right" style="color:var(--green);">{{DEBIT_001}}</td>
+            <td class="mono right">—</td>
+            <td class="mono right">{{SOLDE_001}}</td>
+          </tr>
+          <tr>
+            <td class="mono">{{PIECE_002}}</td>
+            <td>{{DATE_OP_002}}</td>
+            <td>Versement bourse — Promotion {{PROMO_002}}</td>
+            <td class="mono">{{COMPTE_002}}</td>
+            <td class="mono right">—</td>
+            <td class="mono right" style="color:var(--red);">{{CREDIT_002}}</td>
+            <td class="mono right">{{SOLDE_002}}</td>
+          </tr>
+          <tr>
+            <td class="mono">{{PIECE_003}}</td>
+            <td>{{DATE_OP_003}}</td>
+            <td>Reversement — Bourse annulée réf. {{REF_ANNUL}}</td>
+            <td class="mono">{{COMPTE_003}}</td>
+            <td class="mono right" style="color:var(--green);">{{DEBIT_003}}</td>
+            <td class="mono right">—</td>
+            <td class="mono right">{{SOLDE_003}}</td>
+          </tr>
+          <tr>
+            <td class="mono">{{PIECE_004}}</td>
+            <td>{{DATE_OP_004}}</td>
+            <td>Versement bourse — Tranche 2 / {{PERIODE_T2}}</td>
+            <td class="mono">{{COMPTE_004}}</td>
+            <td class="mono right">—</td>
+            <td class="mono right" style="color:var(--red);">{{CREDIT_004}}</td>
+            <td class="mono right">{{SOLDE_004}}</td>
+          </tr>
+          <tr>
+            <td class="mono">{{PIECE_005}}</td>
+            <td>{{DATE_OP_005}}</td>
+            <td>Ajustement budgétaire — Transfert inter-fonds</td>
+            <td class="mono">{{COMPTE_005}}</td>
+            <td class="mono right" style="color:var(--green);">{{DEBIT_005}}</td>
+            <td class="mono right">—</td>
+            <td class="mono right">{{SOLDE_005}}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="right" style="font-weight:700;">TOTAUX PÉRIODE</td>
+            <td class="mono right" style="font-weight:700;color:var(--green);">{{TOTAL_DEBITS}}</td>
+            <td class="mono right" style="font-weight:700;color:var(--red);">{{TOTAL_CREDITS}}</td>
+            <td class="mono right" style="font-weight:700;">{{SOLDE_FINAL}}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 4 : BILAN SIMPLIFIÉ ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">Bilan Comptable Simplifié</span>
+    </div>
+    <div class="bilan-grid">
+      <!-- ACTIF -->
+      <div class="bilan-col bilan-actif">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr style="background:var(--accent);">
+                <th colspan="2" class="bilan-col-title">ACTIF (EMPLOIS)</th>
+              </tr>
+              <tr>
+                <th>Poste</th>
+                <th class="right">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Disponibilités en caisse</td>
+                <td class="mono right">{{ACTIF_CAISSE}}</td>
+              </tr>
+              <tr>
+                <td>Compte bancaire principal</td>
+                <td class="mono right">{{ACTIF_BANQUE}}</td>
+              </tr>
+              <tr>
+                <td>Avances en cours</td>
+                <td class="mono right">{{ACTIF_AVANCES}}</td>
+              </tr>
+              <tr>
+                <td>Créances à recouvrer</td>
+                <td class="mono right">{{ACTIF_CREANCES}}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style="font-weight:700;">TOTAL ACTIF</td>
+                <td class="mono right" style="font-weight:700;">{{TOTAL_ACTIF}}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <!-- PASSIF -->
+      <div class="bilan-col bilan-passif">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr style="background:var(--ink);">
+                <th colspan="2" class="bilan-col-title">PASSIF (RESSOURCES)</th>
+              </tr>
+              <tr>
+                <th>Poste</th>
+                <th class="right">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Dotation État / tutelle</td>
+                <td class="mono right">{{PASSIF_ETAT}}</td>
+              </tr>
+              <tr>
+                <td>Subventions partenaires</td>
+                <td class="mono right">{{PASSIF_PARTENAIRES}}</td>
+              </tr>
+              <tr>
+                <td>Bourses engagées non versées</td>
+                <td class="mono right">{{PASSIF_ENGAGEES}}</td>
+              </tr>
+              <tr>
+                <td>Réserves non affectées</td>
+                <td class="mono right">{{PASSIF_RESERVES}}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style="font-weight:700;">TOTAL PASSIF</td>
+                <td class="mono right" style="font-weight:700;">{{TOTAL_PASSIF}}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vérification équilibre -->
+    <div class="notes-box" style="border-left-color:var(--green);background:var(--green-light);">
+      <div class="notes-title" style="color:var(--green);">✓ Vérification de l'équilibre</div>
+      <div class="notes-text">
+        Actif Total : <strong>{{TOTAL_ACTIF}}</strong> &nbsp;=&nbsp; Passif Total : <strong>{{TOTAL_PASSIF}}</strong> &nbsp;→&nbsp;
+        Écart : <strong>{{ECART_BILAN}}</strong> &nbsp;
+        <span style="color:var(--green);font-weight:600;">{{STATUT_BILAN}}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 5 : RÉCAPITULATIF DES PAIEMENTS ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">Récapitulatif des Paiements par Mois</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Mois</th>
+            <th class="right">Nb. Paiements</th>
+            <th class="right">Montant Versé</th>
+            <th class="right">Montant Annulé</th>
+            <th class="right">Net Décaissé</th>
+            <th class="right">% Budget</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="bold">Janvier {{ANNEE_EXERCICE}}</td>
+            <td class="mono right">{{NB_PAY_JAN}}</td>
+            <td class="mono right">{{MNT_JAN}}</td>
+            <td class="mono right" style="color:var(--red);">{{ANN_JAN}}</td>
+            <td class="mono right bold">{{NET_JAN}}</td>
+            <td class="mono right">{{PCT_JAN}}%</td>
+          </tr>
+          <tr>
+            <td class="bold">Février {{ANNEE_EXERCICE}}</td>
+            <td class="mono right">{{NB_PAY_FEV}}</td>
+            <td class="mono right">{{MNT_FEV}}</td>
+            <td class="mono right" style="color:var(--red);">{{ANN_FEV}}</td>
+            <td class="mono right bold">{{NET_FEV}}</td>
+            <td class="mono right">{{PCT_FEV}}%</td>
+          </tr>
+          <tr>
+            <td class="bold">Mars {{ANNEE_EXERCICE}}</td>
+            <td class="mono right">{{NB_PAY_MAR}}</td>
+            <td class="mono right">{{MNT_MAR}}</td>
+            <td class="mono right" style="color:var(--red);">{{ANN_MAR}}</td>
+            <td class="mono right bold">{{NET_MAR}}</td>
+            <td class="mono right">{{PCT_MAR}}%</td>
+          </tr>
+          <tr>
+            <td class="bold">Avril {{ANNEE_EXERCICE}}</td>
+            <td class="mono right">{{NB_PAY_AVR}}</td>
+            <td class="mono right">{{MNT_AVR}}</td>
+            <td class="mono right" style="color:var(--red);">{{ANN_AVR}}</td>
+            <td class="mono right bold">{{NET_AVR}}</td>
+            <td class="mono right">{{PCT_AVR}}%</td>
+          </tr>
+          <tr>
+            <td class="bold">Mai {{ANNEE_EXERCICE}}</td>
+            <td class="mono right">{{NB_PAY_MAI}}</td>
+            <td class="mono right">{{MNT_MAI}}</td>
+            <td class="mono right" style="color:var(--red);">{{ANN_MAI}}</td>
+            <td class="mono right bold">{{NET_MAI}}</td>
+            <td class="mono right">{{PCT_MAI}}%</td>
+          </tr>
+          <tr>
+            <td class="bold">Juin {{ANNEE_EXERCICE}}</td>
+            <td class="mono right">{{NB_PAY_JUN}}</td>
+            <td class="mono right">{{MNT_JUN}}</td>
+            <td class="mono right" style="color:var(--red);">{{ANN_JUN}}</td>
+            <td class="mono right bold">{{NET_JUN}}</td>
+            <td class="mono right">{{PCT_JUN}}%</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td style="font-weight:700;">CUMUL</td>
+            <td class="mono right" style="font-weight:700;">{{TOTAL_PAIEMENTS}}</td>
+            <td class="mono right" style="font-weight:700;">{{TOTAL_VERSE_GLOB}}</td>
+            <td class="mono right" style="font-weight:700;color:var(--red);">{{TOTAL_ANNULE}}</td>
+            <td class="mono right" style="font-weight:700;">{{TOTAL_NET}}</td>
+            <td class="mono right" style="font-weight:700;">{{PCT_GLOBAL}}%</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 6 : OBSERVATIONS ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">Observations & Recommandations</span>
+    </div>
+    <div class="notes-box">
+      <div class="notes-title">Observations du Responsable Comptable</div>
+      <div class="notes-text">
+        {{OBSERVATIONS_TEXTE}}
+      </div>
+    </div>
+    <div class="notes-box" style="border-left-color:var(--gold);background:var(--gold-light);">
+      <div class="notes-title" style="color:var(--gold);">⚠ Alertes & Points d'Attention</div>
+      <div class="notes-text">
+        {{ALERTES_TEXTE}}
+      </div>
+    </div>
+    <div class="notes-box" style="border-left-color:var(--green);background:var(--green-light);">
+      <div class="notes-title" style="color:var(--green);">Recommandations</div>
+      <div class="notes-text">
+        {{RECOMMANDATIONS_TEXTE}}
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SIGNATURES ══ -->
+  <div class="signatures">
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-name">{{NOM_COMPTABLE}}</div>
+      <div class="sig-role">Responsable Comptable</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-name">{{NOM_DIRECTEUR}}</div>
+      <div class="sig-role">Directeur du Service</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-name">{{NOM_VALIDATEUR}}</div>
+      <div class="sig-role">Contrôleur / Auditeur</div>
+    </div>
+  </div>
+
+  <!-- ══ PIED DE PAGE ══ -->
+  <div class="footer">
+    <div class="footer-text">
+      Réf. {{REF_RAPPORT}} &nbsp;·&nbsp; Généré le {{DATE_EMISSION}} &nbsp;·&nbsp; Confidentiel — Usage interne
+    </div>
+    <div class="page-num">Page 1 / 1</div>
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>

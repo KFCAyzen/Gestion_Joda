@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import { buildStudentAuthEmail } from "../lib/student-auth";
@@ -16,26 +17,8 @@ import {
     staggerItem,
 } from "../utils/animations";
 
-interface LoginPageProps {
-    onLoginSuccess: (user: any) => void;
-}
-
-const ACCOUNTS: Record<string, { id: string; username: string; role: string; name: string; mustChangePassword: boolean; password: string }> = {
-    admin:      { id: "1a5d0dff-db7b-41fd-b8fc-8206249fdd03", username: "superadmin", role: "super_admin", name: "superadmin", mustChangePassword: false, password: "admin123" },
-    superadmin: { id: "1a5d0dff-db7b-41fd-b8fc-8206249fdd03", username: "superadmin", role: "super_admin", name: "superadmin", mustChangePassword: false, password: "super123" },
-    agent:      { id: "2b6e1eff-ec8c-52ge-c9gd-9317350gee14", username: "agent", role: "agent", name: "Agent Joda", mustChangePassword: false, password: "agent123" },
-};
-
-function getSavedUser() {
-    if (typeof window === "undefined") {
-        return null;
-    }
-
-    const storedUser = localStorage.getItem("currentUser");
-    return storedUser ? JSON.parse(storedUser) : null;
-}
-
-export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
+export default function LoginPage() {
+    const router = useRouter();
     const { login } = useAuth();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -65,36 +48,29 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         setLoading(true);
         setError("");
 
+        console.log('🔑 Début handleSubmit');
         try {
-            const account = ACCOUNTS[username as keyof typeof ACCOUNTS];
-            if (account && account.password === password) {
-                const { password: _, ...user } = account;
-                localStorage.setItem("currentUser", JSON.stringify(user));
-                onLoginSuccess(user);
-                setLoading(false);
+            console.log('🔑 Appel login...');
+            const isLoggedIn = await login(username, password);
+            console.log('🔑 Résultat login:', isLoggedIn);
+
+            if (isLoggedIn) {
+                console.log('✅ Redirection vers /tableau-de-bord');
+                router.push("/tableau-de-bord");
                 return;
             }
 
-            const identifier = username.includes("@") ? username : username;
-            const isLoggedIn = await login(identifier, password);
-
-            if (isLoggedIn) {
-                const savedUser = getSavedUser();
-                if (savedUser) {
-                    onLoginSuccess(savedUser);
-                    setLoading(false);
-                    return;
-                }
-            }
-
+            console.log('❌ Login échoué');
             setError("Nom d'utilisateur ou mot de passe incorrect");
             triggerShake();
-        } catch {
+        } catch (err) {
+            console.error('❌ Erreur dans handleSubmit:', err);
             setError("Nom d'utilisateur ou mot de passe incorrect");
             triggerShake();
         }
 
         setLoading(false);
+        console.log('🔑 Fin handleSubmit');
     };
 
     const handleStudentLogin = async (e: React.FormEvent) => {
@@ -106,12 +82,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             const isLoggedIn = await login(buildStudentAuthEmail(studentUsername), studentPassword);
 
             if (isLoggedIn) {
-                const savedUser = getSavedUser();
-                if (savedUser) {
-                    onLoginSuccess(savedUser);
-                    setStudentLoading(false);
-                    return;
-                }
+                router.push("/etudiant");
+                return;
             }
 
             setStudentError("Identifiant ou mot de passe incorrect. Si vous venez d'être inscrit, contactez l'administration.");
@@ -251,15 +223,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                         >
-                            {/* Logo visible uniquement sur mobile quand photo cachée (espace étudiant) */}
                             {showStudentLogin && (
-                            <div className="mb-6 flex flex-col items-center sm:hidden">
-                                <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.15)] ring-1 ring-red-100">
-                                    <img src="/0.png" alt="Joda" className="h-12 w-12 object-contain" />
+                                <div className="mb-6 flex flex-col items-center sm:hidden">
+                                    <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.15)] ring-1 ring-red-100">
+                                        <img src="/0.png" alt="Joda" className="h-12 w-12 object-contain" />
+                                    </div>
+                                    <h1 className="text-lg font-bold tracking-wide text-gray-900">Joda Company</h1>
+                                    <p className="text-xs text-gray-500">Gestion des bourses d'études</p>
                                 </div>
-                                <h1 className="text-lg font-bold tracking-wide text-gray-900">Joda Company</h1>
-                                <p className="text-xs text-gray-500">Gestion des bourses d'études</p>
-                            </div>
                             )}
                             <AnimatePresence mode="wait">
                                 {showStudentLogin ? (
@@ -387,7 +358,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                                 value={username}
                                                 onChange={(e) => setUsername(e.target.value)}
                                                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
-                                                placeholder="Nom d'utilisateur ou email"
+                                                placeholder="Email"
                                                 required
                                                 whileFocus={{ scale: 1.01 }}
                                                 initial={{ opacity: 0, x: -20 }}
@@ -413,12 +384,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                                 </motion.button>
                                             </motion.div>
 
-                                            <motion.div className="text-right" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}>
-                                                <a href="#" className="text-sm text-red-400 transition-colors hover:text-red-600">
-                                                    Mot de passe oublié ?
-                                                </a>
-                                            </motion.div>
-
                                             <AnimatePresence>
                                                 {error && (
                                                     <motion.div
@@ -434,23 +399,23 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                             </AnimatePresence>
 
                                             <motion.button
-                                                    type="submit"
-                                                    disabled={loading}
-                                                    className="w-full rounded-xl bg-red-600 px-4 py-4 text-base font-semibold text-white shadow-[0_16px_32px_rgba(220,38,38,0.35)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={buttonTap}
-                                                    initial={{ opacity: 0, y: 15 }}
-                                                    transition={{ delay: 0.5 }}
-                                                >
-                                                    {loading ? (
-                                                        <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
-                                                            Connexion...
-                                                        </motion.span>
-                                                    ) : (
-                                                        "Se connecter"
-                                                    )}
-                                                </motion.button>
+                                                type="submit"
+                                                disabled={loading}
+                                                className="w-full rounded-xl bg-red-600 px-4 py-4 text-base font-semibold text-white shadow-[0_16px_32px_rgba(220,38,38,0.35)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                animate={{ opacity: 1, y: 0 }}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={buttonTap}
+                                                initial={{ opacity: 0, y: 15 }}
+                                                transition={{ delay: 0.5 }}
+                                            >
+                                                {loading ? (
+                                                    <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
+                                                        Connexion...
+                                                    </motion.span>
+                                                ) : (
+                                                    "Se connecter"
+                                                )}
+                                            </motion.button>
                                         </motion.form>
 
                                         <motion.div
