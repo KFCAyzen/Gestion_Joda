@@ -76,34 +76,11 @@ async function loadLogoBase64(): Promise<string | null> {
     const res = await fetch('/Logo.png');
     if (!res.ok) return null;
     const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
-
     return await new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        try {
-          const w = img.naturalWidth;
-          const h = img.naturalHeight;
-          // Crop ~18% horizontal and ~22% vertical to remove whitespace
-          const cx = Math.round(w * 0.18);
-          const cy = Math.round(h * 0.22);
-          const cw = w - 2 * cx;
-          const ch = h - 2 * cy;
-          const canvas = document.createElement('canvas');
-          canvas.width  = cw;
-          canvas.height = ch;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) { resolve(null); return; }
-          ctx.drawImage(img, cx, cy, cw, ch, 0, 0, cw, ch);
-          URL.revokeObjectURL(objectUrl);
-          resolve(canvas.toDataURL('image/png'));
-        } catch {
-          URL.revokeObjectURL(objectUrl);
-          resolve(null);
-        }
-      };
-      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
-      img.src = objectUrl;
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror  = () => resolve(null);
+      reader.readAsDataURL(blob);
     });
   } catch {
     return null;

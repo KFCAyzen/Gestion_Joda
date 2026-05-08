@@ -224,11 +224,11 @@ export default function LoginPage() {
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <motion.div className="px-4 text-center" variants={staggerContainer} initial="initial" animate="animate">
                                     <motion.div
-                                        className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-[0_10px_25px_rgba(0,0,0,0.5)] sm:mb-4 sm:h-14 sm:w-14 md:h-16 md:w-16 lg:mb-6 lg:h-28 lg:w-28"
+                                        className="mx-auto mb-3 flex items-center justify-center rounded-2xl bg-white px-3 py-2 shadow-[0_10px_25px_rgba(0,0,0,0.5)] sm:mb-4 lg:mb-6"
                                         variants={heroEntrance}
                                         whileHover={{ rotate: [0, -5, 5, 0], scale: 1.08, transition: { duration: 0.4 } }}
                                     >
-                                        <img src="/0.png" alt="Joda Company Logo" className="h-10 w-10 object-contain sm:h-12 sm:w-12 lg:h-20 lg:w-20" />
+                                        <img src="/Logo.png" alt="Joda Company Logo" className="h-10 w-auto object-contain sm:h-12 lg:h-16" />
                                     </motion.div>
                                     <motion.h1 className="text-xl font-bold tracking-wider text-black lg:text-3xl" variants={titleReveal}>
                                         Joda Company
@@ -250,8 +250,8 @@ export default function LoginPage() {
                         >
                             {showStudentLogin && (
                                 <div className="mb-6 flex flex-col items-center sm:hidden">
-                                    <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.15)] ring-1 ring-red-100">
-                                        <img src="/0.png" alt="Joda" className="h-12 w-12 object-contain" />
+                                    <div className="mb-3 flex items-center justify-center rounded-2xl bg-white px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.15)] ring-1 ring-red-100">
+                                        <img src="/Logo.png" alt="Joda" className="h-10 w-auto object-contain" />
                                     </div>
                                     <h1 className="text-lg font-bold tracking-wide text-gray-900">Joda Company</h1>
                                     <p className="text-xs text-gray-500">Gestion des bourses d'études</p>

@@ -379,7 +379,7 @@ function AppContent() {
 
                 <div className="relative flex items-start gap-3 px-5 py-5 border-b border-white/50">
                     <div className="sidebar-brand-mark">
-                        <img src="/0.png" alt="Joda Company Logo" className="w-9 h-9 object-contain" />
+                        <img src="/Logo.png" alt="Joda Company Logo" className="h-9 w-auto object-contain" />
                     </div>
                     <div className="min-w-0">
                         <p className="sidebar-eyebrow">Workspace Joda</p>
