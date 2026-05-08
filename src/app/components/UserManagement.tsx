@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Table,
     TableBody,
@@ -18,6 +19,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Permission, DEFAULT_ROLE_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from "../types/permissions";
+import { Shield, Check, X } from "lucide-react";
 
 interface DbUser {
     id: string;
@@ -27,6 +30,15 @@ interface DbUser {
     name: string;
     must_change_password: boolean;
     created_at: string;
+}
+
+interface UserPermission {
+    id: string;
+    user_id: string;
+    permission: Permission;
+    granted: boolean;
+    granted_by: string;
+    granted_at: string;
 }
 
 export default function UserManagement() {
@@ -44,6 +56,9 @@ export default function UserManagement() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [userToDelete, setUserToDelete] = useState<string | null>(null);
+    const [selectedUser, setSelectedUser] = useState<DbUser | null>(null);
+    const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
+    const [loadingPermissions, setLoadingPermissions] = useState(false);
 
     const loadUsers = async () => {
         setLoading(true);
@@ -107,11 +122,55 @@ export default function UserManagement() {
         setUserToDelete(null);
     };
 
-    const rolePermissions: Record<string, string[]> = {
-        super_admin: ["Accès complet", "Gestion utilisateurs", "Configuration"],
-        admin: ["Gestion modules", "Rapports"],
-        agent: ["Gestion dossiers", "Paiements", "Suivi étudiants"],
-        student: ["Consultation", "Paiements", "Documents"],
+    const loadUserPermissions = async (userId: string) => {
+        setLoadingPermissions(true);
+        try {
+            const { data } = await supabase
+                .from("user_permissions")
+                .select("*")
+                .eq("user_id", userId);
+            if (data) setUserPermissions(data);
+        } catch (err) {
+            console.error("Erreur:", err);
+        } finally {
+            setLoadingPermissions(false);
+        }
+    };
+
+    const togglePermission = async (userId: string, permission: Permission, currentlyGranted: boolean) => {
+        try {
+            if (currentlyGranted) {
+                await supabase
+                    .from("user_permissions")
+                    .delete()
+                    .eq("user_id", userId)
+                    .eq("permission", permission);
+            } else {
+                await supabase
+                    .from("user_permissions")
+                    .insert({
+                        user_id: userId,
+                        permission,
+                        granted: true,
+                        granted_by: currentUser?.id,
+                    });
+            }
+            loadUserPermissions(userId);
+            setSuccess("Permission mise à jour");
+            setTimeout(() => setSuccess(""), 2000);
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
+    const hasPermission = (userId: string, permission: Permission, role: string): boolean => {
+        const customPerm = userPermissions.find(p => p.user_id === userId && p.permission === permission);
+        if (customPerm) return customPerm.granted;
+        return DEFAULT_ROLE_PERMISSIONS[role]?.includes(permission) || false;
+    };
+
+    const isCustomPermission = (userId: string, permission: Permission): boolean => {
+        return userPermissions.some(p => p.user_id === userId && p.permission === permission);
     };
 
     const getRoleLabel = (role: string) =>
@@ -138,17 +197,17 @@ export default function UserManagement() {
                 <Card className="joda-surface border-0 shadow-none">
                     <CardHeader className="border-b border-slate-100">
                         <div className="flex flex-wrap gap-2">
-                            {["users", "permissions", "create"].map((tab) => (
+                            {["users", "create"].map((tab) => (
                                 <button
                                     key={tab}
-                                    onClick={() => setActiveTab(tab)}
+                                    onClick={() => { setActiveTab(tab); setSelectedUser(null); }}
                                     className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                                         activeTab === tab
                                             ? "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-[0_12px_28px_rgba(239,68,68,0.28)]"
                                             : "bg-white/70 text-slate-500 hover:text-slate-800"
                                     }`}
                                 >
-                                    {tab === "users" ? `Utilisateurs (${dbUsers.length})` : tab === "permissions" ? "Permissions" : "Créer"}
+                                    {tab === "users" ? `Utilisateurs (${dbUsers.length})` : "Créer"}
                                 </button>
                             ))}
                         </div>
@@ -158,7 +217,7 @@ export default function UserManagement() {
                         {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
                         {success && <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">{success}</div>}
 
-                        {activeTab === "users" &&
+                        {activeTab === "users" && !selectedUser &&
                             (loading ? (
                                 <div className="py-8 text-center text-slate-500">Chargement...</div>
                             ) : (
@@ -185,11 +244,24 @@ export default function UserManagement() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {currentUser?.role === "super_admin" && u.id !== currentUser.id && (
-                                                        <Button variant="destructive" size="sm" onClick={() => setUserToDelete(u.id)}>
-                                                            Supprimer
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setSelectedUser(u);
+                                                                loadUserPermissions(u.id);
+                                                            }}
+                                                        >
+                                                            <Shield className="h-4 w-4 mr-1" />
+                                                            Permissions
                                                         </Button>
-                                                    )}
+                                                        {currentUser?.role === "super_admin" && u.id !== currentUser.id && (
+                                                            <Button variant="destructive" size="sm" onClick={() => setUserToDelete(u.id)}>
+                                                                Supprimer
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -197,27 +269,78 @@ export default function UserManagement() {
                                 </Table>
                             ))}
 
-                        {activeTab === "permissions" && (
-                            <div className="grid gap-4 md:grid-cols-2">
-                                {Object.entries(rolePermissions).map(([role, perms]) => (
-                                    <Card key={role} className="joda-surface-muted p-1">
-                                        <CardHeader>
-                                            <CardTitle>{getRoleLabel(role)}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <ul className="space-y-2">
-                                                {perms.map((p, i) => (
-                                                    <li key={i} className="flex items-center gap-2">
-                                                        <span className="text-emerald-500">OK</span>
-                                                        <span>{p}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </CardContent>
-                                    </Card>
-                                ))}
+                        {activeTab === "users" && selectedUser && (
+                            <div>
+                                <div className="mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-semibold">{selectedUser.name}</h3>
+                                        <p className="text-sm text-slate-500">
+                                            Rôle: {getRoleLabel(selectedUser.role)} • @{selectedUser.username}
+                                        </p>
+                                    </div>
+                                    <Button variant="outline" onClick={() => setSelectedUser(null)}>
+                                        Retour
+                                    </Button>
+                                </div>
+
+                                {loadingPermissions ? (
+                                    <div className="py-8 text-center text-slate-500">Chargement...</div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => (
+                                            <Card key={group} className="joda-surface-muted">
+                                                <CardHeader>
+                                                    <CardTitle className="text-base">{group}</CardTitle>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="space-y-3">
+                                                        {permissions.map((perm) => {
+                                                            const granted = hasPermission(selectedUser.id, perm as Permission, selectedUser.role);
+                                                            const isCustom = isCustomPermission(selectedUser.id, perm as Permission);
+                                                            const isDefault = DEFAULT_ROLE_PERMISSIONS[selectedUser.role]?.includes(perm as Permission);
+                                                            
+                                                            return (
+                                                                <div key={perm} className="flex items-center justify-between rounded-lg border border-slate-200 p-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <Checkbox
+                                                                            checked={granted}
+                                                                            onCheckedChange={() => togglePermission(selectedUser.id, perm as Permission, granted)}
+                                                                        />
+                                                                        <div>
+                                                                            <div className="font-medium text-sm">{PERMISSION_LABELS[perm as Permission]}</div>
+                                                                            <div className="text-xs text-slate-500">{perm}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        {isCustom && (
+                                                                            <Badge variant="outline" className="text-xs">
+                                                                                Personnalisé
+                                                                            </Badge>
+                                                                        )}
+                                                                        {isDefault && !isCustom && (
+                                                                            <Badge variant="secondary" className="text-xs">
+                                                                                Par défaut
+                                                                            </Badge>
+                                                                        )}
+                                                                        {granted ? (
+                                                                            <Check className="h-4 w-4 text-emerald-500" />
+                                                                        ) : (
+                                                                            <X className="h-4 w-4 text-slate-300" />
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
+
+
 
                         {activeTab === "create" && (
                             <Card className="joda-surface-muted max-w-lg border-0 shadow-none">
