@@ -48,29 +48,23 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
-        console.log('🔑 Début handleSubmit');
         try {
-            console.log('🔑 Appel login...');
             const isLoggedIn = await login(username, password);
-            console.log('🔑 Résultat login:', isLoggedIn);
 
             if (isLoggedIn) {
-                console.log('✅ Redirection vers /tableau-de-bord');
                 router.push("/tableau-de-bord");
                 return;
             }
 
-            console.log('❌ Login échoué');
             setError("Nom d'utilisateur ou mot de passe incorrect");
             triggerShake();
         } catch (err) {
-            console.error('❌ Erreur dans handleSubmit:', err);
+            console.error('Erreur dans handleSubmit:', err);
             setError("Nom d'utilisateur ou mot de passe incorrect");
             triggerShake();
         }
 
         setLoading(false);
-        console.log('🔑 Fin handleSubmit');
     };
 
     const handleStudentLogin = async (e: React.FormEvent) => {

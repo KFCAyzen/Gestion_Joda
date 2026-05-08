@@ -1,7 +1,9 @@
 // Utilitaires pour la gestion des données de bourses d'études
 
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { University, Student, ScholarshipApplication, ApplicationFee } from "../types/scholarship";
+
+const supabase = createClient();
 
 // Données de test pour les universités chinoises
 export const generateUniversityTestData = async (): Promise<boolean> => {
@@ -38,13 +40,16 @@ export const generateUniversityTestData = async (): Promise<boolean> => {
         ];
 
         const { error } = await supabase.from('universities').insert(universities);
-        if (error && !error.message.includes('duplicate')) {
-            throw error;
+        if (error) {
+            if (!error.message.includes('duplicate')) {
+                console.error('Erreur insertion universités:', error.message);
+            }
+            return false;
         }
 
         return true;
-    } catch (error) {
-        console.error('Erreur génération données universités:', error);
+    } catch (error: any) {
+        console.error('Erreur génération données universités:', error?.message || error);
         return false;
     }
 };
@@ -82,13 +87,16 @@ export const generateStudentTestData = async (): Promise<boolean> => {
         ];
 
         const { error } = await supabase.from('students').insert(students);
-        if (error && !error.message.includes('duplicate')) {
-            throw error;
+        if (error) {
+            if (!error.message.includes('duplicate')) {
+                console.error('Erreur insertion étudiants:', error.message);
+            }
+            return false;
         }
 
         return true;
-    } catch (error) {
-        console.error('Erreur génération données étudiants:', error);
+    } catch (error: any) {
+        console.error('Erreur génération données étudiants:', error?.message || error);
         return false;
     }
 };
@@ -101,8 +109,8 @@ export const generateAllScholarshipTestData = async (): Promise<boolean> => {
         const students = await generateStudentTestData();
 
         return univ && students;
-    } catch (error) {
-        console.error('Erreur génération données complètes:', error);
+    } catch (error: any) {
+        console.error('Erreur génération données complètes:', error?.message || error);
         return false;
     }
 };
@@ -116,8 +124,8 @@ export const clearAllScholarshipData = async (): Promise<boolean> => {
         await supabase.from('students').delete().eq('created_by', 'system');
         
         return true;
-    } catch (error) {
-        console.error('Erreur nettoyage données:', error);
+    } catch (error: any) {
+        console.error('Erreur nettoyage données:', error?.message || error);
         return false;
     }
 };

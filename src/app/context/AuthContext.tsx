@@ -149,11 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (email: string, password: string): Promise<boolean> => {
         try {
-            console.log('🔐 Tentative de connexion:', email);
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
             if (authError) {
-                console.error('❌ Erreur auth:', authError.message);
                 if (authError.message !== 'Invalid login credentials') {
                     console.error('Erreur auth:', authError.message);
                 }
@@ -184,15 +182,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             if (authData.user) {
-                console.log('✅ Auth réussie, récupération user DB...');
                 const { data: userData, error: userError } = await supabase
                     .from('users')
                     .select('*')
                     .eq('id', authData.user.id)
                     .single();
-
-                console.log('userData:', userData);
-                console.log('userError:', userError);
 
                 if (userError && userError.message.includes('No rows')) {
                     const { error: insertError } = await supabase.from('users').insert({
@@ -223,7 +217,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         return true;
                     }
                 } else if (userData) {
-                    console.log('✅ User trouvé, création session...');
                     const currentUser: AuthUser = {
                         id: userData.id,
                         username: userData.username,
@@ -232,19 +225,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         email: userData.email,
                         mustChangePassword: userData.must_change_password === true
                     };
-                    console.log('currentUser:', currentUser);
                     setUser(currentUser);
                     if (typeof window !== 'undefined') {
                         localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     }
-                    console.log('✅ Connexion réussie!');
                     return true;
                 }
             }
-            console.log('❌ Connexion échouée - aucune donnée utilisateur');
             return false;
         } catch (error) {
-            console.error('❌ Erreur login (catch):', error);
+            console.error('Erreur login:', error);
             return false;
         }
     };
