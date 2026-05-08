@@ -68,8 +68,7 @@ export const generateStudentTestData = async (): Promise<boolean> => {
                 niveau: 'Licence',
                 filiere: 'Informatique',
                 langue: 'Chinois',
-                diplome_acquis: 'Licence en Informatique',
-                created_by: 'system'
+                diplome_acquis: 'Licence en Informatique'
             },
             {
                 nom: 'Nkomo',
@@ -81,8 +80,7 @@ export const generateStudentTestData = async (): Promise<boolean> => {
                 niveau: 'Master',
                 filiere: 'Économie',
                 langue: 'Anglais',
-                diplome_acquis: 'Master en Économie',
-                created_by: 'system'
+                diplome_acquis: 'Master en Économie'
             }
         ];
 
@@ -118,10 +116,10 @@ export const generateAllScholarshipTestData = async (): Promise<boolean> => {
 // Fonction pour nettoyer toutes les données
 export const clearAllScholarshipData = async (): Promise<boolean> => {
     try {
-        // Supprimer les données de test (celles créées par 'system') de manière séquentielle
-        await supabase.from('universities').delete().eq('created_by', 'system');
+        // Supprimer les données de test en utilisant des critères spécifiques
+        await supabase.from('universities').delete().in('code', ['PKU', 'THU', 'SJTU', 'CSU']);
         await new Promise(resolve => setTimeout(resolve, 100));
-        await supabase.from('students').delete().eq('created_by', 'system');
+        await supabase.from('students').delete().in('email', ['jean.kamga@email.com', 'marie.nkomo@email.com']);
         
         return true;
     } catch (error: any) {
