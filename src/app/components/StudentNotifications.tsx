@@ -35,6 +35,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; ic
 };
 
 export default function StudentNotifications({ user, onBack }: Props) {
+    const supabase = createClient();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>("all");

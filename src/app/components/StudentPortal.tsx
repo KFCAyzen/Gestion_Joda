@@ -83,6 +83,7 @@ const DOSSIER_LABELS: Record<string, string> = {
 type View = "dashboard" | "payments" | "documents" | "dossier" | "notifications";
 
 export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
+    const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [view, setView] = useState<View>("dashboard");
     const [payments, setPayments] = useState<Payment[]>([]);

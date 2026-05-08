@@ -25,6 +25,7 @@ interface DatabaseStats {
 }
 
 export default function StorageMonitoring() {
+  const supabase = createClient();
   const [storageStats, setStorageStats] = useState<StorageStats>({
     totalFiles: 0,
     totalSize: 0,

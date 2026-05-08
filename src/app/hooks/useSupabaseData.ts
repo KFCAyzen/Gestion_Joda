@@ -5,6 +5,8 @@ import type {
   Payment, CoursLangue, EntreeComptable, SortieComptable, Notification
 } from '../types/joda';
 
+const supabase = createClient();
+
 // Helper pour parser les dates depuis Supabase
 const parseDate = (dateStr: string | null | undefined): Date | undefined => {
   if (!dateStr) return undefined;

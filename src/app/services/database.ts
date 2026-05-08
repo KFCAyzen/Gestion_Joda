@@ -1,6 +1,8 @@
 // Service de base de données Supabase
 import { createClient } from "../lib/supabase/client";
 
+const supabase = createClient();
+
 type DbUpdate = Record<string, string | number | boolean | null | undefined>;
 import type { 
   User, Student, Document, DossierBourse, DossierHistoryEntry,

@@ -32,6 +32,7 @@ interface PaymentStats {
 }
 
 export default function PaymentDashboard() {
+    const supabase = createClient();
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<PaymentStats>({

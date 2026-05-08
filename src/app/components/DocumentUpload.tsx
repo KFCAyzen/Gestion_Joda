@@ -34,6 +34,7 @@ interface Props {
 }
 
 export default function DocumentUpload({ studentId, onDocumentUploaded }: Props) {
+    const supabase = createClient();
     const [docs, setDocs] = useState<DocStatus[]>([]);
     const [uploading, setUploading] = useState<string | null>(null);
     const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});

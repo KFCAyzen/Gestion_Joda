@@ -65,6 +65,7 @@ function PasswordInput({ id, label, value, onChange, hint }: {
 }
 
 export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswordModalProps) {
+    const supabase = createClient();
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
