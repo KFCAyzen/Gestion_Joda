@@ -53,18 +53,18 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const isLoggedIn = await login(username, password);
+            const result = await login(username, password);
 
-            if (isLoggedIn) {
+            if (result.success) {
                 router.push("/tableau-de-bord");
                 return;
             }
 
-            setError("Nom d'utilisateur ou mot de passe incorrect");
+            setError(result.message || "Connexion impossible. Vérifiez vos identifiants puis réessayez.");
             triggerShake();
         } catch (err) {
             console.error('Erreur dans handleSubmit:', err);
-            setError("Nom d'utilisateur ou mot de passe incorrect");
+            setError("Connexion impossible. Vérifiez vos identifiants puis réessayez.");
             triggerShake();
         }
 
@@ -104,9 +104,9 @@ export default function LoginPage() {
         setStudentError("");
 
         try {
-            const isLoggedIn = await login(buildStudentAuthEmail(studentUsername), studentPassword);
+            const result = await login(buildStudentAuthEmail(studentUsername), studentPassword);
 
-            if (isLoggedIn) {
+            if (result.success) {
                 router.push("/etudiant");
                 return;
             }

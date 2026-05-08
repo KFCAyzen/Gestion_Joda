@@ -1,9 +1,10 @@
 "use client";
 
 import { createContext, useContext, ReactNode } from 'react';
+import { NotificationPayload, NotificationType } from "../lib/feedback";
 
 interface NotificationContextType {
-    showNotification: (message: string, type?: 'success' | 'error' | 'info') => void;
+    showNotification: (input: string | NotificationPayload, type?: NotificationType) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -18,7 +19,7 @@ export const useNotificationContext = () => {
 
 interface NotificationProviderProps {
     children: ReactNode;
-    showNotification: (message: string, type?: 'success' | 'error' | 'info') => void;
+    showNotification: (input: string | NotificationPayload, type?: NotificationType) => void;
 }
 
 export const NotificationProvider = ({ children, showNotification }: NotificationProviderProps) => {

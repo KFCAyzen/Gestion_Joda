@@ -35,14 +35,18 @@ function StudentPortalPage() {
     return (
         <NotificationProvider showNotification={showNotification}>
             <StudentPortal user={user} onLogout={handleLogout} />
-            {notifications.map((n, i) => (
-                <Notification
-                    key={`student-${n.id}-${i}`}
-                    message={n.message}
-                    type={n.type}
-                    onClose={() => removeNotification(n.id)}
-                />
-            ))}
+            <div className="pointer-events-none fixed right-4 top-4 z-[9999] flex w-[min(100vw-2rem,24rem)] flex-col gap-3">
+                {notifications.map((n, i) => (
+                    <div key={`student-${n.id}-${i}`} className="pointer-events-auto">
+                        <Notification
+                            title={n.title}
+                            message={n.message}
+                            type={n.type}
+                            onClose={() => removeNotification(n.id)}
+                        />
+                    </div>
+                ))}
+            </div>
         </NotificationProvider>
     );
 }

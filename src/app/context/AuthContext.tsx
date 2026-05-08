@@ -1,11 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { createClient } from '../lib/supabase/client';
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { getFriendlyErrorMessage } from "../lib/feedback";
+import { createClient } from "../lib/supabase/client";
 
 const supabase = createClient();
 
-export type UserRole = 'student' | 'agent' | 'admin' | 'supervisor' | 'user' | 'super_admin';
+export type UserRole = "student" | "agent" | "admin" | "supervisor" | "user" | "super_admin";
 
 export interface User {
     id: string;
@@ -20,11 +21,16 @@ export interface User {
 
 type AuthUser = User;
 
+type LoginResult = {
+    success: boolean;
+    message?: string;
+};
+
 interface AuthContextType {
     user: AuthUser | null;
     users: AuthUser[];
     loading: boolean;
-    login: (email: string, password: string) => Promise<boolean>;
+    login: (email: string, password: string) => Promise<LoginResult>;
     logout: () => Promise<void>;
     hasPermission: (requiredRole: UserRole) => boolean;
     createUser: (userData: { username: string; email: string; password: string; role: UserRole; name: string }) => Promise<boolean>;
@@ -45,27 +51,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        checkCurrentUser();
+        void checkCurrentUser();
     }, []);
 
     const checkCurrentUser = async () => {
         try {
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError?.message?.includes('Refresh Token')) {
+            const {
+                data: { session },
+                error: sessionError,
+            } = await supabase.auth.getSession();
+
+            if (sessionError?.message?.includes("Refresh Token")) {
                 await supabase.auth.signOut();
                 setLoading(false);
                 return;
             }
+
             if (session?.user) {
                 const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', session.user.id)
+                    .from("users")
+                    .select("*")
+                    .eq("id", session.user.id)
                     .single();
 
                 if (userError) {
-                    console.error('Erreur récupération user:', userError.message);
-                    // Ne pas créer automatiquement - l'utilisateur doit être créé par un admin
+                    console.error("Erreur récupération user:", userError.message);
                     await supabase.auth.signOut();
                 } else if (userData) {
                     setUser({
@@ -74,12 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         role: userData.role,
                         name: userData.name,
                         email: userData.email,
-                        mustChangePassword: userData.must_change_password === true
+                        mustChangePassword: userData.must_change_password === true,
                     });
                 }
             }
         } catch (error) {
-            console.error('Erreur vérification session:', error);
+            console.error("Erreur vérification session:", error);
         } finally {
             setLoading(false);
         }
@@ -88,76 +98,97 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshUsers = async () => {
         try {
             const { data, error } = await supabase
-                .from('users')
-                .select('id, username, email, role, name, must_change_password')
-                .order('created_at', { ascending: false });
+                .from("users")
+                .select("id, username, email, role, name, must_change_password")
+                .order("created_at", { ascending: false });
+
             if (error) {
-                console.error('Erreur refreshUsers:', error.message);
+                console.error("Erreur refreshUsers:", error.message);
                 return;
             }
+
             if (data) {
-                setUsers(data.map(u => ({
-                    id: u.id,
-                    username: u.username,
-                    email: u.email,
-                    role: u.role,
-                    name: u.name,
-                    mustChangePassword: u.must_change_password
-                })));
+                setUsers(
+                    data.map((entry) => ({
+                        id: entry.id,
+                        username: entry.username,
+                        email: entry.email,
+                        role: entry.role,
+                        name: entry.name,
+                        mustChangePassword: entry.must_change_password,
+                    })),
+                );
             }
         } catch (error: any) {
-            console.error('Erreur chargement utilisateurs:', error?.message || error);
+            console.error("Erreur chargement utilisateurs:", error?.message || error);
         }
     };
 
-    const login = async (email: string, password: string): Promise<boolean> => {
+    const login = async (email: string, password: string): Promise<LoginResult> => {
         try {
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
             if (authError) {
-                if (authError.message !== 'Invalid login credentials') {
-                    console.error('Erreur auth:', authError.message);
+                if (authError.message !== "Invalid login credentials") {
+                    console.error("Erreur auth:", authError.message);
                 }
 
-                if (authError.message === 'Email not confirmed') {
-                    console.error('[Auth] Email non confirmé — contacter un administrateur');
-                }
-
-                return false;
+                return {
+                    success: false,
+                    message: getFriendlyErrorMessage(authError, {
+                        fallback: "Connexion impossible pour le moment. Vérifiez vos identifiants puis réessayez.",
+                    }),
+                };
             }
 
             if (authData.user) {
                 const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', authData.user.id)
+                    .from("users")
+                    .select("*")
+                    .eq("id", authData.user.id)
                     .single();
 
                 if (userError) {
-                    console.error('Erreur récupération user DB:', userError.message);
-                    // Ne pas créer automatiquement - l'utilisateur doit être créé par un admin
+                    console.error("Erreur récupération user DB:", userError.message);
                     await supabase.auth.signOut();
-                    return false;
-                } else if (userData) {
+                    return {
+                        success: false,
+                        message: "Le compte est authentifié mais son profil applicatif est introuvable. Contactez un administrateur.",
+                    };
+                }
+
+                if (userData) {
                     const currentUser: AuthUser = {
                         id: userData.id,
                         username: userData.username,
                         role: userData.role,
                         name: userData.name,
                         email: userData.email,
-                        mustChangePassword: userData.must_change_password === true
+                        mustChangePassword: userData.must_change_password === true,
                     };
+
                     setUser(currentUser);
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                    if (typeof window !== "undefined") {
+                        localStorage.setItem("currentUser", JSON.stringify(currentUser));
                     }
-                    return true;
+
+                    return { success: true };
                 }
             }
-            return false;
+
+            return {
+                success: false,
+                message: "Connexion incomplète. Réessayez ou contactez l'administration si le problème persiste.",
+            };
         } catch (error) {
-            console.error('Erreur login:', error);
-            return false;
+            console.error("Erreur login:", error);
+            return {
+                success: false,
+                message: getFriendlyErrorMessage(error, {
+                    fallback: "Une erreur inattendue a empêché la connexion. Réessayez dans un instant.",
+                }),
+            };
         }
     };
 
@@ -165,43 +196,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             await supabase.auth.signOut();
             setUser(null);
-            if (typeof window !== 'undefined') {
-                localStorage.removeItem('currentUser');
+            if (typeof window !== "undefined") {
+                localStorage.removeItem("currentUser");
             }
         } catch (error) {
-            console.error('Erreur logout:', error);
+            console.error("Erreur logout:", error);
         }
     };
 
     const hasPermission = (requiredRole: UserRole): boolean => {
         if (!user) return false;
         const roleHierarchy: Record<UserRole, number> = {
-            'student': 0, 'user': 1, 'agent': 2, 'supervisor': 3, 'admin': 4, 'super_admin': 5
+            student: 0,
+            user: 1,
+            agent: 2,
+            supervisor: 3,
+            admin: 4,
+            super_admin: 5,
         };
         return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
     };
 
     const canCreateRole = (role: UserRole): boolean => {
         if (!user) return false;
-        if (user.role === 'admin' || user.role === 'super_admin') return true;
-        if (user.role === 'supervisor' && (role === 'agent' || role === 'student')) return true;
+        if (user.role === "admin" || user.role === "super_admin") return true;
+        if (user.role === "supervisor" && (role === "agent" || role === "student")) return true;
         return false;
     };
 
-    // Création via API route (service role key côté serveur)
-    const createUser = async (userData: { username: string; email: string; password: string; role: UserRole; name: string }): Promise<boolean> => {
+    const createUser = async (userData: {
+        username: string;
+        email: string;
+        password: string;
+        role: UserRole;
+        name: string;
+    }): Promise<boolean> => {
         if (!canCreateRole(userData.role)) return false;
         try {
-            const res = await fetch('/api/create-user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const res = await fetch("/api/create-user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData),
             });
             if (!res.ok) return false;
             await refreshUsers();
             return true;
         } catch (error) {
-            console.error('Erreur création utilisateur:', error);
+            console.error("Erreur création utilisateur:", error);
             return false;
         }
     };
@@ -209,31 +250,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const canDeleteUser = (targetUser: AuthUser): boolean => {
         if (!user) return false;
         if (user.id === targetUser.id) return false;
-        // Only super_admin can delete admin or other super_admin accounts
-        if (
-            (targetUser.role === 'super_admin' || targetUser.role === 'admin') &&
-            user.role !== 'super_admin'
-        ) return false;
-        // Supervisors can only delete agents and students
-        if (user.role === 'supervisor') return targetUser.role === 'agent' || targetUser.role === 'student';
-        return user.role === 'admin' || user.role === 'super_admin';
+        if ((targetUser.role === "super_admin" || targetUser.role === "admin") && user.role !== "super_admin") {
+            return false;
+        }
+        if (user.role === "supervisor") return targetUser.role === "agent" || targetUser.role === "student";
+        return user.role === "admin" || user.role === "super_admin";
     };
 
-    // Suppression via API route (service role key côté serveur)
     const deleteUser = async (userId: string): Promise<boolean> => {
-        const targetUser = users.find(u => u.id === userId);
+        const targetUser = users.find((entry) => entry.id === userId);
         if (!targetUser || !canDeleteUser(targetUser)) return false;
         try {
-            const res = await fetch('/api/delete-user', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+            const res = await fetch("/api/delete-user", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId }),
             });
             if (!res.ok) return false;
             await refreshUsers();
             return true;
         } catch (error) {
-            console.error('Erreur suppression utilisateur:', error);
+            console.error("Erreur suppression utilisateur:", error);
             return false;
         }
     };
@@ -241,29 +278,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const canResetPassword = (targetUser: AuthUser): boolean => {
         if (!user) return false;
         if (user.id === targetUser.id) return false;
-        // Only super_admin can reset admin or super_admin passwords
-        if (
-            (targetUser.role === 'super_admin' || targetUser.role === 'admin') &&
-            user.role !== 'super_admin'
-        ) return false;
-        // Supervisors can only reset agent and student passwords
-        if (user.role === 'supervisor') return targetUser.role === 'agent' || targetUser.role === 'student';
-        return user.role === 'admin' || user.role === 'super_admin';
+        if ((targetUser.role === "super_admin" || targetUser.role === "admin") && user.role !== "super_admin") {
+            return false;
+        }
+        if (user.role === "supervisor") return targetUser.role === "agent" || targetUser.role === "student";
+        return user.role === "admin" || user.role === "super_admin";
     };
 
     const resetUserPassword = async (userId: string, _newPassword: string): Promise<boolean> => {
-        const targetUser = users.find(u => u.id === userId);
+        const targetUser = users.find((entry) => entry.id === userId);
         if (!targetUser || !canResetPassword(targetUser)) return false;
         try {
-            const res = await fetch('/api/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const res = await fetch("/api/reset-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId }),
             });
             if (!res.ok) return false;
             return true;
         } catch (error) {
-            console.error('Erreur reset password:', error);
+            console.error("Erreur reset password:", error);
             return false;
         }
     };
@@ -271,24 +305,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const changePassword = async (userId: string, _newPassword: string): Promise<boolean> => {
         try {
             const { error } = await supabase
-                .from('users')
+                .from("users")
                 .update({ must_change_password: false, updated_at: new Date().toISOString() })
-                .eq('id', userId);
+                .eq("id", userId);
             if (error) throw error;
             await refreshUsers();
             return true;
         } catch (error) {
-            console.error('Erreur changement mot de passe:', error);
+            console.error("Erreur changement mot de passe:", error);
             return false;
         }
     };
 
     return (
-        <AuthContext.Provider value={{
-            user, users, loading, login, logout, hasPermission,
-            canCreateRole, createUser, canDeleteUser, deleteUser,
-            canResetPassword, resetUserPassword, changePassword, refreshUsers
-        }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                users,
+                loading,
+                login,
+                logout,
+                hasPermission,
+                canCreateRole,
+                createUser,
+                canDeleteUser,
+                deleteUser,
+                canResetPassword,
+                resetUserPassword,
+                changePassword,
+                refreshUsers,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );
@@ -297,7 +344,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
     const context = useContext(AuthContext);
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
 }

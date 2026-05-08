@@ -234,14 +234,18 @@ function AppShell({ children }: { children: ReactNode }) {
                         setShowPasswordChange(false);
                     }}
                 />
-                {notifications.map((n, i) => (
-                    <Notification
-                        key={`pw-${n.id}-${i}`}
-                        message={n.message}
-                        type={n.type}
-                        onClose={() => removeNotification(n.id)}
-                    />
-                ))}
+                <div className="pointer-events-none fixed right-4 top-4 z-[9999] flex w-[min(100vw-2rem,24rem)] flex-col gap-3">
+                    {notifications.map((n, i) => (
+                        <div key={`pw-${n.id}-${i}`} className="pointer-events-auto">
+                            <Notification
+                                title={n.title}
+                                message={n.message}
+                                type={n.type}
+                                onClose={() => removeNotification(n.id)}
+                            />
+                        </div>
+                    ))}
+                </div>
             </>
         );
     }
@@ -453,14 +457,18 @@ function AppShell({ children }: { children: ReactNode }) {
                 </main>
             </div>
 
-            {notifications.map((n, i) => (
-                <Notification
-                    key={`main-${n.id}-${i}`}
-                    message={n.message}
-                    type={n.type}
-                    onClose={() => removeNotification(n.id)}
-                />
-            ))}
+            <div className="pointer-events-none fixed right-4 top-4 z-[9999] flex w-[min(100vw-2rem,24rem)] flex-col gap-3">
+                {notifications.map((n, i) => (
+                    <div key={`main-${n.id}-${i}`} className="pointer-events-auto">
+                        <Notification
+                            title={n.title}
+                            message={n.message}
+                            type={n.type}
+                            onClose={() => removeNotification(n.id)}
+                        />
+                    </div>
+                ))}
+            </div>
 
             {showUserPasswordChange && (
                 <ChangePassword onClose={() => setShowUserPasswordChange(false)} />
