@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,6 +105,7 @@ function toDate(val: string | null): Date {
 
 export default function AccountingPage() {
     const { user } = useAuth();
+    const supabase = createClient();
     const [entrees, setEntrees] = useState<EntreeComptable[]>([]);
     const [sorties, setSorties] = useState<SortieComptable[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
