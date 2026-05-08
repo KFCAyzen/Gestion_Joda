@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
@@ -65,6 +65,7 @@ function formatPrice(n: number): string {
 
 export default function CoursLangues() {
     const { user } = useAuth();
+    const supabase = createClient();
     const { showNotification } = useNotificationContext();
 
     const [payments, setPayments] = useState<CoursePayment[]>([]);

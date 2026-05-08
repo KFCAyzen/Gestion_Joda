@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import LoadingSpinner from "./LoadingSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; ic
 
 export default function NotificationsPage() {
     const { user } = useAuth();
+    const supabase = createClient();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<FilterType>("all");

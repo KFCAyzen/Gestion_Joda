@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabase';
+import { createClient } from "../lib/supabase/client";
 import type { 
   Student, Document, DossierBourse, DossierHistoryEntry,
   Payment, CoursLangue, EntreeComptable, SortieComptable, Notification

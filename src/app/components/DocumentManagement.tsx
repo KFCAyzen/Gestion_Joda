@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabase';
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ const DOCUMENT_TYPES: { type: string; label: string; required: boolean }[] = [
 
 export default function DocumentManagement({ studentId, studentName }: DocumentManagementProps) {
     const { user } = useAuth();
+    const supabase = createClient();
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploadingType, setUploadingType] = useState<string | null>(null);

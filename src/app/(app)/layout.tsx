@@ -29,7 +29,7 @@ import { NotificationProvider } from "../context/NotificationContext";
 import ChangePasswordModal from "../components/ChangePasswordModal";
 import ChangePassword from "../components/ChangePassword";
 import { ErrorBoundary } from "../components/ErrorBoundary";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import type { UserRole } from "../types/joda";
 
 type RouteId =
@@ -142,6 +142,7 @@ function AppShell({ children }: { children: ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const { user, logout, loading } = useAuth();
+    const supabase = createClient();
     const { notifications, showNotification, removeNotification } = useNotification();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showPasswordChange, setShowPasswordChange] = useState(false);

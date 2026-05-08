@@ -11,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { SearchBar, FilterSelect, PageHeader, LoadingState, StatsCard } from "./shared";
@@ -35,6 +35,7 @@ interface ScholarshipFile {
 
 export default function ScholarshipFileManagement() {
     const { user } = useAuth();
+    const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [files, setFiles] = useState<ScholarshipFile[]>([]);
     const [selectedFile, setSelectedFile] = useState<ScholarshipFile | null>(null);

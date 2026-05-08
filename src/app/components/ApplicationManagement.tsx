@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import Pagination from "./Pagination";
@@ -50,6 +50,7 @@ interface ScholarshipApplication {
 
 export default function ApplicationManagement() {
     const { user } = useAuth();
+    const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [showForm, setShowForm] = useState(false);
     const [editingApplication, setEditingApplication] = useState<ScholarshipApplication | null>(null);

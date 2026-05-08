@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 
 interface ChangePasswordProps {
@@ -78,6 +78,7 @@ function PasswordInput({ id, label, value, onChange, hint }: {
 }
 
 export default function ChangePassword({ onClose }: ChangePasswordProps) {
+    const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -219,3 +220,6 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
         </div>
     );
 }
+
+
+

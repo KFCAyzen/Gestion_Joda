@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/chart";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { generateAllScholarshipTestData, clearAllScholarshipData } from "../utils/scholarshipData";
 import { formatPrice } from "../utils/formatPrice";
 
@@ -466,6 +466,7 @@ function InsightCard({
 
 export default function ScholarshipDashboard() {
     const { user } = useAuth();
+    const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +42,7 @@ const predefinedUniversities: Omit<University, "id" | "created_at">[] = [
 
 export default function UniversityManagement() {
     const { user } = useAuth();
+    const supabase = createClient();
     const [universities, setUniversities] = useState<University[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"list" | "form">("list");

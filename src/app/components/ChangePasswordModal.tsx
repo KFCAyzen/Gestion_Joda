@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 
 interface ChangePasswordModalProps {
     onPasswordChanged: () => void;
@@ -181,3 +181,4 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
         </div>
     );
 }
+

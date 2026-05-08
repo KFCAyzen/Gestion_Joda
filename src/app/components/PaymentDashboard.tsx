@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { formatPrice } from "../utils/formatPrice";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import LoadingSpinner from "./LoadingSpinner";

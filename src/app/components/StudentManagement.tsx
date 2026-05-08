@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
 import Pagination from "./Pagination";
@@ -69,6 +69,7 @@ const emptyFormData = {
 
 export default function StudentManagement() {
     const { user } = useAuth();
+    const supabase = createClient();
     const [localUser, setLocalUser] = useState<{ id: string; role: string } | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);

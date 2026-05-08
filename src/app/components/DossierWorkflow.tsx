@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabase';
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,7 @@ const DOSSIER_STATUSES: {
 
 export default function DossierWorkflow() {
     const { user } = useAuth();
+    const supabase = createClient();
     const [dossiers, setDossiers] = useState<DossierBourse[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState<DossierStatus>('en_attente');

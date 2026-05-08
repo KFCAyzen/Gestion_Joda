@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -42,6 +42,7 @@ const MOTIFS = ["Inscription", "Frais de dossier", "Cours de langue", "Autre"];
 
 export default function ApplicationFeeManagement() {
     const { user } = useAuth();
+    const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [fees, setFees] = useState<ApplicationFee[]>([]);
     const [students, setStudents] = useState<Student[]>([]);

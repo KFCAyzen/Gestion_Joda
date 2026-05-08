@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import ProtectedRoute from "./ProtectedRoute";
@@ -57,6 +57,7 @@ function formatPrice(amount: number): string {
 
 export default function PaymentManagement() {
     const { user } = useAuth();
+    const supabase = createClient();
     const [payments, setPayments] = useState<Payment[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);

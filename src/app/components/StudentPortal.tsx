@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
 import DocumentUpload from "./DocumentUpload";

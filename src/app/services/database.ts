@@ -1,5 +1,5 @@
 // Service de base de données Supabase
-import { supabase } from '../supabase';
+import { createClient } from "../lib/supabase/client";
 
 type DbUpdate = Record<string, string | number | boolean | null | undefined>;
 import type { 
