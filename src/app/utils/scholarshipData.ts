@@ -10,32 +10,40 @@ export const generateUniversityTestData = async (): Promise<boolean> => {
     try {
         const universities = [
             { 
-                name: 'Université de Peking', nom: 'Université de Peking', code: 'PKU', location: 'Pékin', 
-                category: 'Elite', applicationFee: '150000', status: 'Disponible',
-                programmes: ['Médecine', 'Ingénierie', 'Sciences', 'Économie', 'Droit'],
-                programmesList: ['Médecine', 'Ingénierie', 'Sciences', 'Économie', 'Droit'],
-                requirements: { minHSK: 6, minGPA: 3.5, documents: ['Passeport', 'Diplôme', 'Relevés', 'HSK', 'Recommandation'] }
+                nom: 'Université de Peking',
+                pays: 'Chine',
+                ville: 'Pékin',
+                programme: 'Médecine, Ingénierie, Sciences, Économie, Droit',
+                niveau_etude: 'Licence, Master, Doctorat',
+                criteres_admission: 'HSK 6, GPA 3.5, Passeport, Diplôme, Relevés, Recommandation',
+                active: true
             },
             { 
-                name: 'Université Tsinghua', nom: 'Université Tsinghua', code: 'THU', location: 'Pékin', 
-                category: 'Elite', applicationFee: '150000', status: 'Disponible',
-                programmes: ['Ingénierie', 'Architecture', 'Sciences', 'Management', 'Arts'],
-                programmesList: ['Ingénierie', 'Architecture', 'Sciences', 'Management', 'Arts'],
-                requirements: { minHSK: 6, minGPA: 3.5, documents: ['Passeport', 'Diplôme', 'Relevés', 'HSK', 'Recommandation'] }
+                nom: 'Université Tsinghua',
+                pays: 'Chine',
+                ville: 'Pékin',
+                programme: 'Ingénierie, Architecture, Sciences, Management, Arts',
+                niveau_etude: 'Licence, Master, Doctorat',
+                criteres_admission: 'HSK 6, GPA 3.5, Passeport, Diplôme, Relevés, Recommandation',
+                active: true
             },
             { 
-                name: 'Université Jiao Tong de Shanghai', nom: 'Université Jiao Tong de Shanghai', code: 'SJTU', location: 'Shanghai', 
-                category: 'Tier 1', applicationFee: '120000', status: 'Disponible',
-                programmes: ['Ingénierie', 'Médecine', 'Management', 'Sciences', 'Maritime'],
-                programmesList: ['Ingénierie', 'Médecine', 'Management', 'Sciences', 'Maritime'],
-                requirements: { minHSK: 5, minGPA: 3.0, documents: ['Passeport', 'Diplôme', 'Relevés', 'HSK'] }
+                nom: 'Université Jiao Tong de Shanghai',
+                pays: 'Chine',
+                ville: 'Shanghai',
+                programme: 'Ingénierie, Médecine, Management, Sciences, Maritime',
+                niveau_etude: 'Licence, Master, Doctorat',
+                criteres_admission: 'HSK 5, GPA 3.0, Passeport, Diplôme, Relevés',
+                active: true
             },
             { 
-                name: 'Université du Sud Central', nom: 'Université du Sud Central', code: 'CSU', location: 'Changsha', 
-                category: 'Tier 2', applicationFee: '85000', status: 'Disponible',
-                programmes: ['Médecine', 'Ingénierie', 'Transport', 'Métallurgie', 'Sciences'],
-                programmesList: ['Médecine', 'Ingénierie', 'Transport', 'Métallurgie', 'Sciences'],
-                requirements: { minHSK: 4, minGPA: 2.5, documents: ['Passeport', 'Diplôme', 'Relevés'] }
+                nom: 'Université du Sud Central',
+                pays: 'Chine',
+                ville: 'Changsha',
+                programme: 'Médecine, Ingénierie, Transport, Métallurgie, Sciences',
+                niveau_etude: 'Licence, Master',
+                criteres_admission: 'HSK 4, GPA 2.5, Passeport, Diplôme, Relevés',
+                active: true
             }
         ];
 
@@ -117,7 +125,7 @@ export const generateAllScholarshipTestData = async (): Promise<boolean> => {
 export const clearAllScholarshipData = async (): Promise<boolean> => {
     try {
         // Supprimer les données de test en utilisant des critères spécifiques
-        await supabase.from('universities').delete().in('code', ['PKU', 'THU', 'SJTU', 'CSU']);
+        await supabase.from('universities').delete().in('nom', ['Université de Peking', 'Université Tsinghua', 'Université Jiao Tong de Shanghai', 'Université du Sud Central']);
         await new Promise(resolve => setTimeout(resolve, 100));
         await supabase.from('students').delete().in('email', ['jean.kamga@email.com', 'marie.nkomo@email.com']);
         
