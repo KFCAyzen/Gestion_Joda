@@ -44,7 +44,7 @@ export default function StudentPaymentsList({ payments, onBack, getPaymentStatus
                                         <span className={`rounded-full px-2 py-0.5 text-xs ${getPaymentStatusColor(pay.status)}`}>{pay.status}</span>
                                     </div>
                                 </div>
-                                {pay.status === "Paye" && (
+                                {pay.status === "paye" && (
                                     <Button
                                         onClick={() => onGenerateReceipt(pay)}
                                         className="mt-3 flex w-full items-center justify-center gap-2 bg-green-600 hover:bg-green-700"

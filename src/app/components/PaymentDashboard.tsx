@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase";
 import { formatPrice } from "../utils/formatPrice";
+import { calculatePenalty } from "../utils/penaltyCalculator";
 import LoadingSpinner from "./LoadingSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -53,25 +54,6 @@ export default function PaymentDashboard() {
         loadPayments();
     }, []);
 
-    const calculatePenalty = (payment: Payment): number => {
-        if (payment.status === "paye" || !payment.date_limite) return 0;
-        
-        const today = new Date();
-        const deadline = new Date(payment.date_limite);
-        const gracePeriod = payment.type.includes("mandarin") || payment.type.includes("anglais") ? 30 : 3;
-        
-        const graceDate = new Date(deadline);
-        graceDate.setDate(graceDate.getDate() + gracePeriod);
-        
-        if (today <= graceDate) return 0;
-        
-        const daysLate = Math.floor((today.getTime() - graceDate.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (payment.type === "mandarin" || payment.type === "anglais") {
-            return daysLate * 1000;
-        }
-        return daysLate * 10000;
-    };
 
     useEffect(() => {
         if (payments.length === 0) return;

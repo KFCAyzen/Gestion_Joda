@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
     Bell,
+    BookOpen,
     Building2,
     ChevronDown,
     Database,
@@ -37,6 +38,7 @@ type RouteId =
     | "clients"
     | "facturation"
     | "dossiers"
+    | "cours_langues"
     | "users"
     | "performance"
     | "notifications"
@@ -51,6 +53,7 @@ const ROUTES: Record<RouteId, string> = {
     clients: "/etudiants",
     facturation: "/frais",
     dossiers: "/dossiers",
+    cours_langues: "/cours-langues",
     users: "/utilisateurs",
     performance: "/performances",
     notifications: "/notifications",
@@ -66,6 +69,7 @@ const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
     clients: "Pilotage des étudiants et de leurs profils",
     facturation: "Gestion des frais et paiements associés",
     dossiers: "Suivi des dossiers de bourse",
+    cours_langues: "Cours de Mandarin et d'Anglais pour étudiants",
     users: "Administration des comptes utilisateurs",
     performance: "Indicateurs et performances de l'équipe",
     notifications: "Centre de notifications et alertes",
@@ -103,6 +107,7 @@ const menuSections: MenuSection[] = [
         items: [
             { id: "chambres", label: "Universités", icon: <Building2 className={iconCls} /> },
             { id: "facturation", label: "Frais", icon: <WalletCards className={iconCls} /> },
+            { id: "cours_langues", label: "Cours de langues", icon: <BookOpen className={iconCls} /> },
         ],
     },
     {

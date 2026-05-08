@@ -287,8 +287,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const canDeleteUser = (targetUser: AuthUser): boolean => {
         if (!user) return false;
         if (user.id === targetUser.id) return false;
-        if (targetUser.role === 'admin' && user.role !== 'super_admin') return false;
-        return user.role === 'admin' || user.role === 'super_admin' || user.role === 'supervisor';
+        // Only super_admin can delete admin or other super_admin accounts
+        if (
+            (targetUser.role === 'super_admin' || targetUser.role === 'admin') &&
+            user.role !== 'super_admin'
+        ) return false;
+        // Supervisors can only delete agents and students
+        if (user.role === 'supervisor') return targetUser.role === 'agent' || targetUser.role === 'student';
+        return user.role === 'admin' || user.role === 'super_admin';
     };
 
     // Suppression via API route (service role key côté serveur)
@@ -313,8 +319,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const canResetPassword = (targetUser: AuthUser): boolean => {
         if (!user) return false;
         if (user.id === targetUser.id) return false;
-        if (targetUser.role === 'admin' && user.role !== 'super_admin') return false;
-        return user.role === 'admin' || user.role === 'super_admin' || user.role === 'supervisor';
+        // Only super_admin can reset admin or super_admin passwords
+        if (
+            (targetUser.role === 'super_admin' || targetUser.role === 'admin') &&
+            user.role !== 'super_admin'
+        ) return false;
+        // Supervisors can only reset agent and student passwords
+        if (user.role === 'supervisor') return targetUser.role === 'agent' || targetUser.role === 'student';
+        return user.role === 'admin' || user.role === 'super_admin';
     };
 
     // Reset mot de passe via API route (service role key côté serveur)

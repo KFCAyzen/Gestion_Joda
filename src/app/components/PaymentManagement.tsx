@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import { calculatePenalty } from "../utils/penaltyCalculator";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,15 @@ export default function PaymentManagement() {
                 supabase.from('students').select('id, nom, prenom, email, telephone')
             ]);
 
-            if (paymentsRes.data) setPayments(paymentsRes.data);
+            if (paymentsRes.data) {
+                await syncPenalties(paymentsRes.data);
+                // Reload after sync so the UI reflects updated statuses
+                const { data: refreshed } = await supabase
+                    .from('payments')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                setPayments(refreshed ?? paymentsRes.data);
+            }
             if (studentsRes.data) setStudents(studentsRes.data);
         } catch (err) {
             console.error('Erreur:', err);
@@ -79,43 +88,58 @@ export default function PaymentManagement() {
         }
     };
 
-    useEffect(() => { loadData(); }, []);
+    useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const getStudentName = (studentId: string) => {
         const student = students.find(s => s.id === studentId);
         return student ? `${student.nom} ${student.prenom}` : "Étudiant inconnu";
     };
 
-    const calculatePenalty = (payment: Payment): number => {
-        if (payment.status === 'paye' || !payment.date_limite) return 0;
-        
-        const today = new Date();
-        const deadline = new Date(payment.date_limite);
-        const gracePeriod = payment.type.includes('mandarin') || payment.type.includes('anglais') ? 30 : 3;
-        
-        const graceDate = new Date(deadline);
-        graceDate.setDate(graceDate.getDate() + gracePeriod);
-        
-        if (today <= graceDate) return 0;
-        
-        const daysLate = Math.floor((today.getTime() - graceDate.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (payment.type === 'mandarin' || payment.type === 'anglais') {
-            return daysLate * 1000;
-        }
-        return daysLate * 10000;
+
+    // Persist calculated penalties and overdue status to the database
+    const syncPenalties = async (currentPayments: Payment[]) => {
+        const updates = currentPayments
+            .filter(p => p.status !== 'paye' && p.date_limite)
+            .map(p => ({ payment: p, penalty: calculatePenalty(p) }))
+            .filter(({ payment, penalty }) =>
+                penalty !== (payment.penalites ?? 0) ||
+                (penalty > 0 && payment.status === 'attente')
+            );
+
+        if (updates.length === 0) return;
+
+        await Promise.all(updates.map(({ payment, penalty }) =>
+            supabase.from('payments').update({
+                penalites: penalty,
+                status: penalty > 0 ? 'retard' : payment.status,
+            }).eq('id', payment.id)
+        ));
     };
 
+    // Agent: submit a payment for admin review
+    const handleSubmitForValidation = async (paymentId: string) => {
+        if (!user) return;
+        try {
+            await supabase.from('payments').update({
+                status: 'en_validation',
+                validated_by: user.id,
+                validated_at: new Date().toISOString(),
+            }).eq('id', paymentId);
+            loadData();
+        } catch (error) {
+            console.error("Erreur soumission:", error);
+        }
+    };
+
+    // Admin: approve or reject a payment in validation
     const handleValidatePayment = async (paymentId: string, isValid: boolean) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
-        
         try {
             await supabase.from('payments').update({
                 status: isValid ? 'paye' : 'retard',
                 validated_by: user.id,
-                validated_at: new Date().toISOString()
+                validated_at: new Date().toISOString(),
             }).eq('id', paymentId);
-            
             loadData();
         } catch (error) {
             console.error("Erreur validation:", error);
@@ -133,6 +157,7 @@ export default function PaymentManagement() {
             case "paye": return "default";
             case "attente": return "secondary";
             case "retard": return "destructive";
+            case "en_validation": return "outline";
             default: return "secondary";
         }
     };
@@ -142,6 +167,7 @@ export default function PaymentManagement() {
             case "paye": return "Payé";
             case "attente": return "En attente";
             case "retard": return "En retard";
+            case "en_validation": return "En validation";
             default: return status;
         }
     };
@@ -194,6 +220,7 @@ export default function PaymentManagement() {
                                     <SelectContent>
                                         <SelectItem value="all">Tous les statuts</SelectItem>
                                         <SelectItem value="attente">En attente</SelectItem>
+                                        <SelectItem value="en_validation">En validation</SelectItem>
                                         <SelectItem value="paye">Payé</SelectItem>
                                         <SelectItem value="retard">En retard</SelectItem>
                                     </SelectContent>
@@ -256,21 +283,44 @@ export default function PaymentManagement() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {canValidate && payment.status === "attente" && (
+                                                    {/* Agent: submit for admin validation */}
+                                                    {user?.role === "agent" && (payment.status === "attente" || payment.status === "retard") && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleSubmitForValidation(payment.id)}
+                                                        >
+                                                            Soumettre
+                                                        </Button>
+                                                    )}
+                                                    {/* Admin: approve or reject a submission */}
+                                                    {canValidate && payment.status === "en_validation" && (
                                                         <div className="flex gap-2">
-                                                            <Button 
-                                                                variant="outline" 
+                                                            <Button
+                                                                variant="outline"
                                                                 size="sm"
                                                                 onClick={() => handleValidatePayment(payment.id, true)}
                                                             >
-                                                                Valider
+                                                                Approuver
                                                             </Button>
-                                                            <Button 
-                                                                variant="destructive" 
+                                                            <Button
+                                                                variant="destructive"
                                                                 size="sm"
                                                                 onClick={() => handleValidatePayment(payment.id, false)}
                                                             >
                                                                 Rejeter
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                    {/* Admin: direct validation still available for attente/retard */}
+                                                    {canValidate && (payment.status === "attente" || payment.status === "retard") && (
+                                                        <div className="mt-1 flex gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleValidatePayment(payment.id, true)}
+                                                            >
+                                                                Valider
                                                             </Button>
                                                         </div>
                                                     )}

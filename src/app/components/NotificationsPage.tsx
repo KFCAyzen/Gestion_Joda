@@ -57,21 +57,36 @@ export default function NotificationsPage() {
         }
     }, [user]);
 
+    const [autoNotifStatus, setAutoNotifStatus] = useState<string | null>(null);
+
     const generateAutoNotifications = useCallback(async () => {
         if (user?.role !== "admin" && user?.role !== "super_admin") return;
+        setAutoNotifStatus("Génération en cours…");
         try {
-            const { data: payments } = await supabase
+            const { data: payments, error: paymentsError } = await supabase
                 .from("payments")
                 .select("id, student_id, tranche, penalites, status, date_limite")
                 .eq("status", "retard");
 
-            if (!payments) return;
+            if (paymentsError) {
+                setAutoNotifStatus("Erreur : " + paymentsError.message);
+                return;
+            }
+            if (!payments || payments.length === 0) {
+                setAutoNotifStatus("Aucun paiement en retard trouvé.");
+                return;
+            }
 
             const today = new Date();
-            const overduePayments = payments.slice(0, 10).filter(payment => {
+            const overduePayments = payments.filter(payment => {
                 const dueDate = new Date(payment.date_limite);
                 return today > dueDate;
             });
+
+            if (overduePayments.length === 0) {
+                setAutoNotifStatus("Aucun paiement en retard à notifier.");
+                return;
+            }
 
             await executeBatch(
                 overduePayments,
@@ -80,17 +95,19 @@ export default function NotificationsPage() {
                         user_id: payment.student_id,
                         type: "retard_paiement",
                         titre: "Retard de paiement",
-                        message: `Tranche ${payment.tranche} en retard - ${payment.penalites.toLocaleString("fr-FR")} FCFA de pénalités`,
+                        message: `Tranche ${payment.tranche ?? "-"} en retard — ${(payment.penalites ?? 0).toLocaleString("fr-FR")} FCFA de pénalités`,
                         read: false,
                     });
                 },
                 2,
                 200
             );
-            
+
+            setAutoNotifStatus(`${overduePayments.length} notification(s) générée(s).`);
             await load();
-        } catch {
-            // silencieux
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Erreur inconnue";
+            setAutoNotifStatus("Erreur : " + msg);
         }
     }, [user, load]);
 
@@ -151,9 +168,14 @@ export default function NotificationsPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {(user?.role === "admin" || user?.role === "super_admin") && (
-                        <Button variant="outline" onClick={generateAutoNotifications} className="border-orange-200 bg-orange-50 text-orange-700">
-                            Vérifier retards
-                        </Button>
+                        <div className="flex flex-col items-start gap-1">
+                            <Button variant="outline" onClick={generateAutoNotifications} className="border-orange-200 bg-orange-50 text-orange-700">
+                                Vérifier retards
+                            </Button>
+                            {autoNotifStatus && (
+                                <p className="text-xs text-slate-500">{autoNotifStatus}</p>
+                            )}
+                        </div>
                     )}
                     <Button variant="outline" onClick={markAllAsRead} disabled={unreadCount === 0} className="border-emerald-200 bg-emerald-50 text-emerald-700">
                         Tout lire

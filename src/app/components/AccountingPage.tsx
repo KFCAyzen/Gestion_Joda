@@ -219,9 +219,10 @@ export default function AccountingPage() {
     };
 
     const handleValidateSortie = async (id: string) => {
+        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         try {
             await supabase.from("sorties_comptables").update({
-                validated_by: user?.id,
+                validated_by: user.id,
                 validated_at: new Date().toISOString(),
             }).eq("id", id);
             await load();

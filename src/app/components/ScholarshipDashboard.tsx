@@ -478,7 +478,7 @@ export default function ScholarshipDashboard() {
             const [universitiesRes, studentsRes, applicationsRes, paymentsRes, notificationsRes] = await Promise.all([
                 supabase.from("universities").select("id, nom, active"),
                 supabase.from("students").select("id, created_at"),
-                supabase.from("dossier_bourses").select("id, status, created_at, university_id"),
+                supabase.from("dossier_bourses").select("id, status, created_at, university_id, desired_program"),
                 supabase.from("payments").select("id, montant, status, created_at, date_paiement, date_limite, type"),
                 supabase.from("notifications").select("id, type, read, created_at"),
             ]);

@@ -26,11 +26,11 @@ export default function FilterSelect({ label, value, onChange, options, placehol
     return (
         <div className="space-y-2">
             <Label className="text-xs font-medium text-slate-600">{label}</Label>
-            <Select value={value} onValueChange={(val) => onChange(val || "all")}>
+            <Select value={value} onValueChange={(val) => onChange(val ?? "all")}>
                 <SelectTrigger className="w-full">
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
-                <SelectContent className="max-w-none" position="popper" sideOffset={4}>
+                <SelectContent className="max-w-none" sideOffset={4}>
                     <SelectItem value="all">{placeholder}</SelectItem>
                     {options.map((option) => (
                         <SelectItem key={option.value} value={option.value}>

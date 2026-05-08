@@ -228,7 +228,7 @@ export default function StudentManagement() {
             const duplicateCount = students.filter(
                 (student) =>
                     student.prenom.trim().toLowerCase() === formData.prenom.trim().toLowerCase() &&
-                    student.nom.trim().toLowerCase() === formData.nom.trim().toLowerCase(),
+                    student.nom.trim().toLowerCase() === formData.nom.trim().toLowerCase()
             ).length;
 
             const username = buildStudentUsername(formData.prenom, formData.nom, duplicateCount);
@@ -268,6 +268,17 @@ export default function StudentManagement() {
             if (error) {
                 setSubmitError(error.message);
                 return;
+            }
+
+            // Auto-créer le dossier bourse si la procédure est demandée
+            if (formData.choix !== "cours_seuls") {
+                await supabase.from("dossier_bourses").insert({
+                    student_id: data.id,
+                    status: "document_manquant",
+                    desired_program: formData.filiere || "",
+                    study_level: formData.niveau || "",
+                    notes_internes: "Dossier créé automatiquement à l'inscription",
+                });
             }
 
             setCreatedAccount({ username, password: temporaryPassword });
