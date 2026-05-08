@@ -14,8 +14,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { SearchBar, FilterSelect, ActionButtons, PageHeader, LoadingState, EmptyState, StatusBadge, FormField } from "./shared";
-import { Building2 } from "lucide-react";
+import { SearchBar, FilterSelect, DropdownMenu, PageHeader, LoadingState, EmptyState, StatusBadge, FormField } from "./shared";
+import { Building2, Edit, Trash2, Power } from "lucide-react";
 
 interface University {
     id: string;
@@ -246,32 +246,42 @@ export default function UniversityManagement() {
                                                 </TableCell>
                                                 {canEdit && (
                                                     <TableCell>
-                                                        <ActionButtons
-                                                            onEdit={() => {
-                                                                setEditingUni(u);
-                                                                setFormData({
-                                                                    nom: u.nom,
-                                                                    code: (u as any).code || "",
-                                                                    pays: u.pays,
-                                                                    ville: u.ville,
-                                                                    programme: u.programme,
-                                                                    niveau_etude: u.niveau_etude,
-                                                                    criteres_admission: u.criteres_admission,
-                                                                    active: u.active,
-                                                                });
-                                                                setActiveTab("form");
-                                                            }}
-                                                            onDelete={canDelete ? () => handleDelete(u.id) : undefined}
-                                                            showDelete={canDelete}
-                                                            customActions={
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => handleToggle(u.id, u.active)}
-                                                                >
-                                                                    {u.active ? "Désactiver" : "Activer"}
-                                                                </Button>
-                                                            }
+                                                        <DropdownMenu
+                                                            actions={[
+                                                                {
+                                                                    label: "Modifier",
+                                                                    icon: <Edit className="h-4 w-4" />,
+                                                                    onClick: () => {
+                                                                        setEditingUni(u);
+                                                                        setFormData({
+                                                                            nom: u.nom,
+                                                                            code: (u as any).code || "",
+                                                                            pays: u.pays,
+                                                                            ville: u.ville,
+                                                                            programme: u.programme,
+                                                                            niveau_etude: u.niveau_etude,
+                                                                            criteres_admission: u.criteres_admission,
+                                                                            active: u.active,
+                                                                        });
+                                                                        setActiveTab("form");
+                                                                    },
+                                                                },
+                                                                {
+                                                                    label: u.active ? "Désactiver" : "Activer",
+                                                                    icon: <Power className="h-4 w-4" />,
+                                                                    onClick: () => handleToggle(u.id, u.active),
+                                                                },
+                                                                ...(canDelete ? [{
+                                                                    label: "Supprimer",
+                                                                    icon: <Trash2 className="h-4 w-4" />,
+                                                                    onClick: () => {
+                                                                        if (confirm(`Supprimer ${u.nom} ?`)) {
+                                                                            handleDelete(u.id);
+                                                                        }
+                                                                    },
+                                                                    variant: "danger" as const,
+                                                                }] : []),
+                                                            ]}
                                                         />
                                                     </TableCell>
                                                 )}
