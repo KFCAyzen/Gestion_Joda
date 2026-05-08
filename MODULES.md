@@ -640,3 +640,11 @@
 - **Avant optimisations** : ~50-100 étudiants sur plan gratuit
 - **Après optimisations** : ~200-300 étudiants sur plan gratuit
 - **Réduction taille moyenne** : 3-5 MB → 1-1.5 MB par fichier
+
+
+aEmail                       │ Mot de passe    │ Rôle         │
+├─────────────────────────────┼─────────────────┼──────────────┤
+│ superadmin@joda.com         │ Joda@Admin9     │ super_admin  │
+│ admin@joda.com              │ Joda@Admin9     │ admin        │
+│ agent@joda.com              │ Joda@Agent9     │ agent        │
+└─────────────────────────────┴─────────────────┴──────────────┘

@@ -28,6 +28,7 @@ import Notification from "../components/Notification";
 import { NotificationProvider } from "../context/NotificationContext";
 import ChangePasswordModal from "../components/ChangePasswordModal";
 import ChangePassword from "../components/ChangePassword";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { supabase } from "../supabase";
 import type { UserRole } from "../types/joda";
 
@@ -470,8 +471,10 @@ function AppShell({ children }: { children: ReactNode }) {
 export default function AppLayout({ children }: { children: ReactNode }) {
     const { notifications, showNotification, removeNotification } = useNotification();
     return (
-        <NotificationProvider showNotification={showNotification}>
-            <AppShell>{children}</AppShell>
-        </NotificationProvider>
+        <ErrorBoundary>
+            <NotificationProvider showNotification={showNotification}>
+                <AppShell>{children}</AppShell>
+            </NotificationProvider>
+        </ErrorBoundary>
     );
 }

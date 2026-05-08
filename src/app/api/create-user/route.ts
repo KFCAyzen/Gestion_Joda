@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { requireRole } from "@/app/lib/auth";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,7 +16,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-export async function POST(req: NextRequest) {
+async function handleCreateUser(req: NextRequest) {
     try {
     const { name, email, username, password, role, authEmail } = await req.json();
 
@@ -175,3 +176,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: err?.message || "Erreur serveur" }, { status: 500 });
     }
 }
+
+export const POST = requireRole(['admin', 'super_admin'], handleCreateUser);

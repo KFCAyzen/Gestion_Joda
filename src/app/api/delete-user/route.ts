@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireRole } from "@/app/lib/auth";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function DELETE(req: NextRequest) {
+async function handleDeleteUser(req: NextRequest) {
     try {
         const { userId } = await req.json();
 
@@ -34,3 +35,5 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: err?.message || "Erreur serveur" }, { status: 500 });
     }
 }
+
+export const DELETE = requireRole(['super_admin'], handleDeleteUser);
