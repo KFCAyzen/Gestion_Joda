@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
+import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -175,13 +176,30 @@ export default function AccountingPage() {
         if (!newEntree.montant || !newEntree.description) return;
         setSubmitting(true);
         try {
-            await supabase.from("entrees_comptables").insert({
+            const { data } = await supabase.from("entrees_comptables").insert({
+
                 montant: Number(newEntree.montant),
                 description: newEntree.description,
+
                 type: newEntree.type,
                 date: newEntree.date,
                 created_by: user?.id,
-            });
+
+            }).select();
+
+            // Log l'activité
+            if (user && data && data[0]) {
+                await logActivity(
+                    user.id,
+                    user.name,
+                    user.role,
+                    "accounting_entry",
+                    "entrees_comptables",
+                    data[0].id,
+                    `Entrée comptable: ${newEntree.description} - ${Number(newEntree.montant).toLocaleString('fr-FR')} FCFA`,
+                    { type: newEntree.type, montant: Number(newEntree.montant) }
+                );
+            }
             setNewEntree({
                 montant: "",
                 description: "",
@@ -200,13 +218,30 @@ export default function AccountingPage() {
         if (!newSortie.montant || !newSortie.description) return;
         setSubmitting(true);
         try {
-            await supabase.from("sorties_comptables").insert({
+            const { data } = await supabase.from("sorties_comptables").insert({
+
                 montant: Number(newSortie.montant),
                 description: newSortie.description,
+
                 categorie: newSortie.categorie,
                 date: newSortie.date,
                 created_by: user?.id,
-            });
+
+            }).select();
+
+            // Log l'activité
+            if (user && data && data[0]) {
+                await logActivity(
+                    user.id,
+                    user.name,
+                    user.role,
+                    "accounting_expense",
+                    "sorties_comptables",
+                    data[0].id,
+                    `Sortie comptable: ${newSortie.description} - ${Number(newSortie.montant).toLocaleString('fr-FR')} FCFA`,
+                    { categorie: newSortie.categorie, montant: Number(newSortie.montant) }
+                );
+            }
             setNewSortie({
                 montant: "",
                 description: "",

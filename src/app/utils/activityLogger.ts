@@ -2,7 +2,7 @@
  * Système de logging des activités sensibles
  */
 
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 
 export type ActivityType =
   | "student_create"
@@ -59,6 +59,7 @@ export async function logActivity(
   metadata?: Record<string, any>
 ): Promise<void> {
   try {
+    const supabase = createClient();
     await supabase.from("activity_logs").insert({
       user_id: userId,
       user_name: userName,
@@ -88,6 +89,7 @@ export async function getActivityLogs(filters?: {
   limit?: number;
 }) {
   try {
+    const supabase = createClient();
     let query = supabase
       .from("activity_logs")
       .select("*")
