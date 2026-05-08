@@ -1168,7 +1168,7 @@ export default function AccountingPage() {
                                                                 <Label className="text-xs">Catégorie</Label>
                                                                 <Select
                                                                     value={newBudget.categorie}
-                                                                    onValueChange={(value: string) => setNewBudget((p) => ({ ...p, categorie: value }))}
+                                                                    onValueChange={(value) => value && setNewBudget((p) => ({ ...p, categorie: value }))}
                                                                 >
                                                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                                                     <SelectContent>
@@ -1193,7 +1193,7 @@ export default function AccountingPage() {
                                                                 <Label className="text-xs">Période</Label>
                                                                 <Select
                                                                     value={newBudget.periode}
-                                                                    onValueChange={(value) => setNewBudget((p) => ({ ...p, periode: value }))}
+                                                                    onValueChange={(value) => value && setNewBudget((p) => ({ ...p, periode: value }))}
                                                                 >
                                                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                                                     <SelectContent>
