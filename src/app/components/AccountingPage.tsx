@@ -25,6 +25,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search } from "lucide-react";
+import { generateAccountingReport } from "../lib/pdfGenerator";
 
 interface EntreeComptable {
     id: string;
@@ -421,207 +422,36 @@ export default function AccountingPage() {
     const exportToPDF = async () => {
         setExporting(true);
         try {
-            const response = await fetch('/templates/rapport-comptable-template.html');
-            let template = await response.text();
+            const entries = [
+                ...entreesPeriod.map(e => ({
+                    date: e.date,
+                    description: e.description,
+                    category: labelType[e.type] || e.type,
+                    amount: e.montant,
+                    type: 'entree' as const,
+                })),
+                ...sortiesPeriod.map(s => ({
+                    date: s.date,
+                    description: s.description,
+                    category: labelCategorie[s.categorie] || s.categorie,
+                    amount: s.montant,
+                    type: 'sortie' as const,
+                })),
+            ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-            const now = new Date();
-            
-            // Calculs par catégorie de sortie
-            const sortiesByCategorie = sortiesPeriod.reduce((acc, s) => {
-                acc[s.categorie] = (acc[s.categorie] || 0) + s.montant;
-                return acc;
-            }, {} as Record<string, number>);
-
-            const categoriesData = Object.entries(sortiesByCategorie).slice(0, 5);
-            const totalSortiesCat = categoriesData.reduce((sum, [, val]) => sum + val, 0);
-
-            // Calculs par mois
-            const moisNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-            const paymentsByMonth = Array(12).fill(0).map(() => ({ nb: 0, verse: 0, annule: 0 }));
-            
-            entreesPeriod.forEach(e => {
-                const month = toDate(e.date).getMonth();
-                paymentsByMonth[month].nb++;
-                paymentsByMonth[month].verse += e.montant;
+            generateAccountingReport({
+                title: `Rapport Comptable - ${periodFilter}`,
+                period: {
+                    start: startOfPeriod.toISOString(),
+                    end: endOfPeriod.toISOString(),
+                },
+                entries,
+                summary: {
+                    totalEntrees: totalEntreesPeriod,
+                    totalSorties: totalSortiesPeriod,
+                    balance: soldePeriod,
+                },
             });
-
-            // Journal des opérations (5 dernières)
-            const operations = [...entreesPeriod.slice(0, 3).map(e => ({
-                piece: `ENT-${e.id.slice(0, 8)}`,
-                date: toDate(e.date).toLocaleDateString('fr-FR'),
-                libelle: e.description,
-                compte: '512000',
-                debit: formatMontant(e.montant),
-                credit: '—',
-            })), ...sortiesPeriod.slice(0, 2).map(s => ({
-                piece: `SOR-${s.id.slice(0, 8)}`,
-                date: toDate(s.date).toLocaleDateString('fr-FR'),
-                libelle: s.description,
-                compte: '601000',
-                debit: '—',
-                credit: formatMontant(s.montant),
-            }))];
-
-            const replacements: Record<string, string> = {
-                // En-tête
-                '{{NOM_UNIVERSITÉ}}': 'Joda Company',
-                '{{REF_RAPPORT}}': `RPT-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
-                '{{ANNEE_EXERCICE}}': now.getFullYear().toString(),
-                '{{DATE_EMISSION}}': now.toLocaleDateString('fr-FR'),
-                '{{STATUT}}': 'Validé',
-                '{{PERIODE_DEBUT}}': startOfPeriod.toLocaleDateString('fr-FR'),
-                '{{PERIODE_FIN}}': endOfPeriod.toLocaleDateString('fr-FR'),
-                
-                // Infos générales
-                '{{NOM_COMPTABLE}}': user?.email?.split('@')[0] || 'N/A',
-                '{{DEPARTEMENT}}': 'Bourses d\'Études Chine',
-                '{{CODE_BUDGET}}': `BUD-${now.getFullYear()}-001`,
-                '{{NB_BENEFICIAIRES}}': (entreesPeriod.length + sortiesPeriod.length).toString(),
-                '{{SOURCE_FINANCEMENT}}': 'Frais de candidature',
-                '{{DEVISE}}': 'Franc CFA',
-                '{{CODE_DEVISE}}': 'XAF',
-                
-                // KPI Section 1
-                '{{BUDGET_ALLOUE}}': formatMontant(totalEntrees),
-                '{{TOTAL_DECAISSE}}': formatMontant(totalSorties),
-                '{{SOLDE_RESTANT}}': formatMontant(soldeGlobal),
-                '{{TAUX_DECAISSEMENT}}': totalEntrees > 0 ? ((totalSorties / totalEntrees) * 100).toFixed(1) : '0',
-                '{{PCT_RESTANT}}': totalEntrees > 0 ? ((soldeGlobal / totalEntrees) * 100).toFixed(1) : '0',
-                '{{MONTANT_MOYEN}}': entreesPeriod.length > 0 ? formatMontant(totalEntreesPeriod / entreesPeriod.length) : '0 FCFA',
-                
-                // Section 2: Catégories (5 premières)
-                '{{NB_BCS}}': categoriesData[0] ? Math.floor(Math.random() * 50 + 10).toString() : '0',
-                '{{MNT_UNIT_BCS}}': categoriesData[0] ? formatMontant(categoriesData[0][1] / 10) : '—',
-                '{{TOTAL_ENGAGE_BCS}}': categoriesData[0] ? formatMontant(categoriesData[0][1]) : '—',
-                '{{TOTAL_VERSE_BCS}}': categoriesData[0] ? formatMontant(categoriesData[0][1]) : '—',
-                '{{PCT_BCS}}': categoriesData[0] && totalSortiesCat > 0 ? ((categoriesData[0][1] / totalSortiesCat) * 100).toFixed(0) : '0',
-                
-                '{{NB_BEX}}': categoriesData[1] ? Math.floor(Math.random() * 30 + 5).toString() : '0',
-                '{{MNT_UNIT_BEX}}': categoriesData[1] ? formatMontant(categoriesData[1][1] / 5) : '—',
-                '{{TOTAL_ENGAGE_BEX}}': categoriesData[1] ? formatMontant(categoriesData[1][1]) : '—',
-                '{{TOTAL_VERSE_BEX}}': categoriesData[1] ? formatMontant(categoriesData[1][1]) : '—',
-                '{{PCT_BEX}}': categoriesData[1] && totalSortiesCat > 0 ? ((categoriesData[1][1] / totalSortiesCat) * 100).toFixed(0) : '0',
-                
-                '{{NB_BMO}}': categoriesData[2] ? Math.floor(Math.random() * 20 + 3).toString() : '0',
-                '{{MNT_UNIT_BMO}}': categoriesData[2] ? formatMontant(categoriesData[2][1] / 3) : '—',
-                '{{TOTAL_ENGAGE_BMO}}': categoriesData[2] ? formatMontant(categoriesData[2][1]) : '—',
-                '{{TOTAL_VERSE_BMO}}': categoriesData[2] ? formatMontant(categoriesData[2][1]) : '—',
-                '{{PCT_BMO}}': categoriesData[2] && totalSortiesCat > 0 ? ((categoriesData[2][1] / totalSortiesCat) * 100).toFixed(0) : '0',
-                
-                '{{NB_BRE}}': categoriesData[3] ? Math.floor(Math.random() * 15 + 2).toString() : '0',
-                '{{MNT_UNIT_BRE}}': categoriesData[3] ? formatMontant(categoriesData[3][1] / 2) : '—',
-                '{{TOTAL_ENGAGE_BRE}}': categoriesData[3] ? formatMontant(categoriesData[3][1]) : '—',
-                '{{TOTAL_VERSE_BRE}}': categoriesData[3] ? formatMontant(categoriesData[3][1]) : '—',
-                '{{PCT_BRE}}': categoriesData[3] && totalSortiesCat > 0 ? ((categoriesData[3][1] / totalSortiesCat) * 100).toFixed(0) : '0',
-                
-                '{{NB_BUR}}': categoriesData[4] ? Math.floor(Math.random() * 10 + 1).toString() : '0',
-                '{{MNT_UNIT_BUR}}': categoriesData[4] ? formatMontant(categoriesData[4][1]) : '—',
-                '{{TOTAL_ENGAGE_BUR}}': categoriesData[4] ? formatMontant(categoriesData[4][1]) : '—',
-                '{{TOTAL_VERSE_BUR}}': categoriesData[4] ? formatMontant(categoriesData[4][1]) : '—',
-                '{{PCT_BUR}}': categoriesData[4] && totalSortiesCat > 0 ? ((categoriesData[4][1] / totalSortiesCat) * 100).toFixed(0) : '0',
-                
-                '{{TOTAL_NB}}': (entreesPeriod.length + sortiesPeriod.length).toString(),
-                '{{TOTAL_ENGAGE}}': formatMontant(totalEntreesPeriod),
-                '{{TOTAL_VERSE}}': formatMontant(totalSortiesPeriod),
-                
-                // Section 3: Journal des opérations
-                '{{PIECE_001}}': operations[0]?.piece || '—',
-                '{{DATE_OP_001}}': operations[0]?.date || '—',
-                '{{COMPTE_001}}': operations[0]?.compte || '—',
-                '{{DEBIT_001}}': operations[0]?.debit || '—',
-                '{{CREDIT_001}}': operations[0]?.credit || '—',
-                '{{SOLDE_001}}': operations[0] ? formatMontant(totalEntreesPeriod) : '—',
-                
-                '{{PIECE_002}}': operations[1]?.piece || '—',
-                '{{DATE_OP_002}}': operations[1]?.date || '—',
-                '{{PROMO_002}}': now.getFullYear().toString(),
-                '{{COMPTE_002}}': operations[1]?.compte || '—',
-                '{{CREDIT_002}}': operations[1]?.credit || operations[1]?.debit || '—',
-                '{{SOLDE_002}}': formatMontant(soldePeriod),
-                
-                '{{PIECE_003}}': operations[2]?.piece || '—',
-                '{{DATE_OP_003}}': operations[2]?.date || '—',
-                '{{REF_ANNUL}}': operations[2]?.piece || '—',
-                '{{COMPTE_003}}': operations[2]?.compte || '—',
-                '{{DEBIT_003}}': operations[2]?.debit || '—',
-                '{{SOLDE_003}}': formatMontant(soldePeriod),
-                
-                '{{PIECE_004}}': operations[3]?.piece || '—',
-                '{{DATE_OP_004}}': operations[3]?.date || '—',
-                '{{PERIODE_T2}}': 'S2',
-                '{{COMPTE_004}}': operations[3]?.compte || '—',
-                '{{CREDIT_004}}': operations[3]?.credit || operations[3]?.debit || '—',
-                '{{SOLDE_004}}': formatMontant(soldePeriod),
-                
-                '{{PIECE_005}}': operations[4]?.piece || '—',
-                '{{DATE_OP_005}}': operations[4]?.date || '—',
-                '{{COMPTE_005}}': operations[4]?.compte || '—',
-                '{{DEBIT_005}}': operations[4]?.debit || '—',
-                '{{SOLDE_005}}': formatMontant(soldePeriod),
-                
-                '{{TOTAL_DEBITS}}': formatMontant(totalEntreesPeriod),
-                '{{TOTAL_CREDITS}}': formatMontant(totalSortiesPeriod),
-                '{{SOLDE_FINAL}}': formatMontant(soldePeriod),
-                
-                // Section 4: Bilan
-                '{{ACTIF_CAISSE}}': formatMontant(soldeGlobal * 0.1),
-                '{{ACTIF_BANQUE}}': formatMontant(soldeGlobal * 0.85),
-                '{{ACTIF_AVANCES}}': formatMontant(soldeGlobal * 0.03),
-                '{{ACTIF_CREANCES}}': formatMontant(soldeGlobal * 0.02),
-                '{{TOTAL_ACTIF}}': formatMontant(soldeGlobal),
-                
-                '{{PASSIF_ETAT}}': formatMontant(totalEntrees * 0.7),
-                '{{PASSIF_PARTENAIRES}}': formatMontant(totalEntrees * 0.2),
-                '{{PASSIF_ENGAGEES}}': formatMontant(totalSorties * 0.05),
-                '{{PASSIF_RESERVES}}': formatMontant(soldeGlobal),
-                '{{TOTAL_PASSIF}}': formatMontant(soldeGlobal),
-                '{{ECART_BILAN}}': '0 FCFA',
-                '{{STATUT_BILAN}}': 'Équilibré',
-                
-                // Section 5: Paiements par mois (6 premiers mois)
-                ...Array.from({ length: 6 }, (_, i) => {
-                    const moisKey = ['JAN', 'FEV', 'MAR', 'AVR', 'MAI', 'JUN'][i];
-                    const data = paymentsByMonth[i];
-                    return {
-                        [`{{NB_PAY_${moisKey}}}`]: data.nb.toString(),
-                        [`{{MNT_${moisKey}}}`]: formatMontant(data.verse),
-                        [`{{ANN_${moisKey}}}`]: formatMontant(data.annule),
-                        [`{{NET_${moisKey}}}`]: formatMontant(data.verse - data.annule),
-                        [`{{PCT_${moisKey}}}`]: totalEntrees > 0 ? ((data.verse / totalEntrees) * 100).toFixed(1) : '0',
-                    };
-                }).reduce((acc, obj) => ({ ...acc, ...obj }), {}),
-                
-                '{{TOTAL_PAIEMENTS}}': (entreesPeriod.length + sortiesPeriod.length).toString(),
-                '{{TOTAL_VERSE_GLOB}}': formatMontant(totalEntreesPeriod),
-                '{{TOTAL_ANNULE}}': '0 FCFA',
-                '{{TOTAL_NET}}': formatMontant(totalEntreesPeriod),
-                '{{PCT_GLOBAL}}': '100',
-                
-                // Section 6: Observations
-                '{{OBSERVATIONS_TEXTE}}': `Période du ${startOfPeriod.toLocaleDateString('fr-FR')} au ${endOfPeriod.toLocaleDateString('fr-FR')}. Total des entrées : ${formatMontant(totalEntreesPeriod)} (${entreesPeriod.length} opérations). Total des sorties : ${formatMontant(totalSortiesPeriod)} (${sortiesPeriod.length} opérations). Solde de la période : ${formatMontant(soldePeriod)}.`,
-                '{{ALERTES_TEXTE}}': soldePeriod < 0 ? 'Attention : Le solde de la période est négatif. Une révision budgétaire est recommandée.' : totalSortiesPeriod > totalEntreesPeriod * 0.8 ? 'Le taux de consommation budgétaire est élevé (>80%). Surveiller les dépenses.' : 'Aucune alerte particulière. La gestion budgétaire est conforme aux prévisions.',
-                '{{RECOMMANDATIONS_TEXTE}}': 'Continuer le suivi régulier des opérations comptables. Maintenir la validation systématique des sorties. Prévoir une révision budgétaire trimestrielle.',
-                
-                // Signatures
-                '{{NOM_DIRECTEUR}}': 'Direction Joda Company',
-                '{{NOM_VALIDATEUR}}': 'Contrôle Interne',
-            };
-
-            Object.entries(replacements).forEach(([key, value]) => {
-                template = template.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
-            });
-
-            template = template.replace(/\{\{[^}]+\}\}/g, '—');
-
-            const printWindow = window.open('', '_blank');
-            if (printWindow) {
-                printWindow.document.write(template);
-                printWindow.document.close();
-                printWindow.focus();
-                setTimeout(() => {
-                    printWindow.print();
-                }, 500);
-            }
         } catch (err) {
             console.error('Erreur export PDF:', err);
             alert('Erreur lors de l\'export PDF');
