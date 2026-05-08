@@ -32,6 +32,10 @@ export default function LoginPage() {
     const [studentLoading, setStudentLoading] = useState(false);
     const [shakeError, setShakeError] = useState(false);
     const [shakeStudentError, setShakeStudentError] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState<"staff" | "student" | null>(null);
+    const [forgotInput, setForgotInput] = useState("");
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotSent, setForgotSent] = useState(false);
 
     const triggerShake = (isStudent = false) => {
         if (isStudent) {
@@ -65,6 +69,33 @@ export default function LoginPage() {
         }
 
         setLoading(false);
+    };
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!forgotInput.trim()) return;
+        setForgotLoading(true);
+        try {
+            await fetch("/api/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(
+                    showForgotPassword === "student"
+                        ? { username: forgotInput.trim() }
+                        : { email: forgotInput.trim() }
+                ),
+            });
+        } catch {
+            // Silently ignore — always show success to prevent enumeration
+        }
+        setForgotLoading(false);
+        setForgotSent(true);
+    };
+
+    const closeForgotPassword = () => {
+        setShowForgotPassword(null);
+        setForgotInput("");
+        setForgotSent(false);
     };
 
     const handleStudentLogin = async (e: React.FormEvent) => {
@@ -328,6 +359,20 @@ export default function LoginPage() {
                                                 </motion.button>
                                             </div>
                                         </motion.form>
+                                        <motion.div
+                                            className="mt-4 text-center"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.4 }}
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => { setShowForgotPassword("student"); setForgotInput(""); setForgotSent(false); }}
+                                                className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+                                            >
+                                                Mot de passe oublié ?
+                                            </button>
+                                        </motion.div>
                                     </motion.div>
                                 ) : (
                                     <motion.div key="main" className="mx-auto w-full max-w-sm self-center" variants={slideUp} initial="initial" animate="animate" exit="exit">
@@ -418,6 +463,13 @@ export default function LoginPage() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.6 }}
                                         >
+                                            <button
+                                                type="button"
+                                                onClick={() => { setShowForgotPassword("staff"); setForgotInput(""); setForgotSent(false); }}
+                                                className="text-sm text-gray-400 hover:text-red-600 transition-colors"
+                                            >
+                                                Mot de passe oublié ?
+                                            </button>
                                             <div className="flex items-center gap-3">
                                                 <div className="h-px flex-1 bg-gray-200" />
                                                 <span className="text-xs text-gray-400">Espace Étudiant</span>
@@ -442,6 +494,83 @@ export default function LoginPage() {
                     </div>
                 </motion.div>
             </motion.div>
+
+            {/* Forgot password overlay */}
+            <AnimatePresence>
+                {showForgotPassword && (
+                    <motion.div
+                        className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={closeForgotPassword}
+                    >
+                        <motion.div
+                            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+                            initial={{ scale: 0.92, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.92, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {forgotSent ? (
+                                <div className="text-center py-4">
+                                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                                        <svg className="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="mb-2 text-lg font-semibold text-gray-900">Email envoyé</h3>
+                                    <p className="mb-6 text-sm text-gray-500 leading-relaxed">
+                                        Si un compte correspond, vous recevrez un lien de réinitialisation valable 24 h.
+                                    </p>
+                                    <button
+                                        onClick={closeForgotPassword}
+                                        className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+                                    >
+                                        Retour à la connexion
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="mb-5">
+                                        <h3 className="text-lg font-semibold text-gray-900">Mot de passe oublié</h3>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {showForgotPassword === "student"
+                                                ? "Entrez votre nom d'utilisateur et nous enverrons un lien de réinitialisation à l'email associé."
+                                                : "Entrez votre email et nous vous enverrons un lien de réinitialisation."}
+                                        </p>
+                                    </div>
+                                    <form onSubmit={handleForgotPassword} className="space-y-4">
+                                        <input
+                                            type={showForgotPassword === "student" ? "text" : "email"}
+                                            value={forgotInput}
+                                            onChange={(e) => setForgotInput(e.target.value)}
+                                            placeholder={showForgotPassword === "student" ? "Nom d'utilisateur" : "Email"}
+                                            required
+                                            className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={forgotLoading}
+                                            className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(220,38,38,0.3)] hover:bg-red-700 disabled:opacity-50 transition-colors"
+                                        >
+                                            {forgotLoading ? "Envoi..." : "Envoyer le lien"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={closeForgotPassword}
+                                            className="w-full rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                                        >
+                                            Annuler
+                                        </button>
+                                    </form>
+                                </>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }

@@ -82,7 +82,20 @@ async function handleCreateUser(req: NextRequest) {
         return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
 
-    // Envoyer l'email de bienvenue
+    // Générer un lien de définition de mot de passe
+    let setPasswordLink = 'https://gestion-joda.vercel.app';
+    try {
+        const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+            type: 'recovery',
+            email: supabaseEmail,
+        });
+        if (linkData?.properties?.action_link) {
+            setPasswordLink = linkData.properties.action_link;
+        }
+    } catch {
+        // Non bloquant — l'utilisateur pourra demander un reset ultérieurement
+    }
+
     const roleLabels: Record<string, string> = {
         student: "Étudiant", agent: "Agent", admin: "Administrateur",
         supervisor: "Superviseur", super_admin: "Super Administrateur",
@@ -92,7 +105,7 @@ async function handleCreateUser(req: NextRequest) {
         await transporter.sendMail({
             from: `"Joda Company" <${process.env.GMAIL_USER}>`,
             to: email,
-            subject: "Vos informations de connexion - Joda Company",
+            subject: "Bienvenue sur Joda Company — Activez votre compte",
             html: `
 <!DOCTYPE html>
 <html lang="fr">
@@ -111,7 +124,7 @@ async function handleCreateUser(req: NextRequest) {
           <td style="padding:36px 40px;">
             <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${name}</strong>,</p>
             <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.6;">
-              Votre compte a été créé sur la plateforme Joda Company. Voici vos informations de connexion :
+              Votre compte a été créé sur la plateforme Joda Company. Cliquez sur le bouton ci-dessous pour définir votre mot de passe et accéder à votre espace. Ce lien est valable 24 heures.
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;">
               <tr><td style="padding:20px 24px;">
@@ -125,12 +138,6 @@ async function handleCreateUser(req: NextRequest) {
                     <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${email}</td>
                   </tr>
                   <tr>
-                    <td style="padding:6px 0;font-size:13px;color:#6b7280;">Mot de passe</td>
-                    <td style="padding:6px 0;">
-                      <span style="font-size:13px;color:#111827;font-weight:600;font-family:monospace;background:#fff;border:1px solid #e5e7eb;border-radius:4px;padding:4px 10px;">${password}</span>
-                    </td>
-                  </tr>
-                  <tr>
                     <td style="padding:6px 0;font-size:13px;color:#6b7280;">Rôle</td>
                     <td style="padding:6px 0;">
                       <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">${roleLabels[role] || role}</span>
@@ -139,19 +146,20 @@ async function handleCreateUser(req: NextRequest) {
                 </table>
               </td></tr>
             </table>
-            <p style="margin:0 0 24px;font-size:13px;color:#6b7280;line-height:1.6;">
-              Pour des raisons de sécurité, nous vous recommandons de changer votre mot de passe dès votre première connexion.
-            </p>
             <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#dc2626;border-radius:8px;">
-                  <a href="https://gestion-joda.vercel.app"
-                     style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
-                    Se connecter →
+                  <a href="${setPasswordLink}"
+                     style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+                    Définir mon mot de passe →
                   </a>
                 </td>
               </tr>
             </table>
+            <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
+              Si ce bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+              <span style="color:#6b7280;word-break:break-all;">${setPasswordLink}</span>
+            </p>
           </td>
         </tr>
         <tr>
@@ -167,7 +175,7 @@ async function handleCreateUser(req: NextRequest) {
         });
     } catch (emailError: any) {
         console.error("Erreur envoi email:", emailError.message);
-        // On ne bloque pas si l'email échoue, l'utilisateur est déjà créé
+        // Non bloquant — l'utilisateur est créé, il pourra demander un reset
     }
 
     return NextResponse.json({ success: true, userId: data.user.id });

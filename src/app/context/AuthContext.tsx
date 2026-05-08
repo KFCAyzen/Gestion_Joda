@@ -130,23 +130,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const persistAuthenticatedUser = (dbUser: Record<string, unknown>): boolean => {
-        if (!dbUser) return false;
-        const currentUser: AuthUser = {
-            id: dbUser.id as string,
-            username: dbUser.username as string,
-            role: dbUser.role as UserRole,
-            name: dbUser.name as string,
-            email: dbUser.email as string,
-            mustChangePassword: dbUser.must_change_password === true,
-        };
-        setUser(currentUser);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        }
-        return true;
-    };
-
     const login = async (email: string, password: string): Promise<boolean> => {
         try {
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
@@ -157,25 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
 
                 if (authError.message === 'Email not confirmed') {
-                    const { data: userRow } = await supabase
-                        .from('users')
-                        .select('id')
-                        .eq('email', email)
-                        .single();
-
-                    if (userRow?.id) {
-                        // Confirmer via API route
-                        await fetch('/api/reset-password', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ userId: userRow.id, confirmEmail: true, newPassword: password }),
-                        });
-                        const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({ email, password });
-                        if (!retryError && retryData.user) {
-                            const { data: userData } = await supabase.from('users').select('*').eq('id', retryData.user.id).single();
-                            if (userData) return persistAuthenticatedUser(userData);
-                        }
-                    }
+                    console.error('[Auth] Email non confirmé — contacter un administrateur');
                 }
 
                 return false;
@@ -329,15 +294,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return user.role === 'admin' || user.role === 'super_admin';
     };
 
-    // Reset mot de passe via API route (service role key côté serveur)
-    const resetUserPassword = async (userId: string, newPassword: string): Promise<boolean> => {
+    const resetUserPassword = async (userId: string, _newPassword: string): Promise<boolean> => {
         const targetUser = users.find(u => u.id === userId);
         if (!targetUser || !canResetPassword(targetUser)) return false;
         try {
             const res = await fetch('/api/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, newPassword }),
+                body: JSON.stringify({ userId }),
             });
             if (!res.ok) return false;
             return true;

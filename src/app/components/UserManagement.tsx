@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Permission, DEFAULT_ROLE_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from "../types/permissions";
-import { Shield, Check, X } from "lucide-react";
+import { KeyRound, Shield, Check, X } from "lucide-react";
 
 interface DbUser {
     id: string;
@@ -56,6 +56,8 @@ export default function UserManagement() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [userToDelete, setUserToDelete] = useState<string | null>(null);
+    const [userToReset, setUserToReset] = useState<DbUser | null>(null);
+    const [resetLoading, setResetLoading] = useState(false);
     const [selectedUser, setSelectedUser] = useState<DbUser | null>(null);
     const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
     const [loadingPermissions, setLoadingPermissions] = useState(false);
@@ -102,6 +104,24 @@ export default function UserManagement() {
         } catch (err: any) {
             setError(err.message);
         }
+    };
+
+    const handleResetPassword = async (userId: string) => {
+        setResetLoading(true);
+        try {
+            const res = await fetch("/api/reset-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId }),
+            });
+            const result = await res.json();
+            if (!res.ok) setError(result.error || "Erreur lors de la réinitialisation");
+            else setSuccess("Email de réinitialisation envoyé avec succès.");
+        } catch (err: any) {
+            setError(err.message);
+        }
+        setResetLoading(false);
+        setUserToReset(null);
     };
 
     const handleDeleteUser = async (userId: string) => {
@@ -247,7 +267,7 @@ export default function UserManagement() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex flex-wrap gap-2">
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -259,6 +279,16 @@ export default function UserManagement() {
                                                             <Shield className="h-4 w-4 mr-1" />
                                                             Permissions
                                                         </Button>
+                                                        {u.id !== currentUser?.id && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => setUserToReset(u)}
+                                                            >
+                                                                <KeyRound className="h-4 w-4 mr-1" />
+                                                                Réinit. MDP
+                                                            </Button>
+                                                        )}
                                                         {currentUser?.role === "super_admin" && u.id !== currentUser.id && (
                                                             <Button variant="destructive" size="sm" onClick={() => setUserToDelete(u.id)}>
                                                                 Supprimer
@@ -425,6 +455,37 @@ export default function UserManagement() {
                         )}
                     </CardContent>
                 </Card>
+
+                {userToReset && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                            <div className="mb-4 flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+                                    <KeyRound className="h-5 w-5 text-amber-600" />
+                                </div>
+                                <h3 className="text-lg font-semibold">Réinitialiser le mot de passe</h3>
+                            </div>
+                            <p className="mb-1 text-sm text-slate-700">
+                                Un email de réinitialisation sera envoyé à <strong>{userToReset.name}</strong>.
+                            </p>
+                            <p className="mb-6 text-xs text-slate-500">
+                                L'utilisateur recevra un lien valable 24 h pour définir un nouveau mot de passe.
+                            </p>
+                            <div className="flex justify-end gap-2">
+                                <Button variant="outline" onClick={() => setUserToReset(null)} disabled={resetLoading}>
+                                    Annuler
+                                </Button>
+                                <Button
+                                    onClick={() => handleResetPassword(userToReset.id)}
+                                    disabled={resetLoading}
+                                    className="bg-amber-500 hover:bg-amber-600 text-white"
+                                >
+                                    {resetLoading ? "Envoi..." : "Envoyer le lien"}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {userToDelete && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
