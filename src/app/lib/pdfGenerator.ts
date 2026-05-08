@@ -76,11 +76,34 @@ async function loadLogoBase64(): Promise<string | null> {
     const res = await fetch('/Logo.png');
     if (!res.ok) return null;
     const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+
     return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror  = () => resolve(null);
-      reader.readAsDataURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const w = img.naturalWidth;
+          const h = img.naturalHeight;
+          // Crop ~18% horizontal and ~22% vertical to remove whitespace
+          const cx = Math.round(w * 0.18);
+          const cy = Math.round(h * 0.22);
+          const cw = w - 2 * cx;
+          const ch = h - 2 * cy;
+          const canvas = document.createElement('canvas');
+          canvas.width  = cw;
+          canvas.height = ch;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(null); return; }
+          ctx.drawImage(img, cx, cy, cw, ch, 0, 0, cw, ch);
+          URL.revokeObjectURL(objectUrl);
+          resolve(canvas.toDataURL('image/png'));
+        } catch {
+          URL.revokeObjectURL(objectUrl);
+          resolve(null);
+        }
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+      img.src = objectUrl;
     });
   } catch {
     return null;
@@ -107,27 +130,29 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   doc.setFillColor(180, 25, 25);
   doc.rect(0, headerH - 1.5, pageW, 1.5, 'F');
 
-  // ── Logo: white rounded square, smaller (22 × 22 mm), vertically centred
-  const logoSize = 22;
-  const logoX    = marginL;
-  const logoY    = (headerH - logoSize) / 2 - 0.5; // slight optical lift
+  // ── Logo: white rounded rectangle, landscape 3:2, vertically centred
+  const logoW = 36;
+  const logoH = 24;
+  const logoX = marginL;
+  const logoY = (headerH - logoH) / 2;
 
   doc.setFillColor(...WHITE);
-  doc.roundedRect(logoX, logoY, logoSize, logoSize, 3, 3, 'F');
+  doc.roundedRect(logoX, logoY, logoW, logoH, 3, 3, 'F');
 
   if (logoData) {
-    doc.addImage(logoData, 'PNG', logoX + 1.5, logoY + 1.5, logoSize - 3, logoSize - 3);
+    // Fill the full white box — whitespace already removed by canvas crop
+    doc.addImage(logoData, 'PNG', logoX, logoY, logoW, logoH);
   } else {
     doc.setTextColor(...RED);
-    doc.setFontSize(13);
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('JC', logoX + logoSize / 2, logoY + logoSize / 2 + 2, { align: 'center' });
+    doc.text('JC', logoX + logoW / 2, logoY + logoH / 2 + 2.5, { align: 'center' });
   }
 
   // ── Text block — right of logo
-  const textX = logoX + logoSize + 6; // ~38 mm
-  const textW = pageW - textX - marginR; // ~164 mm
-  const col2X = textX + textW / 2;      // ~120 mm
+  const textX = logoX + logoW + 5; // ~51 mm
+  const textW = pageW - textX - marginR; // ~151 mm
+  const col2X = textX + textW / 2;      // ~126 mm
 
   doc.setTextColor(...WHITE);
 
