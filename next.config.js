@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['nodemailer'],
   images: {
     domains: ['firebasestorage.googleapis.com'],
     formats: ['image/webp', 'image/avif'],
@@ -8,7 +9,8 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ['@tailwindcss/forms']
-  }
+  },
+  allowedDevOrigins: ['192.168.0.145'],
 }
 
 module.exports = nextConfig
