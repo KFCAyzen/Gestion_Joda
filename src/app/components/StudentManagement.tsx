@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/table";
 import SearchBar from "./SearchBar";
 import FilterSelect from "./FilterSelect";
-import ActionButtons from "./ActionButtons";
+import { DropdownMenu } from "./shared";
+import { Eye, Edit, Trash2 } from "lucide-react";
 
 interface Student {
     id: string;
@@ -454,44 +455,30 @@ export default function StudentManagement() {
                                                         </TableCell>
                                                         <TableCell>{student.filiere}</TableCell>
                                                         <TableCell>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setSelectedStudent(student);
-                                                                    }}
-                                                                >
-                                                                    Détails
-                                                                </Button>
-                                                                {canEdit && (
-                                                                    <>
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            size="sm"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                openEditForm(student);
-                                                                            }}
-                                                                        >
-                                                                            Modifier
-                                                                        </Button>
-                                                                        {canDelete && (
-                                                                            <Button
-                                                                                variant="destructive"
-                                                                                size="sm"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setStudentToDelete(student);
-                                                                                }}
-                                                                            >
-                                                                                Supprimer
-                                                                            </Button>
-                                                                        )}
-                                                                    </>
-                                                                )}
-                                                            </div>
+                                                            <DropdownMenu
+                                                                actions={[
+                                                                    {
+                                                                        label: "Détails",
+                                                                        icon: <Eye className="h-4 w-4" />,
+                                                                        onClick: () => setSelectedStudent(student),
+                                                                    },
+                                                                    ...(canEdit ? [
+                                                                        {
+                                                                            label: "Modifier",
+                                                                            icon: <Edit className="h-4 w-4" />,
+                                                                            onClick: () => openEditForm(student),
+                                                                        },
+                                                                    ] : []),
+                                                                    ...(canDelete ? [
+                                                                        {
+                                                                            label: "Supprimer",
+                                                                            icon: <Trash2 className="h-4 w-4" />,
+                                                                            onClick: () => setStudentToDelete(student),
+                                                                            variant: "danger" as const,
+                                                                        },
+                                                                    ] : []),
+                                                                ]}
+                                                            />
                                                         </TableCell>
                                                     </TableRow>
                                                     ))}
