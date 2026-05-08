@@ -65,28 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (userError) {
                     console.error('Erreur récupération user:', userError.message);
-                    if (userError.message.includes('No rows')) {
-                        const { error: insertError } = await supabase.from('users').insert({
-                            id: session.user.id,
-                            email: session.user.email,
-                            username: session.user.email?.split('@')[0] || 'user',
-                            name: session.user.email?.split('@')[0] || 'User',
-                            role: 'student',
-                            password_hash: 'managed_by_supabase_auth',
-                            must_change_password: false
-                        });
-                        if (!insertError) {
-                            const { data: newUserData } = await supabase.from('users').select('*').eq('id', session.user.id).single();
-                            if (newUserData) setUser({
-                                id: newUserData.id,
-                                username: newUserData.username,
-                                role: newUserData.role,
-                                name: newUserData.name,
-                                email: newUserData.email,
-                                mustChangePassword: newUserData.must_change_password === true
-                            });
-                        }
-                    }
+                    // Ne pas créer automatiquement - l'utilisateur doit être créé par un admin
+                    await supabase.auth.signOut();
                 } else if (userData) {
                     setUser({
                         id: userData.id,
@@ -153,34 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     .eq('id', authData.user.id)
                     .single();
 
-                if (userError && userError.message.includes('No rows')) {
-                    const { error: insertError } = await supabase.from('users').insert({
-                        id: authData.user.id,
-                        email: authData.user.email,
-                        username: authData.user.email?.split('@')[0] || 'user',
-                        name: authData.user.email?.split('@')[0] || 'User',
-                        role: 'student',
-                        password_hash: 'managed_by_supabase_auth',
-                        must_change_password: false
-                    });
-                    if (insertError) {
-                        console.error('Erreur création user:', insertError.message);
-                        return false;
-                    }
-                    const { data: newUserData } = await supabase.from('users').select('*').eq('id', authData.user.id).single();
-                    if (newUserData) {
-                        const currentUser: AuthUser = {
-                            id: newUserData.id,
-                            username: newUserData.username,
-                            role: newUserData.role,
-                            name: newUserData.name,
-                            email: newUserData.email,
-                            mustChangePassword: newUserData.must_change_password
-                        };
-                        setUser(currentUser);
-                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                        return true;
-                    }
+                if (userError) {
+                    console.error('Erreur récupération user DB:', userError.message);
+                    // Ne pas créer automatiquement - l'utilisateur doit être créé par un admin
+                    await supabase.auth.signOut();
+                    return false;
                 } else if (userData) {
                     const currentUser: AuthUser = {
                         id: userData.id,
