@@ -90,86 +90,93 @@ async function loadLogoBase64(): Promise<string | null> {
 // ─── Header ──────────────────────────────────────────────────────────────────
 // Returns the Y position where content should start (below header).
 const addHeader = (doc: jsPDF, title: string, logoData: string | null): number => {
-  const RED: [number, number, number] = [220, 38, 38];
+  const RED:   [number, number, number] = [220, 38, 38];
   const WHITE: [number, number, number] = [255, 255, 255];
-  const DARK: [number, number, number] = [51, 65, 85];
+  const DARK:  [number, number, number] = [31,  41,  55];
 
-  const headerH = 48; // mm
+  const pageW   = 210;
+  const headerH = 42;
+  const marginL = 10;
+  const marginR = 8;
+
+  // Red background
   doc.setFillColor(...RED);
-  doc.rect(0, 0, 210, headerH, 'F');
+  doc.rect(0, 0, pageW, headerH, 'F');
 
-  // ── Logo (left column, white rounded square background) ──
-  const logoX = 10;
-  const logoY = 6;
-  const logoSize = 36;
+  // Thin dark accent bar at the bottom of the header
+  doc.setFillColor(180, 25, 25);
+  doc.rect(0, headerH - 1.5, pageW, 1.5, 'F');
 
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(logoX, logoY, logoSize, logoSize, 4, 4, 'F');
+  // ── Logo: white rounded square, smaller (22 × 22 mm), vertically centred
+  const logoSize = 22;
+  const logoX    = marginL;
+  const logoY    = (headerH - logoSize) / 2 - 0.5; // slight optical lift
+
+  doc.setFillColor(...WHITE);
+  doc.roundedRect(logoX, logoY, logoSize, logoSize, 3, 3, 'F');
 
   if (logoData) {
-    doc.addImage(logoData, 'PNG', logoX + 2, logoY + 2, logoSize - 4, logoSize - 4);
+    doc.addImage(logoData, 'PNG', logoX + 1.5, logoY + 1.5, logoSize - 3, logoSize - 3);
   } else {
-    // Fallback: "JC" monogram
     doc.setTextColor(...RED);
-    doc.setFontSize(18);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('JC', logoX + logoSize / 2, logoY + logoSize / 2 + 3, { align: 'center' });
+    doc.text('JC', logoX + logoSize / 2, logoY + logoSize / 2 + 2, { align: 'center' });
   }
 
-  // ── Company name & details (right of logo) ──
-  const textX = logoX + logoSize + 6; // ~52 mm
-  const maxW  = 210 - textX - 8;
+  // ── Text block — right of logo
+  const textX = logoX + logoSize + 6; // ~38 mm
+  const textW = pageW - textX - marginR; // ~164 mm
+  const col2X = textX + textW / 2;      // ~120 mm
 
   doc.setTextColor(...WHITE);
 
   // Company name
-  doc.setFontSize(20);
+  doc.setFontSize(17);
   doc.setFont('helvetica', 'bold');
-  doc.text(COMPANY.name, textX, 15);
+  doc.text(COMPANY.name, textX, 12);
 
   // Tagline
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setFont('helvetica', 'italic');
-  doc.text(COMPANY.tagline, textX, 22);
+  doc.text(COMPANY.tagline, textX, 18.5);
 
-  // Separator line
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.3);
-  doc.setGState(new (doc as any).GState({ opacity: 0.4 }));
-  doc.line(textX, 25, 202, 25);
+  // Separator line (semi-transparent white)
+  doc.setDrawColor(...WHITE);
+  doc.setLineWidth(0.25);
+  doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
+  doc.line(textX, 21.5, pageW - marginR, 21.5);
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
-  // Contact grid — two columns
+  // Contact info — 2 columns, plain text labels (no emojis)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
 
-  const col1X = textX;
-  const col2X = textX + maxW / 2 + 2;
-  const lineH  = 5.2;
-  let   cy     = 30;
+  const lh = 4.8;
+  let cy = 26;
 
-  doc.text(`☎  ${COMPANY.phone}`,   col1X, cy);
-  doc.text(`✉  ${COMPANY.email}`,    col2X, cy);
-  cy += lineH;
-  doc.text(`\u{1F310}  ${COMPANY.website}`, col1X, cy);
-  doc.text(`\u{1F4CD}  ${COMPANY.address}`, col2X, cy);
-  cy += lineH;
-  doc.text(COMPANY.nui, col1X, cy);
+  doc.text(`Tel.    : ${COMPANY.phone}`,   textX, cy);
+  doc.text(`E-mail  : ${COMPANY.email}`,   col2X, cy);
+  cy += lh;
+  doc.text(`Web     : ${COMPANY.website}`, textX, cy);
+  doc.text(`Adresse : ${COMPANY.address}`, col2X, cy);
+  cy += lh;
+  doc.text(`NUI     : ${COMPANY.nui.replace('NUI : ', '')}`, textX, cy);
 
-  // ── Document title (below header, dark text) ──
-  const titleY = headerH + 12;
+  // ── Document title — below header band
+  const titleY = headerH + 11;
   doc.setTextColor(...DARK);
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(title, 105, titleY, { align: 'center' });
+  doc.text(title, pageW / 2, titleY, { align: 'center' });
 
-  // Underline
+  // Red underline
   const titleW = doc.getTextWidth(title);
   doc.setDrawColor(...RED);
-  doc.setLineWidth(0.8);
-  doc.line(105 - titleW / 2, titleY + 2, 105 + titleW / 2, titleY + 2);
+  doc.setLineWidth(0.6);
+  doc.line(pageW / 2 - titleW / 2, titleY + 1.5, pageW / 2 + titleW / 2, titleY + 1.5);
 
-  return titleY + 10; // first content Y
+  return titleY + 10;
 };
 
 // ─── Footer ──────────────────────────────────────────────────────────────────
