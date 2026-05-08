@@ -1,6 +1,8 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "regions": ["cdg1"]
+  "crons": [
+    {
+      "path": "/api/cron/check-late-payments",
+      "schedule": "0 9 * * *"
+    }
+  ]
 }
