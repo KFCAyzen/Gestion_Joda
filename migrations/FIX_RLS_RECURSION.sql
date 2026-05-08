@@ -1,41 +1,64 @@
 -- ================================================================
--- FIX: Infinite recursion in RLS policies
+-- FIX: Infinite recursion in RLS policies  (v3 — JWT-based)
 -- ================================================================
 -- INSTRUCTIONS: paste this entire script in Supabase SQL Editor
 --               and click "Run".
 -- ================================================================
 --
--- Root cause: every role-check policy used
---   EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN (...))
--- On the `users` table this is directly self-recursive.
--- On other tables it still recurses because that subquery triggers
--- the `users` RLS policies, which themselves query `users` again.
+-- Why SECURITY DEFINER didn't work:
+--   Supabase forces row_security = ON for the postgres role, so even
+--   a SECURITY DEFINER function querying `users` still triggers the
+--   same recursive policies.
 --
--- Fix: a SECURITY DEFINER function reads the role once, bypassing
--- RLS entirely (it runs as the postgres superuser at call time).
--- All policies are rewritten to call it instead of using subqueries.
+-- Real fix: read the role from the JWT token — zero database queries,
+--   zero RLS evaluation, zero possible recursion.
+--
+-- Caveat: the JWT role is only as fresh as the last token refresh
+--   (~1 h). Existing users need to re-login once after this migration
+--   (or their token refreshes automatically within the hour).
 -- ================================================================
 
 -- ----------------------------------------------------------------
--- 1. Helper — reads current user's role without going through RLS
+-- 1.  Sync raw_user_meta_data for every existing user so the JWT
+--     carries the correct role from the start.
+-- ----------------------------------------------------------------
+UPDATE auth.users au
+SET raw_user_meta_data =
+  COALESCE(au.raw_user_meta_data, '{}'::jsonb)
+  || jsonb_build_object('role', pu.role)
+FROM public.users pu
+WHERE au.id = pu.id
+  AND (
+    au.raw_user_meta_data ->> 'role' IS DISTINCT FROM pu.role
+  );
+
+-- Also push role into app_metadata (admin-controlled, higher trust)
+UPDATE auth.users au
+SET raw_app_meta_data =
+  COALESCE(au.raw_app_meta_data, '{}'::jsonb)
+  || jsonb_build_object('role', pu.role)
+FROM public.users pu
+WHERE au.id = pu.id
+  AND (
+    au.raw_app_meta_data ->> 'role' IS DISTINCT FROM pu.role
+  );
+
+-- ----------------------------------------------------------------
+-- 2.  Helper function — reads role from JWT (NO database query)
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION get_auth_user_role()
 RETURNS TEXT
 LANGUAGE sql
-SECURITY DEFINER
 STABLE
-SET search_path = public, auth
 AS $$
-  SELECT role
-  FROM public.users
-  WHERE id = (
-    SELECT auth.uid()   -- schema-qualified; not affected by search_path
+  SELECT COALESCE(
+    NULLIF(auth.jwt() -> 'app_metadata'  ->> 'role', ''),
+    NULLIF(auth.jwt() -> 'user_metadata' ->> 'role', '')
   )
-  LIMIT 1
 $$;
 
 -- ----------------------------------------------------------------
--- 2. users
+-- 3.  users
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Admins can view all users"  ON users;
 DROP POLICY IF EXISTS "Admins can manage users"    ON users;
@@ -48,10 +71,8 @@ CREATE POLICY "Admins can manage users" ON users
   FOR ALL
   USING (get_auth_user_role() IN ('admin', 'super_admin'));
 
--- "Users can view own profile" (id = auth.uid()) is fine — no change.
-
 -- ----------------------------------------------------------------
--- 3. students
+-- 4.  students
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Students can view own data" ON students;
 DROP POLICY IF EXISTS "Agents can manage students" ON students;
@@ -68,7 +89,7 @@ CREATE POLICY "Agents can manage students" ON students
   USING (get_auth_user_role() IN ('agent', 'admin', 'super_admin'));
 
 -- ----------------------------------------------------------------
--- 4. universities
+-- 5.  universities
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Everyone can view active universities" ON universities;
 DROP POLICY IF EXISTS "Admins can manage universities"        ON universities;
@@ -85,7 +106,7 @@ CREATE POLICY "Admins can manage universities" ON universities
   USING (get_auth_user_role() IN ('admin', 'super_admin'));
 
 -- ----------------------------------------------------------------
--- 5. payments
+-- 6.  payments
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Students can view own payments" ON payments;
 DROP POLICY IF EXISTS "Agents can manage payments"     ON payments;
@@ -104,7 +125,7 @@ CREATE POLICY "Agents can manage payments" ON payments
   USING (get_auth_user_role() IN ('agent', 'admin', 'super_admin'));
 
 -- ----------------------------------------------------------------
--- 6. entrees_comptables
+-- 7.  entrees_comptables
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Admins can view accounting"   ON entrees_comptables;
 DROP POLICY IF EXISTS "Admins can manage accounting" ON entrees_comptables;
@@ -118,7 +139,7 @@ CREATE POLICY "Admins can manage accounting" ON entrees_comptables
   USING (get_auth_user_role() IN ('admin', 'super_admin'));
 
 -- ----------------------------------------------------------------
--- 7. sorties_comptables
+-- 8.  sorties_comptables
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Admins can view expenses"   ON sorties_comptables;
 DROP POLICY IF EXISTS "Admins can manage expenses" ON sorties_comptables;
@@ -132,7 +153,7 @@ CREATE POLICY "Admins can manage expenses" ON sorties_comptables
   USING (get_auth_user_role() IN ('admin', 'super_admin'));
 
 -- ----------------------------------------------------------------
--- 8. user_permissions
+-- 9.  user_permissions
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Admins can view all permissions" ON user_permissions;
 DROP POLICY IF EXISTS "Admins can manage permissions"   ON user_permissions;
@@ -146,7 +167,7 @@ CREATE POLICY "Admins can manage permissions" ON user_permissions
   USING (get_auth_user_role() IN ('admin', 'super_admin'));
 
 -- ----------------------------------------------------------------
--- 9. audit_logs
+-- 10.  audit_logs
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Admins can view audit logs" ON audit_logs;
 
@@ -155,7 +176,7 @@ CREATE POLICY "Admins can view audit logs" ON audit_logs
   USING (get_auth_user_role() IN ('admin', 'super_admin'));
 
 -- ----------------------------------------------------------------
--- 10. email_logs
+-- 11.  email_logs
 -- ----------------------------------------------------------------
 DROP POLICY IF EXISTS "Admins can view email logs" ON email_logs;
 
@@ -164,13 +185,9 @@ CREATE POLICY "Admins can view email logs" ON email_logs
   USING (get_auth_user_role() IN ('admin', 'super_admin'));
 
 -- ----------------------------------------------------------------
--- Verification — should list all active policies
+-- Verification
 -- ----------------------------------------------------------------
-SELECT
-  tablename,
-  policyname,
-  cmd,
-  qual
+SELECT tablename, policyname, cmd, qual
 FROM pg_policies
 WHERE schemaname = 'public'
 ORDER BY tablename, policyname;

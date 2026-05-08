@@ -52,6 +52,7 @@ async function handleCreateUser(req: NextRequest) {
         password,
         email_confirm: true,
         user_metadata: { username, name, role },
+        app_metadata:  { role },
     });
 
     if (authError) {
