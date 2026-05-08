@@ -440,7 +440,7 @@ export default function AccountingPage() {
                 })),
             ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-            generateAccountingReport({
+            await generateAccountingReport({
                 title: `Rapport Comptable - ${periodFilter}`,
                 period: {
                     start: startOfPeriod.toISOString(),
@@ -1179,3 +1179,4 @@ export default function AccountingPage() {
         </ProtectedRoute>
     );
 }
+
