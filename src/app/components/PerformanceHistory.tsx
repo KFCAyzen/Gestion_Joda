@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 import LoadingSpinner from "./LoadingSpinner";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "../lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +15,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface Bill {
     id: string;
@@ -38,6 +34,7 @@ interface DailyStats {
 
 export default function PerformanceHistory() {
     const { user } = useAuth();
+    const supabase = createClient();
     const [bills, setBills] = useState<Bill[]>([]);
     const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
     const [selectedUser, setSelectedUser] = useState<string>("all");
