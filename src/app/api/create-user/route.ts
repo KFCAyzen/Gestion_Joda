@@ -24,6 +24,12 @@ async function handleCreateUser(req: NextRequest) {
         return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
     }
 
+    // Valider que le rôle est valide
+    const validRoles = ['student', 'agent', 'supervisor', 'admin', 'super_admin'];
+    if (!validRoles.includes(role)) {
+        return NextResponse.json({ error: "Rôle invalide" }, { status: 400 });
+    }
+
     // Pour les étudiants, authEmail DOIT être fourni et se terminer par @students.joda.app
     const supabaseEmail = (role === 'student')
         ? (authEmail?.endsWith('@students.joda.app') ? authEmail : `${username.toLowerCase().replace(/[^a-z0-9.]/g, '.')}@students.joda.app`)

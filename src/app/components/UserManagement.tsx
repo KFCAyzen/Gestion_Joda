@@ -51,7 +51,7 @@ export default function UserManagement() {
         name: "",
         email: "",
         password: "Temp123!",
-        role: "student",
+        role: "",
     });
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -99,7 +99,7 @@ export default function UserManagement() {
             }
 
             setSuccess("Utilisateur créé ! Un email avec les informations de connexion a été envoyé.");
-            setFormData({ username: "", name: "", email: "", password: "Temp123!", role: "student" });
+            setFormData({ username: "", name: "", email: "", password: "Temp123!", role: "" });
             loadUsers();
         } catch (err: any) {
             setError(err.message);
@@ -416,8 +416,8 @@ export default function UserManagement() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="role">Rôle *</Label>
-                                            <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v || "student" })}>
-                                                <SelectTrigger>
+                                            <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v || "" })} required>
+                                                <SelectTrigger className={!formData.role ? "text-slate-400" : ""}>
                                                     <SelectValue placeholder="Sélectionner un rôle" />
                                                 </SelectTrigger>
                                                 <SelectContent>
