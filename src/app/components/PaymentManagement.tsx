@@ -135,11 +135,48 @@ export default function PaymentManagement() {
     const handleValidatePayment = async (paymentId: string, isValid: boolean) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         try {
+            // 1. Récupérer les infos du paiement
+            const { data: payment, error: fetchError } = await supabase
+                .from('payments')
+                .select('*, students(nom, prenom)')
+                .eq('id', paymentId)
+                .single();
+
+            if (fetchError || !payment) {
+                console.error("Erreur récupération paiement:", fetchError);
+                return;
+            }
+
+            // 2. Mettre à jour le statut du paiement
             await supabase.from('payments').update({
                 status: isValid ? 'paye' : 'retard',
                 validated_by: user.id,
                 validated_at: new Date().toISOString(),
             }).eq('id', paymentId);
+
+            // 3. Si validé, créer une entrée comptable automatiquement
+            if (isValid) {
+                const typeEntree = payment.type === 'mandarin' || payment.type === 'anglais' 
+                    ? 'paiement_cours' 
+                    : 'paiement_procedure';
+
+                const studentName = payment.students 
+                    ? `${payment.students.nom} ${payment.students.prenom}` 
+                    : 'Étudiant';
+
+                const description = `Paiement ${getTypeLabel(payment.type)} - Tranche ${payment.tranche || 'N/A'} - ${studentName}`;
+
+                await supabase.from('entrees_comptables').insert({
+                    montant: payment.montant,
+                    date: new Date().toISOString(),
+                    type: typeEntree,
+                    description: description,
+                    student_id: payment.student_id,
+                    payment_id: payment.id,
+                    created_by: user.id,
+                });
+            }
+
             loadData();
         } catch (error) {
             console.error("Erreur validation:", error);
