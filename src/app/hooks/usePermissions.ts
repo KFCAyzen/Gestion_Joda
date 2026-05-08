@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { Permission, DEFAULT_ROLE_PERMISSIONS } from "../types/permissions";
 
 interface UserPermission {
@@ -23,6 +23,7 @@ export function usePermissions() {
 
     const loadPermissions = async () => {
       try {
+        const supabase = createClient();
         const { data } = await supabase
           .from("user_permissions")
           .select("permission, granted")

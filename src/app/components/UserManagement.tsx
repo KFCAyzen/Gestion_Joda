@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
-import { supabase } from "../supabase";
+import { createClient } from "../lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +63,7 @@ export default function UserManagement() {
     const loadUsers = async () => {
         setLoading(true);
         try {
+            const supabase = createClient();
             const { data } = await supabase.from("users").select("*").order("created_at", { ascending: false });
             if (data) setDbUsers(data);
         } catch (err) {
@@ -125,6 +126,7 @@ export default function UserManagement() {
     const loadUserPermissions = async (userId: string) => {
         setLoadingPermissions(true);
         try {
+            const supabase = createClient();
             const { data } = await supabase
                 .from("user_permissions")
                 .select("*")
@@ -139,6 +141,7 @@ export default function UserManagement() {
 
     const togglePermission = async (userId: string, permission: Permission, currentlyGranted: boolean) => {
         try {
+            const supabase = createClient();
             if (currentlyGranted) {
                 await supabase
                     .from("user_permissions")
