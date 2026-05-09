@@ -54,60 +54,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         void checkCurrentUser();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (event === "SIGNED_OUT") {
                 setUser(null);
                 if (typeof window !== "undefined") {
                     localStorage.removeItem("currentUser");
                 }
+            } else if (event === "TOKEN_REFRESHED" && session?.user) {
+                await loadUserProfile(session.user.id);
             }
         });
 
         return () => subscription.unsubscribe();
     }, []);
 
+    const loadUserProfile = async (authUserId: string) => {
+        const { data: userData, error: userError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", authUserId)
+            .single();
+
+        if (userError) {
+            console.error("Erreur récupération user:", userError.message);
+            await supabase.auth.signOut();
+            return;
+        }
+
+        if (userData.is_active === false) {
+            await supabase.auth.signOut();
+            if (typeof window !== "undefined") {
+                localStorage.removeItem("currentUser");
+            }
+            return;
+        }
+
+        setUser({
+            id: userData.id,
+            username: userData.username,
+            role: userData.role,
+            name: userData.name,
+            email: userData.email,
+            mustChangePassword: userData.must_change_password === true,
+            isActive: userData.is_active !== false,
+        });
+    };
+
     const checkCurrentUser = async () => {
         try {
-            const {
-                data: { session },
-                error: sessionError,
-            } = await supabase.auth.getSession();
+            const { data: { user: authUser }, error } = await supabase.auth.getUser();
 
-            if (sessionError?.message?.includes("Refresh Token")) {
-                await supabase.auth.signOut();
-                setLoading(false);
+            if (error) {
+                if (error.message.includes("refresh_token") || error.message.includes("Refresh Token")) {
+                    await supabase.auth.signOut();
+                }
                 return;
             }
 
-            if (session?.user) {
-                const { data: userData, error: userError } = await supabase
-                    .from("users")
-                    .select("*")
-                    .eq("id", session.user.id)
-                    .single();
-
-                if (userError) {
-                    console.error("Erreur récupération user:", userError.message);
-                    await supabase.auth.signOut();
-                } else if (userData) {
-                    if (userData.is_active === false) {
-                        await supabase.auth.signOut();
-                        if (typeof window !== "undefined") {
-                            localStorage.removeItem("currentUser");
-                        }
-                        return;
-                    }
-
-                    setUser({
-                        id: userData.id,
-                        username: userData.username,
-                        role: userData.role,
-                        name: userData.name,
-                        email: userData.email,
-                        mustChangePassword: userData.must_change_password === true,
-                        isActive: userData.is_active !== false,
-                    });
-                }
+            if (authUser) {
+                await loadUserProfile(authUser.id);
             }
         } catch (error) {
             console.error("Erreur vérification session:", error);
