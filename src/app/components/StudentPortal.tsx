@@ -10,11 +10,13 @@ import { downloadReceipt, type ReceiptStudent } from "../utils/downloadReceipt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 interface User {
     id: string;
     name: string;
     role: string;
+    mustChangePassword?: boolean;
 }
 
 interface StudentPortalProps {
@@ -98,6 +100,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [studentLangue, setStudentLangue] = useState<string>("");
     const [studentInfo, setStudentInfo] = useState<ReceiptStudent | null>(null);
     const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
+    const [showPasswordChange, setShowPasswordChange] = useState(false);
+
+    useEffect(() => {
+        if (user.mustChangePassword) setShowPasswordChange(true);
+    }, [user.mustChangePassword]);
+
     const load = useCallback(async () => {
         setLoading(true);
         try {
@@ -177,6 +185,9 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
     return (
         <>
+        {showPasswordChange && (
+            <ChangePasswordModal onPasswordChanged={() => setShowPasswordChange(false)} />
+        )}
         <div className="min-h-screen app-shell">
             <header className="glass-header border-b border-white/70">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
