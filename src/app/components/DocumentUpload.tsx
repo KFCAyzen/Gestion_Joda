@@ -44,6 +44,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
     const [uploading, setUploading] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
     const [notifSent, setNotifSent] = useState(false);
+    const [hasNewUpload, setHasNewUpload] = useState(false);
     const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
     const loadDocs = useCallback(async () => {
@@ -143,6 +144,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             await loadDocs();
             onDocumentUploaded();
             setNotifSent(false);
+            setHasNewUpload(true);
 
             if (user) {
                 await logActivity(
@@ -184,6 +186,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             });
             if (!res.ok) throw new Error("Erreur serveur");
             setNotifSent(true);
+            setHasNewUpload(false);
             showNotification("Dossier envoyé à l'équipe avec succès.", "success");
         } catch {
             showNotification("Impossible d'envoyer le dossier. Réessayez.", "error");
@@ -245,13 +248,15 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                             <p className="text-xs text-slate-500 mt-0.5">
                                 {notifSent
                                     ? "L'équipe a été notifiée et va examiner vos documents."
-                                    : "Notifie les agents et administrateurs que vos documents sont prêts pour examen."}
+                                    : hasNewUpload
+                                      ? "Notifie les agents et administrateurs que vos documents sont prêts pour examen."
+                                      : "Uploadez ou remplacez un document pour pouvoir notifier l'équipe."}
                             </p>
                         </div>
                         <button
                             onClick={handleSendToStaff}
-                            disabled={sending || notifSent}
-                            className={`shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-60 ${
+                            disabled={sending || notifSent || !hasNewUpload}
+                            className={`shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                                 notifSent
                                     ? "bg-emerald-100 text-emerald-700 cursor-default"
                                     : "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-[0_8px_20px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_28px_rgba(239,68,68,0.4)]"
