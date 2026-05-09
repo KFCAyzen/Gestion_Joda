@@ -87,14 +87,14 @@ export async function POST(req: NextRequest) {
 
             const { data: userRow } = await supabaseAdmin
                 .from("users")
-                .select("email, name")
+                .select("contact_email, name")
                 .eq("username", username)
                 .eq("role", "student")
                 .maybeSingle();
 
-            if (!userRow?.email) return NextResponse.json({ success: true });
+            if (!userRow?.contact_email) return NextResponse.json({ success: true });
 
-            recipientEmail = userRow.email;
+            recipientEmail = userRow.contact_email;
             recipientName = userRow.name || username;
         } else {
             // Staff flow: email = auth email = recipient email
