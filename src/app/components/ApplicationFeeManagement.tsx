@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { SearchBar, FilterSelect, PageHeader, LoadingState, ErrorMessage, StatusBadge } from "./shared";
 import { downloadReceipt } from "../utils/downloadReceipt";
+import { logActivity } from "../utils/activityLogger";
 
 interface ApplicationFee {
     id: string;
@@ -129,6 +130,21 @@ export default function ApplicationFeeManagement() {
                 payment_id: payment?.id ?? null,
                 created_by: user?.id,
             });
+
+            if (user) {
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "payment_create", "payment", payment?.id ?? null,
+                    `Paiement enregistré : ${formData.motif} — ${studentName} — ${montant.toLocaleString("fr-FR")} FCFA`,
+                    { montant, motif: formData.motif, student_id: formData.studentId }
+                );
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "accounting_entry", "entrees_comptables", payment?.id ?? null,
+                    `Entrée comptable créée : ${formData.motif} — ${studentName} — ${montant.toLocaleString("fr-FR")} FCFA`,
+                    { montant, type: typeEntree }
+                );
+            }
 
             showNotification("Frais enregistrés et comptabilisés !", "success");
             setShowForm(false);

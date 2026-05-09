@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
 import { calculatePenalty } from "../utils/penaltyCalculator";
+import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,12 @@ export default function PaymentManagement() {
                 validated_by: user.id,
                 validated_at: new Date().toISOString(),
             }).eq('id', paymentId);
+            await logActivity(
+                user.id, user.name, user.role,
+                "payment_update", "payment", paymentId,
+                `Paiement soumis pour validation`,
+                { payment_id: paymentId }
+            );
             showNotification("Paiement soumis pour validation", "success");
             loadData();
         } catch (error) {
@@ -187,6 +194,22 @@ export default function PaymentManagement() {
                 });
             }
 
+            await logActivity(
+                user.id, user.name, user.role,
+                "payment_validate", "payment", paymentId,
+                isValid
+                    ? `Paiement approuvé — ${description}`
+                    : `Paiement rejeté — ${description}`,
+                { payment_id: paymentId, validated: isValid, montant: payment.montant }
+            );
+            if (isValid) {
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "accounting_entry", "entrees_comptables", paymentId,
+                    `Entrée comptable créée — ${description}`,
+                    { montant: payment.montant, type: typeEntree }
+                );
+            }
             showNotification(isValid ? "Paiement approuvé" : "Paiement rejeté", isValid ? "success" : "error");
             loadData();
         } catch (error) {
