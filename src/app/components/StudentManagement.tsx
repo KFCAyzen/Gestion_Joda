@@ -37,6 +37,7 @@ import {
 import SearchBar from "./SearchBar";
 import FilterSelect from "./FilterSelect";
 import PaymentOverview from "./PaymentOverview";
+import DocumentManagement from "./DocumentManagement";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import { DropdownMenu } from "./shared";
 import PhoneInput from "./shared/PhoneInput";
@@ -697,6 +698,17 @@ export default function StudentManagement() {
                                                     filiere: selectedStudent.filiere,
                                                 })
                                             }
+                                        />
+                                    </div>
+
+                                    {/* Documents */}
+                                    <div>
+                                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                                            Documents soumis
+                                        </p>
+                                        <DocumentManagement
+                                            studentId={selectedStudent.id}
+                                            studentName={`${selectedStudent.prenom} ${selectedStudent.nom}`}
                                         />
                                     </div>
                                 </div>
