@@ -14,6 +14,7 @@ import {
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import { logActivity } from "../utils/activityLogger";
 import { SearchBar, FilterSelect, PageHeader, LoadingState, StatsCard } from "./shared";
 import ConfirmDialog from "./ConfirmDialog";
 
@@ -109,6 +110,16 @@ export default function ScholarshipFileManagement() {
 
             if (error) throw error;
 
+            if (user) {
+                const file = files.find(f => f.id === fileId);
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "dossier_status_change", "dossier_bourses", fileId,
+                    `Statut dossier mis à jour → ${newStatus} — ${file?.studentName || "Étudiant"}`,
+                    { file_id: fileId, new_status: newStatus }
+                );
+            }
+
             showNotification("Statut mis à jour", "success");
             await loadData();
             if (selectedFile?.id === fileId) {
@@ -131,6 +142,15 @@ export default function ScholarshipFileManagement() {
 
             if (error) throw error;
 
+            if (user) {
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "dossier_update", "dossier_bourses", selectedFile.id,
+                    `Notes dossier mises à jour — ${selectedFile.studentName}`,
+                    { file_id: selectedFile.id }
+                );
+            }
+
             showNotification("Notes sauvegardées", "success");
             await loadData();
         } catch (error) {
@@ -147,8 +167,17 @@ export default function ScholarshipFileManagement() {
             onConfirm: async () => {
                 closeConfirm();
                 try {
+                    const fileToDelete = files.find(f => f.id === fileId);
                     const { error } = await supabase.from("dossier_bourses").delete().eq("id", fileId);
                     if (error) throw error;
+                    if (user) {
+                        await logActivity(
+                            user.id, user.name, user.role,
+                            "dossier_delete", "dossier_bourses", fileId,
+                            `Dossier supprimé — ${fileToDelete?.studentName || "Étudiant"}`,
+                            { file_id: fileId }
+                        );
+                    }
                     showNotification("Dossier supprimé", "success");
                     if (selectedFile?.id === fileId) setSelectedFile(null);
                     await loadData();

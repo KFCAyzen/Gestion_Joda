@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
+import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import { logActivity } from "../utils/activityLogger";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { compressImage, formatFileSize } from "../utils/imageCompression";
@@ -36,6 +38,7 @@ interface Props {
 
 export default function DocumentUpload({ studentId, onDocumentUploaded }: Props) {
     const supabase = createClient();
+    const { user } = useAuth();
     const { showNotification } = useNotificationContext();
     const [docs, setDocs] = useState<DocStatus[]>([]);
     const [uploading, setUploading] = useState<string | null>(null);
@@ -115,6 +118,15 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
 
             await loadDocs();
             onDocumentUploaded();
+
+            if (user) {
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "document_upload", "documents", studentId,
+                    `Document uploadé — ${REQUIRED_DOCS.find(d => d.key === key)?.label || key}`,
+                    { student_id: studentId, doc_type: key }
+                );
+            }
 
             // Vérifier si tous les docs obligatoires sont uploadés → passer le dossier à document_recu
             const updatedDocs = await supabase.from("documents").select("type").eq("student_id", studentId);

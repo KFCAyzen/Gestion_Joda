@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
+import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -93,10 +94,30 @@ export default function UniversityManagement() {
                     .update(formData)
                     .eq("id", editingUni.id);
 
-                if (!error) loadUniversities();
+                if (!error) {
+                    if (user) {
+                        await logActivity(
+                            user.id, user.name, user.role,
+                            "university_update", "universities", editingUni.id,
+                            `Université modifiée — ${formData.nom}`,
+                            { university_id: editingUni.id, nom: formData.nom }
+                        );
+                    }
+                    loadUniversities();
+                }
             } else {
-                const { error } = await supabase.from("universities").insert(formData);
-                if (!error) loadUniversities();
+                const { data: inserted, error } = await supabase.from("universities").insert(formData).select().single();
+                if (!error) {
+                    if (user && inserted) {
+                        await logActivity(
+                            user.id, user.name, user.role,
+                            "university_create", "universities", inserted.id,
+                            `Université créée — ${formData.nom}`,
+                            { university_id: inserted.id, nom: formData.nom, pays: formData.pays }
+                        );
+                    }
+                    loadUniversities();
+                }
             }
             resetForm();
         } catch (err) {
@@ -106,8 +127,19 @@ export default function UniversityManagement() {
 
     const handleDelete = async (id: string) => {
         try {
+            const uniToDelete = universities.find(u => u.id === id);
             const { error } = await supabase.from("universities").delete().eq("id", id);
-            if (!error) loadUniversities();
+            if (!error) {
+                if (user) {
+                    await logActivity(
+                        user.id, user.name, user.role,
+                        "university_delete", "universities", id,
+                        `Université supprimée — ${uniToDelete?.nom || id}`,
+                        { university_id: id }
+                    );
+                }
+                loadUniversities();
+            }
         } catch (err) {
             console.error("Erreur:", err);
         }

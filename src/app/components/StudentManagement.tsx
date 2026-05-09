@@ -8,6 +8,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
 import Pagination from "./Pagination";
 import { getFriendlyErrorMessage } from "../lib/feedback";
+import { logActivity } from "../utils/activityLogger";
 import {
     buildStudentAuthEmail,
     buildStudentUsername,
@@ -260,6 +261,14 @@ export default function StudentManagement() {
                 setSelectedStudent(data);
                 setEditingStudent(null);
                 setOperationMessage("Étudiant mis à jour avec succès.");
+                if (currentUser) {
+                    await logActivity(
+                        currentUser.id, (currentUser as any).name || currentUser.id, currentUser.role,
+                        "student_update", "students", editingStudent.id,
+                        `Étudiant modifié — ${formData.prenom} ${formData.nom}`,
+                        { student_id: editingStudent.id }
+                    );
+                }
                 await loadStudents();
                 setActiveTab("list");
                 return;
@@ -328,6 +337,14 @@ export default function StudentManagement() {
             setCreatedAccount({ username, password: temporaryPassword });
             setSelectedStudent(data);
             setOperationMessage("Étudiant ajouté avec succès.");
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, (currentUser as any).name || currentUser.id, currentUser.role,
+                    "student_create", "students", data.id,
+                    `Étudiant créé — ${formData.prenom} ${formData.nom}`,
+                    { student_id: data.id, choix: formData.choix }
+                );
+            }
             setFormData(emptyFormData);
             setActiveTab("list");
             await loadStudents();
@@ -356,6 +373,14 @@ export default function StudentManagement() {
 
             setStudentToDelete(null);
             setOperationMessage("Étudiant supprimé avec succès.");
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, (currentUser as any).name || currentUser.id, currentUser.role,
+                    "student_delete", "students", studentToDelete.id,
+                    `Étudiant supprimé — ${studentToDelete.prenom} ${studentToDelete.nom}`,
+                    { student_id: studentToDelete.id }
+                );
+            }
             await loadStudents();
         } catch (err) {
             console.error("Erreur:", err);

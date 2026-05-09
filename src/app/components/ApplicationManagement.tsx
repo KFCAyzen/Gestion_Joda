@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import { logActivity } from "../utils/activityLogger";
 import ConfirmDialog from "./ConfirmDialog";
 import Pagination from "./Pagination";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -158,6 +159,17 @@ export default function ApplicationManagement() {
                     return;
                 }
 
+                if (user) {
+                    const student = students.find(s => s.id === formData.studentId);
+                    const university = universities.find(u => u.id === formData.universityId);
+                    await logActivity(
+                        user.id, user.name, user.role,
+                        "application_update", "dossier_bourses", editingApplication.id,
+                        `Candidature modifiée — ${student ? `${student.prenom} ${student.nom}` : "Étudiant"} — ${university?.nom || "Université"} — ${formData.desiredProgram}`,
+                        { student_id: formData.studentId, university_id: formData.universityId }
+                    );
+                }
+
                 showNotification("Candidature modifiée avec succès !", "success");
                 setShowForm(false);
                 setEditingApplication(null);
@@ -188,6 +200,17 @@ export default function ApplicationManagement() {
             }).select().single();
 
             if (!error && dossier) {
+                if (user) {
+                    const studentCreated = students.find(s => s.id === formData.studentId);
+                    const universityCreated = universities.find(u => u.id === formData.universityId);
+                    await logActivity(
+                        user.id, user.name, user.role,
+                        "application_create", "dossier_bourses", dossier.id,
+                        `Candidature créée — ${studentCreated ? `${studentCreated.prenom} ${studentCreated.nom}` : "Étudiant"} — ${universityCreated?.nom || "Université"} — ${formData.desiredProgram}`,
+                        { student_id: formData.studentId, university_id: formData.universityId }
+                    );
+                }
+
                 // Récupérer l'user_id de l'étudiant pour la notif
                 const { data: studentUser } = await supabase
                     .from("students")
@@ -268,6 +291,14 @@ export default function ApplicationManagement() {
                 try {
                     const { error } = await supabase.from("dossier_bourses").delete().eq("id", applicationId);
                     if (error) throw error;
+                    if (user) {
+                        await logActivity(
+                            user.id, user.name, user.role,
+                            "application_delete", "dossier_bourses", applicationId,
+                            `Candidature supprimée — ID: ${applicationId}`,
+                            { application_id: applicationId }
+                        );
+                    }
                     showNotification("Candidature supprimée", "success");
                     await loadData();
                 } catch (error) {
@@ -280,6 +311,14 @@ export default function ApplicationManagement() {
 
     const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
         await supabase.from("dossier_bourses").update({ status: newStatus }).eq("id", applicationId);
+        if (user) {
+            await logActivity(
+                user.id, user.name, user.role,
+                "dossier_status_change", "dossier_bourses", applicationId,
+                `Statut dossier mis à jour → ${newStatus}`,
+                { application_id: applicationId, new_status: newStatus }
+            );
+        }
         loadData();
     };
 

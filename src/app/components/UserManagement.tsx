@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { createClient } from "../lib/supabase/client";
 import { getFriendlyErrorMessage } from "../lib/feedback";
@@ -140,6 +141,14 @@ export default function UserManagement() {
                 message: "Le compte a bien ete ajoute et l'utilisateur peut finaliser son acces par email.",
                 type: "success",
             });
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, currentUser.name, currentUser.role,
+                    "user_create", "users", result.userId ?? null,
+                    `Utilisateur créé — ${formData.name} (${formData.role})`,
+                    { username: formData.username, role: formData.role, email: formData.email }
+                );
+            }
             setFormData({ username: "", name: "", email: "", password: "Temp123!", role: "" });
             await loadUsers();
         } catch (err) {
@@ -210,6 +219,14 @@ export default function UserManagement() {
                     message: "Le compte a bien ete retire de la plateforme.",
                     type: "success",
                 });
+                if (currentUser) {
+                    await logActivity(
+                        currentUser.id, currentUser.name, currentUser.role,
+                        "user_delete", "users", userId,
+                        `Utilisateur supprimé — ID: ${userId}`,
+                        { deleted_user_id: userId }
+                    );
+                }
                 await loadUsers();
             }
         } catch (err) {
@@ -286,6 +303,14 @@ export default function UserManagement() {
                     : "La permission personnalisee a ete accordee.",
                 type: "success",
             });
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, currentUser.name, currentUser.role,
+                    "user_update", "user_permissions", userId,
+                    `Permission ${currentlyGranted ? "retirée" : "accordée"} — ${permission} → utilisateur ${userId}`,
+                    { target_user_id: userId, permission, granted: !currentlyGranted }
+                );
+            }
             setTimeout(() => setSuccess(""), 2000);
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {

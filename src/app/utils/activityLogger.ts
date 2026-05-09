@@ -23,6 +23,7 @@ export type ActivityType =
   | "payment_validate"
   | "accounting_entry"
   | "accounting_expense"
+  | "document_upload"
   | "document_validate"
   | "document_reject"
   | "user_create"
@@ -156,6 +157,7 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   payment_validate: "Validation paiement",
   accounting_entry: "Entrée comptable",
   accounting_expense: "Sortie comptable",
+  document_upload: "Upload document",
   document_validate: "Validation document",
   document_reject: "Rejet document",
   user_create: "Création utilisateur",
