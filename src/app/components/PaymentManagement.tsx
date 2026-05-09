@@ -55,6 +55,7 @@ interface Payment {
     validated_by: string | null;
     validated_at: string | null;
     created_at: string;
+    initiated_by_student?: boolean;
 }
 
 function formatPrice(amount: number): string {
@@ -155,9 +156,13 @@ export default function PaymentManagement() {
         }
     };
 
-    // Admin: approve or reject a payment in validation
+    // Staff: approve or reject a payment in validation (admin always, others for student-initiated)
     const handleValidatePayment = async (paymentId: string, isValid: boolean) => {
-        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
+        if (!user) return;
+        const payment = payments.find(p => p.id === paymentId);
+        const isAdminLike = user.role === "admin" || user.role === "super_admin";
+        const isStaff = user.role === "agent" || user.role === "supervisor";
+        if (!isAdminLike && !(isStaff && payment?.initiated_by_student)) return;
         try {
             // 1. Récupérer les infos du paiement
             const { data: payment, error: fetchError } = await supabase
@@ -328,7 +333,10 @@ export default function PaymentManagement() {
         }
     };
 
-    const canValidate = user?.role === "admin" || user?.role === "super_admin";
+    const isAdminLike = user?.role === "admin" || user?.role === "super_admin";
+    const canValidate = isAdminLike;
+    const canValidatePayment = (p: Payment) =>
+        isAdminLike || ((user?.role === "agent" || user?.role === "supervisor") && !!p.initiated_by_student);
 
     return (
         <ProtectedRoute requiredRole="agent">
@@ -402,9 +410,14 @@ export default function PaymentManagement() {
                                         const totalAmount = payment.montant + penalty;
                                         
                                         return (
-                                            <TableRow key={payment.id}>
+                                            <TableRow key={payment.id} className={payment.initiated_by_student && payment.status === "en_validation" ? "bg-blue-50/50" : ""}>
                                                 <TableCell>
                                                     <div className="font-medium">{getStudentName(payment.student_id)}</div>
+                                                    {payment.initiated_by_student && (
+                                                        <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                                            Déclaré par l&apos;étudiant
+                                                        </span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>{getTypeLabel(payment.type)}</TableCell>
                                                 <TableCell>
@@ -419,7 +432,7 @@ export default function PaymentManagement() {
                                                     {penalty > 0 ? formatPrice(penalty) : "-"}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {payment.date_limite 
+                                                    {payment.date_limite
                                                         ? new Date(payment.date_limite).toLocaleDateString('fr-FR')
                                                         : "-"}
                                                 </TableCell>
@@ -454,7 +467,7 @@ export default function PaymentManagement() {
                                                                       },
                                                                   ]
                                                                 : []),
-                                                            ...(user?.role === "agent" && (payment.status === "attente" || payment.status === "retard")
+                                                            ...(user?.role === "agent" && !payment.initiated_by_student && (payment.status === "attente" || payment.status === "retard")
                                                                 ? [
                                                                       {
                                                                           label: "Soumettre",
@@ -463,7 +476,7 @@ export default function PaymentManagement() {
                                                                       },
                                                                   ]
                                                                 : []),
-                                                            ...(canValidate && payment.status === "en_validation"
+                                                            ...(canValidatePayment(payment) && payment.status === "en_validation"
                                                                 ? [
                                                                       {
                                                                           label: "Approuver",
@@ -490,7 +503,7 @@ export default function PaymentManagement() {
                                                             ...(payment.facture_url
                                                                 ? [
                                                                       {
-                                                                          label: "Voir la facture",
+                                                                          label: payment.initiated_by_student ? "Voir la preuve" : "Voir la facture",
                                                                           icon: <FileText className="h-4 w-4" />,
                                                                           onClick: () => window.open(payment.facture_url!, "_blank", "noopener,noreferrer"),
                                                                       },

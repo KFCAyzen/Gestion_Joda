@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Bell } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Bell, CreditCard, Upload, X } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
@@ -104,6 +104,10 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [showPasswordChange, setShowPasswordChange] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [universityName, setUniversityName] = useState<string | null>(null);
+    const [declareModal, setDeclareModal] = useState<{ payment: Payment } | null>(null);
+    const [declaring, setDeclaring] = useState(false);
+    const [proofDataUrl, setProofDataUrl] = useState<string | null>(null);
+    const proofInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (user.mustChangePassword) setShowPasswordChange(true);
@@ -180,6 +184,55 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 return "Non conforme";
             default:
                 return status;
+        }
+    };
+
+    const openDeclareModal = (payment: Payment) => {
+        setProofDataUrl(null);
+        setDeclareModal({ payment });
+    };
+
+    const handleProofFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => setProofDataUrl(reader.result as string);
+        reader.readAsDataURL(file);
+    };
+
+    const handleDeclarePayment = async () => {
+        if (!declareModal) return;
+        setDeclaring(true);
+        try {
+            const res = await fetch("/api/declare-payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    payment_id: declareModal.payment.id,
+                    proof_url: proofDataUrl ?? undefined,
+                }),
+            });
+            if (res.ok) {
+                showNotification("Paiement déclaré — en attente de validation", "success");
+                setDeclareModal(null);
+                void load();
+            } else {
+                const data = await res.json();
+                showNotification(data.error ?? "Erreur lors de la déclaration", "error");
+            }
+        } catch {
+            showNotification("Erreur réseau", "error");
+        } finally {
+            setDeclaring(false);
+        }
+    };
+
+    const getPaymentTypeLabel = (type: string) => {
+        switch (type) {
+            case "bourse": return "Bourse";
+            case "mandarin": return "Cours Mandarin";
+            case "anglais": return "Cours Anglais";
+            default: return type;
         }
     };
 
@@ -327,22 +380,43 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <CardContent>
                                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                                         {payments.map((payment) => (
-                                            <button
+                                            <div
                                                 key={payment.id}
-                                                className="joda-surface-muted flex w-full items-center justify-between gap-3 p-3 text-left transition-colors hover:bg-slate-50"
-                                                onClick={() => setDetailPayment(payment)}
+                                                className="joda-surface-muted flex w-full flex-col gap-3 rounded-xl p-3"
                                             >
-                                                <div className="min-w-0">
-                                                    <p className="truncate text-sm font-medium capitalize">{payment.type}</p>
-                                                    <p className="text-sm text-gray-500">
-                                                        {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString("fr-FR") : "-"}
-                                                    </p>
-                                                </div>
-                                                <div className="shrink-0 text-right">
-                                                    <p className="text-sm font-bold text-red-600">{formatMontant(payment.montant)}</p>
-                                                    <Badge className={STATUS_COLORS[payment.status]}>{getPaymentStatusLabel(payment.status)}</Badge>
-                                                </div>
-                                            </button>
+                                                <button
+                                                    className="flex w-full items-center justify-between gap-3 text-left"
+                                                    onClick={() => setDetailPayment(payment)}
+                                                >
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-medium">{getPaymentTypeLabel(payment.type)}</p>
+                                                        {payment.tranche && (
+                                                            <p className="text-xs text-slate-500">Tranche {payment.tranche}</p>
+                                                        )}
+                                                        <p className="text-xs text-slate-400">
+                                                            {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString("fr-FR") : "-"}
+                                                        </p>
+                                                    </div>
+                                                    <div className="shrink-0 text-right">
+                                                        <p className="text-sm font-bold text-red-600">{formatMontant(payment.montant)}</p>
+                                                        <Badge className={STATUS_COLORS[payment.status]}>{getPaymentStatusLabel(payment.status)}</Badge>
+                                                    </div>
+                                                </button>
+                                                {(payment.status === "attente" || payment.status === "retard") && (
+                                                    <button
+                                                        onClick={() => openDeclareModal(payment)}
+                                                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                                                    >
+                                                        <CreditCard className="h-3.5 w-3.5" />
+                                                        Déclarer ce paiement
+                                                    </button>
+                                                )}
+                                                {payment.status === "en_validation" && (
+                                                    <span className="rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-center text-xs font-semibold text-blue-700">
+                                                        En attente de validation
+                                                    </span>
+                                                )}
+                                            </div>
                                         ))}
                                     </div>
                                 </CardContent>
@@ -446,6 +520,87 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 )}
             </main>
         </div>
+
+        {/* Modal déclaration de paiement */}
+        {declareModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-5 flex items-start justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-900">Déclarer un paiement</h3>
+                            <p className="mt-0.5 text-sm text-slate-500">
+                                {getPaymentTypeLabel(declareModal.payment.type)}
+                                {declareModal.payment.tranche ? ` — Tranche ${declareModal.payment.tranche}` : ""}
+                            </p>
+                        </div>
+                        <button onClick={() => setDeclareModal(null)} className="text-slate-400 hover:text-slate-600">
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <div className="mb-5 space-y-3 text-sm">
+                        <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+                            <span className="text-slate-500">Montant</span>
+                            <span className="font-bold text-red-600">{formatMontant(declareModal.payment.montant)}</span>
+                        </div>
+                        {declareModal.payment.date_limite && (
+                            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+                                <span className="text-slate-500">Date limite</span>
+                                <span className="font-medium">{new Date(declareModal.payment.date_limite).toLocaleDateString("fr-FR")}</span>
+                            </div>
+                        )}
+
+                        <div className="space-y-1.5">
+                            <p className="text-xs font-medium text-slate-600">Preuve de paiement (optionnel)</p>
+                            <input
+                                ref={proofInputRef}
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                onChange={handleProofFile}
+                                className="hidden"
+                            />
+                            {proofDataUrl ? (
+                                <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                                    <Upload className="h-4 w-4 text-green-600" />
+                                    <span className="flex-1 text-xs text-green-700">Fichier joint</span>
+                                    <button
+                                        onClick={() => { setProofDataUrl(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
+                                        className="text-slate-400 hover:text-slate-600"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => proofInputRef.current?.click()}
+                                    className="flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-xs text-slate-500 transition-colors hover:border-red-300 hover:text-red-600"
+                                >
+                                    <Upload className="h-4 w-4" />
+                                    Joindre un reçu ou screenshot
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <p className="mb-5 text-xs text-slate-400">
+                        En confirmant, vous déclarez avoir effectué ce paiement. L&apos;équipe Joda vérifiera et validera dans les plus brefs délais.
+                    </p>
+
+                    <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1" onClick={() => setDeclareModal(null)} disabled={declaring}>
+                            Annuler
+                        </Button>
+                        <Button
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                            onClick={handleDeclarePayment}
+                            disabled={declaring}
+                        >
+                            {declaring ? "Envoi..." : "Confirmer"}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Modal détails paiement étudiant */}
         {detailPayment && (

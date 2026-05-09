@@ -111,7 +111,8 @@ export default function ScholarshipFileManagement() {
 
     const closeFile = () => setSelectedFile(null);
 
-    const updateStatus = async (newStatus: string) => {
+    const updateStatus = async (newStatus: string | null) => {
+        if (!newStatus) return;
         if (!selectedFile || selectedFile.status === newStatus) return;
         setUpdatingStatus(true);
         try {
