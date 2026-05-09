@@ -173,7 +173,7 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   const DARK:  [number, number, number] = [31,  41,  55];
 
   const pageW   = 210;
-  const headerH = 44;
+  const headerH = 36;
   const marginL = 10;
   const marginR = 8;
 
@@ -237,10 +237,10 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...DARK);
-  doc.text(`Tel.    : ${COMPANY.phone}`,   marginL,              32);
-  doc.text(`Web     : ${COMPANY.website}`, marginL + colW,       32);
+  doc.text(`Tel.    : ${COMPANY.phone}`,   marginL,              29);
+  doc.text(`Web     : ${COMPANY.website}`, marginL + colW,       29);
   doc.setFontSize(7);
-  doc.text(`${COMPANY.nui}`,              marginL + colW * 2,   32);
+  doc.text(`${COMPANY.nui}`,              marginL + colW * 2,   29);
 
   // ── Titre du document — sous le bandeau
   const titleY = headerH + 11;
