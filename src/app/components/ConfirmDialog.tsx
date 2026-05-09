@@ -30,19 +30,21 @@ export default function ConfirmDialog({
     return (
         <AnimatePresence>
             <motion.div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", backgroundColor: "rgba(15,23,42,0.25)" }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
             >
                 <motion.div
-                    className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+                    className="w-full max-w-md rounded-2xl border border-white/30 p-6 shadow-2xl"
+                    style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
                     initial={{ scale: 0.94, y: 20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
                     exit={{ scale: 0.94, opacity: 0 }}
                 >
                     {variant === "destructive" && (
-                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100/80">
                             <AlertTriangle className="h-6 w-6 text-red-600" />
                         </div>
                     )}
