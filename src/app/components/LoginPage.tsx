@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
@@ -19,33 +19,46 @@ import {
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login } = useAuth();
-    const [username, setUsername] = useState("");
+    const { login, user } = useAuth();
+    const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [showStudentLogin, setShowStudentLogin] = useState(false);
-    const [studentUsername, setStudentUsername] = useState("");
-    const [studentPassword, setStudentPassword] = useState("");
-    const [studentError, setStudentError] = useState("");
-    const [studentLoading, setStudentLoading] = useState(false);
     const [shakeError, setShakeError] = useState(false);
-    const [shakeStudentError, setShakeStudentError] = useState(false);
-    const [showForgotPassword, setShowForgotPassword] = useState<"staff" | "student" | null>(null);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [forgotInput, setForgotInput] = useState("");
     const [forgotLoading, setForgotLoading] = useState(false);
     const [forgotSent, setForgotSent] = useState(false);
 
-    const triggerShake = (isStudent = false) => {
-        if (isStudent) {
-            setShakeStudentError(true);
-            setTimeout(() => setShakeStudentError(false), 600);
-        } else {
-            setShakeError(true);
-            setTimeout(() => setShakeError(false), 600);
+    useEffect(() => {
+        if (user) {
+            router.push(user.role === "student" ? "/etudiant" : "/tableau-de-bord");
         }
+    }, [user, router]);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            document.body.style.overflow = "hidden";
+            document.body.style.position = "fixed";
+            document.body.style.width = "100%";
+            document.body.style.height = "100%";
+            return () => {
+                document.body.style.overflow = "";
+                document.body.style.position = "";
+                document.body.style.width = "";
+                document.body.style.height = "";
+            };
+        }
+    }, []);
+
+    const triggerShake = () => {
+        setShakeError(true);
+        setTimeout(() => setShakeError(false), 600);
     };
+
+    const resolveEmail = (value: string) =>
+        value.includes("@") ? value.trim() : buildStudentAuthEmail(value.trim());
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,17 +66,13 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const result = await login(username, password);
+            const result = await login(resolveEmail(identifier), password);
 
-            if (result.success) {
-                router.push("/tableau-de-bord");
-                return;
-            }
+            if (result.success) return; // useEffect handles redirect
 
             setError(result.message || "Connexion impossible. Vérifiez vos identifiants puis réessayez.");
             triggerShake();
-        } catch (err) {
-            console.error('Erreur dans handleSubmit:', err);
+        } catch {
             setError("Connexion impossible. Vérifiez vos identifiants puis réessayez.");
             triggerShake();
         }
@@ -76,13 +85,14 @@ export default function LoginPage() {
         if (!forgotInput.trim()) return;
         setForgotLoading(true);
         try {
+            const isEmail = forgotInput.includes("@");
             await fetch("/api/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(
-                    showForgotPassword === "student"
-                        ? { username: forgotInput.trim() }
-                        : { email: forgotInput.trim() }
+                    isEmail
+                        ? { email: forgotInput.trim() }
+                        : { username: forgotInput.trim() }
                 ),
             });
         } catch {
@@ -93,49 +103,10 @@ export default function LoginPage() {
     };
 
     const closeForgotPassword = () => {
-        setShowForgotPassword(null);
+        setShowForgotPassword(false);
         setForgotInput("");
         setForgotSent(false);
     };
-
-    const handleStudentLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setStudentLoading(true);
-        setStudentError("");
-
-        try {
-            const result = await login(buildStudentAuthEmail(studentUsername), studentPassword);
-
-            if (result.success) {
-                router.push("/etudiant");
-                return;
-            }
-
-            setStudentError("Identifiant ou mot de passe incorrect. Si vous venez d'être inscrit, contactez l'administration.");
-            triggerShake(true);
-        } catch {
-            setStudentError("Nom d'utilisateur ou mot de passe incorrect");
-            triggerShake(true);
-        }
-
-        setStudentLoading(false);
-    };
-
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            document.body.style.overflow = "hidden";
-            document.body.style.position = "fixed";
-            document.body.style.width = "100%";
-            document.body.style.height = "100%";
-
-            return () => {
-                document.body.style.overflow = "";
-                document.body.style.position = "";
-                document.body.style.width = "";
-                document.body.style.height = "";
-            };
-        }
-    }, []);
 
     const EyeIcon = ({ visible }: { visible: boolean }) =>
         visible ? (
@@ -208,7 +179,7 @@ export default function LoginPage() {
                     <div className="flex h-full flex-col lg:grid lg:grid-cols-[1.2fr_1fr]">
                         {/* Panneau image */}
                         <motion.div
-                            className={`relative overflow-hidden ${showStudentLogin ? "hidden lg:block" : ""} h-48 sm:h-2/5 lg:h-full`}
+                            className="relative overflow-hidden h-48 sm:h-2/5 lg:h-full"
                             initial={{ x: -60, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -248,248 +219,120 @@ export default function LoginPage() {
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                         >
-                            {showStudentLogin && (
-                                <div className="mb-6 flex flex-col items-center sm:hidden">
-                                    <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-3xl bg-white p-3 shadow-[0_8px_24px_rgba(0,0,0,0.15)] ring-1 ring-red-100">
-                                        <img src="/Logo.png" alt="Joda" className="h-full w-full object-contain" />
+                            <motion.div
+                                className="mx-auto w-full max-w-sm self-center"
+                                variants={slideUp}
+                                initial="initial"
+                                animate="animate"
+                            >
+                                <motion.div
+                                    className="mb-6 lg:mb-8"
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2, duration: 0.5 }}
+                                >
+                                    <h2 className="mb-1 text-2xl font-light lg:text-3xl">Connexion</h2>
+                                    <p className="text-sm text-gray-500">Accédez à votre espace</p>
+                                </motion.div>
+
+                                <motion.form
+                                    onSubmit={handleSubmit}
+                                    className="space-y-4"
+                                    animate={shakeError ? { x: [0, -12, 12, -8, 8, -4, 4, 0] } : {}}
+                                    transition={{ duration: 0.5 }}
+                                >
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                            Email ou nom d'utilisateur
+                                        </label>
+                                        <motion.input
+                                            type="text"
+                                            value={identifier}
+                                            onChange={(e) => setIdentifier(e.target.value)}
+                                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                            placeholder="email@exemple.com ou prénom.nom"
+                                            required
+                                            autoComplete="username"
+                                            whileFocus={{ scale: 1.01 }}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.3 }}
+                                        />
                                     </div>
-                                    <h1 className="text-lg font-bold tracking-wide text-gray-900">Joda Company</h1>
-                                    <p className="text-xs text-gray-500">Gestion des bourses d'études</p>
-                                </div>
-                            )}
-                            <AnimatePresence mode="wait">
-                                {showStudentLogin ? (
-                                    <motion.div key="student" className="mx-auto w-full max-w-sm" variants={slideUp} initial="initial" animate="animate" exit="exit">
-                                        <motion.div className="mb-6 lg:mb-8" variants={staggerContainer} initial="initial" animate="animate">
-                                            <motion.button
-                                                onClick={() => {
-                                                    setShowStudentLogin(false);
-                                                    setStudentUsername("");
-                                                    setStudentPassword("");
-                                                    setStudentError("");
-                                                }}
-                                                className="mb-4 flex items-center gap-2 font-medium text-red-600 hover:text-red-700"
-                                                whileHover={{ x: -5 }}
-                                                whileTap={buttonTap}
-                                                variants={staggerItem}
-                                            >
-                                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                                </svg>
-                                                Retour
-                                            </motion.button>
-                                            <motion.h2 className="mb-2 text-2xl font-light lg:text-2xl" variants={titleReveal}>
-                                                Espace Étudiant
-                                            </motion.h2>
-                                            <motion.p className="text-sm text-gray-600" variants={staggerItem}>
-                                                Les comptes sont créés par l'administration. Connectez-vous avec votre nom d'utilisateur.
-                                            </motion.p>
-                                        </motion.div>
-
-                                        <motion.form
-                                            onSubmit={handleStudentLogin}
-                                            className="space-y-4"
-                                            animate={shakeStudentError ? { x: [0, -12, 12, -8, 8, -4, 4, 0] } : {}}
-                                            transition={{ duration: 0.5 }}
-                                        >
-                                            <motion.input
-                                                type="text"
-                                                value={studentUsername}
-                                                onChange={(e) => setStudentUsername(e.target.value)}
-                                                className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-base text-gray-900 placeholder-gray-500 transition-all focus:border-red-500 focus:ring-2 focus:ring-red-500"
-                                                placeholder="Nom d'utilisateur"
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                            Mot de passe
+                                        </label>
+                                        <motion.div className="relative" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.38 }}>
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-12 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                                placeholder="••••••••"
                                                 required
-                                                whileFocus={{ scale: 1.02, borderColor: "#dc2626" }}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: 0.1 }}
+                                                autoComplete="current-password"
                                             />
-                                            <motion.div className="relative" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.18 }}>
-                                                <input
-                                                    type={showPassword ? "text" : "password"}
-                                                    value={studentPassword}
-                                                    onChange={(e) => setStudentPassword(e.target.value)}
-                                                    className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 pr-12 text-base text-gray-900 placeholder-gray-500 transition-all focus:border-red-500 focus:ring-2 focus:ring-red-500"
-                                                    placeholder="Mot de passe"
-                                                    required
-                                                />
-                                                <motion.button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition-colors hover:text-red-500"
-                                                    whileTap={buttonTap}
-                                                    whileHover={{ scale: 1.2 }}
-                                                >
-                                                    <EyeIcon visible={showPassword} />
-                                                </motion.button>
-                                            </motion.div>
-
-                                            <AnimatePresence>
-                                                {studentError && (
-                                                    <motion.div
-                                                        variants={slideUp}
-                                                        initial="initial"
-                                                        animate="animate"
-                                                        exit="exit"
-                                                        className="rounded-xl border border-red-200 bg-red-50 p-3 text-center text-sm font-medium text-red-500"
-                                                    >
-                                                        {studentError}
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
-                                            <div className="sticky bottom-0 -mx-1 bg-white/95 px-1 pb-1 pt-3 backdrop-blur-sm">
-                                                <motion.button
-                                                    type="submit"
-                                                    disabled={studentLoading}
-                                                    className="w-full rounded-xl bg-red-600 px-4 py-3 text-base font-semibold text-white shadow-[0_16px_32px_rgba(220,38,38,0.35)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    whileHover={{ scale: 1.04, boxShadow: "0 16px 32px rgba(220,38,38,0.5)" }}
-                                                    whileTap={buttonTap}
-                                                    initial={{ opacity: 0, y: 15 }}
-                                                    transition={{ delay: 0.3 }}
-                                                >
-                                                    {studentLoading ? (
-                                                        <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
-                                                            Connexion...
-                                                        </motion.span>
-                                                    ) : (
-                                                        "Se connecter"
-                                                    )}
-                                                </motion.button>
-                                            </div>
-                                        </motion.form>
-                                        <motion.div
-                                            className="mt-4 text-center"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ delay: 0.4 }}
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() => { setShowForgotPassword("student"); setForgotInput(""); setForgotSent(false); }}
-                                                className="text-sm text-gray-500 hover:text-red-600 transition-colors"
-                                            >
-                                                Mot de passe oublié ?
-                                            </button>
-                                        </motion.div>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div key="main" className="mx-auto w-full max-w-sm self-center" variants={slideUp} initial="initial" animate="animate" exit="exit">
-                                        <motion.div
-                                            className="mb-6 lg:mb-8"
-                                            initial={{ opacity: 0, y: -20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.2, duration: 0.5 }}
-                                        >
-                                            <h2 className="mb-1 text-2xl font-light lg:text-3xl">Connexion</h2>
-                                            <p className="text-sm text-gray-500">Accédez à votre espace</p>
-                                        </motion.div>
-
-                                        <motion.form
-                                            onSubmit={handleSubmit}
-                                            className="space-y-4"
-                                            animate={shakeError ? { x: [0, -12, 12, -8, 8, -4, 4, 0] } : {}}
-                                            transition={{ duration: 0.5 }}
-                                        >
-                                            <motion.input
-                                                type="text"
-                                                value={username}
-                                                onChange={(e) => setUsername(e.target.value)}
-                                                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
-                                                placeholder="Email"
-                                                required
-                                                whileFocus={{ scale: 1.01 }}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: 0.3 }}
-                                            />
-                                            <motion.div className="relative" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.38 }}>
-                                                <input
-                                                    type={showPassword ? "text" : "password"}
-                                                    value={password}
-                                                    onChange={(e) => setPassword(e.target.value)}
-                                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-12 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
-                                                    placeholder="Mot de passe"
-                                                    required
-                                                />
-                                                <motion.button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-red-500"
-                                                    whileTap={buttonTap}
-                                                >
-                                                    <EyeIcon visible={showPassword} />
-                                                </motion.button>
-                                            </motion.div>
-
-                                            <AnimatePresence>
-                                                {error && (
-                                                    <motion.div
-                                                        variants={slideUp}
-                                                        initial="initial"
-                                                        animate="animate"
-                                                        exit="exit"
-                                                        className="rounded-lg border border-red-200 bg-red-50 p-2 text-center text-xs font-medium text-red-500 sm:rounded-xl sm:p-3 sm:text-sm"
-                                                    >
-                                                        {error}
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
                                             <motion.button
-                                                type="submit"
-                                                disabled={loading}
-                                                className="w-full rounded-xl bg-red-600 px-4 py-4 text-base font-semibold text-white shadow-[0_16px_32px_rgba(220,38,38,0.35)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                                animate={{ opacity: 1, y: 0 }}
-                                                whileHover={{ scale: 1.02 }}
-                                                whileTap={buttonTap}
-                                                initial={{ opacity: 0, y: 15 }}
-                                                transition={{ delay: 0.5 }}
-                                            >
-                                                {loading ? (
-                                                    <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
-                                                        Connexion...
-                                                    </motion.span>
-                                                ) : (
-                                                    "Se connecter"
-                                                )}
-                                            </motion.button>
-                                        </motion.form>
-
-                                        <motion.div
-                                            className="mt-6 space-y-3 text-center"
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.6 }}
-                                        >
-                                            <button
                                                 type="button"
-                                                onClick={() => { setShowForgotPassword("staff"); setForgotInput(""); setForgotSent(false); }}
-                                                className="text-sm text-gray-400 hover:text-red-600 transition-colors"
-                                            >
-                                                Mot de passe oublié ?
-                                            </button>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-px flex-1 bg-gray-200" />
-                                                <span className="text-xs text-gray-400">Espace Étudiant</span>
-                                                <div className="h-px flex-1 bg-gray-200" />
-                                            </div>
-                                            <motion.button
-                                                onClick={() => setShowStudentLogin(true)}
-                                                className="w-full rounded-xl border-2 border-red-600 px-4 py-3.5 text-sm font-semibold text-red-600 transition-all hover:bg-red-50"
-                                                whileHover={{ scale: 1.02 }}
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-red-500"
                                                 whileTap={buttonTap}
-                                                initial={{ opacity: 0, y: 15 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 0.6 }}
                                             >
-                                                Se connecter en tant qu'étudiant
+                                                <EyeIcon visible={showPassword} />
                                             </motion.button>
                                         </motion.div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                    </div>
+
+                                    <AnimatePresence>
+                                        {error && (
+                                            <motion.div
+                                                variants={slideUp}
+                                                initial="initial"
+                                                animate="animate"
+                                                exit="exit"
+                                                className="rounded-lg border border-red-200 bg-red-50 p-2 text-center text-xs font-medium text-red-500 sm:rounded-xl sm:p-3 sm:text-sm"
+                                            >
+                                                {error}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <motion.button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full rounded-xl bg-red-600 px-4 py-4 text-base font-semibold text-white shadow-[0_16px_32px_rgba(220,38,38,0.35)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        animate={{ opacity: 1, y: 0 }}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={buttonTap}
+                                        initial={{ opacity: 0, y: 15 }}
+                                        transition={{ delay: 0.5 }}
+                                    >
+                                        {loading ? (
+                                            <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
+                                                Connexion...
+                                            </motion.span>
+                                        ) : (
+                                            "Se connecter"
+                                        )}
+                                    </motion.button>
+                                </motion.form>
+
+                                <motion.div
+                                    className="mt-6 text-center"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowForgotPassword(true); setForgotInput(""); setForgotSent(false); }}
+                                        className="text-sm text-gray-400 hover:text-red-600 transition-colors"
+                                    >
+                                        Mot de passe oublié ?
+                                    </button>
+                                </motion.div>
+                            </motion.div>
                         </motion.div>
                     </div>
                 </motion.div>
@@ -536,17 +379,15 @@ export default function LoginPage() {
                                     <div className="mb-5">
                                         <h3 className="text-lg font-semibold text-gray-900">Mot de passe oublié</h3>
                                         <p className="mt-1 text-sm text-gray-500">
-                                            {showForgotPassword === "student"
-                                                ? "Entrez votre nom d'utilisateur et nous enverrons un lien de réinitialisation à l'email associé."
-                                                : "Entrez votre email et nous vous enverrons un lien de réinitialisation."}
+                                            Entrez votre email (staff) ou nom d'utilisateur (étudiant) pour recevoir un lien de réinitialisation.
                                         </p>
                                     </div>
                                     <form onSubmit={handleForgotPassword} className="space-y-4">
                                         <input
-                                            type={showForgotPassword === "student" ? "text" : "email"}
+                                            type="text"
                                             value={forgotInput}
                                             onChange={(e) => setForgotInput(e.target.value)}
-                                            placeholder={showForgotPassword === "student" ? "Nom d'utilisateur" : "Email"}
+                                            placeholder="email@exemple.com ou prénom.nom"
                                             required
                                             className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
                                         />
