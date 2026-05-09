@@ -686,12 +686,31 @@ export default function StudentManagement() {
                                 {/* Pied fixe */}
                                 <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-6 py-4">
                                     {canEdit && (
-                                        <>
-                                            <Button variant="outline" onClick={() => { openEditForm(selectedStudent); setSelectedStudent(null); }}>Modifier</Button>
-                                            {canDelete && (
-                                                <Button variant="destructive" onClick={() => { setStudentToDelete(selectedStudent); setSelectedStudent(null); }}>Supprimer</Button>
-                                            )}
-                                        </>
+                                        <DropdownMenu
+                                            actions={[
+                                                {
+                                                    label: "Modifier",
+                                                    icon: <Edit className="h-4 w-4" />,
+                                                    onClick: () => {
+                                                        openEditForm(selectedStudent);
+                                                        setSelectedStudent(null);
+                                                    },
+                                                },
+                                                ...(canDelete
+                                                    ? [
+                                                          {
+                                                              label: "Supprimer",
+                                                              icon: <Trash2 className="h-4 w-4" />,
+                                                              onClick: () => {
+                                                                  setStudentToDelete(selectedStudent);
+                                                                  setSelectedStudent(null);
+                                                              },
+                                                              variant: "danger" as const,
+                                                          },
+                                                      ]
+                                                    : []),
+                                            ]}
+                                        />
                                     )}
                                     <Button onClick={() => setSelectedStudent(null)}>Fermer</Button>
                                 </div>

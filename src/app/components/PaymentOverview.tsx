@@ -334,7 +334,7 @@ export default function PaymentOverview({
                         </div>
 
                         {/* Tranches */}
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">
                             {service.tranches.map((tranche) => {
                                 const payment = sPayments.find(
                                     (p) => p.tranche === tranche.tranche
@@ -344,14 +344,14 @@ export default function PaymentOverview({
                                 return (
                                     <div
                                         key={tranche.tranche}
-                                        className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm"
+                                        className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-sm"
                                     >
                                         {/* Ligne principale */}
                                         <div className="mb-2 flex items-start justify-between gap-2">
                                             <div className="flex items-center gap-2.5 min-w-0">
                                                 {/* Cercle numéro */}
                                                 <span
-                                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                                                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
                                                         state.barPct === 100 && state.barColor === "bg-green-500"
                                                             ? "bg-green-100 text-green-700"
                                                             : state.barColor.includes("red")
@@ -366,7 +366,7 @@ export default function PaymentOverview({
                                                     {payment?.status === "paye" ? "✓" : tranche.tranche}
                                                 </span>
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-semibold text-slate-800 leading-tight">
+                                                    <p className="text-xs font-semibold leading-tight text-slate-800">
                                                         {tranche.label}
                                                     </p>
                                                     {payment?.date_limite && payment.status !== "paye" && (
@@ -377,7 +377,7 @@ export default function PaymentOverview({
                                                 </div>
                                             </div>
                                             <div className="shrink-0 text-right">
-                                                <p className="text-sm font-bold text-slate-900">
+                                                <p className="text-xs font-bold text-slate-900">
                                                     {fmt(tranche.montant)}
                                                 </p>
                                                 <span

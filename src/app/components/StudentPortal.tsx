@@ -294,21 +294,21 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     <CardTitle className="text-base">Historique des paiements</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-3">
+                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                                         {payments.map((payment) => (
                                             <button
                                                 key={payment.id}
-                                                className="joda-surface-muted flex w-full items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors"
+                                                className="joda-surface-muted flex w-full items-center justify-between gap-3 p-3 text-left transition-colors hover:bg-slate-50"
                                                 onClick={() => setDetailPayment(payment)}
                                             >
-                                                <div>
-                                                    <p className="font-medium capitalize">{payment.type}</p>
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-medium capitalize">{payment.type}</p>
                                                     <p className="text-sm text-gray-500">
                                                         {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString("fr-FR") : "-"}
                                                     </p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="font-bold text-red-600">{formatMontant(payment.montant)}</p>
+                                                <div className="shrink-0 text-right">
+                                                    <p className="text-sm font-bold text-red-600">{formatMontant(payment.montant)}</p>
                                                     <Badge className={STATUS_COLORS[payment.status]}>{getPaymentStatusLabel(payment.status)}</Badge>
                                                 </div>
                                             </button>

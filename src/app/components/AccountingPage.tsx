@@ -30,6 +30,7 @@ import { printThermalReceipt } from "../utils/thermalReceipt";
 import { generateAccountingReport } from "../lib/pdfGenerator";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
+import DropdownMenu from "./shared/DropdownMenu";
 
 interface EntreeComptable {
     id: string;
@@ -1000,18 +1001,31 @@ export default function AccountingPage() {
                                                         <TableCell><Badge variant="secondary">{labelType[e.type]}</Badge></TableCell>
                                                         <TableCell className="text-right font-semibold text-emerald-600">{formatMontant(e.montant)}</TableCell>
                                                         <TableCell className="text-right">
-                                                            <div className="flex justify-end gap-1">
-                                                                <Button variant="ghost" size="sm" onClick={() => setDetailEntree(e)} title="Voir détails">
-                                                                    <Eye className="h-4 w-4 text-slate-500" />
-                                                                </Button>
-                                                                <Button variant="ghost" size="sm" onClick={() => handlePrintEntree(e)} title="Imprimer reçu">
-                                                                    <FileText className="h-4 w-4 text-emerald-600" />
-                                                                </Button>
-                                                                {isAdmin && (
-                                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteEntree(e.id)}>
-                                                                        <Trash2 className="h-4 w-4 text-rose-500" />
-                                                                    </Button>
-                                                                )}
+                                                            <div className="flex justify-end">
+                                                                <DropdownMenu
+                                                                    actions={[
+                                                                        {
+                                                                            label: "Voir détails",
+                                                                            icon: <Eye className="h-4 w-4" />,
+                                                                            onClick: () => setDetailEntree(e),
+                                                                        },
+                                                                        {
+                                                                            label: "Imprimer reçu",
+                                                                            icon: <FileText className="h-4 w-4" />,
+                                                                            onClick: () => handlePrintEntree(e),
+                                                                        },
+                                                                        ...(isAdmin
+                                                                            ? [
+                                                                                  {
+                                                                                      label: "Supprimer",
+                                                                                      icon: <Trash2 className="h-4 w-4" />,
+                                                                                      onClick: () => handleDeleteEntree(e.id),
+                                                                                      variant: "danger" as const,
+                                                                                  },
+                                                                              ]
+                                                                            : []),
+                                                                    ]}
+                                                                />
                                                             </div>
                                                         </TableCell>
                                                     </TableRow>
@@ -1134,15 +1148,26 @@ export default function AccountingPage() {
                                                         </TableCell>
                                                         <TableCell className="text-right font-semibold text-rose-600">{formatMontant(s.montant)}</TableCell>
                                                         <TableCell className="text-right">
-                                                            <div className="flex justify-end gap-1">
-                                                                <Button variant="ghost" size="sm" onClick={() => setDetailSortie(s)} title="Voir détails">
-                                                                    <Eye className="h-4 w-4 text-slate-500" />
-                                                                </Button>
-                                                                {isAdmin && (
-                                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteSortie(s.id)}>
-                                                                        <Trash2 className="h-4 w-4 text-rose-500" />
-                                                                    </Button>
-                                                                )}
+                                                            <div className="flex justify-end">
+                                                                <DropdownMenu
+                                                                    actions={[
+                                                                        {
+                                                                            label: "Voir détails",
+                                                                            icon: <Eye className="h-4 w-4" />,
+                                                                            onClick: () => setDetailSortie(s),
+                                                                        },
+                                                                        ...(isAdmin
+                                                                            ? [
+                                                                                  {
+                                                                                      label: "Supprimer",
+                                                                                      icon: <Trash2 className="h-4 w-4" />,
+                                                                                      onClick: () => handleDeleteSortie(s.id),
+                                                                                      variant: "danger" as const,
+                                                                                  },
+                                                                              ]
+                                                                            : []),
+                                                                    ]}
+                                                                />
                                                             </div>
                                                         </TableCell>
                                                     </TableRow>

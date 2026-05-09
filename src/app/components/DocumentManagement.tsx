@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { CheckCircle2, Eye, XCircle } from "lucide-react";
+import DropdownMenu from "./shared/DropdownMenu";
 
 interface DocumentManagementProps {
     studentId: string;
@@ -236,9 +238,30 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
                                                     Uploadé le {new Date(document.uploaded_at).toLocaleDateString('fr-FR')}
                                                 </p>
                                             </div>
-                                            <Button variant="outline" size="sm" onClick={() => window.open(document.url, '_blank')}>
-                                                Voir
-                                            </Button>
+                                            <DropdownMenu
+                                                actions={[
+                                                    {
+                                                        label: "Voir le document",
+                                                        icon: <Eye className="h-4 w-4" />,
+                                                        onClick: () => window.open(document.url, "_blank", "noopener,noreferrer"),
+                                                    },
+                                                    ...(user?.role !== "student" && document.status === "en_attente"
+                                                        ? [
+                                                              {
+                                                                  label: "Valider",
+                                                                  icon: <CheckCircle2 className="h-4 w-4" />,
+                                                                  onClick: () => setValidationModal({ document, status: "valide" }),
+                                                              },
+                                                              {
+                                                                  label: "Rejeter",
+                                                                  icon: <XCircle className="h-4 w-4" />,
+                                                                  onClick: () => setValidationModal({ document, status: "non_conforme" }),
+                                                                  variant: "danger" as const,
+                                                              },
+                                                          ]
+                                                        : []),
+                                                ]}
+                                            />
                                         </div>
 
                                         {document.status === 'non_conforme' && document.rejection_reason && (
@@ -248,16 +271,6 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
                                             </div>
                                         )}
 
-                                        {user?.role !== 'student' && document.status === 'en_attente' && (
-                                            <div className="flex gap-2">
-                                                <Button size="sm" className="flex-1 bg-green-600" onClick={() => setValidationModal({ document, status: 'valide' })}>
-                                                    Valider
-                                                </Button>
-                                                <Button size="sm" variant="destructive" className="flex-1" onClick={() => setValidationModal({ document, status: 'non_conforme' })}>
-                                                    Rejeter
-                                                </Button>
-                                            </div>
-                                        )}
                                     </div>
                                 )}
                             </CardContent>

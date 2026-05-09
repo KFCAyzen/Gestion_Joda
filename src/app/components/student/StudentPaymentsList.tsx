@@ -31,16 +31,16 @@ export default function StudentPaymentsList({ payments, onBack, getPaymentStatus
                         <p className="text-base text-slate-500">Aucun paiement enregistré</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                         {payments.map((pay) => (
-                            <div key={pay.id} className="joda-surface-muted p-4">
-                                <div className="mb-3 flex items-start justify-between">
+                            <div key={pay.id} className="joda-surface-muted p-3">
+                                <div className="mb-3 flex items-start justify-between gap-3">
                                     <div className="min-w-0 flex-1">
-                                        <h4 className="text-base font-semibold text-slate-900">{pay.description}</h4>
-                                        <p className="text-sm text-slate-600">{pay.date}</p>
+                                        <h4 className="truncate text-sm font-semibold text-slate-900">{pay.description}</h4>
+                                        <p className="text-xs text-slate-600">{pay.date}</p>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-2xl font-bold text-slate-900">{pay.amount.toLocaleString()} FCFA</p>
+                                    <div className="shrink-0 text-right">
+                                        <p className="text-sm font-bold text-slate-900">{pay.amount.toLocaleString()} FCFA</p>
                                         <span className={`rounded-full px-2 py-0.5 text-xs ${getPaymentStatusColor(pay.status)}`}>{pay.status}</span>
                                     </div>
                                 </div>

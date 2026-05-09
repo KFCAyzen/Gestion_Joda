@@ -19,6 +19,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Edit, Trash2 } from "lucide-react";
+import DropdownMenu from "./shared/DropdownMenu";
 
 interface Student {
     id: string;
@@ -631,7 +633,7 @@ export default function ApplicationManagement() {
                                             </div>
                                         </div>
 
-                                        <div className="flex gap-2">
+                                        <div className="flex items-center gap-2">
                                             <Select value={application.status} onValueChange={(v) => updateApplicationStatus(application.id, v || application.status)}>
                                                 <SelectTrigger className="w-[180px] text-xs font-medium"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
@@ -644,22 +646,25 @@ export default function ApplicationManagement() {
                                                     <SelectItem value="termine">Terminé</SelectItem>
                                                 </SelectContent>
                                             </Select>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => openEditForm(application)}
-                                            >
-                                                Modifier
-                                            </Button>
-                                            {canDelete && (
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => deleteApplication(application.id)}
-                                                >
-                                                    Supprimer
-                                                </Button>
-                                            )}
+                                            <DropdownMenu
+                                                actions={[
+                                                    {
+                                                        label: "Modifier",
+                                                        icon: <Edit className="h-4 w-4" />,
+                                                        onClick: () => openEditForm(application),
+                                                    },
+                                                    ...(canDelete
+                                                        ? [
+                                                              {
+                                                                  label: "Supprimer",
+                                                                  icon: <Trash2 className="h-4 w-4" />,
+                                                                  onClick: () => deleteApplication(application.id),
+                                                                  variant: "danger" as const,
+                                                              },
+                                                          ]
+                                                        : []),
+                                                ]}
+                                            />
                                         </div>
                                     </div>
                                 );

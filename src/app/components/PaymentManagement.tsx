@@ -29,6 +29,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { CheckCircle2, Edit, Eye, FileText, Printer, Send, XCircle } from "lucide-react";
+import DropdownMenu from "./shared/DropdownMenu";
 
 interface Student {
     id: string;
@@ -427,46 +429,75 @@ export default function PaymentManagement() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        <Button variant="ghost" size="sm" onClick={() => setDetailPayment(payment)} className="text-xs">
-                                                            Détails
-                                                        </Button>
-                                                        {canValidate && (
-                                                            <Button variant="ghost" size="sm" onClick={() => openEdit(payment)} className="text-xs">
-                                                                Modifier
-                                                            </Button>
-                                                        )}
-                                                        {payment.status === "paye" && (
-                                                            <Button variant="ghost" size="sm" onClick={() => handlePrintReceipt(payment)} className="text-xs text-emerald-600">
-                                                                Reçu
-                                                            </Button>
-                                                        )}
-                                                        {user?.role === "agent" && (payment.status === "attente" || payment.status === "retard") && (
-                                                            <Button variant="outline" size="sm" onClick={() => handleSubmitForValidation(payment.id)} className="text-xs">
-                                                                Soumettre
-                                                            </Button>
-                                                        )}
-                                                        {canValidate && payment.status === "en_validation" && (
-                                                            <>
-                                                                <Button variant="outline" size="sm" onClick={() => confirmApprove(payment.id)} className="text-xs">
-                                                                    Approuver
-                                                                </Button>
-                                                                <Button variant="destructive" size="sm" onClick={() => confirmReject(payment.id)} className="text-xs">
-                                                                    Rejeter
-                                                                </Button>
-                                                            </>
-                                                        )}
-                                                        {canValidate && (payment.status === "attente" || payment.status === "retard") && (
-                                                            <Button variant="outline" size="sm" onClick={() => confirmApprove(payment.id)} className="text-xs">
-                                                                Valider
-                                                            </Button>
-                                                        )}
-                                                        {payment.facture_url && (
-                                                            <a href={payment.facture_url} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-900 text-xs underline">
-                                                                Facture
-                                                            </a>
-                                                        )}
-                                                    </div>
+                                                    <DropdownMenu
+                                                        actions={[
+                                                            {
+                                                                label: "Détails",
+                                                                icon: <Eye className="h-4 w-4" />,
+                                                                onClick: () => setDetailPayment(payment),
+                                                            },
+                                                            ...(canValidate
+                                                                ? [
+                                                                      {
+                                                                          label: "Modifier",
+                                                                          icon: <Edit className="h-4 w-4" />,
+                                                                          onClick: () => openEdit(payment),
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                            ...(payment.status === "paye"
+                                                                ? [
+                                                                      {
+                                                                          label: "Imprimer le reçu",
+                                                                          icon: <Printer className="h-4 w-4" />,
+                                                                          onClick: () => handlePrintReceipt(payment),
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                            ...(user?.role === "agent" && (payment.status === "attente" || payment.status === "retard")
+                                                                ? [
+                                                                      {
+                                                                          label: "Soumettre",
+                                                                          icon: <Send className="h-4 w-4" />,
+                                                                          onClick: () => handleSubmitForValidation(payment.id),
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                            ...(canValidate && payment.status === "en_validation"
+                                                                ? [
+                                                                      {
+                                                                          label: "Approuver",
+                                                                          icon: <CheckCircle2 className="h-4 w-4" />,
+                                                                          onClick: () => confirmApprove(payment.id),
+                                                                      },
+                                                                      {
+                                                                          label: "Rejeter",
+                                                                          icon: <XCircle className="h-4 w-4" />,
+                                                                          onClick: () => confirmReject(payment.id),
+                                                                          variant: "danger" as const,
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                            ...(canValidate && (payment.status === "attente" || payment.status === "retard")
+                                                                ? [
+                                                                      {
+                                                                          label: "Valider",
+                                                                          icon: <CheckCircle2 className="h-4 w-4" />,
+                                                                          onClick: () => confirmApprove(payment.id),
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                            ...(payment.facture_url
+                                                                ? [
+                                                                      {
+                                                                          label: "Voir la facture",
+                                                                          icon: <FileText className="h-4 w-4" />,
+                                                                          onClick: () => window.open(payment.facture_url!, "_blank", "noopener,noreferrer"),
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                        ]}
+                                                    />
                                                 </TableCell>
                                             </TableRow>
                                         );

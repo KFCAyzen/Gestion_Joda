@@ -80,6 +80,7 @@ async function handleCreateUser(req: NextRequest) {
         role,
         password_hash: "managed_by_supabase_auth",
         must_change_password: role === "student",
+        is_active: true,
     }, { onConflict: 'id' });
 
     if (dbError) {

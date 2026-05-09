@@ -15,6 +15,7 @@ export interface User {
     name: string;
     email?: string;
     mustChangePassword?: boolean;
+    isActive?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -78,6 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     console.error("Erreur récupération user:", userError.message);
                     await supabase.auth.signOut();
                 } else if (userData) {
+                    if (userData.is_active === false) {
+                        await supabase.auth.signOut();
+                        if (typeof window !== "undefined") {
+                            localStorage.removeItem("currentUser");
+                        }
+                        return;
+                    }
+
                     setUser({
                         id: userData.id,
                         username: userData.username,
@@ -85,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         name: userData.name,
                         email: userData.email,
                         mustChangePassword: userData.must_change_password === true,
+                        isActive: userData.is_active !== false,
                     });
                 }
             }
@@ -99,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const { data, error } = await supabase
                 .from("users")
-                .select("id, username, email, role, name, must_change_password")
+                .select("id, username, email, role, name, must_change_password, is_active")
                 .order("created_at", { ascending: false });
 
             if (error) {
@@ -116,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         role: entry.role,
                         name: entry.name,
                         mustChangePassword: entry.must_change_password,
+                        isActive: entry.is_active !== false,
                     })),
                 );
             }
@@ -158,6 +169,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
 
                 if (userData) {
+                    if (userData.is_active === false) {
+                        await supabase.auth.signOut();
+                        if (typeof window !== "undefined") {
+                            localStorage.removeItem("currentUser");
+                        }
+                        return {
+                            success: false,
+                            message: "Ce compte est désactivé. Contactez un administrateur pour rétablir l'accès.",
+                        };
+                    }
+
                     const currentUser: AuthUser = {
                         id: userData.id,
                         username: userData.username,
@@ -165,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         name: userData.name,
                         email: userData.email,
                         mustChangePassword: userData.must_change_password === true,
+                        isActive: userData.is_active !== false,
                     };
 
                     setUser(currentUser);

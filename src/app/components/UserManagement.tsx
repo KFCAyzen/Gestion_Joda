@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Permission, DEFAULT_ROLE_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from "../types/permissions";
-import { Check, KeyRound, Shield, X } from "lucide-react";
+import { Check, KeyRound, Power, PowerOff, Shield, Trash2, X } from "lucide-react";
+import DropdownMenu from "./shared/DropdownMenu";
 
 interface DbUser {
     id: string;
@@ -32,6 +33,7 @@ interface DbUser {
     role: string;
     name: string;
     must_change_password: boolean;
+    is_active?: boolean | null;
     created_at: string;
 }
 
@@ -242,6 +244,51 @@ export default function UserManagement() {
         setUserToDelete(null);
     };
 
+    const handleToggleUserActive = async (targetUser: DbUser) => {
+        if (!currentUser || targetUser.id === currentUser.id) return;
+
+        const nextActive = targetUser.is_active === false;
+        try {
+            const supabase = createClient();
+            const { error: updateError } = await supabase
+                .from("users")
+                .update({ is_active: nextActive, updated_at: new Date().toISOString() })
+                .eq("id", targetUser.id);
+
+            if (updateError) {
+                throw updateError;
+            }
+
+            await logActivity(
+                currentUser.id,
+                currentUser.name,
+                currentUser.role,
+                "user_update",
+                "users",
+                targetUser.id,
+                `Compte ${nextActive ? "activé" : "désactivé"} — ${targetUser.name}`,
+                { target_user_id: targetUser.id, is_active: nextActive },
+            );
+
+            const message = nextActive
+                ? `${targetUser.name} peut de nouveau accéder à la plateforme.`
+                : `${targetUser.name} ne pourra plus se connecter tant que le compte reste désactivé.`;
+            setFeedback("", message);
+            showNotification({
+                title: nextActive ? "Compte activé" : "Compte désactivé",
+                message,
+                type: "success",
+            });
+            await loadUsers();
+        } catch (err) {
+            const message = getFriendlyErrorMessage(err, {
+                fallback: "Le statut du compte n'a pas pu être modifié. Réessayez dans un instant.",
+            });
+            setFeedback(message, "");
+            showNotification({ title: "Statut du compte", message, type: "error" });
+        }
+    };
+
     const loadUserPermissions = async (userId: string) => {
         setLoadingPermissions(true);
         try {
@@ -392,12 +439,13 @@ export default function UserManagement() {
                                             <TableHead>Nom</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Role</TableHead>
+                                            <TableHead>Statut</TableHead>
                                             <TableHead>Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {dbUsers.map((entry) => (
-                                            <TableRow key={entry.id}>
+                                            <TableRow key={entry.id} className={entry.is_active === false ? "opacity-60" : ""}>
                                                 <TableCell>
                                                     <div className="font-medium">{entry.name}</div>
                                                     <div className="text-sm text-slate-500">@{entry.username}</div>
@@ -409,30 +457,57 @@ export default function UserManagement() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                setSelectedUser(entry);
-                                                                void loadUserPermissions(entry.id);
-                                                            }}
-                                                        >
-                                                            <Shield className="mr-1 h-4 w-4" />
-                                                            Permissions
-                                                        </Button>
-                                                        {entry.id !== currentUser?.id && (
-                                                            <Button variant="outline" size="sm" onClick={() => setUserToReset(entry)}>
-                                                                <KeyRound className="mr-1 h-4 w-4" />
-                                                                Reinit. MDP
-                                                            </Button>
-                                                        )}
-                                                        {currentUser?.role === "super_admin" && entry.id !== currentUser.id && (
-                                                            <Button variant="destructive" size="sm" onClick={() => setUserToDelete(entry.id)}>
-                                                                Supprimer
-                                                            </Button>
-                                                        )}
-                                                    </div>
+                                                    <Badge variant={entry.is_active === false ? "secondary" : "default"}>
+                                                        {entry.is_active === false ? "Désactivé" : "Actif"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <DropdownMenu
+                                                        actions={[
+                                                            {
+                                                                label: "Permissions",
+                                                                icon: <Shield className="h-4 w-4" />,
+                                                                onClick: () => {
+                                                                    setSelectedUser(entry);
+                                                                    void loadUserPermissions(entry.id);
+                                                                },
+                                                            },
+                                                            ...(entry.id !== currentUser?.id
+                                                                ? [
+                                                                      {
+                                                                          label: "Réinitialiser le mot de passe",
+                                                                          icon: <KeyRound className="h-4 w-4" />,
+                                                                          onClick: () => setUserToReset(entry),
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                            ...((currentUser?.role === "admin" || currentUser?.role === "super_admin") && entry.id !== currentUser?.id
+                                                                ? [
+                                                                      {
+                                                                          label: entry.is_active === false ? "Activer le compte" : "Désactiver le compte",
+                                                                          icon:
+                                                                              entry.is_active === false ? (
+                                                                                  <Power className="h-4 w-4" />
+                                                                              ) : (
+                                                                                  <PowerOff className="h-4 w-4" />
+                                                                              ),
+                                                                          onClick: () => void handleToggleUserActive(entry),
+                                                                          variant: entry.is_active === false ? "default" as const : "danger" as const,
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                            ...(currentUser?.role === "super_admin" && entry.id !== currentUser.id
+                                                                ? [
+                                                                      {
+                                                                          label: "Supprimer",
+                                                                          icon: <Trash2 className="h-4 w-4" />,
+                                                                          onClick: () => setUserToDelete(entry.id),
+                                                                          variant: "danger" as const,
+                                                                      },
+                                                                  ]
+                                                                : []),
+                                                        ]}
+                                                    />
                                                 </TableCell>
                                             </TableRow>
                                         ))}
