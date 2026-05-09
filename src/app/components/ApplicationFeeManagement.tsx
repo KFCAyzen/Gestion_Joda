@@ -17,7 +17,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { SearchBar, FilterSelect, PageHeader, LoadingState, ErrorMessage, StatusBadge } from "./shared";
+import { SearchBar, FilterSelect, PageHeader, LoadingState, ErrorMessage, StatusBadge, DropdownMenu } from "./shared";
+import { Eye, Edit, Printer, Download } from "lucide-react";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import { logActivity } from "../utils/activityLogger";
 import { printThermalReceipt } from "../utils/thermalReceipt";
@@ -372,55 +373,19 @@ export default function ApplicationFeeManagement() {
                                                 <StatusBadge status={fee.status} />
                                             </div>
                                         </div>
-                                        <div className="mt-3 flex gap-2">
-                                            <button
-                                                onClick={() => setDetailFee(fee)}
-                                                className="flex-1 rounded-lg border border-slate-200 bg-slate-50 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-                                            >
-                                                Voir détails
-                                            </button>
-                                            {(user?.role === "admin" || user?.role === "super_admin") && (
-                                                <button
-                                                    onClick={() => openEditFee(fee)}
-                                                    className="flex-1 rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100"
-                                                >
-                                                    Modifier
-                                                </button>
-                                            )}
-                                            {fee.status === "paye" && student && (
-                                                <button
-                                                    onClick={() => handlePrintFeeThermal(fee, student)}
-                                                    className="flex-1 rounded-lg border border-emerald-200 bg-emerald-50 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
-                                                >
-                                                    Reçu thermique
-                                                </button>
-                                            )}
+                                        <div className="mt-3 flex justify-end">
+                                            <DropdownMenu actions={[
+                                                { label: "Voir détails", icon: <Eye className="h-4 w-4" />, onClick: () => setDetailFee(fee) },
+                                                ...((user?.role === "admin" || user?.role === "super_admin") ? [{ label: "Modifier", icon: <Edit className="h-4 w-4" />, onClick: () => openEditFee(fee) }] : []),
+                                                ...(fee.status === "paye" && student ? [
+                                                    { label: "Reçu thermique", icon: <Printer className="h-4 w-4" />, onClick: () => handlePrintFeeThermal(fee, student) },
+                                                    { label: "Télécharger reçu", icon: <Download className="h-4 w-4" />, onClick: () => downloadReceipt(
+                                                        { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
+                                                        { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere }
+                                                    )},
+                                                ] : []),
+                                            ]} />
                                         </div>
-                                        {fee.status === "paye" && student && (
-                                            <button
-                                                onClick={() => downloadReceipt(
-                                                    {
-                                                        id: fee.id,
-                                                        type: fee.type,
-                                                        tranche: fee.tranche ?? null,
-                                                        montant: fee.montant,
-                                                        status: fee.status,
-                                                        date_paiement: fee.date ?? null,
-                                                    },
-                                                    {
-                                                        nom: student.nom,
-                                                        prenom: student.prenom,
-                                                        email: student.email,
-                                                        telephone: student.telephone,
-                                                        niveau: student.niveau,
-                                                        filiere: student.filiere,
-                                                    }
-                                                )}
-                                                className="mt-3 w-full rounded-lg border border-green-200 bg-green-50 py-1.5 text-xs font-semibold text-green-700 transition-colors hover:bg-green-100"
-                                            >
-                                                Télécharger le reçu
-                                            </button>
-                                        )}
                                     </div>
                                 );
                             })}
