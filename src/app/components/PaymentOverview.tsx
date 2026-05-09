@@ -222,10 +222,12 @@ export default function PaymentOverview({
     choix,
     langue,
     payments,
+    onDownloadReceipt,
 }: {
     choix: string;
     langue: string;
     payments: Payment[];
+    onDownloadReceipt?: (payment: Payment) => void;
 }) {
     const services = useMemo(() => getExpectedServices(choix, langue), [choix, langue]);
 
@@ -414,6 +416,16 @@ export default function PaymentOverview({
                                                     +{fmt(state.penalty)}
                                                 </span>
                                             </div>
+                                        )}
+
+                                        {/* Bouton reçu */}
+                                        {payment?.status === "paye" && onDownloadReceipt && (
+                                            <button
+                                                onClick={() => onDownloadReceipt(payment)}
+                                                className="mt-2 w-full rounded-lg border border-green-200 bg-green-50 py-1.5 text-xs font-semibold text-green-700 transition-colors hover:bg-green-100"
+                                            >
+                                                Télécharger le reçu
+                                            </button>
                                         )}
                                     </div>
                                 );

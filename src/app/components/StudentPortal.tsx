@@ -6,6 +6,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
 import DocumentUpload from "./DocumentUpload";
 import PaymentOverview from "./PaymentOverview";
+import { downloadReceipt, type ReceiptStudent } from "../utils/downloadReceipt";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -94,13 +95,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [studentId, setStudentId] = useState<string | null>(null);
     const [studentChoix, setStudentChoix] = useState<string>("");
     const [studentLangue, setStudentLangue] = useState<string>("");
+    const [studentInfo, setStudentInfo] = useState<ReceiptStudent | null>(null);
     const load = useCallback(async () => {
         setLoading(true);
         try {
             // Récupérer l'ID étudiant depuis la table students via created_by
             const { data: studentData } = await supabase
                 .from("students")
-                .select("id, choix, langue")
+                .select("id, choix, langue, nom, prenom, email, telephone, niveau, filiere")
                 .eq("created_by", user.id)
                 .single();
 
@@ -109,6 +111,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             setStudentId(sid);
             setStudentChoix(studentData?.choix ?? "");
             setStudentLangue(studentData?.langue ?? "");
+            setStudentInfo({
+                nom: studentData?.nom ?? "",
+                prenom: studentData?.prenom ?? "",
+                email: studentData?.email ?? "",
+                telephone: studentData?.telephone ?? "",
+                niveau: studentData?.niveau ?? "",
+                filiere: studentData?.filiere ?? "",
+            });
 
             const [pays, docs, dossiers] = await Promise.all([
                 supabase.from("payments").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
@@ -268,6 +278,9 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     choix={studentChoix}
                                     langue={studentLangue}
                                     payments={payments}
+                                    onDownloadReceipt={studentInfo
+                                        ? (p) => downloadReceipt(p, studentInfo)
+                                        : undefined}
                                 />
                             </CardContent>
                         </Card>

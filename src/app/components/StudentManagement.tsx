@@ -36,6 +36,7 @@ import {
 import SearchBar from "./SearchBar";
 import FilterSelect from "./FilterSelect";
 import PaymentOverview from "./PaymentOverview";
+import { downloadReceipt } from "../utils/downloadReceipt";
 import { DropdownMenu } from "./shared";
 import { Eye, Edit, Trash2 } from "lucide-react";
 
@@ -626,6 +627,16 @@ export default function StudentManagement() {
                                             choix={selectedStudent.choix}
                                             langue={selectedStudent.langue || ""}
                                             payments={selectedStudentPayments}
+                                            onDownloadReceipt={(p) =>
+                                                downloadReceipt(p, {
+                                                    nom: selectedStudent.nom,
+                                                    prenom: selectedStudent.prenom,
+                                                    email: selectedStudent.email,
+                                                    telephone: selectedStudent.telephone,
+                                                    niveau: selectedStudent.niveau,
+                                                    filiere: selectedStudent.filiere,
+                                                })
+                                            }
                                         />
                                     </div>
                                 </div>
