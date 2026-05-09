@@ -224,11 +224,11 @@ export default function LoginPage() {
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <motion.div className="px-4 text-center" variants={staggerContainer} initial="initial" animate="animate">
                                     <motion.div
-                                        className="mx-auto mb-3 flex items-center justify-center rounded-2xl bg-white px-3 py-2 shadow-[0_10px_25px_rgba(0,0,0,0.5)] sm:mb-4 lg:mb-6"
+                                        className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-3xl bg-white p-3 shadow-[0_10px_25px_rgba(0,0,0,0.5)] sm:mb-4 sm:h-24 sm:w-24 sm:p-4 lg:mb-6 lg:h-28 lg:w-28 lg:p-5"
                                         variants={heroEntrance}
                                         whileHover={{ rotate: [0, -5, 5, 0], scale: 1.08, transition: { duration: 0.4 } }}
                                     >
-                                        <img src="/Logo.png" alt="Joda Company Logo" className="h-10 w-auto object-contain sm:h-12 lg:h-16" />
+                                        <img src="/Logo.png" alt="Joda Company Logo" className="h-full w-full object-contain" />
                                     </motion.div>
                                     <motion.h1 className="text-xl font-bold tracking-wider text-black lg:text-3xl" variants={titleReveal}>
                                         Joda Company
@@ -250,8 +250,8 @@ export default function LoginPage() {
                         >
                             {showStudentLogin && (
                                 <div className="mb-6 flex flex-col items-center sm:hidden">
-                                    <div className="mb-3 flex items-center justify-center rounded-2xl bg-white px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.15)] ring-1 ring-red-100">
-                                        <img src="/Logo.png" alt="Joda" className="h-10 w-auto object-contain" />
+                                    <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-3xl bg-white p-3 shadow-[0_8px_24px_rgba(0,0,0,0.15)] ring-1 ring-red-100">
+                                        <img src="/Logo.png" alt="Joda" className="h-full w-full object-contain" />
                                     </div>
                                     <h1 className="text-lg font-bold tracking-wide text-gray-900">Joda Company</h1>
                                     <p className="text-xs text-gray-500">Gestion des bourses d'études</p>
@@ -269,7 +269,7 @@ export default function LoginPage() {
                                                     setStudentError("");
                                                 }}
                                                 className="mb-4 flex items-center gap-2 font-medium text-red-600 hover:text-red-700"
-                                                whileHover={{ x: -5, color: "#991b1b" }}
+                                                whileHover={{ x: -5 }}
                                                 whileTap={buttonTap}
                                                 variants={staggerItem}
                                             >
