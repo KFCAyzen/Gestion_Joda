@@ -138,7 +138,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             });
 
             const [paysRes, docs, dossiers, unreadRes] = await Promise.all([
-                fetch("/api/student-payments").then(r => r.json()),
+                fetch("/api/student-payments").then(r => r.ok ? r.json() : []).catch(() => []),
                 supabase.from("documents").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
                 supabase.from("dossier_bourses").select("*").eq("student_id", sid).order("created_at", { ascending: false }).limit(1),
                 supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("read", false),
