@@ -96,15 +96,18 @@ export const PHONE_COUNTRY_CODES = [
     { code: "+961", country: "Liban" },
 ];
 
-export function normalizePhoneNumber(countryCode: string, localNumber: string) {
+export function normalizePhoneNumber(countryCode: string | null | undefined, localNumber: string) {
     const trimmed = localNumber.replace(/\s+/g, " ").trim();
     if (!trimmed) return "";
     if (trimmed.startsWith("+")) return trimmed;
-    return `${countryCode} ${trimmed}`;
+    const prefix = countryCode || DEFAULT_PHONE_COUNTRY_CODE;
+    return `${prefix} ${trimmed}`;
 }
 
 export function splitPhoneNumber(value: string | null | undefined) {
-    const phone = (value || "").trim();
+    // Strip any "undefined " prefix written by a previous bug
+    const raw = (value || "").trim().replace(/^undefined\s*/i, "");
+    const phone = raw;
     if (!phone) {
         return { countryCode: DEFAULT_PHONE_COUNTRY_CODE, localNumber: "" };
     }

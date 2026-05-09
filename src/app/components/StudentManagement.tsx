@@ -639,7 +639,7 @@ export default function StudentManagement() {
                                         <div className="rounded-xl border border-slate-200 p-3">
                                             <p className="text-xs uppercase tracking-wider text-slate-400">Contact</p>
                                             <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.email}</p>
-                                            <p className="text-sm text-slate-600">{selectedStudent.telephone}</p>
+                                            <p className="text-sm text-slate-600">{(selectedStudent.telephone || "").replace(/^undefined\s*/i, "") || "Non renseigné"}</p>
                                         </div>
                                         <div className="rounded-xl border border-slate-200 p-3">
                                             <p className="text-xs uppercase tracking-wider text-slate-400">Parcours</p>
@@ -694,31 +694,16 @@ export default function StudentManagement() {
                                 {/* Pied fixe */}
                                 <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-6 py-4">
                                     {canEdit && (
-                                        <DropdownMenu
-                                            actions={[
-                                                {
-                                                    label: "Modifier",
-                                                    icon: <Edit className="h-4 w-4" />,
-                                                    onClick: () => {
-                                                        openEditForm(selectedStudent);
-                                                        setSelectedStudent(null);
-                                                    },
-                                                },
-                                                ...(canDelete
-                                                    ? [
-                                                          {
-                                                              label: "Supprimer",
-                                                              icon: <Trash2 className="h-4 w-4" />,
-                                                              onClick: () => {
-                                                                  setStudentToDelete(selectedStudent);
-                                                                  setSelectedStudent(null);
-                                                              },
-                                                              variant: "danger" as const,
-                                                          },
-                                                      ]
-                                                    : []),
-                                            ]}
-                                        />
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                openEditForm(selectedStudent);
+                                                setSelectedStudent(null);
+                                            }}
+                                        >
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Modifier
+                                        </Button>
                                     )}
                                     <Button onClick={() => setSelectedStudent(null)}>Fermer</Button>
                                 </div>
