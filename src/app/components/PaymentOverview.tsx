@@ -281,7 +281,7 @@ export default function PaymentOverview({
 
             {totalPenalties > 0 && (
                 <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-                    <span className="text-xs font-semibold text-red-600">⚠ Pénalités cumulées :</span>
+                    <span className="text-xs font-semibold text-red-600">Pénalités cumulées :</span>
                     <span className="text-sm font-bold text-red-700">{fmt(totalPenalties)}</span>
                 </div>
             )}

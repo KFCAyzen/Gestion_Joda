@@ -160,7 +160,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
         <div className="space-y-6">
             {/* Info sur la compression */}
             <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-                <p className="font-medium">📋 Informations importantes :</p>
+                <p className="font-medium">Informations importantes :</p>
                 <ul className="mt-2 ml-4 list-disc space-y-1 text-xs">
                     <li>Taille maximale par fichier : <strong>{FILE_LIMITS.MAX_FILE_SIZE_MB} MB</strong></li>
                     <li>Les images sont automatiquement compressées (cible : {FILE_LIMITS.TARGET_COMPRESSED_SIZE_MB} MB)</li>
@@ -184,7 +184,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                     <p className="mt-2 text-xs text-slate-500">{completion}/{total} documents obligatoires uploadés</p>
                     {pct === 100 && (
                         <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-                            ✅ Tous les documents ont été soumis. Votre dossier est en cours de traitement.
+                            Tous les documents ont été soumis. Votre dossier est en cours de traitement.
                         </div>
                     )}
                 </CardContent>
