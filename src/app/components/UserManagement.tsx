@@ -25,6 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Permission, DEFAULT_ROLE_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from "../types/permissions";
 import { Check, KeyRound, Power, PowerOff, Shield, Trash2, X } from "lucide-react";
 import DropdownMenu from "./shared/DropdownMenu";
+import PhoneInput from "./shared/PhoneInput";
+import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhoneNumber } from "../lib/phone";
 
 interface DbUser {
     id: string;
@@ -32,6 +34,7 @@ interface DbUser {
     email: string;
     role: string;
     name: string;
+    telephone?: string | null;
     must_change_password: boolean;
     is_active?: boolean | null;
     created_at: string;
@@ -57,6 +60,8 @@ export default function UserManagement() {
         prenom: "",
         nom: "",
         email: "",
+        phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
+        telephone: "",
         password: "Temp123!",
         role: "",
     });
@@ -121,10 +126,11 @@ export default function UserManagement() {
 
         try {
             const fullName = `${formData.prenom} ${formData.nom}`.trim();
+            const phoneNumber = normalizePhoneNumber(formData.phoneCountryCode, formData.telephone);
             const res = await fetch("/api/create-user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...formData, name: fullName }),
+                body: JSON.stringify({ ...formData, telephone: phoneNumber, name: fullName }),
             });
 
             const result = await res.json();
@@ -154,7 +160,16 @@ export default function UserManagement() {
                     { username: formData.username, role: formData.role, email: formData.email }
                 );
             }
-            setFormData({ username: "", prenom: "", nom: "", email: "", password: "Temp123!", role: "" });
+            setFormData({
+                username: "",
+                prenom: "",
+                nom: "",
+                email: "",
+                phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
+                telephone: "",
+                password: "Temp123!",
+                role: "",
+            });
             await loadUsers();
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
@@ -641,6 +656,16 @@ export default function UserManagement() {
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 placeholder="email@exemple.com"
                                                 required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="telephone">Téléphone</Label>
+                                            <PhoneInput
+                                                id="telephone"
+                                                countryCode={formData.phoneCountryCode}
+                                                value={formData.telephone}
+                                                onCountryCodeChange={(value) => setFormData({ ...formData, phoneCountryCode: value })}
+                                                onValueChange={(value) => setFormData({ ...formData, telephone: value })}
                                             />
                                         </div>
                                         <div className="space-y-2">

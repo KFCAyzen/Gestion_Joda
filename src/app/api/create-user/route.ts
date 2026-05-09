@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
 
 async function handleCreateUser(req: NextRequest) {
     try {
-    const { name, email, username, password, role, authEmail } = await req.json();
+    const { name, email, username, password, role, authEmail, telephone } = await req.json();
 
     if (!email || !name || !password || !username || !role) {
         return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
@@ -78,6 +78,7 @@ async function handleCreateUser(req: NextRequest) {
         username,
         name,
         role,
+        telephone: telephone || null,
         password_hash: "managed_by_supabase_auth",
         must_change_password: role === "student",
         is_active: true,

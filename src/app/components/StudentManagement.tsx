@@ -39,7 +39,9 @@ import FilterSelect from "./FilterSelect";
 import PaymentOverview from "./PaymentOverview";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import { DropdownMenu } from "./shared";
+import PhoneInput from "./shared/PhoneInput";
 import { Eye, Edit, Trash2 } from "lucide-react";
+import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhoneNumber, splitPhoneNumber } from "../lib/phone";
 
 interface Student {
     id: string;
@@ -62,6 +64,7 @@ const emptyFormData = {
     nom: "",
     prenom: "",
     email: "",
+    phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     telephone: "",
     age: "",
     sexe: "M",
@@ -208,11 +211,13 @@ export default function StudentManagement() {
         setSelectedStudent(student);
         setFeedback("", "");
         setEditingStudent(student);
+        const phone = splitPhoneNumber(student.telephone);
         setFormData({
             nom: student.nom,
             prenom: student.prenom,
             email: student.email,
-            telephone: student.telephone,
+            phoneCountryCode: phone.countryCode,
+            telephone: phone.localNumber,
             age: student.age.toString(),
             sexe: student.sexe,
             niveau: student.niveau,
@@ -228,8 +233,10 @@ export default function StudentManagement() {
         e.preventDefault();
         setFeedback("", "");
 
+        const { phoneCountryCode, ...rawFormData } = formData;
         const studentData = {
-            ...formData,
+            ...rawFormData,
+            telephone: normalizePhoneNumber(phoneCountryCode, formData.telephone),
             age: parseInt(formData.age, 10) || 0,
         };
 
@@ -770,10 +777,12 @@ export default function StudentManagement() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="telephone">Téléphone *</Label>
-                                            <Input
+                                            <PhoneInput
                                                 id="telephone"
+                                                countryCode={formData.phoneCountryCode}
                                                 value={formData.telephone}
-                                                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                                                onCountryCodeChange={(value) => setFormData({ ...formData, phoneCountryCode: value })}
+                                                onValueChange={(value) => setFormData({ ...formData, telephone: value })}
                                                 required
                                             />
                                         </div>
