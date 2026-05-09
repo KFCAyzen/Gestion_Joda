@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
 import { calculatePenalty } from "../utils/penaltyCalculator";
+import { MONTANTS_MANDARIN, MONTANTS_ANGLAIS } from "../types/joda";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +29,8 @@ import {
 } from "@/components/ui/table";
 
 const COURSE_PRICES: Record<string, number> = {
-    mandarin: 121000,
-    anglais: 91000,
+    mandarin: MONTANTS_MANDARIN.TOTAL,
+    anglais: MONTANTS_ANGLAIS.TOTAL,
 };
 
 const COURSE_LABELS: Record<string, string> = {
@@ -37,11 +38,27 @@ const COURSE_LABELS: Record<string, string> = {
     anglais: "Anglais",
 };
 
+const COURSE_TRANCHES = {
+    mandarin: [
+        { tranche: 1, label: "Inscription", montant: MONTANTS_MANDARIN.INSCRIPTION },
+        { tranche: 2, label: "Livre", montant: MONTANTS_MANDARIN.LIVRE },
+        { tranche: 3, label: "1re tranche", montant: MONTANTS_MANDARIN.TRANCHE_1 },
+        { tranche: 4, label: "2e tranche", montant: MONTANTS_MANDARIN.TRANCHE_2 },
+    ],
+    anglais: [
+        { tranche: 1, label: "Inscription", montant: MONTANTS_ANGLAIS.INSCRIPTION },
+        { tranche: 2, label: "Livre", montant: MONTANTS_ANGLAIS.LIVRE },
+        { tranche: 3, label: "1re tranche", montant: MONTANTS_ANGLAIS.TRANCHE_1 },
+        { tranche: 4, label: "2e tranche", montant: MONTANTS_ANGLAIS.TRANCHE_2 },
+    ],
+} as const;
+
 
 interface CoursePayment {
     id: string;
     student_id: string;
     type: string;
+    tranche: number | null;
     montant: number;
     status: string;
     date_limite: string;
@@ -127,15 +144,19 @@ export default function CoursLangues() {
                 return;
             }
 
-            // Création du paiement associé
-            const { error: payError } = await supabase.from("payments").insert({
-                student_id: formData.studentId,
-                type: formData.type,
-                montant: COURSE_PRICES[formData.type],
-                status: "attente",
-                date_limite: formData.dateLimit,
-                penalites: 0,
-            });
+            // Création des 4 tranches de paiement
+            const tranches = COURSE_TRANCHES[formData.type as keyof typeof COURSE_TRANCHES];
+            const { error: payError } = await supabase.from("payments").insert(
+                tranches.map(t => ({
+                    student_id: formData.studentId,
+                    type: formData.type,
+                    tranche: t.tranche,
+                    montant: t.montant,
+                    status: "attente",
+                    date_limite: formData.dateLimit,
+                    penalites: 0,
+                }))
+            );
 
             if (payError) {
                 // Rollback : supprimer l'inscription créée pour rester cohérent
@@ -173,13 +194,15 @@ export default function CoursLangues() {
         await loadData();
     };
 
+    // Count enrollments (distinct student+type pairs) not individual tranches
+    const enrollments = [...new Set(payments.map(p => `${p.student_id}__${p.type}`))];
     const stats = {
-        total: payments.length,
+        total: enrollments.length,
         paid: payments.filter(p => p.status === "paye").length,
         pending: payments.filter(p => p.status === "attente").length,
         late: payments.filter(p => p.status === "retard").length,
-        mandarin: payments.filter(p => p.type === "mandarin").length,
-        anglais: payments.filter(p => p.type === "anglais").length,
+        mandarin: [...new Set(payments.filter(p => p.type === "mandarin").map(p => p.student_id))].length,
+        anglais: [...new Set(payments.filter(p => p.type === "anglais").map(p => p.student_id))].length,
     };
 
     const getStatusVariant = (status: string) => {
@@ -308,6 +331,7 @@ export default function CoursLangues() {
                                     <TableRow>
                                         <TableHead>Étudiant</TableHead>
                                         <TableHead>Cours</TableHead>
+                                        <TableHead>Tranche</TableHead>
                                         <TableHead>Montant</TableHead>
                                         <TableHead>Pénalité</TableHead>
                                         <TableHead>Date limite</TableHead>
@@ -324,6 +348,11 @@ export default function CoursLangues() {
                                                     {getStudentName(payment.student_id)}
                                                 </TableCell>
                                                 <TableCell>{COURSE_LABELS[payment.type] ?? payment.type}</TableCell>
+                                                <TableCell className="text-slate-500">
+                                                    {payment.tranche
+                                                        ? `T${payment.tranche} — ${COURSE_TRANCHES[payment.type as keyof typeof COURSE_TRANCHES]?.find(t => t.tranche === payment.tranche)?.label ?? ""}`
+                                                        : "—"}
+                                                </TableCell>
                                                 <TableCell>
                                                     <div>{formatPrice(payment.montant)}</div>
                                                     {penalty > 0 && (

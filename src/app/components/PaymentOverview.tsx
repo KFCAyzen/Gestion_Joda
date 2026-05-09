@@ -166,7 +166,31 @@ function computeTrancheState(payment: Payment | undefined, serviceType: string) 
     };
 }
 
-function getExpectedServices(choix: string, langue: string): Service[] {
+const MANDARIN_SERVICE: Service = {
+    type: "mandarin",
+    label: "Cours de Mandarin",
+    total: MONTANTS_MANDARIN.TOTAL,
+    tranches: [
+        { tranche: 1, label: "Inscription", montant: MONTANTS_MANDARIN.INSCRIPTION },
+        { tranche: 2, label: "Livre", montant: MONTANTS_MANDARIN.LIVRE },
+        { tranche: 3, label: "1re tranche de cours", montant: MONTANTS_MANDARIN.TRANCHE_1 },
+        { tranche: 4, label: "2e tranche de cours", montant: MONTANTS_MANDARIN.TRANCHE_2 },
+    ],
+};
+
+const ANGLAIS_SERVICE: Service = {
+    type: "anglais",
+    label: "Cours d'Anglais",
+    total: MONTANTS_ANGLAIS.TOTAL,
+    tranches: [
+        { tranche: 1, label: "Inscription", montant: MONTANTS_ANGLAIS.INSCRIPTION },
+        { tranche: 2, label: "Livre", montant: MONTANTS_ANGLAIS.LIVRE },
+        { tranche: 3, label: "1re tranche de cours", montant: MONTANTS_ANGLAIS.TRANCHE_1 },
+        { tranche: 4, label: "2e tranche de cours", montant: MONTANTS_ANGLAIS.TRANCHE_2 },
+    ],
+};
+
+function getExpectedServices(choix: string, langue: string, payments: Payment[]): Service[] {
     const services: Service[] = [];
     const lc = langue.toLowerCase();
 
@@ -186,30 +210,18 @@ function getExpectedServices(choix: string, langue: string): Service[] {
 
     if (choix === "cours_seuls" || choix === "procedure_cours") {
         if (lc.includes("mandarin")) {
-            services.push({
-                type: "mandarin",
-                label: "Cours de Mandarin",
-                total: MONTANTS_MANDARIN.TOTAL,
-                tranches: [
-                    { tranche: 1, label: "Inscription", montant: MONTANTS_MANDARIN.INSCRIPTION },
-                    { tranche: 2, label: "Livre", montant: MONTANTS_MANDARIN.LIVRE },
-                    { tranche: 3, label: "1re tranche de cours", montant: MONTANTS_MANDARIN.TRANCHE_1 },
-                    { tranche: 4, label: "2e tranche de cours", montant: MONTANTS_MANDARIN.TRANCHE_2 },
-                ],
-            });
+            services.push(MANDARIN_SERVICE);
         } else if (lc.includes("anglais")) {
-            services.push({
-                type: "anglais",
-                label: "Cours d'Anglais",
-                total: MONTANTS_ANGLAIS.TOTAL,
-                tranches: [
-                    { tranche: 1, label: "Inscription", montant: MONTANTS_ANGLAIS.INSCRIPTION },
-                    { tranche: 2, label: "Livre", montant: MONTANTS_ANGLAIS.LIVRE },
-                    { tranche: 3, label: "1re tranche de cours", montant: MONTANTS_ANGLAIS.TRANCHE_1 },
-                    { tranche: 4, label: "2e tranche de cours", montant: MONTANTS_ANGLAIS.TRANCHE_2 },
-                ],
-            });
+            services.push(ANGLAIS_SERVICE);
         }
+    }
+
+    // Add course services detected from actual payments (e.g. enrolled via CoursLangues)
+    if (payments.some(p => p.type === "mandarin") && !services.some(s => s.type === "mandarin")) {
+        services.push(MANDARIN_SERVICE);
+    }
+    if (payments.some(p => p.type === "anglais") && !services.some(s => s.type === "anglais")) {
+        services.push(ANGLAIS_SERVICE);
     }
 
     return services;
@@ -232,7 +244,7 @@ export default function PaymentOverview({
     onDownloadReceipt?: (payment: Payment) => void;
     onDeclarePayment?: (payment: Payment) => void;
 }) {
-    const services = useMemo(() => getExpectedServices(choix, langue), [choix, langue]);
+    const services = useMemo(() => getExpectedServices(choix, langue, payments), [choix, langue, payments]);
 
     const totalDu = services.reduce((sum, s) => sum + s.total, 0);
     const totalPenalties = useMemo(
@@ -325,13 +337,13 @@ export default function PaymentOverview({
                             <div>
                                 <p className="text-sm font-semibold text-slate-800">{service.label}</p>
                                 <p className="text-[10px] text-slate-400">
-                                    {paidCount} / {service.tranches.length} tranche{service.tranches.length > 1 ? "s" : ""} réglée{paidCount > 1 ? "s" : ""}
+                                    {paidCount}, {service.tranches.length} tranche{service.tranches.length > 1 ? "s" : ""} réglée{paidCount > 1 ? "s" : ""}
                                 </p>
                             </div>
                             <div className="text-right">
                                 <p className="text-xs font-semibold text-slate-700">{sPct}%</p>
                                 <p className="text-[10px] text-slate-400">
-                                    {sPaid.toLocaleString("fr-FR")} / {service.total.toLocaleString("fr-FR")} FCFA
+                                    {sPaid.toLocaleString("fr-FR")}, {service.total.toLocaleString("fr-FR")} FCFA
                                 </p>
                             </div>
                         </div>

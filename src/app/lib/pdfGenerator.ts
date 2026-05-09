@@ -113,17 +113,11 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   const logoX = marginL;
   const logoY = 4;
 
-  doc.setFillColor(...WHITE);
-  doc.roundedRect(logoX, logoY, logoW, logoH, 2, 2, 'F');
-
-  if (logoData) {
-    doc.addImage(logoData, 'PNG', logoX, logoY, logoW, logoH);
-  } else {
-    doc.setTextColor(...RED);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('JC', logoX + logoW / 2, logoY + logoH / 2 + 2, { align: 'center' });
-  }
+  // White "J" symbol directly on red band (no background box)
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(28);
+  doc.setFont('helvetica', 'bold');
+  doc.text('J', logoX + logoW / 2, logoY + logoH / 2 + 4.5, { align: 'center' });
 
   // ── Titre — collé au logo
   const titleX = logoX + logoW + 4; // ~34 mm
