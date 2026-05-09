@@ -106,9 +106,10 @@ async function handleCreateUser(req: NextRequest) {
     }
 
     // Upsert dans la table users (évite le conflit si l'ID existe déjà)
+    // Pour les étudiants on stocke le vrai email (pas le @students.joda.app) pour pouvoir leur envoyer des mails
     const { error: dbError } = await supabaseAdmin.from("users").upsert({
         id: data.user.id,
-        email: supabaseEmail,
+        email: role === "student" ? email : supabaseEmail,
         username,
         name,
         role,

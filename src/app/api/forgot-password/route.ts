@@ -82,27 +82,19 @@ export async function POST(req: NextRequest) {
         let recipientName = "Utilisateur";
 
         if (username) {
-            // Student flow: username → @students.joda.app auth + real email from students table
+            // Student flow: username → auth email @students.joda.app + vrai email depuis users.email
             authEmail = buildStudentAuthEmail(username);
 
             const { data: userRow } = await supabaseAdmin
                 .from("users")
-                .select("id, name")
+                .select("email, name")
                 .eq("username", username)
                 .eq("role", "student")
                 .maybeSingle();
 
-            if (!userRow) return NextResponse.json({ success: true });
+            if (!userRow?.email) return NextResponse.json({ success: true });
 
-            const { data: studentRow } = await supabaseAdmin
-                .from("students")
-                .select("email")
-                .eq("created_by", userRow.id)
-                .maybeSingle();
-
-            if (!studentRow?.email) return NextResponse.json({ success: true });
-
-            recipientEmail = studentRow.email;
+            recipientEmail = userRow.email;
             recipientName = userRow.name || username;
         } else {
             // Staff flow: email = auth email = recipient email
@@ -121,6 +113,7 @@ export async function POST(req: NextRequest) {
         const { data, error } = await supabaseAdmin.auth.admin.generateLink({
             type: "recovery",
             email: authEmail,
+            options: { redirectTo: "https://gestion-joda.vercel.app/auth/callback" },
         });
 
         if (error) {
