@@ -283,8 +283,14 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
             </div>
 
             {validationModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", backgroundColor: "rgba(15,23,42,0.25)" }}
+                >
+                    <div
+                        className="max-w-md w-full rounded-xl border border-white/30 shadow-2xl"
+                        style={{ background: "rgba(255,255,255,0.78)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+                    >
                         <div className="p-6 border-b border-gray-200">
                             <h3 className="text-lg font-semibold text-gray-900">
                                 {validationModal.status === 'valide' ? 'Valider le document' : 'Rejeter le document'}
