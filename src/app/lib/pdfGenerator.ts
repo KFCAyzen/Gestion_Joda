@@ -71,16 +71,32 @@ const formatDate = (date: string): string =>
     day: '2-digit', month: 'long', year: 'numeric',
   });
 
-async function loadLogoBase64(): Promise<string | null> {
+async function loadLogoWhiteBase64(): Promise<string | null> {
   try {
     const res = await fetch('/Logo.png');
     if (!res.ok) return null;
     const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror  = () => resolve(null);
-      reader.readAsDataURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    return await new Promise<string | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imageData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i + 3] > 0) { d[i] = 255; d[i + 1] = 255; d[i + 2] = 255; }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+      img.src = objectUrl;
     });
   } catch {
     return null;
@@ -113,11 +129,15 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   const logoX = marginL;
   const logoY = 4;
 
-  // White "J" symbol directly on red band (no background box)
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(28);
-  doc.setFont('helvetica', 'bold');
-  doc.text('J', logoX + logoW / 2, logoY + logoH / 2 + 4.5, { align: 'center' });
+  // Logo blanc directement sur le bandeau rouge
+  if (logoData) {
+    doc.addImage(logoData, 'PNG', logoX, logoY, logoW, logoH);
+  } else {
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('J', logoX + logoW / 2, logoY + logoH / 2 + 3, { align: 'center' });
+  }
 
   // ── Titre — collé au logo
   const titleX = logoX + logoW + 4; // ~34 mm
@@ -210,7 +230,7 @@ const addFooter = (doc: jsPDF) => {
 // ─── 1. Reçu de paiement ─────────────────────────────────────────────────────
 export const generatePaymentReceipt = async (receipt: PaymentReceipt): Promise<void> => {
   const doc = new jsPDF();
-  const logo = await loadLogoBase64();
+  const logo = await loadLogoWhiteBase64();
   const startY = addHeader(doc, 'REÇU DE PAIEMENT', logo);
 
   // Receipt number badge
@@ -294,7 +314,7 @@ export const generatePaymentReceipt = async (receipt: PaymentReceipt): Promise<v
 // ─── 2. Rapport comptable ────────────────────────────────────────────────────
 export const generateAccountingReport = async (report: AccountingReport): Promise<void> => {
   const doc = new jsPDF();
-  const logo = await loadLogoBase64();
+  const logo = await loadLogoWhiteBase64();
   const startY = addHeader(doc, report.title.toUpperCase(), logo);
 
   // Period
@@ -369,7 +389,7 @@ export const generateAccountingReport = async (report: AccountingReport): Promis
 // ─── 3. Rapport étudiant ─────────────────────────────────────────────────────
 export const generateStudentReport = async (report: StudentReport): Promise<void> => {
   const doc = new jsPDF();
-  const logo = await loadLogoBase64();
+  const logo = await loadLogoWhiteBase64();
   const startY = addHeader(doc, 'RAPPORT ÉTUDIANT', logo);
 
   doc.setFontSize(11);
