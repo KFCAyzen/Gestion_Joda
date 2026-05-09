@@ -90,7 +90,15 @@ async function loadLogoWhiteBase64(): Promise<string | null> {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const d = imageData.data;
         for (let i = 0; i < d.length; i += 4) {
-          if (d[i + 3] > 0) { d[i] = 255; d[i + 1] = 255; d[i + 2] = 255; }
+          if (d[i + 3] === 0) continue;
+          const brightness = (d[i] + d[i + 1] + d[i + 2]) / 3;
+          if (brightness < 30) {
+            d[i + 3] = 0;          // fond noir → transparent
+          } else if (brightness > 180) {
+            d[i] = 0; d[i + 1] = 0; d[i + 2] = 0; // texte clair → noir
+          } else {
+            d[i] = 255; d[i + 1] = 255; d[i + 2] = 255; // symbole J coloré → blanc
+          }
         }
         ctx.putImageData(imageData, 0, 0);
         resolve(canvas.toDataURL('image/png'));
