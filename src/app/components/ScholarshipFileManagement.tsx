@@ -15,6 +15,7 @@ import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { SearchBar, FilterSelect, PageHeader, LoadingState, StatsCard } from "./shared";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface ScholarshipFile {
     id: string;
@@ -43,6 +44,10 @@ export default function ScholarshipFileManagement() {
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [notes, setNotes] = useState("");
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean; title: string; description: string; onConfirm: () => void;
+    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+    const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
 
     const canDelete = user?.role === "admin" || user?.role === "super_admin";
 
@@ -134,23 +139,25 @@ export default function ScholarshipFileManagement() {
         }
     };
 
-    const deleteFile = async (fileId: string) => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer ce dossier ?")) return;
-
-        try {
-            const { error } = await supabase.from("dossier_bourses").delete().eq("id", fileId);
-
-            if (error) throw error;
-
-            showNotification("Dossier supprimé", "success");
-            if (selectedFile?.id === fileId) {
-                setSelectedFile(null);
-            }
-            await loadData();
-        } catch (error) {
-            console.error("Erreur suppression dossier:", error);
-            showNotification("Erreur lors de la suppression", "error");
-        }
+    const deleteFile = (fileId: string) => {
+        setConfirmDialog({
+            open: true,
+            title: "Supprimer ce dossier",
+            description: "Cette action est irréversible. Le dossier sera définitivement supprimé.",
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    const { error } = await supabase.from("dossier_bourses").delete().eq("id", fileId);
+                    if (error) throw error;
+                    showNotification("Dossier supprimé", "success");
+                    if (selectedFile?.id === fileId) setSelectedFile(null);
+                    await loadData();
+                } catch (error) {
+                    console.error("Erreur suppression dossier:", error);
+                    showNotification("Erreur lors de la suppression", "error");
+                }
+            },
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -441,6 +448,14 @@ export default function ScholarshipFileManagement() {
                     </div>
                 </div>
             </div>
+        <ConfirmDialog
+            isOpen={confirmDialog.open}
+            onClose={closeConfirm}
+            onConfirm={confirmDialog.onConfirm}
+            title={confirmDialog.title}
+            description={confirmDialog.description}
+            confirmLabel="Supprimer"
+        />
         </div>
     );
 }

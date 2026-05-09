@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
+import { useNotificationContext } from "../context/NotificationContext";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { compressImage, formatFileSize } from "../utils/imageCompression";
@@ -35,6 +36,7 @@ interface Props {
 
 export default function DocumentUpload({ studentId, onDocumentUploaded }: Props) {
     const supabase = createClient();
+    const { showNotification } = useNotificationContext();
     const [docs, setDocs] = useState<DocStatus[]>([]);
     const [uploading, setUploading] = useState<string | null>(null);
     const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -55,7 +57,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
         // Validation initiale du fichier
         const validation = validateFile(file);
         if (!validation.valid) {
-            alert(validation.error);
+            showNotification(validation.error || "Fichier invalide", "error");
             return;
         }
 
@@ -76,7 +78,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             // Validation finale après compression
             const finalValidation = validateFile(fileToUpload);
             if (!finalValidation.valid) {
-                alert(finalValidation.error);
+                showNotification(finalValidation.error || "Fichier invalide", "error");
                 return;
             }
 
@@ -128,7 +130,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             }
         } catch (err) {
             console.error("Erreur upload:", err);
-            alert("Erreur lors de l'upload du fichier. Veuillez réessayer.");
+            showNotification("Erreur lors de l'upload du fichier. Veuillez réessayer.", "error");
         } finally {
             setUploading(null);
         }

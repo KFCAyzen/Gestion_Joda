@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
+import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
 import Pagination from "./Pagination";
+import { getFriendlyErrorMessage } from "../lib/feedback";
 import {
     buildStudentAuthEmail,
     buildStudentUsername,
@@ -69,6 +71,7 @@ const emptyFormData = {
 
 export default function StudentManagement() {
     const { user } = useAuth();
+    const { showNotification } = useNotificationContext();
     const supabase = createClient();
     const [localUser, setLocalUser] = useState<{ id: string; role: string } | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
@@ -85,6 +88,11 @@ export default function StudentManagement() {
     const [formData, setFormData] = useState(emptyFormData);
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 20;
+
+    const setFeedback = (nextError = "", nextSuccess = "") => {
+        setSubmitError(nextError);
+        setOperationMessage(nextSuccess);
+    };
 
     useEffect(() => {
         if (typeof window === "undefined") {
@@ -116,12 +124,20 @@ export default function StudentManagement() {
                 query = query.eq("created_by", currentUser.id);
             }
 
-            const { data } = await query;
+            const { data, error } = await query;
+            if (error) {
+                throw error;
+            }
             if (data) {
                 setStudents(data);
             }
         } catch (err) {
             console.error("Erreur:", err);
+            const message = getFriendlyErrorMessage(err, {
+                fallback: "Impossible de charger la liste des etudiants pour le moment.",
+            });
+            setFeedback(message, "");
+            showNotification({ title: "Chargement des etudiants", message, type: "error" });
         } finally {
             setLoading(false);
         }
@@ -166,8 +182,7 @@ export default function StudentManagement() {
     }, [students]);
 
     const openCreateForm = () => {
-        setSubmitError("");
-        setOperationMessage("");
+        setFeedback("", "");
         setEditingStudent(null);
         setFormData(emptyFormData);
         setActiveTab("form");
@@ -175,8 +190,7 @@ export default function StudentManagement() {
 
     const openEditForm = (student: Student) => {
         setSelectedStudent(student);
-        setSubmitError("");
-        setOperationMessage("");
+        setFeedback("", "");
         setEditingStudent(student);
         setFormData({
             nom: student.nom,
@@ -196,13 +210,19 @@ export default function StudentManagement() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSubmitError("");
-        setOperationMessage("");
+        setFeedback("", "");
 
         const studentData = {
             ...formData,
             age: parseInt(formData.age, 10) || 0,
         };
+
+        if (studentData.age <= 0) {
+            const message = "Renseignez un age valide avant d'enregistrer cet etudiant.";
+            setFeedback(message, "");
+            showNotification({ title: "Age invalide", message, type: "warning" });
+            return;
+        }
 
         try {
             if (editingStudent) {
@@ -214,7 +234,11 @@ export default function StudentManagement() {
                     .single();
 
                 if (error) {
-                    setSubmitError(error.message);
+                    const message = getFriendlyErrorMessage(error, {
+                        fallback: "La fiche etudiante n'a pas pu etre mise a jour.",
+                    });
+                    setFeedback(message, "");
+                    showNotification({ title: "Modification de l'etudiant", message, type: "error" });
                     return;
                 }
 
@@ -267,7 +291,11 @@ export default function StudentManagement() {
                 .single();
 
             if (error) {
-                setSubmitError(error.message);
+                const message = getFriendlyErrorMessage(error, {
+                    fallback: "Le profil etudiant n'a pas pu etre enregistre dans la base.",
+                });
+                setFeedback(message, "");
+                showNotification({ title: "Enregistrement de l'etudiant", message, type: "error" });
                 return;
             }
 

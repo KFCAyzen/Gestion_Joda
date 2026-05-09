@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import ConfirmDialog from "./ConfirmDialog";
 import Pagination from "./Pagination";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,10 @@ export default function ApplicationManagement() {
     const { user } = useAuth();
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean; title: string; description: string; onConfirm: () => void;
+    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+    const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
     const [showForm, setShowForm] = useState(false);
     const [editingApplication, setEditingApplication] = useState<ScholarshipApplication | null>(null);
     const [applications, setApplications] = useState<ScholarshipApplication[]>([]);
@@ -253,19 +258,24 @@ export default function ApplicationManagement() {
         setShowForm(true);
     };
 
-    const deleteApplication = async (applicationId: string) => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer cette candidature ?")) return;
-
-        try {
-            const { error } = await supabase.from("dossier_bourses").delete().eq("id", applicationId);
-            if (error) throw error;
-
-            showNotification("Candidature supprimée", "success");
-            await loadData();
-        } catch (error) {
-            console.error("Erreur suppression:", error);
-            showNotification("Erreur lors de la suppression", "error");
-        }
+    const deleteApplication = (applicationId: string) => {
+        setConfirmDialog({
+            open: true,
+            title: 'Supprimer la candidature',
+            description: 'Cette candidature sera définitivement supprimée. Cette action est irréversible.',
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    const { error } = await supabase.from("dossier_bourses").delete().eq("id", applicationId);
+                    if (error) throw error;
+                    showNotification("Candidature supprimée", "success");
+                    await loadData();
+                } catch (error) {
+                    console.error("Erreur suppression:", error);
+                    showNotification("Erreur lors de la suppression", "error");
+                }
+            },
+        });
     };
 
     const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
@@ -629,6 +639,14 @@ export default function ApplicationManagement() {
                     )}
                 </CardContent>
             </Card>
+        <ConfirmDialog
+            isOpen={confirmDialog.open}
+            onClose={closeConfirm}
+            onConfirm={confirmDialog.onConfirm}
+            title={confirmDialog.title}
+            description={confirmDialog.description}
+            confirmLabel="Supprimer"
+        />
         </div>
     );
 }

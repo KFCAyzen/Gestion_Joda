@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
+import { useNotificationContext } from "../context/NotificationContext";
+import ConfirmDialog from "./ConfirmDialog";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +60,11 @@ function formatPrice(amount: number): string {
 export default function PaymentManagement() {
     const { user } = useAuth();
     const supabase = createClient();
+    const { showNotification } = useNotificationContext();
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean; title: string; description: string; onConfirm: () => void;
+    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+    const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
     const [payments, setPayments] = useState<Payment[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
@@ -126,9 +133,11 @@ export default function PaymentManagement() {
                 validated_by: user.id,
                 validated_at: new Date().toISOString(),
             }).eq('id', paymentId);
+            showNotification("Paiement soumis pour validation", "success");
             loadData();
         } catch (error) {
             console.error("Erreur soumission:", error);
+            showNotification("Erreur lors de la soumission", "error");
         }
     };
 
@@ -178,10 +187,30 @@ export default function PaymentManagement() {
                 });
             }
 
+            showNotification(isValid ? "Paiement approuvé" : "Paiement rejeté", isValid ? "success" : "error");
             loadData();
         } catch (error) {
             console.error("Erreur validation:", error);
+            showNotification("Erreur lors de la validation", "error");
         }
+    };
+
+    const confirmApprove = (paymentId: string) => {
+        setConfirmDialog({
+            open: true,
+            title: "Approuver ce paiement",
+            description: "Le paiement sera marqué comme payé et une entrée comptable sera créée automatiquement.",
+            onConfirm: async () => { closeConfirm(); await handleValidatePayment(paymentId, true); },
+        });
+    };
+
+    const confirmReject = (paymentId: string) => {
+        setConfirmDialog({
+            open: true,
+            title: "Rejeter ce paiement",
+            description: "Le paiement sera remis en statut retard.",
+            onConfirm: async () => { closeConfirm(); await handleValidatePayment(paymentId, false); },
+        });
     };
 
     const filteredPayments = payments.filter(payment => {
@@ -337,14 +366,14 @@ export default function PaymentManagement() {
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
-                                                                onClick={() => handleValidatePayment(payment.id, true)}
+                                                                onClick={() => confirmApprove(payment.id)}
                                                             >
                                                                 Approuver
                                                             </Button>
                                                             <Button
                                                                 variant="destructive"
                                                                 size="sm"
-                                                                onClick={() => handleValidatePayment(payment.id, false)}
+                                                                onClick={() => confirmReject(payment.id)}
                                                             >
                                                                 Rejeter
                                                             </Button>
@@ -356,7 +385,7 @@ export default function PaymentManagement() {
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
-                                                                onClick={() => handleValidatePayment(payment.id, true)}
+                                                                onClick={() => confirmApprove(payment.id)}
                                                             >
                                                                 Valider
                                                             </Button>
@@ -387,6 +416,14 @@ export default function PaymentManagement() {
                     </CardContent>
                 </Card>
             </div>
+        <ConfirmDialog
+            isOpen={confirmDialog.open}
+            onClose={closeConfirm}
+            onConfirm={confirmDialog.onConfirm}
+            title={confirmDialog.title}
+            description={confirmDialog.description}
+            confirmLabel="Confirmer"
+        />
         </ProtectedRoute>
     );
 }

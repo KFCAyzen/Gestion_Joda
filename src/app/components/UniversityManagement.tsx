@@ -15,6 +15,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { SearchBar, FilterSelect, DropdownMenu, PageHeader, LoadingState, EmptyState, StatusBadge, FormField } from "./shared";
+import ConfirmDialog from "./ConfirmDialog";
 import { Building2, Edit, Trash2, Power } from "lucide-react";
 
 interface University {
@@ -50,6 +51,11 @@ export default function UniversityManagement() {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [cityFilter, setCityFilter] = useState("all");
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean; title: string; description: string; onConfirm: () => void;
+    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+    const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
+
     const [formData, setFormData] = useState({
         nom: "",
         code: "",
@@ -275,11 +281,12 @@ export default function UniversityManagement() {
                                                                 ...(canDelete ? [{
                                                                     label: "Supprimer",
                                                                     icon: <Trash2 className="h-4 w-4" />,
-                                                                    onClick: () => {
-                                                                        if (confirm(`Supprimer ${u.nom} ?`)) {
-                                                                            handleDelete(u.id);
-                                                                        }
-                                                                    },
+                                                                    onClick: () => setConfirmDialog({
+                                                                        open: true,
+                                                                        title: `Supprimer ${u.nom}`,
+                                                                        description: "Cette université sera définitivement supprimée.",
+                                                                        onConfirm: () => { closeConfirm(); handleDelete(u.id); },
+                                                                    }),
                                                                     variant: "danger" as const,
                                                                 }] : []),
                                                             ]}
@@ -364,6 +371,14 @@ export default function UniversityManagement() {
                     </Card>
                 )}
             </div>
+        <ConfirmDialog
+            isOpen={confirmDialog.open}
+            onClose={closeConfirm}
+            onConfirm={confirmDialog.onConfirm}
+            title={confirmDialog.title}
+            description={confirmDialog.description}
+            confirmLabel="Supprimer"
+        />
         </ProtectedRoute>
     );
 }

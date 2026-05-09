@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
 import { createClient } from "../lib/supabase/client";
+import { getFriendlyErrorMessage } from "../lib/feedback";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Permission, DEFAULT_ROLE_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from "../types/permissions";
-import { KeyRound, Shield, Check, X } from "lucide-react";
+import { Check, KeyRound, Shield, X } from "lucide-react";
 
 interface DbUser {
     id: string;
@@ -43,6 +45,7 @@ interface UserPermission {
 
 export default function UserManagement() {
     const { user: currentUser } = useAuth();
+    const { showNotification } = useNotificationContext();
     const [activeTab, setActiveTab] = useState("users");
     const [dbUsers, setDbUsers] = useState<DbUser[]>([]);
     const [loading, setLoading] = useState(true);
@@ -62,27 +65,55 @@ export default function UserManagement() {
     const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
     const [loadingPermissions, setLoadingPermissions] = useState(false);
 
+    const setFeedback = (nextError = "", nextSuccess = "") => {
+        setError(nextError);
+        setSuccess(nextSuccess);
+    };
+
     const loadUsers = async () => {
         setLoading(true);
         try {
             const supabase = createClient();
-            const { data } = await supabase.from("users").select("*").order("created_at", { ascending: false });
-            if (data) setDbUsers(data);
+            const { data, error: usersError } = await supabase.from("users").select("*").order("created_at", { ascending: false });
+
+            if (usersError) {
+                throw usersError;
+            }
+
+            setDbUsers(data || []);
         } catch (err) {
             console.error("Erreur:", err);
+            const message = getFriendlyErrorMessage(err, {
+                fallback: "Impossible de charger la liste des utilisateurs pour le moment.",
+            });
+            setFeedback(message, "");
+            showNotification({ title: "Chargement des utilisateurs", message, type: "error" });
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        loadUsers();
+        void loadUsers();
     }, []);
 
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
-        setSuccess("");
+        setFeedback("", "");
+
+        if (!formData.role) {
+            const message = "Selectionnez un role avant de creer le compte.";
+            setFeedback(message, "");
+            showNotification({ title: "Role requis", message, type: "warning" });
+            return;
+        }
+
+        if (formData.password.trim().length < 8) {
+            const message = "Le mot de passe temporaire doit contenir au moins 8 caracteres.";
+            setFeedback(message, "");
+            showNotification({ title: "Mot de passe trop court", message, type: "warning" });
+            return;
+        }
 
         try {
             const res = await fetch("/api/create-user", {
@@ -94,15 +125,29 @@ export default function UserManagement() {
             const result = await res.json();
 
             if (!res.ok) {
-                setError(result.error || "Erreur lors de la création");
+                const message = getFriendlyErrorMessage(result.error, {
+                    fallback: "Impossible de creer cet utilisateur pour le moment.",
+                });
+                setFeedback(message, "");
+                showNotification({ title: "Creation utilisateur", message, type: "error" });
                 return;
             }
 
-            setSuccess("Utilisateur créé ! Un email avec les informations de connexion a été envoyé.");
+            const successMessage = "Utilisateur cree. Un email avec les informations de connexion a ete envoye.";
+            setFeedback("", successMessage);
+            showNotification({
+                title: "Utilisateur cree",
+                message: "Le compte a bien ete ajoute et l'utilisateur peut finaliser son acces par email.",
+                type: "success",
+            });
             setFormData({ username: "", name: "", email: "", password: "Temp123!", role: "" });
-            loadUsers();
-        } catch (err: any) {
-            setError(err.message);
+            await loadUsers();
+        } catch (err) {
+            const message = getFriendlyErrorMessage(err, {
+                fallback: "La creation de l'utilisateur a echoue. Reessayez dans un instant.",
+            });
+            setFeedback(message, "");
+            showNotification({ title: "Creation utilisateur", message, type: "error" });
         }
     };
 
@@ -115,10 +160,28 @@ export default function UserManagement() {
                 body: JSON.stringify({ userId }),
             });
             const result = await res.json();
-            if (!res.ok) setError(result.error || "Erreur lors de la réinitialisation");
-            else setSuccess("Email de réinitialisation envoyé avec succès.");
-        } catch (err: any) {
-            setError(err.message);
+
+            if (!res.ok) {
+                const message = getFriendlyErrorMessage(result.error, {
+                    fallback: "Impossible d'envoyer le lien de reinitialisation pour le moment.",
+                });
+                setFeedback(message, "");
+                showNotification({ title: "Reinitialisation du mot de passe", message, type: "error" });
+            } else {
+                const successMessage = "Email de reinitialisation envoye avec succes.";
+                setFeedback("", successMessage);
+                showNotification({
+                    title: "Lien envoye",
+                    message: "L'utilisateur recevra un email pour choisir un nouveau mot de passe.",
+                    type: "success",
+                });
+            }
+        } catch (err) {
+            const message = getFriendlyErrorMessage(err, {
+                fallback: "Impossible d'envoyer le lien de reinitialisation pour le moment.",
+            });
+            setFeedback(message, "");
+            showNotification({ title: "Reinitialisation du mot de passe", message, type: "error" });
         }
         setResetLoading(false);
         setUserToReset(null);
@@ -132,13 +195,29 @@ export default function UserManagement() {
                 body: JSON.stringify({ userId }),
             });
             const result = await res.json();
-            if (!res.ok) setError(result.error || "Erreur lors de la suppression");
-            else {
-                setSuccess("Utilisateur supprimé");
-                loadUsers();
+
+            if (!res.ok) {
+                const message = getFriendlyErrorMessage(result.error, {
+                    fallback: "La suppression a echoue. Verifiez qu'aucune contrainte ne bloque ce compte.",
+                });
+                setFeedback(message, "");
+                showNotification({ title: "Suppression utilisateur", message, type: "error" });
+            } else {
+                const successMessage = "Utilisateur supprime.";
+                setFeedback("", successMessage);
+                showNotification({
+                    title: "Utilisateur supprime",
+                    message: "Le compte a bien ete retire de la plateforme.",
+                    type: "success",
+                });
+                await loadUsers();
             }
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const message = getFriendlyErrorMessage(err, {
+                fallback: "La suppression a echoue. Reessayez dans un instant.",
+            });
+            setFeedback(message, "");
+            showNotification({ title: "Suppression utilisateur", message, type: "error" });
         }
         setUserToDelete(null);
     };
@@ -147,13 +226,23 @@ export default function UserManagement() {
         setLoadingPermissions(true);
         try {
             const supabase = createClient();
-            const { data } = await supabase
+            const { data, error: permissionsError } = await supabase
                 .from("user_permissions")
                 .select("*")
                 .eq("user_id", userId);
-            if (data) setUserPermissions(data);
+
+            if (permissionsError) {
+                throw permissionsError;
+            }
+
+            setUserPermissions(data || []);
         } catch (err) {
             console.error("Erreur:", err);
+            const message = getFriendlyErrorMessage(err, {
+                fallback: "Impossible de charger les permissions de cet utilisateur.",
+            });
+            setFeedback(message, "");
+            showNotification({ title: "Chargement des permissions", message, type: "error" });
         } finally {
             setLoadingPermissions(false);
         }
@@ -162,14 +251,19 @@ export default function UserManagement() {
     const togglePermission = async (userId: string, permission: Permission, currentlyGranted: boolean) => {
         try {
             const supabase = createClient();
+
             if (currentlyGranted) {
-                await supabase
+                const { error: deleteError } = await supabase
                     .from("user_permissions")
                     .delete()
                     .eq("user_id", userId)
                     .eq("permission", permission);
+
+                if (deleteError) {
+                    throw deleteError;
+                }
             } else {
-                await supabase
+                const { error: insertError } = await supabase
                     .from("user_permissions")
                     .insert({
                         user_id: userId,
@@ -177,23 +271,39 @@ export default function UserManagement() {
                         granted: true,
                         granted_by: currentUser?.id,
                     });
+
+                if (insertError) {
+                    throw insertError;
+                }
             }
-            loadUserPermissions(userId);
-            setSuccess("Permission mise à jour");
+
+            await loadUserPermissions(userId);
+            setFeedback("", "Permission mise a jour.");
+            showNotification({
+                title: "Permissions mises a jour",
+                message: currentlyGranted
+                    ? "La permission personnalisee a ete retiree."
+                    : "La permission personnalisee a ete accordee.",
+                type: "success",
+            });
             setTimeout(() => setSuccess(""), 2000);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const message = getFriendlyErrorMessage(err, {
+                fallback: "Impossible de modifier cette permission pour le moment.",
+            });
+            setFeedback(message, "");
+            showNotification({ title: "Mise a jour des permissions", message, type: "error" });
         }
     };
 
     const hasPermission = (userId: string, permission: Permission, role: string): boolean => {
-        const customPerm = userPermissions.find(p => p.user_id === userId && p.permission === permission);
+        const customPerm = userPermissions.find((entry) => entry.user_id === userId && entry.permission === permission);
         if (customPerm) return customPerm.granted;
         return DEFAULT_ROLE_PERMISSIONS[role]?.includes(permission) || false;
     };
 
     const isCustomPermission = (userId: string, permission: Permission): boolean => {
-        return userPermissions.some(p => p.user_id === userId && p.permission === permission);
+        return userPermissions.some((entry) => entry.user_id === userId && entry.permission === permission);
     };
 
     const getRoleLabel = (role: string) =>
@@ -201,19 +311,20 @@ export default function UserManagement() {
             super_admin: "Super Admin",
             admin: "Admin",
             agent: "Agent",
-            student: "Étudiant",
-        }[role] || role);
+            student: "Etudiant",
+            supervisor: "Superviseur",
+        })[role] || role;
 
     return (
         <ProtectedRoute requiredRole="admin">
             <div className="space-y-6 p-4 sm:p-6">
                 <div className="joda-surface">
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                        Administration accès
+                        Administration acces
                     </p>
                     <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Gestion des Utilisateurs</h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Administre les comptes, les rôles et les droits de la plateforme.
+                        Administre les comptes, les roles et les droits de la plateforme.
                     </p>
                 </div>
 
@@ -223,14 +334,17 @@ export default function UserManagement() {
                             {["users", "create"].map((tab) => (
                                 <button
                                     key={tab}
-                                    onClick={() => { setActiveTab(tab); setSelectedUser(null); }}
+                                    onClick={() => {
+                                        setActiveTab(tab);
+                                        setSelectedUser(null);
+                                    }}
                                     className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                                         activeTab === tab
                                             ? "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-[0_12px_28px_rgba(239,68,68,0.28)]"
                                             : "bg-white/70 text-slate-500 hover:text-slate-800"
                                     }`}
                                 >
-                                    {tab === "users" ? `Utilisateurs (${dbUsers.length})` : "Créer"}
+                                    {tab === "users" ? `Utilisateurs (${dbUsers.length})` : "Creer"}
                                 </button>
                             ))}
                         </div>
@@ -249,21 +363,21 @@ export default function UserManagement() {
                                         <TableRow>
                                             <TableHead>Nom</TableHead>
                                             <TableHead>Email</TableHead>
-                                            <TableHead>Rôle</TableHead>
+                                            <TableHead>Role</TableHead>
                                             <TableHead>Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {dbUsers.map((u) => (
-                                            <TableRow key={u.id}>
+                                        {dbUsers.map((entry) => (
+                                            <TableRow key={entry.id}>
                                                 <TableCell>
-                                                    <div className="font-medium">{u.name}</div>
-                                                    <div className="text-sm text-slate-500">@{u.username}</div>
+                                                    <div className="font-medium">{entry.name}</div>
+                                                    <div className="text-sm text-slate-500">@{entry.username}</div>
                                                 </TableCell>
-                                                <TableCell>{u.email}</TableCell>
+                                                <TableCell>{entry.email}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={u.role === "super_admin" || u.role === "admin" ? "destructive" : "default"}>
-                                                        {getRoleLabel(u.role)}
+                                                    <Badge variant={entry.role === "super_admin" || entry.role === "admin" ? "destructive" : "default"}>
+                                                        {getRoleLabel(entry.role)}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
@@ -272,25 +386,21 @@ export default function UserManagement() {
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => {
-                                                                setSelectedUser(u);
-                                                                loadUserPermissions(u.id);
+                                                                setSelectedUser(entry);
+                                                                void loadUserPermissions(entry.id);
                                                             }}
                                                         >
-                                                            <Shield className="h-4 w-4 mr-1" />
+                                                            <Shield className="mr-1 h-4 w-4" />
                                                             Permissions
                                                         </Button>
-                                                        {u.id !== currentUser?.id && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => setUserToReset(u)}
-                                                            >
-                                                                <KeyRound className="h-4 w-4 mr-1" />
-                                                                Réinit. MDP
+                                                        {entry.id !== currentUser?.id && (
+                                                            <Button variant="outline" size="sm" onClick={() => setUserToReset(entry)}>
+                                                                <KeyRound className="mr-1 h-4 w-4" />
+                                                                Reinit. MDP
                                                             </Button>
                                                         )}
-                                                        {currentUser?.role === "super_admin" && u.id !== currentUser.id && (
-                                                            <Button variant="destructive" size="sm" onClick={() => setUserToDelete(u.id)}>
+                                                        {currentUser?.role === "super_admin" && entry.id !== currentUser.id && (
+                                                            <Button variant="destructive" size="sm" onClick={() => setUserToDelete(entry.id)}>
                                                                 Supprimer
                                                             </Button>
                                                         )}
@@ -308,7 +418,7 @@ export default function UserManagement() {
                                     <div>
                                         <h3 className="text-lg font-semibold">{selectedUser.name}</h3>
                                         <p className="text-sm text-slate-500">
-                                            Rôle: {getRoleLabel(selectedUser.role)} • @{selectedUser.username}
+                                            Role: {getRoleLabel(selectedUser.role)} - @{selectedUser.username}
                                         </p>
                                     </div>
                                     <Button variant="outline" onClick={() => setSelectedUser(null)}>
@@ -331,28 +441,30 @@ export default function UserManagement() {
                                                             const granted = hasPermission(selectedUser.id, perm as Permission, selectedUser.role);
                                                             const isCustom = isCustomPermission(selectedUser.id, perm as Permission);
                                                             const isDefault = DEFAULT_ROLE_PERMISSIONS[selectedUser.role]?.includes(perm as Permission);
-                                                            
+
                                                             return (
                                                                 <div key={perm} className="flex items-center justify-between rounded-lg border border-slate-200 p-3">
                                                                     <div className="flex items-center gap-3">
                                                                         <Checkbox
                                                                             checked={granted}
-                                                                            onCheckedChange={() => togglePermission(selectedUser.id, perm as Permission, granted)}
+                                                                            onCheckedChange={() =>
+                                                                                void togglePermission(selectedUser.id, perm as Permission, granted)
+                                                                            }
                                                                         />
                                                                         <div>
-                                                                            <div className="font-medium text-sm">{PERMISSION_LABELS[perm as Permission]}</div>
+                                                                            <div className="text-sm font-medium">{PERMISSION_LABELS[perm as Permission]}</div>
                                                                             <div className="text-xs text-slate-500">{perm}</div>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
                                                                         {isCustom && (
                                                                             <Badge variant="outline" className="text-xs">
-                                                                                Personnalisé
+                                                                                Personnalise
                                                                             </Badge>
                                                                         )}
                                                                         {isDefault && !isCustom && (
                                                                             <Badge variant="secondary" className="text-xs">
-                                                                                Par défaut
+                                                                                Par defaut
                                                                             </Badge>
                                                                         )}
                                                                         {granted ? (
@@ -373,12 +485,10 @@ export default function UserManagement() {
                             </div>
                         )}
 
-
-
                         {activeTab === "create" && (
                             <Card className="joda-surface-muted max-w-lg border-0 shadow-none">
                                 <CardHeader>
-                                    <CardTitle>Créer un nouvel utilisateur</CardTitle>
+                                    <CardTitle>Creer un nouvel utilisateur</CardTitle>
                                     <CardDescription>L'utilisateur recevra un email pour confirmer son compte.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -399,7 +509,7 @@ export default function UserManagement() {
                                                 id="name"
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                placeholder="Nom Prénom"
+                                                placeholder="Nom Prenom"
                                                 required
                                             />
                                         </div>
@@ -415,13 +525,13 @@ export default function UserManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="role">Rôle *</Label>
-                                            <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v || "" })} required>
+                                            <Label htmlFor="role">Role *</Label>
+                                            <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v || "" })}>
                                                 <SelectTrigger className={!formData.role ? "text-slate-400" : ""}>
-                                                    <SelectValue placeholder="Sélectionner un rôle" />
+                                                    <SelectValue placeholder="Selectionner un role" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="student">Étudiant</SelectItem>
+                                                    <SelectItem value="student">Etudiant</SelectItem>
                                                     <SelectItem value="agent">Agent</SelectItem>
                                                     {currentUser?.role === "super_admin" && (
                                                         <>
@@ -443,11 +553,11 @@ export default function UserManagement() {
                                                 required
                                             />
                                             <p className="text-xs text-slate-500">
-                                                L'utilisateur devra changer son mot de passe à la première connexion.
+                                                L'utilisateur devra changer son mot de passe a la premiere connexion.
                                             </p>
                                         </div>
                                         <Button type="submit" className="w-full">
-                                            Créer l'utilisateur
+                                            Creer l'utilisateur
                                         </Button>
                                     </form>
                                 </CardContent>
@@ -463,22 +573,22 @@ export default function UserManagement() {
                                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
                                     <KeyRound className="h-5 w-5 text-amber-600" />
                                 </div>
-                                <h3 className="text-lg font-semibold">Réinitialiser le mot de passe</h3>
+                                <h3 className="text-lg font-semibold">Reinitialiser le mot de passe</h3>
                             </div>
                             <p className="mb-1 text-sm text-slate-700">
-                                Un email de réinitialisation sera envoyé à <strong>{userToReset.name}</strong>.
+                                Un email de reinitialisation sera envoye a <strong>{userToReset.name}</strong>.
                             </p>
                             <p className="mb-6 text-xs text-slate-500">
-                                L'utilisateur recevra un lien valable 24 h pour définir un nouveau mot de passe.
+                                L'utilisateur recevra un lien valable 24 h pour definir un nouveau mot de passe.
                             </p>
                             <div className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => setUserToReset(null)} disabled={resetLoading}>
                                     Annuler
                                 </Button>
                                 <Button
-                                    onClick={() => handleResetPassword(userToReset.id)}
+                                    onClick={() => void handleResetPassword(userToReset.id)}
                                     disabled={resetLoading}
-                                    className="bg-amber-500 hover:bg-amber-600 text-white"
+                                    className="bg-amber-500 text-white hover:bg-amber-600"
                                 >
                                     {resetLoading ? "Envoi..." : "Envoyer le lien"}
                                 </Button>
@@ -493,8 +603,12 @@ export default function UserManagement() {
                             <h3 className="mb-4 text-lg font-semibold">Confirmer la suppression</h3>
                             <p className="mb-4">Voulez-vous supprimer cet utilisateur ?</p>
                             <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setUserToDelete(null)}>Annuler</Button>
-                                <Button variant="destructive" onClick={() => handleDeleteUser(userToDelete)}>Supprimer</Button>
+                                <Button variant="outline" onClick={() => setUserToDelete(null)}>
+                                    Annuler
+                                </Button>
+                                <Button variant="destructive" onClick={() => void handleDeleteUser(userToDelete)}>
+                                    Supprimer
+                                </Button>
                             </div>
                         </div>
                     </div>
