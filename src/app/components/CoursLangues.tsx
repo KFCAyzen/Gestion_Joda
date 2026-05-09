@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { MONTANTS_MANDARIN, MONTANTS_ANGLAIS } from "../types/joda";
@@ -166,6 +167,15 @@ export default function CoursLangues() {
             }
 
             showNotification(`Inscription au cours de ${COURSE_LABELS[formData.type]} enregistrée`, "success");
+            if (user) {
+                const s = students.find(st => st.id === formData.studentId);
+                const sName = s ? `${s.nom} ${s.prenom}` : formData.studentId;
+                await logActivity(
+                    user.id, (user as any).name || user.id, (user as any).role || "agent",
+                    "payment_create", "cours_langues", coursRow.id,
+                    `Inscription ${COURSE_LABELS[formData.type]} — ${sName}`
+                );
+            }
             setShowForm(false);
             setFormData({
                 studentId: "",

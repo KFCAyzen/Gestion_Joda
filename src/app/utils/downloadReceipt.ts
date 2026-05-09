@@ -180,7 +180,7 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
 
   <div class="amount-section">
     <div class="amount-title">MONTANT PAYÉ</div>
-    <div class="amount-value">${formatPrice(payment.montant.toString())}</div>
+    <div class="amount-value">${Math.round(payment.montant).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')} FCFA</div>
     <div style="font-size:14px;color:#666;margin-top:10px;">(${numberToWords(payment.montant)} francs CFA)</div>
   </div>
 

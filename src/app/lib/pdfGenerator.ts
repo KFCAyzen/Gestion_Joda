@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 
 // ─── Company info ────────────────────────────────────────────────────────────
 const COMPANY = {
-  name:    'JODA COMPANY',
+  name:    'ODA COMPANY',
   tagline: "Gestion des bourses d'études en Chine",
   phone:   '+237 6 59 19 92 16',
   website: 'joda-company.com',
@@ -64,7 +64,7 @@ interface StudentReport {
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 const formatCurrency = (amount: number): string =>
-  new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(amount) + ' FCFA';
+  Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' FCFA';
 
 const formatDate = (date: string): string =>
   new Date(date).toLocaleDateString('fr-FR', {
@@ -102,22 +102,56 @@ async function loadLogoWhiteBase64(): Promise<string | null> {
         }
         ctx.putImageData(imageData, 0, 0);
 
-        // Rogne les colonnes entièrement transparentes pour coller symbole et texte
-        const trimData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        let minX = canvas.width, maxX = -1;
-        for (let y = 0; y < canvas.height; y++) {
-          for (let x = 0; x < canvas.width; x++) {
-            if (trimData[(y * canvas.width + x) * 4 + 3] > 0) {
-              if (x < minX) minX = x;
-              if (x > maxX) maxX = x;
+        // Supprime les composantes connexes mineures (icône interne du J)
+        const w = canvas.width, h = canvas.height;
+        const px = ctx.getImageData(0, 0, w, h);
+        const pxd = px.data;
+        const visited  = new Uint8Array(w * h);
+        const labels   = new Int32Array(w * h);
+        const compSizes = new Map<number, number>();
+        let nextId = 1;
+        for (let i = 0; i < w * h; i++) {
+          if (visited[i] || pxd[i * 4 + 3] === 0) continue;
+          const id = nextId++;
+          let size = 0;
+          const stack = [i];
+          visited[i] = 1;
+          while (stack.length) {
+            const cur = stack.pop()!;
+            labels[cur] = id; size++;
+            const x = cur % w, y = (cur / w) | 0;
+            if (x > 0   && !visited[cur-1] && pxd[(cur-1)*4+3] > 0) { visited[cur-1] = 1; stack.push(cur-1); }
+            if (x < w-1 && !visited[cur+1] && pxd[(cur+1)*4+3] > 0) { visited[cur+1] = 1; stack.push(cur+1); }
+            if (y > 0   && !visited[cur-w] && pxd[(cur-w)*4+3] > 0) { visited[cur-w] = 1; stack.push(cur-w); }
+            if (y < h-1 && !visited[cur+w] && pxd[(cur+w)*4+3] > 0) { visited[cur+w] = 1; stack.push(cur+w); }
+          }
+          compSizes.set(id, size);
+        }
+        let largestId = 0, largestSize = 0;
+        for (const [id, size] of compSizes) {
+          if (size > largestSize) { largestSize = size; largestId = id; }
+        }
+        for (let i = 0; i < w * h; i++) {
+          if (labels[i] > 0 && labels[i] !== largestId) pxd[i * 4 + 3] = 0;
+        }
+        ctx.putImageData(px, 0, 0);
+
+        // Rogne les bords transparents
+        const trimData = ctx.getImageData(0, 0, w, h).data;
+        let minX = w, maxX = -1, minY = h, maxY = -1;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            if (trimData[(y * w + x) * 4 + 3] > 0) {
+              if (x < minX) minX = x; if (x > maxX) maxX = x;
+              if (y < minY) minY = y; if (y > maxY) maxY = y;
             }
           }
         }
         if (minX <= maxX) {
           const trim = document.createElement('canvas');
           trim.width  = maxX - minX + 1;
-          trim.height = canvas.height;
-          trim.getContext('2d')!.drawImage(canvas, minX, 0, trim.width, canvas.height, 0, 0, trim.width, canvas.height);
+          trim.height = maxY - minY + 1;
+          trim.getContext('2d')!.drawImage(canvas, minX, minY, trim.width, trim.height, 0, 0, trim.width, trim.height);
           resolve(trim.toDataURL('image/png'));
         } else {
           resolve(canvas.toDataURL('image/png'));
@@ -182,6 +216,15 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   doc.setFont('helvetica', 'italic');
   doc.text(COMPANY.tagline, titleX, 17.5);
 
+  // ── Email + Adresse — côté droit, alignés avec le titre (au-dessus du séparateur)
+  const rightCol = 118;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...DARK);
+  doc.text(`E-mail  : ${COMPANY.email}`,   rightCol, 12);
+  doc.setFontSize(7);
+  doc.text(`Adresse : ${COMPANY.address}`, rightCol, 18);
+
   // ── Séparateur pleine largeur
   doc.setDrawColor(...WHITE);
   doc.setLineWidth(0.25);
@@ -189,23 +232,15 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   doc.line(marginL, 21, pageW - marginR, 21);
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
-  // ── Infos de contact — pleine largeur, 2 colonnes
-  const col2X = marginL + (pageW - marginL - marginR) / 2; // ~106 mm
-  const lh = 5;
-  let cy = 26.5;
-
+  // ── Tel / Web / NUI — une seule ligne pleine largeur sous le séparateur
+  const colW = (pageW - marginL - marginR) / 3;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...DARK);
-
-  doc.text(`Tel.    : ${COMPANY.phone}`,   marginL, cy);
-  doc.text(`E-mail  : ${COMPANY.email}`,   col2X,   cy);
-  cy += lh;
-  doc.text(`Web     : ${COMPANY.website}`, marginL, cy);
-  doc.text(`Adresse : ${COMPANY.address}`, col2X,   cy);
-  cy += lh;
+  doc.text(`Tel.    : ${COMPANY.phone}`,   marginL,              32);
+  doc.text(`Web     : ${COMPANY.website}`, marginL + colW,       32);
   doc.setFontSize(7);
-  doc.text(`${COMPANY.nui}`, marginL, cy);
+  doc.text(`${COMPANY.nui}`,              marginL + colW * 2,   32);
 
   // ── Titre du document — sous le bandeau
   const titleY = headerH + 11;

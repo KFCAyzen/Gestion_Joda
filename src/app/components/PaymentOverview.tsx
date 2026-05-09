@@ -337,7 +337,7 @@ export default function PaymentOverview({
                             <div>
                                 <p className="text-sm font-semibold text-slate-800">{service.label}</p>
                                 <p className="text-[10px] text-slate-400">
-                                    {paidCount}, {service.tranches.length} tranche{service.tranches.length > 1 ? "s" : ""} réglée{paidCount > 1 ? "s" : ""}
+                                    {paidCount} / {service.tranches.length} tranche{service.tranches.length > 1 ? "s" : ""} réglée{paidCount > 1 ? "s" : ""}
                                 </p>
                             </div>
                             <div className="text-right">
