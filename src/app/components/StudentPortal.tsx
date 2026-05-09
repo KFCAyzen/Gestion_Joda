@@ -26,6 +26,7 @@ interface Payment {
     id: string;
     student_id: string;
     type: string;
+    tranche: number | null;
     montant: number;
     status: string;
     date_limite: string;
@@ -96,6 +97,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [studentChoix, setStudentChoix] = useState<string>("");
     const [studentLangue, setStudentLangue] = useState<string>("");
     const [studentInfo, setStudentInfo] = useState<ReceiptStudent | null>(null);
+    const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
     const load = useCallback(async () => {
         setLoading(true);
         try {
@@ -174,6 +176,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     }
 
     return (
+        <>
         <div className="min-h-screen app-shell">
             <header className="glass-header border-b border-white/70">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
@@ -293,7 +296,11 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <CardContent>
                                     <div className="space-y-3">
                                         {payments.map((payment) => (
-                                            <div key={payment.id} className="joda-surface-muted flex items-center justify-between p-4">
+                                            <button
+                                                key={payment.id}
+                                                className="joda-surface-muted flex w-full items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors"
+                                                onClick={() => setDetailPayment(payment)}
+                                            >
                                                 <div>
                                                     <p className="font-medium capitalize">{payment.type}</p>
                                                     <p className="text-sm text-gray-500">
@@ -304,7 +311,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                     <p className="font-bold text-red-600">{formatMontant(payment.montant)}</p>
                                                     <Badge className={STATUS_COLORS[payment.status]}>{getPaymentStatusLabel(payment.status)}</Badge>
                                                 </div>
-                                            </div>
+                                            </button>
                                         ))}
                                     </div>
                                 </CardContent>
@@ -345,5 +352,38 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 {view === "notifications" && <StudentNotifications user={user} />}
             </main>
         </div>
+
+        {/* Modal détails paiement étudiant */}
+        {detailPayment && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Détails du paiement</h3>
+                        <button onClick={() => setDetailPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                    </div>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Service</span><span className="font-medium capitalize">{detailPayment.type}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Montant</span><span className="font-bold text-red-600">{formatMontant(detailPayment.montant)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Statut</span>
+                            <Badge className={STATUS_COLORS[detailPayment.status]}>{getPaymentStatusLabel(detailPayment.status)}</Badge>
+                        </div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Date limite</span><span className="font-medium">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString("fr-FR") : "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Date paiement</span><span className="font-medium">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString("fr-FR") : "—"}</span></div>
+                    </div>
+                    <div className="mt-5 flex gap-2">
+                        {detailPayment.status === "paye" && studentInfo && (
+                            <button
+                                onClick={() => downloadReceipt(detailPayment as any, studentInfo)}
+                                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                            >
+                                Télécharger reçu
+                            </button>
+                        )}
+                        <button onClick={() => setDetailPayment(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }

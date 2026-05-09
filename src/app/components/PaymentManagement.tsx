@@ -7,6 +7,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { logActivity } from "../utils/activityLogger";
+import { printThermalReceipt } from "../utils/thermalReceipt";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,10 @@ export default function PaymentManagement() {
     const [loading, setLoading] = useState(true);
     const [selectedStudent, setSelectedStudent] = useState<string | "">("");
     const [filterStatus, setFilterStatus] = useState<string>("all");
+    const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
+    const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+    const [editForm, setEditForm] = useState({ montant: "", date_limite: "", type: "", tranche: "" });
+    const [saving, setSaving] = useState(false);
 
     const loadData = async () => {
         setLoading(true);
@@ -172,17 +177,15 @@ export default function PaymentManagement() {
             }).eq('id', paymentId);
 
             // 3. Si validé, créer une entrée comptable automatiquement
+            const typeEntree = payment.type === 'mandarin' || payment.type === 'anglais'
+                ? 'paiement_cours'
+                : 'paiement_procedure';
+            const studentName = payment.students
+                ? `${payment.students.nom} ${payment.students.prenom}`
+                : 'Étudiant';
+            const description = `Paiement ${getTypeLabel(payment.type)} - Tranche ${payment.tranche || 'N/A'} - ${studentName}`;
+
             if (isValid) {
-                const typeEntree = payment.type === 'mandarin' || payment.type === 'anglais' 
-                    ? 'paiement_cours' 
-                    : 'paiement_procedure';
-
-                const studentName = payment.students 
-                    ? `${payment.students.nom} ${payment.students.prenom}` 
-                    : 'Étudiant';
-
-                const description = `Paiement ${getTypeLabel(payment.type)} - Tranche ${payment.tranche || 'N/A'} - ${studentName}`;
-
                 await supabase.from('entrees_comptables').insert({
                     montant: payment.montant,
                     date: new Date().toISOString(),
@@ -216,6 +219,58 @@ export default function PaymentManagement() {
             console.error("Erreur validation:", error);
             showNotification("Erreur lors de la validation", "error");
         }
+    };
+
+    const openEdit = (payment: Payment) => {
+        setEditingPayment(payment);
+        setEditForm({
+            montant: payment.montant.toString(),
+            date_limite: payment.date_limite ? payment.date_limite.slice(0, 10) : "",
+            type: payment.type,
+            tranche: payment.tranche?.toString() || "",
+        });
+    };
+
+    const handleUpdatePayment = async () => {
+        if (!editingPayment || !user) return;
+        setSaving(true);
+        try {
+            await supabase.from("payments").update({
+                montant: parseInt(editForm.montant, 10),
+                date_limite: editForm.date_limite || null,
+                type: editForm.type,
+                tranche: editForm.tranche ? parseInt(editForm.tranche, 10) : null,
+            }).eq("id", editingPayment.id);
+            await logActivity(
+                user.id, user.name, user.role,
+                "payment_update", "payment", editingPayment.id,
+                `Paiement modifié — ${getStudentName(editingPayment.student_id)}`,
+                { payment_id: editingPayment.id }
+            );
+            showNotification("Paiement mis à jour", "success");
+            setEditingPayment(null);
+            loadData();
+        } catch (err) {
+            showNotification("Erreur lors de la modification", "error");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handlePrintReceipt = (payment: Payment) => {
+        const student = students.find(s => s.id === payment.student_id);
+        const penalty = calculatePenalty(payment);
+        printThermalReceipt({
+            refId: payment.id,
+            date: payment.date_paiement
+                ? new Date(payment.date_paiement).toLocaleDateString("fr-FR")
+                : new Date().toLocaleDateString("fr-FR"),
+            studentName: student ? `${student.nom} ${student.prenom}` : undefined,
+            service: getTypeLabel(payment.type),
+            tranche: payment.tranche ? `${payment.tranche}` : undefined,
+            montant: payment.montant,
+            penalite: penalty > 0 ? penalty : undefined,
+        });
     };
 
     const confirmApprove = (paymentId: string) => {
@@ -372,57 +427,46 @@ export default function PaymentManagement() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {/* Agent: submit for admin validation */}
-                                                    {user?.role === "agent" && (payment.status === "attente" || payment.status === "retard") && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleSubmitForValidation(payment.id)}
-                                                        >
-                                                            Soumettre
+                                                    <div className="flex flex-wrap gap-1">
+                                                        <Button variant="ghost" size="sm" onClick={() => setDetailPayment(payment)} className="text-xs">
+                                                            Détails
                                                         </Button>
-                                                    )}
-                                                    {/* Admin: approve or reject a submission */}
-                                                    {canValidate && payment.status === "en_validation" && (
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => confirmApprove(payment.id)}
-                                                            >
-                                                                Approuver
+                                                        {canValidate && (
+                                                            <Button variant="ghost" size="sm" onClick={() => openEdit(payment)} className="text-xs">
+                                                                Modifier
                                                             </Button>
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={() => confirmReject(payment.id)}
-                                                            >
-                                                                Rejeter
+                                                        )}
+                                                        {payment.status === "paye" && (
+                                                            <Button variant="ghost" size="sm" onClick={() => handlePrintReceipt(payment)} className="text-xs text-emerald-600">
+                                                                Reçu
                                                             </Button>
-                                                        </div>
-                                                    )}
-                                                    {/* Admin: direct validation still available for attente/retard */}
-                                                    {canValidate && (payment.status === "attente" || payment.status === "retard") && (
-                                                        <div className="mt-1 flex gap-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => confirmApprove(payment.id)}
-                                                            >
+                                                        )}
+                                                        {user?.role === "agent" && (payment.status === "attente" || payment.status === "retard") && (
+                                                            <Button variant="outline" size="sm" onClick={() => handleSubmitForValidation(payment.id)} className="text-xs">
+                                                                Soumettre
+                                                            </Button>
+                                                        )}
+                                                        {canValidate && payment.status === "en_validation" && (
+                                                            <>
+                                                                <Button variant="outline" size="sm" onClick={() => confirmApprove(payment.id)} className="text-xs">
+                                                                    Approuver
+                                                                </Button>
+                                                                <Button variant="destructive" size="sm" onClick={() => confirmReject(payment.id)} className="text-xs">
+                                                                    Rejeter
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                        {canValidate && (payment.status === "attente" || payment.status === "retard") && (
+                                                            <Button variant="outline" size="sm" onClick={() => confirmApprove(payment.id)} className="text-xs">
                                                                 Valider
                                                             </Button>
-                                                        </div>
-                                                    )}
-                                                    {payment.facture_url && (
-                                                        <a
-                                                            href={payment.facture_url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-green-600 hover:text-green-900 text-sm"
-                                                        >
-                                                            Voir facture
-                                                        </a>
-                                                    )}
+                                                        )}
+                                                        {payment.facture_url && (
+                                                            <a href={payment.facture_url} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-900 text-xs underline">
+                                                                Facture
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -446,6 +490,109 @@ export default function PaymentManagement() {
             description={confirmDialog.description}
             confirmLabel="Confirmer"
         />
+
+        {/* Modal détails paiement */}
+        {detailPayment && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Détails du paiement</h3>
+                        <button onClick={() => setDetailPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                    </div>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-slate-500">Étudiant</span>
+                            <span className="font-medium">{getStudentName(detailPayment.student_id)}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-slate-500">Type</span>
+                            <span className="font-medium">{getTypeLabel(detailPayment.type)}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-slate-500">Tranche</span>
+                            <span className="font-medium">{detailPayment.tranche ?? "-"}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-slate-500">Montant</span>
+                            <span className="font-medium text-emerald-600">{formatPrice(detailPayment.montant)}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-slate-500">Pénalité</span>
+                            <span className="font-medium text-red-600">{calculatePenalty(detailPayment) > 0 ? formatPrice(calculatePenalty(detailPayment)) : "-"}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-slate-500">Date limite</span>
+                            <span className="font-medium">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString("fr-FR") : "-"}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-slate-500">Date paiement</span>
+                            <span className="font-medium">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString("fr-FR") : "-"}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-slate-500">Statut</span>
+                            <span className={`font-medium ${detailPayment.status === "paye" ? "text-emerald-600" : detailPayment.status === "retard" ? "text-red-600" : "text-amber-600"}`}>
+                                {getStatusLabel(detailPayment.status)}
+                            </span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-500">Créé le</span>
+                            <span className="font-medium">{new Date(detailPayment.created_at).toLocaleDateString("fr-FR")}</span>
+                        </div>
+                    </div>
+                    <div className="mt-5 flex gap-2">
+                        {detailPayment.status === "paye" && (
+                            <Button size="sm" onClick={() => handlePrintReceipt(detailPayment)} className="bg-emerald-600 hover:bg-emerald-700">
+                                Imprimer reçu
+                            </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => setDetailPayment(null)}>Fermer</Button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Modal modification paiement */}
+        {editingPayment && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Modifier le paiement</h3>
+                        <button onClick={() => setEditingPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                    </div>
+                    <div className="space-y-4">
+                        <div>
+                            <Label>Montant (FCFA)</Label>
+                            <Input type="number" value={editForm.montant} onChange={e => setEditForm(f => ({ ...f, montant: e.target.value }))} />
+                        </div>
+                        <div>
+                            <Label>Type</Label>
+                            <Select value={editForm.type} onValueChange={v => setEditForm(f => ({ ...f, type: v || f.type }))}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="bourse">Bourse</SelectItem>
+                                    <SelectItem value="mandarin">Cours Mandarin</SelectItem>
+                                    <SelectItem value="anglais">Cours Anglais</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Tranche</Label>
+                            <Input type="number" min="1" value={editForm.tranche} onChange={e => setEditForm(f => ({ ...f, tranche: e.target.value }))} />
+                        </div>
+                        <div>
+                            <Label>Date limite</Label>
+                            <Input type="date" value={editForm.date_limite} onChange={e => setEditForm(f => ({ ...f, date_limite: e.target.value }))} />
+                        </div>
+                    </div>
+                    <div className="mt-5 flex gap-2">
+                        <Button onClick={handleUpdatePayment} disabled={saving} style={{ backgroundColor: "#dc2626" }}>
+                            {saving ? "Enregistrement..." : "Enregistrer"}
+                        </Button>
+                        <Button variant="outline" onClick={() => setEditingPayment(null)}>Annuler</Button>
+                    </div>
+                </div>
+            </div>
+        )}
         </ProtectedRoute>
     );
 }

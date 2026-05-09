@@ -20,6 +20,7 @@ import {
 import { SearchBar, FilterSelect, PageHeader, LoadingState, ErrorMessage, StatusBadge } from "./shared";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import { logActivity } from "../utils/activityLogger";
+import { printThermalReceipt } from "../utils/thermalReceipt";
 
 interface ApplicationFee {
     id: string;
@@ -56,6 +57,10 @@ export default function ApplicationFeeManagement() {
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [detailFee, setDetailFee] = useState<ApplicationFee | null>(null);
+    const [editingFee, setEditingFee] = useState<ApplicationFee | null>(null);
+    const [editFeeForm, setEditFeeForm] = useState({ montant: "", date: "" });
+    const [savingFee, setSavingFee] = useState(false);
 
     const [formData, setFormData] = useState({
         studentId: "",
@@ -160,6 +165,41 @@ export default function ApplicationFeeManagement() {
         }
     };
 
+    const openEditFee = (fee: ApplicationFee) => {
+        setEditingFee(fee);
+        setEditFeeForm({ montant: fee.montant.toString(), date: fee.date?.slice(0, 10) || "" });
+    };
+
+    const handleUpdateFee = async () => {
+        if (!editingFee) return;
+        setSavingFee(true);
+        try {
+            const supabase = createClient();
+            await supabase.from("payments").update({
+                montant: parseInt(editFeeForm.montant, 10),
+                date_limite: editFeeForm.date || null,
+            }).eq("id", editingFee.id);
+            if (user) {
+                await logActivity(user.id, user.name, user.role, "payment_update", "payment", editingFee.id,
+                    `Paiement modifié — frais`, { payment_id: editingFee.id });
+            }
+            showNotification("Paiement mis à jour", "success");
+            setEditingFee(null);
+            await loadData();
+        } catch { showNotification("Erreur", "error"); }
+        setSavingFee(false);
+    };
+
+    const handlePrintFeeThermal = (fee: ApplicationFee, student: Student | undefined) => {
+        printThermalReceipt({
+            refId: fee.id,
+            date: fee.date ? new Date(fee.date).toLocaleDateString("fr-FR") : new Date().toLocaleDateString("fr-FR"),
+            studentName: student ? `${student.prenom} ${student.nom}` : undefined,
+            service: "Frais de candidature",
+            montant: fee.montant,
+        });
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case "paye":
@@ -199,6 +239,7 @@ export default function ApplicationFeeManagement() {
     }
 
     return (
+        <>
         <div className="space-y-6 p-4 sm:p-6 lg:p-8">
             <PageHeader
                 eyebrow="Suivi paiements"
@@ -331,6 +372,30 @@ export default function ApplicationFeeManagement() {
                                                 <StatusBadge status={fee.status} />
                                             </div>
                                         </div>
+                                        <div className="mt-3 flex gap-2">
+                                            <button
+                                                onClick={() => setDetailFee(fee)}
+                                                className="flex-1 rounded-lg border border-slate-200 bg-slate-50 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                                            >
+                                                Voir détails
+                                            </button>
+                                            {(user?.role === "admin" || user?.role === "super_admin") && (
+                                                <button
+                                                    onClick={() => openEditFee(fee)}
+                                                    className="flex-1 rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100"
+                                                >
+                                                    Modifier
+                                                </button>
+                                            )}
+                                            {fee.status === "paye" && student && (
+                                                <button
+                                                    onClick={() => handlePrintFeeThermal(fee, student)}
+                                                    className="flex-1 rounded-lg border border-emerald-200 bg-emerald-50 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                                                >
+                                                    Reçu thermique
+                                                </button>
+                                            )}
+                                        </div>
                                         {fee.status === "paye" && student && (
                                             <button
                                                 onClick={() => downloadReceipt(
@@ -364,5 +429,64 @@ export default function ApplicationFeeManagement() {
                 </CardContent>
             </Card>
         </div>
+
+        {/* Modal détails frais */}
+        {detailFee && (() => {
+            const student = students.find(s => s.id === detailFee.student_id);
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">Détails du paiement</h3>
+                            <button onClick={() => setDetailFee(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                        </div>
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Étudiant</span><span className="font-medium">{student ? `${student.prenom} ${student.nom}` : "—"}</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Montant</span><span className="font-bold text-red-600">{detailFee.montant?.toLocaleString("fr-FR")} FCFA</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Date</span><span className="font-medium">{detailFee.date ? new Date(detailFee.date).toLocaleDateString("fr-FR") : "—"}</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Type</span><span className="font-medium">{detailFee.type}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-500">Statut</span><span className={`font-medium ${detailFee.status === "paye" ? "text-emerald-600" : "text-amber-600"}`}>{getStatusLabel(detailFee.status)}</span></div>
+                        </div>
+                        <div className="mt-5 flex gap-2">
+                            {detailFee.status === "paye" && (
+                                <button onClick={() => handlePrintFeeThermal(detailFee, student)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
+                                    Imprimer reçu
+                                </button>
+                            )}
+                            <button onClick={() => setDetailFee(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600">Fermer</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        })()}
+
+        {/* Modal modification frais */}
+        {editingFee && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Modifier le paiement</h3>
+                        <button onClick={() => setEditingFee(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                    </div>
+                    <div className="space-y-4">
+                        <div>
+                            <Label style={{ color: "#dc2626" }}>Montant (FCFA)</Label>
+                            <Input type="number" value={editFeeForm.montant} onChange={e => setEditFeeForm(f => ({ ...f, montant: e.target.value }))} />
+                        </div>
+                        <div>
+                            <Label style={{ color: "#dc2626" }}>Date</Label>
+                            <Input type="date" value={editFeeForm.date} onChange={e => setEditFeeForm(f => ({ ...f, date: e.target.value }))} />
+                        </div>
+                    </div>
+                    <div className="mt-5 flex gap-2">
+                        <Button onClick={handleUpdateFee} disabled={savingFee} style={{ backgroundColor: "#dc2626" }}>
+                            {savingFee ? "Enregistrement..." : "Enregistrer"}
+                        </Button>
+                        <Button variant="outline" onClick={() => setEditingFee(null)}>Annuler</Button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }

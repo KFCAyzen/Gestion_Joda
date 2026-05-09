@@ -52,7 +52,8 @@ export default function UserManagement() {
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         username: "",
-        name: "",
+        prenom: "",
+        nom: "",
         email: "",
         password: "Temp123!",
         role: "",
@@ -117,10 +118,11 @@ export default function UserManagement() {
         }
 
         try {
+            const fullName = `${formData.prenom} ${formData.nom}`.trim();
             const res = await fetch("/api/create-user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, name: fullName }),
             });
 
             const result = await res.json();
@@ -142,14 +144,15 @@ export default function UserManagement() {
                 type: "success",
             });
             if (currentUser) {
+                const fullName = `${formData.prenom} ${formData.nom}`.trim();
                 await logActivity(
                     currentUser.id, currentUser.name, currentUser.role,
                     "user_create", "users", result.userId ?? null,
-                    `Utilisateur créé — ${formData.name} (${formData.role})`,
+                    `Utilisateur créé — ${fullName} (${formData.role})`,
                     { username: formData.username, role: formData.role, email: formData.email }
                 );
             }
-            setFormData({ username: "", name: "", email: "", password: "Temp123!", role: "" });
+            setFormData({ username: "", prenom: "", nom: "", email: "", password: "Temp123!", role: "" });
             await loadUsers();
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
@@ -529,12 +532,22 @@ export default function UserManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="name">Nom complet *</Label>
+                                            <Label htmlFor="prenom">Prénom *</Label>
                                             <Input
-                                                id="name"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                placeholder="Nom Prenom"
+                                                id="prenom"
+                                                value={formData.prenom}
+                                                onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+                                                placeholder="Prénom"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="nom">Nom *</Label>
+                                            <Input
+                                                id="nom"
+                                                value={formData.nom}
+                                                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                                                placeholder="Nom de famille"
                                                 required
                                             />
                                         </div>

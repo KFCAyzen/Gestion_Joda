@@ -25,7 +25,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search, Eye, Edit } from "lucide-react";
+import { printThermalReceipt } from "../utils/thermalReceipt";
 import { generateAccountingReport } from "../lib/pdfGenerator";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
@@ -146,6 +147,13 @@ export default function AccountingPage() {
     const [newCategory, setNewCategory] = useState({ nom: "", type: "sortie" as "entree" | "sortie" });
     const [exporting, setExporting] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [detailEntree, setDetailEntree] = useState<EntreeComptable | null>(null);
+    const [detailSortie, setDetailSortie] = useState<SortieComptable | null>(null);
+    const [editingEntree, setEditingEntree] = useState<EntreeComptable | null>(null);
+    const [editingSortie, setEditingSortie] = useState<SortieComptable | null>(null);
+    const [editEntreeForm, setEditEntreeForm] = useState({ montant: "", description: "", type: "", date: "" });
+    const [editSortieForm, setEditSortieForm] = useState({ montant: "", description: "", categorie: "", date: "" });
+    const [savingEdit, setSavingEdit] = useState(false);
 
     const CATEGORIES_SORTIES = useMemo(() => {
         const defaults = ["loyer", "salaires", "fonctionnement", "materiels", "fournitures", "transports", "communication", "partenaires", "divers"];
@@ -489,6 +497,68 @@ export default function AccountingPage() {
                     showNotification("Erreur lors de la suppression", "error");
                 }
             },
+        });
+    };
+
+    const openEditEntree = (e: EntreeComptable) => {
+        setEditingEntree(e);
+        setEditEntreeForm({ montant: e.montant.toString(), description: e.description, type: e.type, date: e.date?.slice(0, 10) || "" });
+    };
+
+    const openEditSortie = (s: SortieComptable) => {
+        setEditingSortie(s);
+        setEditSortieForm({ montant: s.montant.toString(), description: s.description, categorie: s.categorie, date: s.date?.slice(0, 10) || "" });
+    };
+
+    const handleSaveEntree = async () => {
+        if (!editingEntree) return;
+        setSavingEdit(true);
+        try {
+            await supabase.from("entrees_comptables").update({
+                montant: Number(editEntreeForm.montant),
+                description: editEntreeForm.description,
+                type: editEntreeForm.type,
+                date: editEntreeForm.date,
+            }).eq("id", editingEntree.id);
+            if (user) {
+                await logActivity(user.id, user.name, user.role, "accounting_entry", "entrees_comptables", editingEntree.id,
+                    `Entrée modifiée : ${editEntreeForm.description}`, { montant: Number(editEntreeForm.montant) });
+            }
+            showNotification("Entrée modifiée", "success");
+            setEditingEntree(null);
+            await load();
+        } catch { showNotification("Erreur", "error"); }
+        setSavingEdit(false);
+    };
+
+    const handleSaveSortie = async () => {
+        if (!editingSortie) return;
+        setSavingEdit(true);
+        try {
+            await supabase.from("sorties_comptables").update({
+                montant: Number(editSortieForm.montant),
+                description: editSortieForm.description,
+                categorie: editSortieForm.categorie,
+                date: editSortieForm.date,
+            }).eq("id", editingSortie.id);
+            if (user) {
+                await logActivity(user.id, user.name, user.role, "accounting_expense", "sorties_comptables", editingSortie.id,
+                    `Sortie modifiée : ${editSortieForm.description}`, { montant: Number(editSortieForm.montant) });
+            }
+            showNotification("Sortie modifiée", "success");
+            setEditingSortie(null);
+            await load();
+        } catch { showNotification("Erreur", "error"); }
+        setSavingEdit(false);
+    };
+
+    const handlePrintEntree = (e: EntreeComptable) => {
+        printThermalReceipt({
+            refId: e.id,
+            date: e.date ? new Date(e.date).toLocaleDateString("fr-FR") : new Date().toLocaleDateString("fr-FR"),
+            service: labelType[e.type] || e.type,
+            description: e.description,
+            montant: e.montant,
         });
     };
 
@@ -919,7 +989,7 @@ export default function AccountingPage() {
                                                     <TableHead>Description</TableHead>
                                                     <TableHead>Type</TableHead>
                                                     <TableHead className="text-right">Montant</TableHead>
-                                                    {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                                                    <TableHead className="text-right">Actions</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -929,18 +999,26 @@ export default function AccountingPage() {
                                                         <TableCell>{e.description}</TableCell>
                                                         <TableCell><Badge variant="secondary">{labelType[e.type]}</Badge></TableCell>
                                                         <TableCell className="text-right font-semibold text-emerald-600">{formatMontant(e.montant)}</TableCell>
-                                                        {isAdmin && (
-                                                            <TableCell className="text-right">
-                                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteEntree(e.id)}>
-                                                                    <Trash2 className="h-4 w-4 text-rose-500" />
+                                                        <TableCell className="text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                <Button variant="ghost" size="sm" onClick={() => setDetailEntree(e)} title="Voir détails">
+                                                                    <Eye className="h-4 w-4 text-slate-500" />
                                                                 </Button>
-                                                            </TableCell>
-                                                        )}
+                                                                <Button variant="ghost" size="sm" onClick={() => handlePrintEntree(e)} title="Imprimer reçu">
+                                                                    <FileText className="h-4 w-4 text-emerald-600" />
+                                                                </Button>
+                                                                {isAdmin && (
+                                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteEntree(e.id)}>
+                                                                        <Trash2 className="h-4 w-4 text-rose-500" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
                                                     </TableRow>
                                                 ))}
                                                 {filteredEntrees.length === 0 && (
                                                     <TableRow>
-                                                        <TableCell colSpan={isAdmin ? 5 : 4} className="py-8 text-center text-slate-400">
+                                                        <TableCell colSpan={5} className="py-8 text-center text-slate-400">
                                                             {searchTerm ? "Aucun résultat" : "Aucune entree"}
                                                         </TableCell>
                                                     </TableRow>
@@ -1055,18 +1133,23 @@ export default function AccountingPage() {
                                                             )}
                                                         </TableCell>
                                                         <TableCell className="text-right font-semibold text-rose-600">{formatMontant(s.montant)}</TableCell>
-                                                        {isAdmin && (
-                                                            <TableCell className="text-right">
-                                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteSortie(s.id)}>
-                                                                    <Trash2 className="h-4 w-4 text-rose-500" />
+                                                        <TableCell className="text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                <Button variant="ghost" size="sm" onClick={() => setDetailSortie(s)} title="Voir détails">
+                                                                    <Eye className="h-4 w-4 text-slate-500" />
                                                                 </Button>
-                                                            </TableCell>
-                                                        )}
+                                                                {isAdmin && (
+                                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteSortie(s.id)}>
+                                                                        <Trash2 className="h-4 w-4 text-rose-500" />
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
                                                     </TableRow>
                                                 ))}
                                                 {filteredSorties.length === 0 && (
                                                     <TableRow>
-                                                        <TableCell colSpan={isAdmin ? 6 : 5} className="py-8 text-center text-slate-400">
+                                                        <TableCell colSpan={6} className="py-8 text-center text-slate-400">
                                                             {searchTerm ? "Aucun résultat" : "Aucune sortie"}
                                                         </TableCell>
                                                     </TableRow>
@@ -1275,6 +1358,52 @@ export default function AccountingPage() {
             description={confirmDialog.description}
             confirmLabel="Supprimer"
         />
+
+        {/* Modal détails entrée */}
+        {detailEntree && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-emerald-700">Détails — Entrée</h3>
+                        <button onClick={() => setDetailEntree(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                    </div>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Date</span><span className="font-medium">{toDate(detailEntree.date).toLocaleDateString("fr-FR")}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Description</span><span className="font-medium text-right max-w-[60%]">{detailEntree.description}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Type</span><span className="font-medium">{labelType[detailEntree.type] || detailEntree.type}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Montant</span><span className="font-bold text-emerald-600">{formatMontant(detailEntree.montant)}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Créé le</span><span className="font-medium">{toDate(detailEntree.created_at).toLocaleDateString("fr-FR")}</span></div>
+                    </div>
+                    <div className="mt-5 flex gap-2">
+                        <Button size="sm" onClick={() => handlePrintEntree(detailEntree)} className="bg-emerald-600 hover:bg-emerald-700">Imprimer reçu</Button>
+                        <Button variant="outline" size="sm" onClick={() => setDetailEntree(null)}>Fermer</Button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Modal détails sortie */}
+        {detailSortie && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-rose-700">Détails — Sortie</h3>
+                        <button onClick={() => setDetailSortie(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                    </div>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Date</span><span className="font-medium">{toDate(detailSortie.date).toLocaleDateString("fr-FR")}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Description</span><span className="font-medium text-right max-w-[60%]">{detailSortie.description}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Catégorie</span><span className="font-medium">{labelCategorie[detailSortie.categorie] || detailSortie.categorie}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Montant</span><span className="font-bold text-rose-600">{formatMontant(detailSortie.montant)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Statut</span><span className="font-medium">{detailSortie.validated_by ? "Validé" : "En attente"}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">Créé le</span><span className="font-medium">{toDate(detailSortie.created_at).toLocaleDateString("fr-FR")}</span></div>
+                    </div>
+                    <div className="mt-5">
+                        <Button variant="outline" size="sm" onClick={() => setDetailSortie(null)}>Fermer</Button>
+                    </div>
+                </div>
+            </div>
+        )}
         </>
     );
 }
