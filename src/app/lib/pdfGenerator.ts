@@ -101,7 +101,27 @@ async function loadLogoWhiteBase64(): Promise<string | null> {
           }
         }
         ctx.putImageData(imageData, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
+
+        // Rogne les colonnes entièrement transparentes pour coller symbole et texte
+        const trimData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let minX = canvas.width, maxX = -1;
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = 0; x < canvas.width; x++) {
+            if (trimData[(y * canvas.width + x) * 4 + 3] > 0) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+            }
+          }
+        }
+        if (minX <= maxX) {
+          const trim = document.createElement('canvas');
+          trim.width  = maxX - minX + 1;
+          trim.height = canvas.height;
+          trim.getContext('2d')!.drawImage(canvas, minX, 0, trim.width, canvas.height, 0, 0, trim.width, canvas.height);
+          resolve(trim.toDataURL('image/png'));
+        } else {
+          resolve(canvas.toDataURL('image/png'));
+        }
       };
       img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
       img.src = objectUrl;
