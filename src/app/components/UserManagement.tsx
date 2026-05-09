@@ -457,7 +457,13 @@ export default function UserManagement() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant={entry.is_active === false ? "secondary" : "default"}>
+                                                    <Badge
+                                                        className={
+                                                            entry.is_active === false
+                                                                ? "bg-red-100 text-red-700 hover:bg-red-100"
+                                                                : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                                        }
+                                                    >
                                                         {entry.is_active === false ? "Désactivé" : "Actif"}
                                                     </Badge>
                                                 </TableCell>

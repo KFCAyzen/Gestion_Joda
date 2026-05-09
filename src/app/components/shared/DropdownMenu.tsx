@@ -46,7 +46,7 @@ export default function DropdownMenu({ actions }: DropdownMenuProps) {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
                     {actions.map((action, index) => (
                         <button
                             key={index}
@@ -55,7 +55,7 @@ export default function DropdownMenu({ actions }: DropdownMenuProps) {
                                 setIsOpen(false);
                             }}
                             disabled={action.disabled}
-                            className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                            className={`flex w-full items-center gap-2 px-4 py-2 text-left text-sm leading-5 transition-colors ${
                                 action.disabled
                                     ? "opacity-50 cursor-not-allowed"
                                     : action.variant === "danger"
@@ -64,7 +64,7 @@ export default function DropdownMenu({ actions }: DropdownMenuProps) {
                             }`}
                         >
                             {action.icon && <span className="flex-shrink-0">{action.icon}</span>}
-                            <span>{action.label}</span>
+                            <span className="min-w-0 flex-1 whitespace-normal break-words">{action.label}</span>
                         </button>
                     ))}
                 </div>
