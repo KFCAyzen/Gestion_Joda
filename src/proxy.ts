@@ -23,26 +23,26 @@ export async function proxy(request: NextRequest) {
         }
     );
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
     const { pathname } = request.nextUrl;
 
     const isLoginPage = pathname === '/login';
     const isApiRoute = pathname.startsWith('/api/');
+    const isAuthCallback = pathname === '/auth/callback';
 
-    // Les routes API ne sont pas protégées ici
-    if (isApiRoute) {
+    if (isApiRoute || isAuthCallback) {
         return supabaseResponse;
     }
 
     // Redirige vers /login si pas de session
-    if (!session && !isLoginPage) {
+    if (!user && !isLoginPage) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
     }
 
     // Redirige vers /tableau-de-bord si déjà connecté et sur /login
-    if (session && isLoginPage) {
+    if (user && isLoginPage) {
         return NextResponse.redirect(new URL('/tableau-de-bord', request.url));
     }
 

@@ -53,6 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         void checkCurrentUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === "SIGNED_OUT") {
+                setUser(null);
+                if (typeof window !== "undefined") {
+                    localStorage.removeItem("currentUser");
+                }
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const checkCurrentUser = async () => {

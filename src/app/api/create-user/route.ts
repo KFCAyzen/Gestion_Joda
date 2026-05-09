@@ -131,6 +131,9 @@ async function handleCreateUser(req: NextRequest) {
         const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',
             email: supabaseEmail,
+            options: {
+                redirectTo: 'https://gestion-joda.vercel.app/auth/callback',
+            },
         });
         if (linkData?.properties?.action_link) {
             setPasswordLink = linkData.properties.action_link;
