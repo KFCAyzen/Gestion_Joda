@@ -31,9 +31,12 @@ interface Document {
 const DOCUMENT_TYPES: { type: string; label: string; required: boolean }[] = [
     { type: 'passeport', label: 'Passeport', required: true },
     { type: 'casier_judiciaire', label: 'Casier judiciaire', required: true },
-    { type: 'carte_photo', label: 'Carte photo numérique', required: true },
-    { type: 'releve_bac', label: 'Relevé du Bac', required: true },
-    { type: 'diplome_bac', label: 'Diplôme du Bac', required: true }
+    { type: 'carte_photo', label: 'Photo d\'identité', required: true },
+    { type: 'releve_bac', label: 'Relevé de notes', required: true },
+    { type: 'diplome_bac', label: 'Diplôme', required: true },
+    { type: 'lettre_motivation', label: 'Lettre de motivation', required: true },
+    { type: 'lettre_recommandation', label: 'Lettre de recommandation', required: true },
+    { type: 'certificat_hsk', label: 'Certificat HSK', required: false },
 ];
 
 export default function DocumentManagement({ studentId, studentName }: DocumentManagementProps) {
