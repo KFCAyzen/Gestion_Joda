@@ -39,6 +39,13 @@
 - `ProtectedRoute.tsx` — Garde de route par rôle
 - `AuthContext.tsx` — Contexte global d'authentification
 
+### Refresh token
+- `proxy.ts` (middleware) : `getUser()` — valide le token côté serveur Supabase et déclenche le refresh automatique.
+- `AuthContext` :
+  - `checkCurrentUser()` utilise `getUser()` (non `getSession()`) pour forcer la validation.
+  - `loadUserProfile(authUserId)` : helper partagé entre init et listener.
+  - `onAuthStateChange` gère `SIGNED_OUT` (vide l'état) et `TOKEN_REFRESHED` (recharge le profil depuis `users`).
+
 ### Flows
 
 **Login admin/agent**
@@ -464,25 +471,37 @@
 ## 13. PORTAIL ÉTUDIANT
 
 ### Composants
-- `StudentPortal.tsx`
-- `student/StudentDashboard.tsx`
-- `student/StudentApplicationsList.tsx`
-- `student/StudentDocumentsList.tsx`
-- `student/StudentPaymentsList.tsx`
-- `student/StudentStatsCard.tsx`
-- `DocumentUpload.tsx` — Upload de documents avec compression automatique
+- `StudentPortal.tsx` — Shell principal (header, nav, routing entre vues)
+- `DocumentUpload.tsx` — Upload de documents avec compression automatique + bouton envoi staff
+- `StudentNotifications.tsx` — Liste des notifications étudiant (accessible via la cloche)
+- `PaymentOverview.tsx` — Synthèse des paiements
+- `ChangePasswordModal.tsx` — Modale changement mdp obligatoire (première connexion)
+
+### Navigation
+- **4 onglets** dans la nav : Tableau de bord, Paiements, Documents, Mon dossier
+- **Cloche `Bell`** dans le header avec badge rouge (compte non lus) → ouvre la vue notifications
+- Retour depuis notifications → `load()` rafraîchit le badge
 
 ### Fonctionnalités
-- Vue personnelle de l'étudiant sur son dossier
-- Suivi de ses candidatures
-- Suivi de ses paiements
+- Vue personnelle sur le dossier, paiements, documents
+- **Carte "Statut dossier"** du dashboard cliquable → navigue vers la vue dossier
+- **Vue dossier enrichie** :
+  - Statut du dossier (badge)
+  - Nom de l'université (requête `universities` sur `university_id`)
+  - Date de création
+  - Message de l'équipe (`notes_internes`)
+  - Timeline des 6 étapes avec cases cochées selon l'avancement
 - Upload de documents avec :
-  - **Compression automatique des images** (max 2 MB)
-  - **Validation stricte de taille** (max 2 MB par fichier)
+  - **Compression automatique des images** (cible 3 MB, résolution 2048px, qualité 85%)
+  - **Limite** : 10 MB par fichier
   - Formats acceptés : PDF, JPG, PNG
   - Barre de progression de complétion
   - Statut de validation par document
-- Notifications personnelles
+- **Bouton "Envoyer à l'équipe"** (visible dès qu'un document est uploadé) :
+  - Appelle `POST /api/notify-staff`
+  - Notifie tous les admin/super_admin/agent/supervisor
+  - Se réinitialise après chaque nouvel upload
+  - Passe en état "Envoyé" (vert) après succès
 
 ### Documents requis
 1. Passeport (copie des pages d'identité)
@@ -524,6 +543,7 @@
 | `/api/send-welcome` | POST | Envoie l'email de bienvenue | Service Role Key |
 | `/api/send-application` | POST | Envoie l'email de demande de documents à l'étudiant | Service Role Key |
 | `/api/validate-file` | POST | Valide un fichier côté serveur (type, taille, nom) | Service Role Key |
+| `/api/notify-staff` | POST | Notifie tous les admin/agent/supervisor qu'un étudiant a soumis ses documents | `requireAuth` (tout user connecté) |
 
 ---
 
@@ -606,15 +626,16 @@
 - **Fonction** : `compressImage(file, maxSizeMB, maxWidthOrHeight, quality)`
 - **Fonctionnalités** :
   - Compression automatique des images JPEG/PNG
-  - Redimensionnement si > 1920px
-  - Qualité ajustable (80% par défaut)
-  - Réduction récursive jusqu'à 2 MB max
+  - Redimensionnement si > 2048px
+  - Qualité : 85%
+  - Cible : 3 MB (`TARGET_COMPRESSED_SIZE_MB`)
   - Logs de compression (avant → après)
 
 ### Validation de Fichiers
 - **Fichier** : `utils/fileValidation.ts`
 - **Configuration** : `FILE_LIMITS`
-  - Taille max : 2 MB
+  - `MAX_FILE_SIZE_MB` : 10 MB (entrée brute)
+  - `TARGET_COMPRESSED_SIZE_MB` : 3 MB (cible après compression images)
   - Types MIME autorisés : PDF, JPEG, PNG
   - Extensions autorisées : .pdf, .jpg, .jpeg, .png
 - **Fonction** : `validateFile(file)` → `{ valid: boolean, error?: string }`
