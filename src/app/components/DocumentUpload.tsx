@@ -42,6 +42,8 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
     const { showNotification } = useNotificationContext();
     const [docs, setDocs] = useState<DocStatus[]>([]);
     const [uploading, setUploading] = useState<string | null>(null);
+    const [sending, setSending] = useState(false);
+    const [notifSent, setNotifSent] = useState(false);
     const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
     const loadDocs = useCallback(async () => {
@@ -118,6 +120,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
 
             await loadDocs();
             onDocumentUploaded();
+            setNotifSent(false);
 
             if (user) {
                 await logActivity(
@@ -145,6 +148,25 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             showNotification("Erreur lors de l'upload du fichier. Veuillez réessayer.", "error");
         } finally {
             setUploading(null);
+        }
+    };
+
+    const handleSendToStaff = async () => {
+        if (!studentId) return;
+        setSending(true);
+        try {
+            const res = await fetch("/api/notify-staff", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ studentId }),
+            });
+            if (!res.ok) throw new Error("Erreur serveur");
+            setNotifSent(true);
+            showNotification("Dossier envoyé à l'équipe avec succès.", "success");
+        } catch {
+            showNotification("Impossible d'envoyer le dossier. Réessayez.", "error");
+        } finally {
+            setSending(false);
         }
     };
 
@@ -189,6 +211,35 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                     )}
                 </CardContent>
             </Card>
+
+            {/* Bouton d'envoi */}
+            {docs.length > 0 && (
+                <div className={`rounded-xl border p-4 ${notifSent ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                                {notifSent ? "Dossier envoyé à l'équipe" : "Envoyer mon dossier à l'équipe"}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                {notifSent
+                                    ? "L'équipe a été notifiée et va examiner vos documents."
+                                    : "Notifie les agents et administrateurs que vos documents sont prêts pour examen."}
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleSendToStaff}
+                            disabled={sending || notifSent}
+                            className={`shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-60 ${
+                                notifSent
+                                    ? "bg-emerald-100 text-emerald-700 cursor-default"
+                                    : "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-[0_8px_20px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_28px_rgba(239,68,68,0.4)]"
+                            }`}
+                        >
+                            {sending ? "Envoi..." : notifSent ? "Envoyé" : "Envoyer"}
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Liste des documents */}
             <div className="grid gap-4 sm:grid-cols-2">
