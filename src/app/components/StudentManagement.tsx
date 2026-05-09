@@ -335,6 +335,7 @@ export default function StudentManagement() {
                 .insert({
                     ...studentData,
                     created_by: result.userId,
+                    user_id: result.userId,
                 })
                 .select()
                 .single();
@@ -390,6 +391,15 @@ export default function StudentManagement() {
             if (error) {
                 setSubmitError(error.message);
                 return;
+            }
+
+            // Supprimer le compte auth + users si le lien user_id existe
+            if ((studentToDelete as any).user_id) {
+                await fetch("/api/delete-user", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId: (studentToDelete as any).user_id }),
+                }).catch(() => {});
             }
 
             if (selectedStudent?.id === studentToDelete.id) {

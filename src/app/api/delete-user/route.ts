@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { requireRole } from "@/app/lib/auth";
+import { requireRole, AuthSession } from "@/app/lib/auth";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-async function handleDeleteUser(req: NextRequest) {
+async function handleDeleteUser(req: NextRequest, session: AuthSession) {
     try {
         const { userId } = await req.json();
 
         if (!userId) {
             return NextResponse.json({ error: "userId manquant" }, { status: 400 });
+        }
+
+        // Vérifier le rôle de la cible pour éviter qu'un admin supprime un autre admin
+        if (session.user.role === "admin") {
+            const { data: target } = await supabaseAdmin
+                .from("users")
+                .select("role")
+                .eq("id", userId)
+                .maybeSingle();
+            if (!target || !["student", "agent", "user"].includes(target.role)) {
+                return NextResponse.json({ error: "Permission insuffisante" }, { status: 403 });
+            }
         }
 
         // Supprimer de Supabase Auth (cascade sur la table users si FK configurée)
@@ -36,4 +48,4 @@ async function handleDeleteUser(req: NextRequest) {
     }
 }
 
-export const DELETE = requireRole(['super_admin'], handleDeleteUser);
+export const DELETE = requireRole(['admin', 'super_admin'], handleDeleteUser);
