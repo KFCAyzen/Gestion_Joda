@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AlertTriangle, CalendarDays, Clock3, School2, Sparkles, Trash2 } from "lucide-react";
+import { CalendarDays, Clock3, School2, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -14,8 +13,9 @@ import {
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import { getFriendlyErrorMessage } from "../lib/feedback";
 import { logActivity } from "../utils/activityLogger";
-import { SearchBar, FilterSelect, PageHeader, LoadingState, StatsCard } from "./shared";
+import { SearchBar, FilterSelect, LoadingState } from "./shared";
 import ConfirmDialog from "./ConfirmDialog";
 
 interface ScholarshipFile {
@@ -44,6 +44,9 @@ export default function ScholarshipFileManagement() {
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+    const [isSavingNotes, setIsSavingNotes] = useState(false);
+    const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
     const [notes, setNotes] = useState("");
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean; title: string; description: string; onConfirm: () => void;
@@ -85,7 +88,10 @@ export default function ScholarshipFileManagement() {
             setFiles(filesData);
         } catch (error) {
             console.error("Erreur chargement dossiers:", error);
-            showNotification("Erreur lors du chargement des dossiers", "error");
+            const message = getFriendlyErrorMessage(error, {
+                fallback: "Impossible de charger les dossiers de bourse pour le moment.",
+            });
+            showNotification({ title: "Chargement des dossiers", message, type: "error" });
         } finally {
             setIsLoading(false);
         }
@@ -102,6 +108,10 @@ export default function ScholarshipFileManagement() {
     }, [selectedFile]);
 
     const updateStatus = async (fileId: string, newStatus: string) => {
+        const file = files.find((f) => f.id === fileId);
+        if (file?.status === newStatus) return;
+
+        setUpdatingStatusId(fileId);
         try {
             const { error } = await supabase
                 .from("dossier_bourses")
@@ -111,7 +121,6 @@ export default function ScholarshipFileManagement() {
             if (error) throw error;
 
             if (user) {
-                const file = files.find(f => f.id === fileId);
                 await logActivity(
                     user.id, user.name, user.role,
                     "dossier_status_change", "dossier_bourses", fileId,
@@ -120,20 +129,33 @@ export default function ScholarshipFileManagement() {
                 );
             }
 
-            showNotification("Statut mis à jour", "success");
+            showNotification({
+                title: "Statut mis à jour",
+                message: `${file?.studentName || "Le dossier"} est maintenant "${getStatusText(newStatus)}".`,
+                type: "success",
+            });
             await loadData();
             if (selectedFile?.id === fileId) {
                 setSelectedFile({ ...selectedFile, status: newStatus });
             }
         } catch (error) {
             console.error("Erreur mise à jour statut:", error);
-            showNotification("Erreur lors de la mise à jour", "error");
+            showNotification({
+                title: "Mise à jour du statut",
+                message: getFriendlyErrorMessage(error, {
+                    fallback: "Le statut du dossier n'a pas pu être mis à jour. Réessayez dans un instant.",
+                }),
+                type: "error",
+            });
+        } finally {
+            setUpdatingStatusId(null);
         }
     };
 
     const updateNotes = async () => {
         if (!selectedFile) return;
 
+        setIsSavingNotes(true);
         try {
             const { error } = await supabase
                 .from("dossier_bourses")
@@ -151,11 +173,24 @@ export default function ScholarshipFileManagement() {
                 );
             }
 
-            showNotification("Notes sauvegardées", "success");
+            showNotification({
+                title: "Notes sauvegardées",
+                message: `Les notes du dossier de ${selectedFile.studentName} ont été mises à jour.`,
+                type: "success",
+            });
             await loadData();
+            setSelectedFile({ ...selectedFile, notes_internes: notes, updated_at: new Date().toISOString() });
         } catch (error) {
             console.error("Erreur sauvegarde notes:", error);
-            showNotification("Erreur lors de la sauvegarde", "error");
+            showNotification({
+                title: "Sauvegarde des notes",
+                message: getFriendlyErrorMessage(error, {
+                    fallback: "Les notes n'ont pas pu être sauvegardées. Vérifiez votre connexion puis réessayez.",
+                }),
+                type: "error",
+            });
+        } finally {
+            setIsSavingNotes(false);
         }
     };
 
@@ -166,8 +201,9 @@ export default function ScholarshipFileManagement() {
             description: "Cette action est irréversible. Le dossier sera définitivement supprimé.",
             onConfirm: async () => {
                 closeConfirm();
+                setDeletingFileId(fileId);
                 try {
-                    const fileToDelete = files.find(f => f.id === fileId);
+                    const fileToDelete = files.find((f) => f.id === fileId);
                     const { error } = await supabase.from("dossier_bourses").delete().eq("id", fileId);
                     if (error) throw error;
                     if (user) {
@@ -178,12 +214,24 @@ export default function ScholarshipFileManagement() {
                             { file_id: fileId }
                         );
                     }
-                    showNotification("Dossier supprimé", "success");
+                    showNotification({
+                        title: "Dossier supprimé",
+                        message: `${fileToDelete?.studentName || "Le dossier"} a été retiré de la liste des bourses.`,
+                        type: "success",
+                    });
                     if (selectedFile?.id === fileId) setSelectedFile(null);
                     await loadData();
                 } catch (error) {
                     console.error("Erreur suppression dossier:", error);
-                    showNotification("Erreur lors de la suppression", "error");
+                    showNotification({
+                        title: "Suppression du dossier",
+                        message: getFriendlyErrorMessage(error, {
+                            fallback: "Le dossier n'a pas pu être supprimé. Vérifiez les éléments liés puis réessayez.",
+                        }),
+                        type: "error",
+                    });
+                } finally {
+                    setDeletingFileId(null);
                 }
             },
         });
@@ -419,6 +467,7 @@ export default function ScholarshipFileManagement() {
                                         <div className="mb-3 text-sm font-bold text-slate-700">Statut du dossier</div>
                                         <Select
                                             value={selectedFile.status}
+                                            disabled={updatingStatusId === selectedFile.id}
                                             onValueChange={(v) => updateStatus(selectedFile.id, v || "en_attente")}
                                         >
                                             <SelectTrigger className="w-full bg-white">
@@ -440,10 +489,11 @@ export default function ScholarshipFileManagement() {
                                             <Button
                                                 variant="destructive"
                                                 className="w-full"
+                                                disabled={deletingFileId === selectedFile.id}
                                                 onClick={() => deleteFile(selectedFile.id)}
                                             >
                                                 <Trash2 className="mr-2 h-4 w-4" />
-                                                Supprimer le dossier
+                                                {deletingFileId === selectedFile.id ? "Suppression..." : "Supprimer le dossier"}
                                             </Button>
                                         </div>
                                     )}
@@ -459,7 +509,9 @@ export default function ScholarshipFileManagement() {
                                         placeholder="Ajouter des notes, commentaires ou observations sur ce dossier..."
                                     />
                                     <div className="mt-3 flex justify-end">
-                                        <Button className="bg-red-600 hover:bg-red-700" onClick={updateNotes}>Sauvegarder</Button>
+                                        <Button className="bg-red-600 hover:bg-red-700" disabled={isSavingNotes} onClick={updateNotes}>
+                                            {isSavingNotes ? "Sauvegarde..." : "Sauvegarder"}
+                                        </Button>
                                     </div>
                                 </div>
                             </div>

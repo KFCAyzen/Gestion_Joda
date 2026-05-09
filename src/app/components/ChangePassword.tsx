@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
+import { getFriendlyErrorMessage } from "../lib/feedback";
 
 interface ChangePasswordProps {
     onClose: () => void;
@@ -31,21 +32,37 @@ function StrengthBar({ password }: { password: string }) {
                     />
                 ))}
             </div>
-            <p className={`text-xs font-medium ${score <= 1 ? "text-red-500" : score === 2 ? "text-orange-400" : score === 3 ? "text-yellow-500" : "text-emerald-500"}`}>
+            <p
+                className={`text-xs font-medium ${
+                    score <= 1 ? "text-red-500" : score === 2 ? "text-orange-400" : score === 3 ? "text-yellow-500" : "text-emerald-500"
+                }`}
+            >
                 {labels[score]}
             </p>
         </div>
     );
 }
 
-function PasswordInput({ id, label, value, onChange, hint }: {
-    id: string; label: string; value: string;
-    onChange: (v: string) => void; hint?: string;
+function PasswordInput({
+    id,
+    label,
+    value,
+    onChange,
+    hint,
+}: {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    hint?: string;
 }) {
     const [show, setShow] = useState(false);
+
     return (
         <div className="space-y-1.5">
-            <label htmlFor={id} className="block text-sm font-medium text-slate-700">{label}</label>
+            <label htmlFor={id} className="block text-sm font-medium text-slate-700">
+                {label}
+            </label>
             <div className="relative">
                 <input
                     id={id}
@@ -62,12 +79,22 @@ function PasswordInput({ id, label, value, onChange, hint }: {
                 >
                     {show ? (
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                            />
                         </svg>
                     ) : (
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
                         </svg>
                     )}
                 </button>
@@ -93,27 +120,64 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
         e.preventDefault();
         setError("");
 
+        if (!currentPassword.trim()) {
+            setError("Renseignez votre mot de passe actuel avant de continuer.");
+            return;
+        }
         if (newPassword !== confirmPassword) {
             setError("Les mots de passe ne correspondent pas.");
             return;
         }
-        if (newPassword.length < 6) {
-            setError("Le mot de passe doit contenir au moins 6 caractères.");
+        if (newPassword.length < 8) {
+            setError("Le mot de passe doit contenir au moins 8 caracteres.");
             return;
         }
 
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) { setError("Utilisateur non connecté."); return; }
+            const {
+                data: { user },
+            } = await supabase.auth.getUser();
+            if (!user) {
+                setError("Votre session a expiré. Reconnectez-vous puis recommencez.");
+                return;
+            }
+            if (!user.email) {
+                setError("Impossible de vérifier votre compte. Reconnectez-vous puis recommencez.");
+                return;
+            }
+
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: currentPassword,
+            });
+            if (signInError) {
+                setError("Le mot de passe actuel est incorrect.");
+                return;
+            }
 
             const { error: err } = await supabase.auth.updateUser({ password: newPassword });
-            if (err) { setError(err.message); return; }
+            if (err) {
+                setError(
+                    getFriendlyErrorMessage(err, {
+                        fallback: "Le mot de passe n'a pas pu être modifié. Réessayez dans un instant.",
+                    }),
+                );
+                return;
+            }
 
-            showNotification("Mot de passe modifié avec succès", "success");
+            showNotification({
+                title: "Mot de passe mis à jour",
+                message: "Votre nouveau mot de passe est désormais actif.",
+                type: "success",
+            });
             onClose();
-        } catch {
-            setError("Une erreur est survenue.");
+        } catch (error) {
+            setError(
+                getFriendlyErrorMessage(error, {
+                    fallback: "Une erreur est survenue pendant le changement de mot de passe.",
+                }),
+            );
         } finally {
             setLoading(false);
         }
@@ -122,18 +186,21 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
             <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-[0_32px_80px_rgba(0,0,0,0.2)]">
-
-                {/* Header */}
                 <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 px-8 py-7">
                     <div className="flex items-center gap-4">
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/20">
                             <svg className="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                                />
                             </svg>
                         </div>
                         <div>
                             <h2 className="text-xl font-semibold text-white">Modifier le mot de passe</h2>
-                            <p className="mt-0.5 text-sm text-slate-400">Choisissez un mot de passe sécurisé</p>
+                            <p className="mt-0.5 text-sm text-slate-400">Choisissez un mot de passe securise</p>
                         </div>
                     </div>
                     <button
@@ -146,15 +213,8 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                     </button>
                 </div>
 
-                {/* Body */}
                 <form onSubmit={handleChangePassword} className="space-y-5 px-8 py-7">
-
-                    <PasswordInput
-                        id="current"
-                        label="Mot de passe actuel"
-                        value={currentPassword}
-                        onChange={setCurrentPassword}
-                    />
+                    <PasswordInput id="current" label="Mot de passe actuel" value={currentPassword} onChange={setCurrentPassword} />
 
                     <div>
                         <PasswordInput
@@ -162,7 +222,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                             label="Nouveau mot de passe"
                             value={newPassword}
                             onChange={setNewPassword}
-                            hint="Minimum 8 caractères, majuscule, chiffre et symbole recommandés"
+                            hint="Minimum 8 caracteres, majuscule, chiffre et symbole recommandes"
                         />
                         <StrengthBar password={newPassword} />
                     </div>
@@ -192,13 +252,8 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                         )}
                     </div>
 
-                    {error && (
-                        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                            {error}
-                        </div>
-                    )}
+                    {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
 
-                    {/* Footer */}
                     <div className="flex gap-3 pt-2">
                         <button
                             type="button"
@@ -220,6 +275,3 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
         </div>
     );
 }
-
-
-
