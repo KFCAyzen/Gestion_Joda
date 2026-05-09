@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { CalendarDays, Clock3, School2, Sparkles, Trash2 } from "lucide-react";
+import { CalendarDays, Clock3, School2, Sparkles, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Select,
@@ -45,13 +45,13 @@ export default function ScholarshipFileManagement() {
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(true);
-    const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
     const [isSavingNotes, setIsSavingNotes] = useState(false);
     const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
     const [notes, setNotes] = useState("");
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean; title: string; description: string; onConfirm: () => void;
-    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+    }>({ open: false, title: "", description: "", onConfirm: () => {} });
     const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
 
     const canDelete = user?.role === "admin" || user?.role === "super_admin";
@@ -88,83 +88,70 @@ export default function ScholarshipFileManagement() {
 
             setFiles(filesData);
         } catch (error) {
-            console.error("Erreur chargement dossiers:", error);
-            const message = getFriendlyErrorMessage(error, {
-                fallback: "Impossible de charger les dossiers de bourse pour le moment.",
+            showNotification({
+                title: "Chargement des dossiers",
+                message: getFriendlyErrorMessage(error, { fallback: "Impossible de charger les dossiers." }),
+                type: "error",
             });
-            showNotification({ title: "Chargement des dossiers", message, type: "error" });
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
     useEffect(() => {
-        if (selectedFile) {
-            setNotes(selectedFile.notes_internes || "");
-        }
-    }, [selectedFile]);
+        if (selectedFile) setNotes(selectedFile.notes_internes || "");
+    }, [selectedFile?.id]);
 
-    const updateStatus = async (fileId: string, newStatus: string) => {
-        const file = files.find((f) => f.id === fileId);
-        if (file?.status === newStatus) return;
+    const openFile = (file: ScholarshipFile) => {
+        setSelectedFile(file);
+        setNotes(file.notes_internes || "");
+    };
 
-        setUpdatingStatusId(fileId);
+    const closeFile = () => setSelectedFile(null);
+
+    const updateStatus = async (newStatus: string) => {
+        if (!selectedFile || selectedFile.status === newStatus) return;
+        setUpdatingStatus(true);
         try {
             const { error } = await supabase
                 .from("dossier_bourses")
                 .update({ status: newStatus, updated_at: new Date().toISOString() })
-                .eq("id", fileId);
-
+                .eq("id", selectedFile.id);
             if (error) throw error;
-
             if (user) {
                 await logActivity(
                     user.id, user.name, user.role,
-                    "dossier_status_change", "dossier_bourses", fileId,
-                    `Statut dossier mis à jour → ${newStatus} — ${file?.studentName || "Étudiant"}`,
-                    { file_id: fileId, new_status: newStatus }
+                    "dossier_status_change", "dossier_bourses", selectedFile.id,
+                    `Statut dossier mis à jour → ${newStatus} — ${selectedFile.studentName}`,
+                    { file_id: selectedFile.id, new_status: newStatus }
                 );
             }
-
-            showNotification({
-                title: "Statut mis à jour",
-                message: `${file?.studentName || "Le dossier"} est maintenant "${getStatusText(newStatus)}".`,
-                type: "success",
-            });
-            await loadData();
-            if (selectedFile?.id === fileId) {
-                setSelectedFile({ ...selectedFile, status: newStatus });
-            }
+            const updated = { ...selectedFile, status: newStatus, updated_at: new Date().toISOString() };
+            setSelectedFile(updated);
+            setFiles(prev => prev.map(f => f.id === selectedFile.id ? updated : f));
+            showNotification({ title: "Statut mis à jour", message: `Statut → "${getStatusText(newStatus)}".`, type: "success" });
         } catch (error) {
-            console.error("Erreur mise à jour statut:", error);
             showNotification({
-                title: "Mise à jour du statut",
-                message: getFriendlyErrorMessage(error, {
-                    fallback: "Le statut du dossier n'a pas pu être mis à jour. Réessayez dans un instant.",
-                }),
+                title: "Erreur",
+                message: getFriendlyErrorMessage(error, { fallback: "Mise à jour du statut impossible." }),
                 type: "error",
             });
         } finally {
-            setUpdatingStatusId(null);
+            setUpdatingStatus(false);
         }
     };
 
     const updateNotes = async () => {
         if (!selectedFile) return;
-
         setIsSavingNotes(true);
         try {
             const { error } = await supabase
                 .from("dossier_bourses")
                 .update({ notes_internes: notes, updated_at: new Date().toISOString() })
                 .eq("id", selectedFile.id);
-
             if (error) throw error;
-
             if (user) {
                 await logActivity(
                     user.id, user.name, user.role,
@@ -173,21 +160,14 @@ export default function ScholarshipFileManagement() {
                     { file_id: selectedFile.id }
                 );
             }
-
-            showNotification({
-                title: "Notes sauvegardées",
-                message: `Les notes du dossier de ${selectedFile.studentName} ont été mises à jour.`,
-                type: "success",
-            });
-            await loadData();
-            setSelectedFile({ ...selectedFile, notes_internes: notes, updated_at: new Date().toISOString() });
+            const updated = { ...selectedFile, notes_internes: notes, updated_at: new Date().toISOString() };
+            setSelectedFile(updated);
+            setFiles(prev => prev.map(f => f.id === selectedFile.id ? updated : f));
+            showNotification({ title: "Notes sauvegardées", message: "Les notes ont été mises à jour.", type: "success" });
         } catch (error) {
-            console.error("Erreur sauvegarde notes:", error);
             showNotification({
-                title: "Sauvegarde des notes",
-                message: getFriendlyErrorMessage(error, {
-                    fallback: "Les notes n'ont pas pu être sauvegardées. Vérifiez votre connexion puis réessayez.",
-                }),
+                title: "Erreur",
+                message: getFriendlyErrorMessage(error, { fallback: "Sauvegarde des notes impossible." }),
                 type: "error",
             });
         } finally {
@@ -195,40 +175,33 @@ export default function ScholarshipFileManagement() {
         }
     };
 
-    const deleteFile = (fileId: string) => {
+    const deleteFile = () => {
+        if (!selectedFile) return;
         setConfirmDialog({
             open: true,
             title: "Supprimer ce dossier",
             description: "Cette action est irréversible. Le dossier sera définitivement supprimé.",
             onConfirm: async () => {
                 closeConfirm();
-                setDeletingFileId(fileId);
+                setDeletingFileId(selectedFile.id);
                 try {
-                    const fileToDelete = files.find((f) => f.id === fileId);
-                    const { error } = await supabase.from("dossier_bourses").delete().eq("id", fileId);
+                    const { error } = await supabase.from("dossier_bourses").delete().eq("id", selectedFile.id);
                     if (error) throw error;
                     if (user) {
                         await logActivity(
                             user.id, user.name, user.role,
-                            "dossier_delete", "dossier_bourses", fileId,
-                            `Dossier supprimé — ${fileToDelete?.studentName || "Étudiant"}`,
-                            { file_id: fileId }
+                            "dossier_delete", "dossier_bourses", selectedFile.id,
+                            `Dossier supprimé — ${selectedFile.studentName}`,
+                            { file_id: selectedFile.id }
                         );
                     }
-                    showNotification({
-                        title: "Dossier supprimé",
-                        message: `${fileToDelete?.studentName || "Le dossier"} a été retiré de la liste des bourses.`,
-                        type: "success",
-                    });
-                    if (selectedFile?.id === fileId) setSelectedFile(null);
-                    await loadData();
+                    showNotification({ title: "Dossier supprimé", message: `${selectedFile.studentName} a été retiré.`, type: "success" });
+                    setFiles(prev => prev.filter(f => f.id !== selectedFile.id));
+                    closeFile();
                 } catch (error) {
-                    console.error("Erreur suppression dossier:", error);
                     showNotification({
-                        title: "Suppression du dossier",
-                        message: getFriendlyErrorMessage(error, {
-                            fallback: "Le dossier n'a pas pu être supprimé. Vérifiez les éléments liés puis réessayez.",
-                        }),
+                        title: "Erreur",
+                        message: getFriendlyErrorMessage(error, { fallback: "Suppression impossible." }),
                         type: "error",
                     });
                 } finally {
@@ -240,42 +213,30 @@ export default function ScholarshipFileManagement() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "admission_validee":
-                return "bg-emerald-100 text-emerald-800";
-            case "en_cours":
-                return "bg-blue-100 text-blue-800";
-            case "admission_rejetee":
-                return "bg-rose-100 text-rose-800";
-            case "document_manquant":
-                return "bg-amber-100 text-amber-800";
-            default:
-                return "bg-slate-100 text-slate-700";
+            case "admission_validee": return "bg-emerald-100 text-emerald-800";
+            case "en_cours": return "bg-blue-100 text-blue-800";
+            case "admission_rejetee": return "bg-rose-100 text-rose-800";
+            case "document_manquant": return "bg-amber-100 text-amber-800";
+            case "document_recu": return "bg-teal-100 text-teal-800";
+            case "visa_en_cours": return "bg-purple-100 text-purple-800";
+            case "termine": return "bg-slate-100 text-slate-700";
+            default: return "bg-slate-100 text-slate-700";
         }
     };
 
     const getStatusText = (status: string) => {
-        switch (status) {
-            case "document_recu":
-                return "Document reçu";
-            case "en_attente":
-                return "En attente";
-            case "en_cours":
-                return "En cours";
-            case "document_manquant":
-                return "Documents manquants";
-            case "admission_validee":
-                return "Approuvé";
-            case "admission_rejetee":
-                return "Rejeté";
-            case "en_attente_universite":
-                return "En attente université";
-            case "visa_en_cours":
-                return "Visa en cours";
-            case "termine":
-                return "Terminé";
-            default:
-                return status;
-        }
+        const map: Record<string, string> = {
+            document_recu: "Document reçu",
+            en_attente: "En attente",
+            en_cours: "En cours",
+            document_manquant: "Documents manquants",
+            admission_validee: "Approuvé",
+            admission_rejetee: "Rejeté",
+            en_attente_universite: "En attente université",
+            visa_en_cours: "Visa en cours",
+            termine: "Terminé",
+        };
+        return map[status] ?? status;
     };
 
     const getAvatarGradient = (name: string) => {
@@ -291,14 +252,9 @@ export default function ScholarshipFileManagement() {
     };
 
     const getInitials = (name: string) =>
-        name
-            .split(" ")
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((part) => part[0]?.toUpperCase())
-            .join("");
+        name.split(" ").filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join("");
 
-    const filteredFiles = files.filter((file) => {
+    const filteredFiles = files.filter(file => {
         const matchesStatus = filterStatus === "all" || file.status === filterStatus;
         const matchesSearch =
             searchTerm === "" ||
@@ -308,10 +264,142 @@ export default function ScholarshipFileManagement() {
         return matchesStatus && matchesSearch;
     });
 
-    if (isLoading) {
-        return <LoadingState message="Chargement des dossiers..." />;
+    if (isLoading) return <LoadingState message="Chargement des dossiers..." />;
+
+    // ── Vue détail ──────────────────────────────────────────────────────────
+    if (selectedFile) {
+        return (
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="joda-surface flex items-center gap-4">
+                    <button
+                        onClick={closeFile}
+                        className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Retour
+                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${getAvatarGradient(selectedFile.studentName)} text-sm font-bold text-white shadow`}>
+                            {getInitials(selectedFile.studentName)}
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900">{selectedFile.studentName}</h2>
+                            <p className="text-sm text-slate-500">{selectedFile.program} — {selectedFile.university}</p>
+                        </div>
+                    </div>
+                    <span className={`ml-auto rounded-full px-4 py-1.5 text-xs font-bold ${getStatusColor(selectedFile.status)}`}>
+                        {getStatusText(selectedFile.status)}
+                    </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    {/* Colonne gauche : infos + statut + notes */}
+                    <div className="space-y-6 lg:col-span-1">
+                        {/* Infos */}
+                        <div className="joda-surface space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Informations</p>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center gap-2 text-slate-600">
+                                    <School2 className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                                    {selectedFile.university}
+                                </div>
+                                <div className="flex items-center gap-2 text-slate-600">
+                                    <CalendarDays className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                                    Soumis le {new Date(selectedFile.created_at).toLocaleDateString("fr-FR")}
+                                </div>
+                                {selectedFile.updated_at && (
+                                    <div className="flex items-center gap-2 text-slate-600">
+                                        <Clock3 className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                                        Mis à jour le {new Date(selectedFile.updated_at).toLocaleDateString("fr-FR")}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Statut */}
+                        <div className="joda-surface space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Statut du dossier</p>
+                            <Select
+                                value={selectedFile.status}
+                                disabled={updatingStatus}
+                                onValueChange={updateStatus}
+                            >
+                                <SelectTrigger className="w-full bg-white">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="document_manquant">Documents manquants</SelectItem>
+                                    <SelectItem value="document_recu">Document reçu</SelectItem>
+                                    <SelectItem value="en_attente">En attente</SelectItem>
+                                    <SelectItem value="en_cours">En cours</SelectItem>
+                                    <SelectItem value="admission_validee">Approuvé</SelectItem>
+                                    <SelectItem value="admission_rejetee">Rejeté</SelectItem>
+                                    <SelectItem value="en_attente_universite">En attente université</SelectItem>
+                                    <SelectItem value="visa_en_cours">Visa en cours</SelectItem>
+                                    <SelectItem value="termine">Terminé</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Notes */}
+                        <div className="joda-surface space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Notes & Commentaires</p>
+                            <textarea
+                                value={notes}
+                                onChange={e => setNotes(e.target.value)}
+                                className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm transition-all focus:border-red-500 focus:ring-2 focus:ring-red-100 focus:outline-none"
+                                rows={6}
+                                placeholder="Ajouter des notes ou observations..."
+                            />
+                            <div className="flex justify-end">
+                                <Button className="bg-red-600 hover:bg-red-700" disabled={isSavingNotes} onClick={updateNotes}>
+                                    {isSavingNotes ? "Sauvegarde..." : "Sauvegarder"}
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Suppression */}
+                        {canDelete && (
+                            <div className="joda-surface">
+                                <Button
+                                    variant="destructive"
+                                    className="w-full"
+                                    disabled={deletingFileId === selectedFile.id}
+                                    onClick={deleteFile}
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    {deletingFileId === selectedFile.id ? "Suppression..." : "Supprimer le dossier"}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Colonne droite : documents */}
+                    <div className="lg:col-span-2">
+                        <div className="joda-surface">
+                            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Documents</p>
+                            <DocumentManagement
+                                studentId={selectedFile.student_id}
+                                studentName={selectedFile.studentName}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <ConfirmDialog
+                    isOpen={confirmDialog.open}
+                    onClose={closeConfirm}
+                    onConfirm={confirmDialog.onConfirm}
+                    title={confirmDialog.title}
+                    description={confirmDialog.description}
+                    confirmLabel="Supprimer"
+                />
+            </div>
+        );
     }
 
+    // ── Vue liste ───────────────────────────────────────────────────────────
     return (
         <div className="space-y-8">
             <div className="joda-surface">
@@ -328,35 +416,30 @@ export default function ScholarshipFileManagement() {
                             <p className="text-lg text-slate-500">Suivi avancé des candidatures de bourses</p>
                         </div>
                     </div>
-
                     <div className="grid grid-cols-3 gap-6">
                         <div className="text-center">
                             <div className="text-2xl font-bold text-red-600">{files.length}</div>
                             <div className="text-sm text-slate-500">Total</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-emerald-600">{files.filter((f) => f.status === "admission_validee").length}</div>
+                            <div className="text-2xl font-bold text-emerald-600">{files.filter(f => f.status === "admission_validee").length}</div>
                             <div className="text-sm text-slate-500">Approuvés</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">{files.filter((f) => f.status === "en_cours").length}</div>
+                            <div className="text-2xl font-bold text-blue-600">{files.filter(f => f.status === "en_cours").length}</div>
                             <div className="text-sm text-slate-500">En cours</div>
                         </div>
                     </div>
                 </div>
-
                 <div className="flex flex-col gap-3 sm:flex-row">
-                    <SearchBar
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                        placeholder="Rechercher par nom, université ou programme..."
-                    />
+                    <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher par nom, université ou programme..." />
                     <FilterSelect
                         label="Statut"
                         value={filterStatus}
                         onChange={setFilterStatus}
                         options={[
                             { value: "document_manquant", label: "Documents manquants" },
+                            { value: "document_recu", label: "Document reçu" },
                             { value: "en_attente", label: "En attente" },
                             { value: "en_cours", label: "En cours" },
                             { value: "admission_validee", label: "Approuvé" },
@@ -366,186 +449,78 @@ export default function ScholarshipFileManagement() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-4">
-                <div className="xl:col-span-3">
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                        {filteredFiles.map((file) => (
-                            <div
-                                key={file.id}
-                                className={`relative cursor-pointer overflow-hidden rounded-[2rem] border bg-gradient-to-br from-slate-50 via-white to-slate-100 border-slate-200 p-5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)] ${
-                                    selectedFile?.id === file.id
-                                        ? "ring-2 ring-red-500 shadow-[0_24px_54px_rgba(239,68,68,0.16)]"
-                                        : "shadow-[0_18px_45px_rgba(15,23,42,0.07)]"
-                                }`}
-                                onClick={() => setSelectedFile(file)}
-                            >
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.92),transparent_34%)]" />
-                                <div className="relative space-y-5">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${getAvatarGradient(file.studentName)} text-sm font-bold text-white shadow-[0_16px_32px_rgba(15,23,42,0.22)]`}>
-                                                {getInitials(file.studentName)}
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <h3 className="text-lg font-bold text-slate-950">{file.studentName}</h3>
-                                                    {file.status === "admission_validee" && <Sparkles className="h-4 w-4 text-emerald-500" />}
-                                                </div>
-                                                <p className="text-sm text-slate-500">{file.program}</p>
-                                            </div>
-                                        </div>
-                                        <span className={`rounded-full px-4 py-2 text-xs font-bold shadow-sm ${getStatusColor(file.status)}`}>
-                                            {getStatusText(file.status)}
-                                        </span>
-                                    </div>
-
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="rounded-[1.4rem] border border-white/80 bg-white/75 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-                                            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                                                <School2 className="h-3.5 w-3.5" />
-                                                Université cible
-                                            </div>
-                                            <p className="text-sm font-semibold text-slate-900">{file.university}</p>
-                                        </div>
-                                        <div className="rounded-[1.4rem] border border-white/80 bg-white/75 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-                                            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                                                <CalendarDays className="h-3.5 w-3.5" />
-                                                Dépôt
-                                            </div>
-                                            <p className="text-sm font-semibold text-slate-900">{new Date(file.created_at).toLocaleDateString("fr-FR")}</p>
-                                        </div>
-                                    </div>
-
-                                    {file.notes_internes && (
-                                        <div className="flex items-start gap-3 rounded-[1.4rem] border border-sky-200 bg-sky-50/80 p-4">
-                                            <Clock3 className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-500" />
-                                            <div>
-                                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">Note de suivi</p>
-                                                <p className="mt-1 text-sm leading-6 text-slate-700">{file.notes_internes}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+            {filteredFiles.length === 0 ? (
+                <div className="joda-surface py-20 text-center">
+                    <p className="text-slate-400">Aucun dossier trouvé.</p>
                 </div>
-
-                <div className="xl:col-span-1">
-                    <div className="sticky top-6">
-                        {selectedFile ? (
-                            <div className="space-y-6">
-                                <div className="joda-surface">
-                                    <div className="mb-8 text-center">
-                                        <div className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${getAvatarGradient(selectedFile.studentName)} text-2xl font-bold text-white shadow-lg`}>
-                                            {getInitials(selectedFile.studentName)}
+            ) : (
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {filteredFiles.map(file => (
+                        <div
+                            key={file.id}
+                            className="relative cursor-pointer overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)]"
+                            onClick={() => openFile(file)}
+                        >
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.92),transparent_34%)]" />
+                            <div className="relative space-y-5">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${getAvatarGradient(file.studentName)} text-sm font-bold text-white shadow-[0_16px_32px_rgba(15,23,42,0.22)]`}>
+                                            {getInitials(file.studentName)}
                                         </div>
-                                        <h3 className="text-xl font-bold text-slate-900">{selectedFile.studentName}</h3>
-                                        <p className="text-slate-600">{selectedFile.program}</p>
-                                        <span className={`mt-2 inline-block rounded-full px-4 py-2 text-sm font-bold ${getStatusColor(selectedFile.status)}`}>
-                                            {getStatusText(selectedFile.status)}
-                                        </span>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="rounded-xl bg-slate-50 p-5">
-                                            <div className="text-sm text-slate-600">Université</div>
-                                            <div className="font-semibold text-slate-900">{selectedFile.university}</div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="rounded-lg bg-blue-50 p-4">
-                                                <div className="text-xs text-blue-600">Soumis</div>
-                                                <div className="text-sm font-semibold text-blue-900">{new Date(selectedFile.created_at).toLocaleDateString("fr-FR")}</div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="text-lg font-bold text-slate-950">{file.studentName}</h3>
+                                                {file.status === "admission_validee" && <Sparkles className="h-4 w-4 text-emerald-500" />}
                                             </div>
-                                            <div className="rounded-lg bg-green-50 p-4">
-                                                <div className="text-xs text-green-600">Mis à jour</div>
-                                                <div className="text-sm font-semibold text-green-900">{selectedFile.updated_at ? new Date(selectedFile.updated_at).toLocaleDateString("fr-FR") : "-"}</div>
-                                            </div>
+                                            <p className="text-sm text-slate-500">{file.program}</p>
                                         </div>
                                     </div>
+                                    <span className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm ${getStatusColor(file.status)}`}>
+                                        {getStatusText(file.status)}
+                                    </span>
+                                </div>
 
-                                    <div className="mt-6">
-                                        <div className="mb-3 text-sm font-bold text-slate-700">Statut du dossier</div>
-                                        <Select
-                                            value={selectedFile.status}
-                                            disabled={updatingStatusId === selectedFile.id}
-                                            onValueChange={(v) => updateStatus(selectedFile.id, v || "en_attente")}
-                                        >
-                                            <SelectTrigger className="w-full bg-white">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="document_manquant">Documents manquants</SelectItem>
-                                                <SelectItem value="en_attente">En attente</SelectItem>
-                                                <SelectItem value="en_cours">En cours</SelectItem>
-                                                <SelectItem value="admission_validee">Approuvé</SelectItem>
-                                                <SelectItem value="admission_rejetee">Rejeté</SelectItem>
-                                                <SelectItem value="termine">Terminé</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {canDelete && (
-                                        <div className="mt-6">
-                                            <Button
-                                                variant="destructive"
-                                                className="w-full"
-                                                disabled={deletingFileId === selectedFile.id}
-                                                onClick={() => deleteFile(selectedFile.id)}
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                {deletingFileId === selectedFile.id ? "Suppression..." : "Supprimer le dossier"}
-                                            </Button>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="rounded-[1.4rem] border border-white/80 bg-white/75 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                                            <School2 className="h-3.5 w-3.5" />
+                                            Université cible
                                         </div>
-                                    )}
-                                </div>
-
-                                <div className="joda-surface">
-                                    <h3 className="mb-4 text-lg font-bold text-slate-900">Notes & Commentaires</h3>
-                                    <textarea
-                                        value={notes}
-                                        onChange={(e) => setNotes(e.target.value)}
-                                        className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 transition-all focus:border-red-500 focus:ring-2 focus:ring-red-500"
-                                        rows={6}
-                                        placeholder="Ajouter des notes, commentaires ou observations sur ce dossier..."
-                                    />
-                                    <div className="mt-3 flex justify-end">
-                                        <Button className="bg-red-600 hover:bg-red-700" disabled={isSavingNotes} onClick={updateNotes}>
-                                            {isSavingNotes ? "Sauvegarde..." : "Sauvegarder"}
-                                        </Button>
+                                        <p className="text-sm font-semibold text-slate-900">{file.university}</p>
+                                    </div>
+                                    <div className="rounded-[1.4rem] border border-white/80 bg-white/75 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                                            <CalendarDays className="h-3.5 w-3.5" />
+                                            Dépôt
+                                        </div>
+                                        <p className="text-sm font-semibold text-slate-900">{new Date(file.created_at).toLocaleDateString("fr-FR")}</p>
                                     </div>
                                 </div>
 
-                                <div className="joda-surface">
-                                    <h3 className="mb-4 text-lg font-bold text-slate-900">Documents</h3>
-                                    <DocumentManagement
-                                        studentId={selectedFile.student_id}
-                                        studentName={selectedFile.studentName}
-                                    />
-                                </div>
+                                {file.notes_internes && (
+                                    <div className="flex items-start gap-3 rounded-[1.4rem] border border-sky-200 bg-sky-50/80 p-4">
+                                        <Clock3 className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-500" />
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">Note de suivi</p>
+                                            <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-700">{file.notes_internes}</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="joda-surface px-8 py-20 text-center">
-                                <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200">
-                                    <svg className="h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                </div>
-                                <h3 className="mb-3 text-lg font-semibold text-slate-900">Aucun dossier sélectionné</h3>
-                                <p className="text-slate-500">Clique sur un dossier pour voir les détails et gérer les documents.</p>
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    ))}
                 </div>
-            </div>
-        <ConfirmDialog
-            isOpen={confirmDialog.open}
-            onClose={closeConfirm}
-            onConfirm={confirmDialog.onConfirm}
-            title={confirmDialog.title}
-            description={confirmDialog.description}
-            confirmLabel="Supprimer"
-        />
+            )}
+
+            <ConfirmDialog
+                isOpen={confirmDialog.open}
+                onClose={closeConfirm}
+                onConfirm={confirmDialog.onConfirm}
+                title={confirmDialog.title}
+                description={confirmDialog.description}
+                confirmLabel="Supprimer"
+            />
         </div>
     );
 }
