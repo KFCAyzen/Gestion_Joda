@@ -138,12 +138,10 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                 return;
             }
 
-            const { error: profileError } = await supabase
-                .from("users")
-                .update({ must_change_password: false, updated_at: new Date().toISOString() })
-                .eq("id", user.id);
-            if (profileError) {
-                throw profileError;
+            // Utiliser l'API route pour bypasser le RLS (le student n'a pas de droit UPDATE sur users)
+            const res = await fetch("/api/clear-password-flag", { method: "POST" });
+            if (!res.ok) {
+                throw new Error("Impossible de mettre à jour le profil.");
             }
 
             const saved = localStorage.getItem("currentUser");
