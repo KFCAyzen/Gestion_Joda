@@ -14,6 +14,7 @@ import {
     buildStudentUsername,
     generateTemporaryPassword,
 } from "../lib/student-auth";
+import { MONTANTS_BOURSE, MONTANTS_MANDARIN, MONTANTS_ANGLAIS } from "../types/joda";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -359,6 +360,46 @@ export default function StudentManagement() {
                     study_level: formData.niveau || "",
                     notes_internes: "Dossier créé automatiquement à l'inscription",
                 });
+            }
+
+            // Auto-créer les tranches de paiement selon les services souscrits
+            const paymentRows: {
+                student_id: string; type: string; tranche: number;
+                montant: number; status: string; penalites: number;
+            }[] = [];
+
+            if (formData.choix === "procedure_seule" || formData.choix === "procedure_cours") {
+                [
+                    { tranche: 1, montant: MONTANTS_BOURSE.TRANCHE_1 },
+                    { tranche: 2, montant: MONTANTS_BOURSE.TRANCHE_2 },
+                    { tranche: 3, montant: MONTANTS_BOURSE.TRANCHE_3 },
+                    { tranche: 4, montant: MONTANTS_BOURSE.TRANCHE_4 },
+                ].forEach(t => paymentRows.push({ student_id: data.id, type: "bourse", ...t, status: "attente", penalites: 0 }));
+            }
+
+            const langueKey = formData.langue?.toLowerCase().includes("mandarin") ? "mandarin"
+                : formData.langue?.toLowerCase().includes("anglais") ? "anglais"
+                : null;
+
+            if ((formData.choix === "cours_seuls" || formData.choix === "procedure_cours") && langueKey) {
+                const coursTransches = langueKey === "mandarin"
+                    ? [
+                        { tranche: 1, montant: MONTANTS_MANDARIN.INSCRIPTION },
+                        { tranche: 2, montant: MONTANTS_MANDARIN.LIVRE },
+                        { tranche: 3, montant: MONTANTS_MANDARIN.TRANCHE_1 },
+                        { tranche: 4, montant: MONTANTS_MANDARIN.TRANCHE_2 },
+                    ]
+                    : [
+                        { tranche: 1, montant: MONTANTS_ANGLAIS.INSCRIPTION },
+                        { tranche: 2, montant: MONTANTS_ANGLAIS.LIVRE },
+                        { tranche: 3, montant: MONTANTS_ANGLAIS.TRANCHE_1 },
+                        { tranche: 4, montant: MONTANTS_ANGLAIS.TRANCHE_2 },
+                    ];
+                coursTransches.forEach(t => paymentRows.push({ student_id: data.id, type: langueKey, ...t, status: "attente", penalites: 0 }));
+            }
+
+            if (paymentRows.length > 0) {
+                await supabase.from("payments").insert(paymentRows);
             }
 
             setCreatedAccount({ username, password: temporaryPassword });

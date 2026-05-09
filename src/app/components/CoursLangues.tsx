@@ -145,25 +145,35 @@ export default function CoursLangues() {
                 return;
             }
 
-            // Création des 4 tranches de paiement
-            const tranches = COURSE_TRANCHES[formData.type as keyof typeof COURSE_TRANCHES];
-            const { error: payError } = await supabase.from("payments").insert(
-                tranches.map(t => ({
-                    student_id: formData.studentId,
-                    type: formData.type,
-                    tranche: t.tranche,
-                    montant: t.montant,
-                    status: "attente",
-                    date_limite: formData.dateLimit,
-                    penalites: 0,
-                }))
-            );
+            // Vérifier si des paiements existent déjà (créés à l'inscription)
+            const { data: existingPays } = await supabase
+                .from("payments")
+                .select("id")
+                .eq("student_id", formData.studentId)
+                .eq("type", formData.type)
+                .limit(1);
 
-            if (payError) {
-                // Rollback : supprimer l'inscription créée pour rester cohérent
-                await supabase.from("cours_langues").delete().eq("id", coursRow.id);
-                showNotification("Erreur création paiement : " + payError.message, "error");
-                return;
+            // Création des 4 tranches de paiement (seulement si pas déjà présentes)
+            const tranches = COURSE_TRANCHES[formData.type as keyof typeof COURSE_TRANCHES];
+            if (!existingPays || existingPays.length === 0) {
+                const { error: payError } = await supabase.from("payments").insert(
+                    tranches.map(t => ({
+                        student_id: formData.studentId,
+                        type: formData.type,
+                        tranche: t.tranche,
+                        montant: t.montant,
+                        status: "attente",
+                        date_limite: formData.dateLimit,
+                        penalites: 0,
+                    }))
+                );
+
+                if (payError) {
+                    // Rollback : supprimer l'inscription créée pour rester cohérent
+                    await supabase.from("cours_langues").delete().eq("id", coursRow.id);
+                    showNotification("Erreur création paiement : " + payError.message, "error");
+                    return;
+                }
             }
 
             showNotification(`Inscription au cours de ${COURSE_LABELS[formData.type]} enregistrée`, "success");
