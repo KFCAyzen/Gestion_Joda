@@ -70,7 +70,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             let fileToUpload = file;
             if (file.type.startsWith('image/')) {
                 try {
-                    fileToUpload = await compressImage(file, FILE_LIMITS.MAX_FILE_SIZE_MB);
+                    fileToUpload = await compressImage(file, FILE_LIMITS.TARGET_COMPRESSED_SIZE_MB);
                     console.log(`Image compressée: ${formatFileSize(file.size)} → ${formatFileSize(fileToUpload.size)}`);
                 } catch (err) {
                     console.error('Erreur compression:', err);
@@ -163,7 +163,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                 <p className="font-medium">📋 Informations importantes :</p>
                 <ul className="mt-2 ml-4 list-disc space-y-1 text-xs">
                     <li>Taille maximale par fichier : <strong>{FILE_LIMITS.MAX_FILE_SIZE_MB} MB</strong></li>
-                    <li>Les images sont automatiquement compressées</li>
+                    <li>Les images sont automatiquement compressées (cible : {FILE_LIMITS.TARGET_COMPRESSED_SIZE_MB} MB)</li>
                     <li>Formats acceptés : <strong>{FILE_LIMITS.ALLOWED_EXTENSIONS.join(', ')}</strong></li>
                 </ul>
             </div>

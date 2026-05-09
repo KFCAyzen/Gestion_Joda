@@ -3,11 +3,12 @@
  */
 
 export const FILE_LIMITS = {
-  // Taille maximale par fichier (en MB)
-  MAX_FILE_SIZE_MB: 2,
-  
-  // Taille maximale en bytes
-  MAX_FILE_SIZE_BYTES: 2 * 1024 * 1024,
+  // Taille maximale acceptée en entrée (avant compression)
+  MAX_FILE_SIZE_MB: 10,
+  MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024,
+
+  // Taille cible après compression des images
+  TARGET_COMPRESSED_SIZE_MB: 3,
   
   // Types MIME autorisés
   ALLOWED_MIME_TYPES: [
@@ -22,8 +23,8 @@ export const FILE_LIMITS = {
   
   // Messages d'erreur
   ERRORS: {
-    FILE_TOO_LARGE: (size: number, max: number) => 
-      `Fichier trop volumineux (${size.toFixed(2)} MB). Maximum: ${max} MB`,
+    FILE_TOO_LARGE: (size: number, max: number) =>
+      `Fichier trop volumineux (${size.toFixed(1)} MB). Maximum autorisé : ${max} MB`,
     INVALID_TYPE: 'Type de fichier non autorisé. Formats acceptés: PDF, JPG, PNG',
     INVALID_NAME: 'Nom de fichier invalide. Utilisez uniquement des lettres, chiffres, tirets et points.',
     NO_FILE: 'Aucun fichier fourni',

@@ -1,16 +1,16 @@
 /**
  * Compresse une image avant l'upload
  * @param file - Fichier image à compresser
- * @param maxSizeMB - Taille maximale en MB (défaut: 2MB)
- * @param maxWidthOrHeight - Dimension maximale (défaut: 1920px)
- * @param quality - Qualité de compression 0-1 (défaut: 0.8)
+ * @param maxSizeMB - Taille cible en MB (défaut: 3MB)
+ * @param maxWidthOrHeight - Dimension maximale (défaut: 2048px)
+ * @param quality - Qualité de compression 0-1 (défaut: 0.85)
  * @returns Promise<File> - Fichier compressé
  */
 export async function compressImage(
   file: File,
-  maxSizeMB: number = 2,
-  maxWidthOrHeight: number = 1920,
-  quality: number = 0.8
+  maxSizeMB: number = 3,
+  maxWidthOrHeight: number = 2048,
+  quality: number = 0.85
 ): Promise<File> {
   // Si ce n'est pas une image, retourner le fichier tel quel
   if (!file.type.startsWith('image/')) {
