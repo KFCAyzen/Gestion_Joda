@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { SearchBar, FilterSelect, PageHeader, LoadingState, ErrorMessage, StatusBadge } from "./shared";
+import { downloadReceipt } from "../utils/downloadReceipt";
 
 interface ApplicationFee {
     id: string;
@@ -36,6 +37,10 @@ interface Student {
     id: string;
     nom: string;
     prenom: string;
+    email: string;
+    telephone: string;
+    niveau: string;
+    filiere: string;
 }
 
 const MOTIFS = ["Inscription", "Frais de dossier", "Cours de langue", "Autre"];
@@ -63,7 +68,7 @@ export default function ApplicationFeeManagement() {
         try {
             const [feesRes, studentsRes] = await Promise.all([
                 supabase.from("payments").select("*").order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom"),
+                supabase.from("students").select("id, nom, prenom, email, telephone, niveau, filiere"),
             ]);
 
             setFees(feesRes.data || []);
@@ -268,21 +273,48 @@ export default function ApplicationFeeManagement() {
                                 const student = students.find((s) => s.id === fee.student_id);
 
                                 return (
-                                    <div key={fee.id} className="joda-surface-muted flex items-center justify-between p-4">
-                                        <div>
-                                            <p className="font-semibold text-slate-800">
-                                                {student ? `${student.prenom} ${student.nom}` : "Étudiant"}
-                                            </p>
-                                            <p className="text-sm text-slate-600">
-                                                {fee.date ? new Date(fee.date).toLocaleDateString("fr-FR") : "-"}
-                                            </p>
+                                    <div key={fee.id} className="joda-surface-muted p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="font-semibold text-slate-800">
+                                                    {student ? `${student.prenom} ${student.nom}` : "Étudiant"}
+                                                </p>
+                                                <p className="text-sm text-slate-600">
+                                                    {fee.date ? new Date(fee.date).toLocaleDateString("fr-FR") : "-"}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-lg font-bold" style={{ color: "#dc2626" }}>
+                                                    {formatPrice(fee.montant?.toString() || "0")}
+                                                </p>
+                                                <StatusBadge status={fee.status} />
+                                            </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-lg font-bold" style={{ color: "#dc2626" }}>
-                                                {formatPrice(fee.montant?.toString() || "0")}
-                                            </p>
-                                            <StatusBadge status={fee.status} />
-                                        </div>
+                                        {fee.status === "paye" && student && (
+                                            <button
+                                                onClick={() => downloadReceipt(
+                                                    {
+                                                        id: fee.id,
+                                                        type: fee.type,
+                                                        tranche: fee.tranche ?? null,
+                                                        montant: fee.montant,
+                                                        status: fee.status,
+                                                        date_paiement: fee.date ?? null,
+                                                    },
+                                                    {
+                                                        nom: student.nom,
+                                                        prenom: student.prenom,
+                                                        email: student.email,
+                                                        telephone: student.telephone,
+                                                        niveau: student.niveau,
+                                                        filiere: student.filiere,
+                                                    }
+                                                )}
+                                                className="mt-3 w-full rounded-lg border border-green-200 bg-green-50 py-1.5 text-xs font-semibold text-green-700 transition-colors hover:bg-green-100"
+                                            >
+                                                Télécharger le reçu
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}
