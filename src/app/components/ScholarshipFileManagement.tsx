@@ -17,6 +17,7 @@ import { getFriendlyErrorMessage } from "../lib/feedback";
 import { logActivity } from "../utils/activityLogger";
 import { SearchBar, FilterSelect, LoadingState } from "./shared";
 import ConfirmDialog from "./ConfirmDialog";
+import DocumentManagement from "./DocumentManagement";
 
 interface ScholarshipFile {
     id: string;
@@ -513,6 +514,14 @@ export default function ScholarshipFileManagement() {
                                             {isSavingNotes ? "Sauvegarde..." : "Sauvegarder"}
                                         </Button>
                                     </div>
+                                </div>
+
+                                <div className="joda-surface">
+                                    <h3 className="mb-4 text-lg font-bold text-slate-900">Documents</h3>
+                                    <DocumentManagement
+                                        studentId={selectedFile.student_id}
+                                        studentName={selectedFile.studentName}
+                                    />
                                 </div>
                             </div>
                         ) : (
