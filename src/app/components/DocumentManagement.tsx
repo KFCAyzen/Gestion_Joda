@@ -288,8 +288,7 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
                     style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", backgroundColor: "rgba(15,23,42,0.25)" }}
                 >
                     <div
-                        className="max-w-md w-full rounded-xl border border-white/30 shadow-2xl"
-                        style={{ background: "rgba(255,255,255,0.78)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+                        className="max-w-md w-full rounded-xl bg-white shadow-2xl"
                     >
                         <div className="p-6 border-b border-gray-200">
                             <h3 className="text-lg font-semibold text-gray-900">
