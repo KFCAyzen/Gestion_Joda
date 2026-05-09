@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Bell } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
@@ -101,6 +102,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [studentInfo, setStudentInfo] = useState<ReceiptStudent | null>(null);
     const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
     const [showPasswordChange, setShowPasswordChange] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [universityName, setUniversityName] = useState<string | null>(null);
 
     useEffect(() => {
         if (user.mustChangePassword) setShowPasswordChange(true);
@@ -130,15 +133,20 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 filiere: studentData?.filiere ?? "",
             });
 
-            const [pays, docs, dossiers] = await Promise.all([
+            const [pays, docs, dossiers, unreadRes] = await Promise.all([
                 supabase.from("payments").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
                 supabase.from("documents").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
                 supabase.from("dossier_bourses").select("*").eq("student_id", sid).order("created_at", { ascending: false }).limit(1),
+                supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("read", false),
             ]);
             setPayments(pays.data || []);
             setDocuments(docs.data || []);
-            if (dossiers.data && dossiers.data.length > 0) {
-                setDossier(dossiers.data[0]);
+            setUnreadCount(unreadRes.count ?? 0);
+            const dossierData = dossiers.data?.[0] ?? null;
+            setDossier(dossierData);
+            if (dossierData?.university_id) {
+                const { data: uniData } = await supabase.from("universities").select("nom").eq("id", dossierData.university_id).single();
+                setUniversityName(uniData?.nom ?? null);
             }
         } finally {
             setLoading(false);
@@ -198,7 +206,19 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         <h1 className="text-2xl font-bold text-slate-900">Gestion Joda</h1>
                         <p className="text-sm text-slate-500">Bienvenue, {user.name}</p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setView("notifications")}
+                            className="relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+                            aria-label="Notifications"
+                        >
+                            <Bell className="h-5 w-5" />
+                            {unreadCount > 0 && (
+                                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                    {unreadCount > 9 ? "9+" : unreadCount}
+                                </span>
+                            )}
+                        </button>
                         <span className="hidden text-sm text-slate-500 sm:inline-block">{user.name}</span>
                         <Button variant="outline" size="sm" onClick={onLogout}>Déconnexion</Button>
                     </div>
@@ -208,7 +228,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             <nav className="border-b border-white/70 bg-white/70 backdrop-blur-xl">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-wrap gap-2 py-3">
-                        {(["dashboard", "payments", "documents", "dossier", "notifications"] as View[]).map((v) => (
+                        {(["dashboard", "payments", "documents", "dossier"] as View[]).map((v) => (
                             <button
                                 key={v}
                                 onClick={() => setView(v)}
@@ -224,9 +244,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                       ? "Paiements"
                                       : v === "documents"
                                         ? "Documents"
-                                        : v === "dossier"
-                                          ? "Mon dossier"
-                                          : "Notifications"}
+                                        : "Mon dossier"}
                             </button>
                         ))}
                     </div>
@@ -264,16 +282,18 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     <p className="text-xs text-slate-500">Documents uploadés</p>
                                 </CardContent>
                             </Card>
-                            <Card className="joda-surface border-0 shadow-none">
-                                <CardHeader>
-                                    <CardTitle className="text-sm">Statut dossier</CardTitle>
-                                </CardHeader>
-                                <CardContent>
+                            <button
+                                className="joda-surface w-full rounded-xl text-left transition-shadow hover:shadow-md"
+                                onClick={() => setView("dossier")}
+                            >
+                                <div className="p-6">
+                                    <p className="mb-2 text-sm font-medium text-slate-700">Statut dossier</p>
                                     <Badge className={STATUS_COLORS[dossier?.status || "en_attente"]}>
                                         {DOSSIER_LABELS[dossier?.status || "en_attente"]}
                                     </Badge>
-                                </CardContent>
-                            </Card>
+                                    <p className="mt-3 text-xs text-slate-400">Voir les détails →</p>
+                                </div>
+                            </button>
                         </div>
                     </div>
                 )}
@@ -336,31 +356,94 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 )}
 
                 {view === "dossier" && (
-                    <Card className="joda-surface border-0 shadow-none">
-                        <CardHeader>
-                            <CardTitle>Mon dossier de bourse</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {dossier ? (
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">Statut :</span>
-                                        <Badge className={STATUS_COLORS[dossier.status]}>{DOSSIER_LABELS[dossier.status]}</Badge>
-                                    </div>
-                                    {dossier.notes_internes && (
-                                        <div className="rounded-lg bg-gray-50 p-4">
-                                            <p className="text-sm text-gray-700">{dossier.notes_internes}</p>
+                    <div className="space-y-6">
+                        <div className="joda-surface">
+                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">Mon dossier</p>
+                            <h2 className="text-2xl font-bold text-slate-900">Dossier de bourse</h2>
+                            <p className="mt-1 text-sm text-slate-500">Suivi de l'avancement de ta candidature.</p>
+                        </div>
+                        {dossier ? (
+                            <>
+                                <Card className="joda-surface border-0 shadow-none">
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Informations</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="flex items-center justify-between border-b pb-3">
+                                            <span className="text-sm text-slate-500">Statut</span>
+                                            <Badge className={STATUS_COLORS[dossier.status]}>{DOSSIER_LABELS[dossier.status]}</Badge>
                                         </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <p className="py-8 text-center text-gray-500">Aucun dossier</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                                        {universityName && (
+                                            <div className="flex items-center justify-between border-b pb-3">
+                                                <span className="text-sm text-slate-500">Université</span>
+                                                <span className="text-sm font-medium text-slate-900">{universityName}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-slate-500">Date de création</span>
+                                            <span className="text-sm font-medium text-slate-900">
+                                                {new Date(dossier.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                                            </span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {dossier.notes_internes && (
+                                    <Card className="joda-surface border-0 shadow-none">
+                                        <CardHeader>
+                                            <CardTitle className="text-base">Message de l'équipe</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-slate-700 leading-relaxed">{dossier.notes_internes}</p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                <Card className="joda-surface border-0 shadow-none">
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Étapes</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ol className="space-y-3">
+                                            {(["en_attente", "document_recu", "en_cours", "admission_validee", "visa_en_cours", "termine"] as const).map((step) => {
+                                                const steps = ["en_attente", "document_recu", "en_cours", "admission_validee", "visa_en_cours", "termine"];
+                                                const currentIdx = steps.indexOf(dossier.status);
+                                                const stepIdx = steps.indexOf(step);
+                                                const done = stepIdx < currentIdx;
+                                                const active = stepIdx === currentIdx;
+                                                return (
+                                                    <li key={step} className="flex items-center gap-3">
+                                                        <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                                                            done ? "bg-green-100 text-green-600" : active ? "bg-red-100 text-red-600" : "bg-slate-100 text-slate-400"
+                                                        }`}>
+                                                            {done ? "✓" : stepIdx + 1}
+                                                        </span>
+                                                        <span className={`text-sm ${active ? "font-semibold text-slate-900" : done ? "text-slate-500 line-through" : "text-slate-400"}`}>
+                                                            {DOSSIER_LABELS[step] ?? step}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ol>
+                                    </CardContent>
+                                </Card>
+                            </>
+                        ) : (
+                            <Card className="joda-surface border-0 shadow-none">
+                                <CardContent>
+                                    <p className="py-8 text-center text-slate-400">Aucun dossier enregistré pour le moment.</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
                 )}
 
-                {view === "notifications" && <StudentNotifications user={user} />}
+                {view === "notifications" && (
+                    <StudentNotifications
+                        user={user}
+                        onBack={() => { setView("dashboard"); void load(); }}
+                    />
+                )}
             </main>
         </div>
 
