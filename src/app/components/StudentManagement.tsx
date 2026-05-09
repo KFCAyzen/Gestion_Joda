@@ -231,6 +231,55 @@ export default function StudentManagement() {
         setActiveTab("form");
     };
 
+    // Crée les tranches manquantes selon le service souscrit — sans toucher aux paiements existants
+    const syncPaymentsForStudent = async (studentId: string, choix: string, langue: string) => {
+        const { data: existing } = await supabase
+            .from("payments")
+            .select("type")
+            .eq("student_id", studentId);
+
+        const existingTypes = new Set((existing ?? []).map((p: { type: string }) => p.type));
+
+        const toInsert: {
+            student_id: string; type: string; tranche: number;
+            montant: number; status: string; penalites: number;
+        }[] = [];
+
+        if ((choix === "procedure_seule" || choix === "procedure_cours") && !existingTypes.has("bourse")) {
+            [
+                { tranche: 1, montant: MONTANTS_BOURSE.TRANCHE_1 },
+                { tranche: 2, montant: MONTANTS_BOURSE.TRANCHE_2 },
+                { tranche: 3, montant: MONTANTS_BOURSE.TRANCHE_3 },
+                { tranche: 4, montant: MONTANTS_BOURSE.TRANCHE_4 },
+            ].forEach(t => toInsert.push({ student_id: studentId, type: "bourse", ...t, status: "attente", penalites: 0 }));
+        }
+
+        const langueKey = langue?.toLowerCase().includes("mandarin") ? "mandarin"
+            : langue?.toLowerCase().includes("anglais") ? "anglais"
+            : null;
+
+        if ((choix === "cours_seuls" || choix === "procedure_cours") && langueKey && !existingTypes.has(langueKey)) {
+            const coursTransches = langueKey === "mandarin"
+                ? [
+                    { tranche: 1, montant: MONTANTS_MANDARIN.INSCRIPTION },
+                    { tranche: 2, montant: MONTANTS_MANDARIN.LIVRE },
+                    { tranche: 3, montant: MONTANTS_MANDARIN.TRANCHE_1 },
+                    { tranche: 4, montant: MONTANTS_MANDARIN.TRANCHE_2 },
+                ]
+                : [
+                    { tranche: 1, montant: MONTANTS_ANGLAIS.INSCRIPTION },
+                    { tranche: 2, montant: MONTANTS_ANGLAIS.LIVRE },
+                    { tranche: 3, montant: MONTANTS_ANGLAIS.TRANCHE_1 },
+                    { tranche: 4, montant: MONTANTS_ANGLAIS.TRANCHE_2 },
+                ];
+            coursTransches.forEach(t => toInsert.push({ student_id: studentId, type: langueKey, ...t, status: "attente", penalites: 0 }));
+        }
+
+        if (toInsert.length > 0) {
+            await supabase.from("payments").insert(toInsert);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFeedback("", "");
@@ -295,6 +344,10 @@ export default function StudentManagement() {
                         });
                     }
                 }
+
+                // Synchroniser les paiements manquants selon le nouveau choix/langue
+                await syncPaymentsForStudent(editingStudent.id, formData.choix, formData.langue);
+
                 await loadStudents();
                 setActiveTab("list");
                 return;
@@ -363,44 +416,7 @@ export default function StudentManagement() {
             }
 
             // Auto-créer les tranches de paiement selon les services souscrits
-            const paymentRows: {
-                student_id: string; type: string; tranche: number;
-                montant: number; status: string; penalites: number;
-            }[] = [];
-
-            if (formData.choix === "procedure_seule" || formData.choix === "procedure_cours") {
-                [
-                    { tranche: 1, montant: MONTANTS_BOURSE.TRANCHE_1 },
-                    { tranche: 2, montant: MONTANTS_BOURSE.TRANCHE_2 },
-                    { tranche: 3, montant: MONTANTS_BOURSE.TRANCHE_3 },
-                    { tranche: 4, montant: MONTANTS_BOURSE.TRANCHE_4 },
-                ].forEach(t => paymentRows.push({ student_id: data.id, type: "bourse", ...t, status: "attente", penalites: 0 }));
-            }
-
-            const langueKey = formData.langue?.toLowerCase().includes("mandarin") ? "mandarin"
-                : formData.langue?.toLowerCase().includes("anglais") ? "anglais"
-                : null;
-
-            if ((formData.choix === "cours_seuls" || formData.choix === "procedure_cours") && langueKey) {
-                const coursTransches = langueKey === "mandarin"
-                    ? [
-                        { tranche: 1, montant: MONTANTS_MANDARIN.INSCRIPTION },
-                        { tranche: 2, montant: MONTANTS_MANDARIN.LIVRE },
-                        { tranche: 3, montant: MONTANTS_MANDARIN.TRANCHE_1 },
-                        { tranche: 4, montant: MONTANTS_MANDARIN.TRANCHE_2 },
-                    ]
-                    : [
-                        { tranche: 1, montant: MONTANTS_ANGLAIS.INSCRIPTION },
-                        { tranche: 2, montant: MONTANTS_ANGLAIS.LIVRE },
-                        { tranche: 3, montant: MONTANTS_ANGLAIS.TRANCHE_1 },
-                        { tranche: 4, montant: MONTANTS_ANGLAIS.TRANCHE_2 },
-                    ];
-                coursTransches.forEach(t => paymentRows.push({ student_id: data.id, type: langueKey, ...t, status: "attente", penalites: 0 }));
-            }
-
-            if (paymentRows.length > 0) {
-                await supabase.from("payments").insert(paymentRows);
-            }
+            await syncPaymentsForStudent(data.id, formData.choix, formData.langue);
 
             setCreatedAccount({ username, password: temporaryPassword });
             setSelectedStudent(data);
