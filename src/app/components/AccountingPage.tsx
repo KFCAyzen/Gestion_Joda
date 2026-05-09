@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/select";
 import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search } from "lucide-react";
 import { generateAccountingReport } from "../lib/pdfGenerator";
+import { useNotificationContext } from "../context/NotificationContext";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface EntreeComptable {
     id: string;
@@ -107,6 +109,11 @@ function toDate(val: string | null): Date {
 export default function AccountingPage() {
     const { user } = useAuth();
     const supabase = createClient();
+    const { showNotification } = useNotificationContext();
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean; title: string; description: string; onConfirm: () => void;
+    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+    const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
     const [entrees, setEntrees] = useState<EntreeComptable[]>([]);
     const [sorties, setSorties] = useState<SortieComptable[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -207,8 +214,10 @@ export default function AccountingPage() {
                 date: today.toISOString().slice(0, 10),
             });
             await load();
+            showNotification("Entrée ajoutée", "success");
         } catch (err) {
             console.error("Erreur:", err);
+            showNotification("Erreur lors de l'ajout de l'entrée", "error");
         }
         setSubmitting(false);
     };
@@ -249,8 +258,10 @@ export default function AccountingPage() {
                 date: today.toISOString().slice(0, 10),
             });
             await load();
+            showNotification("Sortie ajoutée", "success");
         } catch (err) {
             console.error("Erreur:", err);
+            showNotification("Erreur lors de l'ajout de la sortie", "error");
         }
         setSubmitting(false);
     };
@@ -263,8 +274,10 @@ export default function AccountingPage() {
                 validated_at: new Date().toISOString(),
             }).eq("id", id);
             await load();
+            showNotification("Sortie validée", "success");
         } catch (err) {
             console.error("Erreur:", err);
+            showNotification("Erreur lors de la validation", "error");
         }
     };
 
@@ -376,8 +389,10 @@ export default function AccountingPage() {
             });
             setNewBudget({ categorie: "loyer", montant_prevu: "", periode: "mensuel" });
             await load();
+            showNotification("Budget ajouté", "success");
         } catch (err) {
             console.error("Erreur:", err);
+            showNotification("Erreur lors de l'ajout du budget", "error");
         }
         setSubmitting(false);
     };
@@ -393,50 +408,88 @@ export default function AccountingPage() {
             });
             setNewCategory({ nom: "", type: "sortie" });
             await load();
+            showNotification("Catégorie ajoutée", "success");
         } catch (err) {
             console.error("Erreur:", err);
+            showNotification("Erreur lors de l'ajout de la catégorie", "error");
         }
         setSubmitting(false);
     };
 
-    const handleDeleteCategory = async (id: string) => {
-        if (!confirm("Supprimer cette catégorie ?")) return;
-        try {
-            await supabase.from("custom_categories").delete().eq("id", id);
-            await load();
-        } catch (err) {
-            console.error("Erreur:", err);
-        }
+    const handleDeleteCategory = (id: string) => {
+        setConfirmDialog({
+            open: true,
+            title: 'Supprimer la catégorie',
+            description: 'Cette catégorie sera définitivement supprimée.',
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    await supabase.from("custom_categories").delete().eq("id", id);
+                    await load();
+                    showNotification("Catégorie supprimée", "success");
+                } catch (err) {
+                    console.error("Erreur:", err);
+                    showNotification("Erreur lors de la suppression", "error");
+                }
+            },
+        });
     };
 
-    const handleDeleteBudget = async (id: string) => {
-        if (!confirm("Supprimer ce budget ?")) return;
-        try {
-            await supabase.from("budgets").delete().eq("id", id);
-            await load();
-        } catch (err) {
-            console.error("Erreur:", err);
-        }
+    const handleDeleteBudget = (id: string) => {
+        setConfirmDialog({
+            open: true,
+            title: 'Supprimer le budget',
+            description: 'Ce budget sera définitivement supprimé.',
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    await supabase.from("budgets").delete().eq("id", id);
+                    await load();
+                    showNotification("Budget supprimé", "success");
+                } catch (err) {
+                    console.error("Erreur:", err);
+                    showNotification("Erreur lors de la suppression", "error");
+                }
+            },
+        });
     };
 
-    const handleDeleteEntree = async (id: string) => {
-        if (!confirm("Supprimer cette entrée ?")) return;
-        try {
-            await supabase.from("entrees_comptables").delete().eq("id", id);
-            await load();
-        } catch (err) {
-            console.error("Erreur:", err);
-        }
+    const handleDeleteEntree = (id: string) => {
+        setConfirmDialog({
+            open: true,
+            title: "Supprimer l'entrée",
+            description: "Cette entrée comptable sera définitivement supprimée.",
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    await supabase.from("entrees_comptables").delete().eq("id", id);
+                    await load();
+                    showNotification("Entrée supprimée", "success");
+                } catch (err) {
+                    console.error("Erreur:", err);
+                    showNotification("Erreur lors de la suppression", "error");
+                }
+            },
+        });
     };
 
-    const handleDeleteSortie = async (id: string) => {
-        if (!confirm("Supprimer cette sortie ?")) return;
-        try {
-            await supabase.from("sorties_comptables").delete().eq("id", id);
-            await load();
-        } catch (err) {
-            console.error("Erreur:", err);
-        }
+    const handleDeleteSortie = (id: string) => {
+        setConfirmDialog({
+            open: true,
+            title: 'Supprimer la sortie',
+            description: 'Cette sortie comptable sera définitivement supprimée.',
+            onConfirm: async () => {
+                closeConfirm();
+                try {
+                    await supabase.from("sorties_comptables").delete().eq("id", id);
+                    await load();
+                    showNotification("Sortie supprimée", "success");
+                } catch (err) {
+                    console.error("Erreur:", err);
+                    showNotification("Erreur lors de la suppression", "error");
+                }
+            },
+        });
     };
 
     const exportToExcel = () => {
@@ -452,6 +505,7 @@ export default function AccountingPage() {
         link.href = URL.createObjectURL(blob);
         link.download = `comptabilite_${periodFilter}_${new Date().toISOString().slice(0, 10)}.csv`;
         link.click();
+        showNotification("Export Excel généré", "success");
         setExporting(false);
     };
 
@@ -490,7 +544,7 @@ export default function AccountingPage() {
             });
         } catch (err) {
             console.error('Erreur export PDF:', err);
-            alert('Erreur lors de l\'export PDF');
+            showNotification("Erreur lors de l'export PDF", "error");
         }
         setExporting(false);
     };
@@ -506,6 +560,7 @@ export default function AccountingPage() {
     ];
 
     return (
+        <>
         <ProtectedRoute requiredRole="agent">
             <div className="space-y-6 p-4 sm:p-6">
                 <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1212,6 +1267,15 @@ export default function AccountingPage() {
                 </Card>
             </div>
         </ProtectedRoute>
+        <ConfirmDialog
+            isOpen={confirmDialog.open}
+            onClose={closeConfirm}
+            onConfirm={confirmDialog.onConfirm}
+            title={confirmDialog.title}
+            description={confirmDialog.description}
+            confirmLabel="Supprimer"
+        />
+        </>
     );
 }
 
