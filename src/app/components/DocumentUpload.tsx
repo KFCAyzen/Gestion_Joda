@@ -73,7 +73,14 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
 
     const handleUpload = async (key: DocKey, file: File) => {
         if (!studentId) return;
-        
+
+        // Bloquer si le document a déjà été validé par le staff
+        const existing = getDoc(key);
+        if (existing?.status === "valide") {
+            showNotification("Ce document a été validé et ne peut plus être remplacé.", "error");
+            return;
+        }
+
         // Validation initiale du fichier
         const validation = validateFile(file);
         if (!validation.valid) {
@@ -307,15 +314,20 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                             }}
                                         />
                                         <button
-                                            onClick={() => inputRefs.current[doc.key]?.click()}
-                                            disabled={isUploading}
+                                            onClick={() => {
+                                                if (uploaded?.status !== "valide") inputRefs.current[doc.key]?.click();
+                                            }}
+                                            disabled={isUploading || uploaded?.status === "valide"}
+                                            title={uploaded?.status === "valide" ? "Document validé — remplacement impossible" : undefined}
                                             className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
-                                                uploaded
-                                                    ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                                    : "bg-red-600 text-white hover:bg-red-700"
+                                                uploaded?.status === "valide"
+                                                    ? "border border-emerald-200 bg-emerald-50 text-emerald-600 cursor-not-allowed opacity-75"
+                                                    : uploaded
+                                                      ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                                      : "bg-red-600 text-white hover:bg-red-700"
                                             } disabled:opacity-50`}
                                         >
-                                            {isUploading ? "..." : uploaded ? "Remplacer" : "Uploader"}
+                                            {isUploading ? "..." : uploaded?.status === "valide" ? "Verrouillé" : uploaded ? "Remplacer" : "Uploader"}
                                         </button>
                                     </div>
                                 </div>
