@@ -95,7 +95,7 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   const DARK:  [number, number, number] = [31,  41,  55];
 
   const pageW   = 210;
-  const headerH = 42;
+  const headerH = 44;
   const marginL = 10;
   const marginR = 8;
 
@@ -103,76 +103,76 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   doc.setFillColor(...RED);
   doc.rect(0, 0, pageW, headerH, 'F');
 
-  // Thin dark accent bar at the bottom of the header
+  // Thin dark accent bar at bottom
   doc.setFillColor(180, 25, 25);
   doc.rect(0, headerH - 1.5, pageW, 1.5, 'F');
 
-  // ── Logo: white rounded rectangle, landscape 3:2, vertically centred
-  const logoW = 36;
-  const logoH = 24;
+  // ── Logo — petit, intégré au titre (inline avec "JODA COMPANY")
+  const logoW = 20;
+  const logoH = 13;
   const logoX = marginL;
-  const logoY = (headerH - logoH) / 2;
+  const logoY = 4;
 
   doc.setFillColor(...WHITE);
-  doc.roundedRect(logoX, logoY, logoW, logoH, 3, 3, 'F');
+  doc.roundedRect(logoX, logoY, logoW, logoH, 2, 2, 'F');
 
   if (logoData) {
-    // Fill the full white box — whitespace already removed by canvas crop
     doc.addImage(logoData, 'PNG', logoX, logoY, logoW, logoH);
   } else {
     doc.setTextColor(...RED);
-    doc.setFontSize(14);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('JC', logoX + logoW / 2, logoY + logoH / 2 + 2.5, { align: 'center' });
+    doc.text('JC', logoX + logoW / 2, logoY + logoH / 2 + 2, { align: 'center' });
   }
 
-  // ── Text block — right of logo
-  const textX = logoX + logoW + 5; // ~51 mm
-  const textW = pageW - textX - marginR; // ~151 mm
-  const col2X = textX + textW / 2;      // ~126 mm
+  // ── Titre — collé au logo
+  const titleX = logoX + logoW + 4; // ~34 mm
 
   doc.setTextColor(...WHITE);
 
-  // Company name
+  // Nom société
   doc.setFontSize(17);
   doc.setFont('helvetica', 'bold');
-  doc.text(COMPANY.name, textX, 12);
+  doc.text(COMPANY.name, titleX, 11.5);
 
   // Tagline
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'italic');
-  doc.text(COMPANY.tagline, textX, 18.5);
+  doc.text(COMPANY.tagline, titleX, 17.5);
 
-  // Separator line (semi-transparent white)
+  // ── Séparateur pleine largeur
   doc.setDrawColor(...WHITE);
   doc.setLineWidth(0.25);
   doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
-  doc.line(textX, 21.5, pageW - marginR, 21.5);
+  doc.line(marginL, 21, pageW - marginR, 21);
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
-  // Contact info — 2 columns, plain text labels (no emojis)
+  // ── Infos de contact — pleine largeur, 2 colonnes
+  const col2X = marginL + (pageW - marginL - marginR) / 2; // ~106 mm
+  const lh = 5;
+  let cy = 26.5;
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
+  doc.setTextColor(...WHITE);
 
-  const lh = 4.8;
-  let cy = 26;
-
-  doc.text(`Tel.    : ${COMPANY.phone}`,   textX, cy);
-  doc.text(`E-mail  : ${COMPANY.email}`,   col2X, cy);
+  doc.text(`Tel.    : ${COMPANY.phone}`,   marginL, cy);
+  doc.text(`E-mail  : ${COMPANY.email}`,   col2X,   cy);
   cy += lh;
-  doc.text(`Web     : ${COMPANY.website}`, textX, cy);
-  doc.text(`Adresse : ${COMPANY.address}`, col2X, cy);
+  doc.text(`Web     : ${COMPANY.website}`, marginL, cy);
+  doc.text(`Adresse : ${COMPANY.address}`, col2X,   cy);
   cy += lh;
-  doc.text(`NUI     : ${COMPANY.nui.replace('NUI : ', '')}`, textX, cy);
+  doc.setFontSize(7);
+  doc.text(`${COMPANY.nui}`, marginL, cy);
 
-  // ── Document title — below header band
+  // ── Titre du document — sous le bandeau
   const titleY = headerH + 11;
   doc.setTextColor(...DARK);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text(title, pageW / 2, titleY, { align: 'center' });
 
-  // Red underline
+  // Soulignement rouge
   const titleW = doc.getTextWidth(title);
   doc.setDrawColor(...RED);
   doc.setLineWidth(0.6);
