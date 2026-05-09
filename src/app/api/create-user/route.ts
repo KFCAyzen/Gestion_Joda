@@ -16,6 +16,33 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+function getCreateUserErrorMessage(error: unknown) {
+    const rawMessage = error && typeof error === "object" && "message" in error && typeof error.message === "string"
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : "";
+    const message = rawMessage.toLowerCase();
+
+    if (message.includes("database error creating new user")) {
+        return "Le compte d'authentification n'a pas pu être créé à cause d'une configuration base de données. Appliquez la migration de correction du profil utilisateur puis réessayez.";
+    }
+
+    if (message.includes("already been registered") || message.includes("already registered") || message.includes("already exists")) {
+        return "Un compte existe déjà avec cet email ou cet identifiant.";
+    }
+
+    if (message.includes("invalid email")) {
+        return "L'adresse email n'est pas valide.";
+    }
+
+    if (message.includes("password")) {
+        return "Le mot de passe temporaire ne respecte pas les règles de sécurité.";
+    }
+
+    return rawMessage || "Impossible de créer le compte pour le moment. Réessayez dans un instant.";
+}
+
 async function handleCreateUser(req: NextRequest) {
     try {
     const { name, email, username, password, role, authEmail, telephone } = await req.json();
@@ -57,13 +84,20 @@ async function handleCreateUser(req: NextRequest) {
         email: supabaseEmail,
         password,
         email_confirm: true,
-        user_metadata: { username, name, role },
+        user_metadata: {
+            username,
+            name,
+            role,
+            telephone: telephone || null,
+            must_change_password: role === "student",
+            is_active: true,
+        },
         app_metadata:  { role },
     });
 
     if (authError) {
         console.error("[create-user] authError:", authError.message);
-        return NextResponse.json({ error: authError.message }, { status: 400 });
+        return NextResponse.json({ error: getCreateUserErrorMessage(authError) }, { status: 400 });
     }
 
     if (!data.user) {

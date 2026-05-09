@@ -319,6 +319,7 @@ export default function StudentManagement() {
                     password: temporaryPassword,
                     role: "student",
                     authEmail: buildStudentAuthEmail(username),
+                    telephone: studentData.telephone,
                 }),
             });
 
