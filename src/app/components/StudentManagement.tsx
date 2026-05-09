@@ -269,6 +269,23 @@ export default function StudentManagement() {
                         { student_id: editingStudent.id }
                     );
                 }
+                // Si le nouveau choix nécessite une procédure, s'assurer qu'un dossier existe
+                if (formData.choix !== "cours_seuls") {
+                    const { data: existingDossier } = await supabase
+                        .from("dossier_bourses")
+                        .select("id")
+                        .eq("student_id", editingStudent.id)
+                        .maybeSingle();
+                    if (!existingDossier) {
+                        await supabase.from("dossier_bourses").insert({
+                            student_id: editingStudent.id,
+                            status: "document_manquant",
+                            desired_program: formData.filiere || "",
+                            study_level: formData.niveau || "",
+                            notes_internes: "Dossier créé automatiquement lors de la mise à jour du service",
+                        });
+                    }
+                }
                 await loadStudents();
                 setActiveTab("list");
                 return;
