@@ -54,6 +54,21 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
 
     useEffect(() => { loadDocs(); }, [loadDocs]);
 
+    // Abonnement temps réel : rafraîchit quand le staff valide/rejette un document
+    useEffect(() => {
+        if (!studentId) return;
+        const channel = supabase
+            .channel(`docs-rt-${studentId}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'documents',
+                filter: `student_id=eq.${studentId}`,
+            }, () => { loadDocs(); })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [studentId, loadDocs]);
+
     const getDoc = (key: string) => docs.find(d => d.type === key);
 
     const handleUpload = async (key: DocKey, file: File) => {

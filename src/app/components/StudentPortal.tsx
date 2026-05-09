@@ -161,6 +161,34 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         load();
     }, [load]);
 
+    // Abonnement temps réel : met à jour le dossier quand le staff change son statut
+    useEffect(() => {
+        if (!studentId) return;
+        const channel = supabase
+            .channel(`dossier-rt-${studentId}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'dossier_bourses',
+                filter: `student_id=eq.${studentId}`,
+            }, async () => {
+                const { data } = await supabase
+                    .from("dossier_bourses").select("*")
+                    .eq("student_id", studentId)
+                    .order("created_at", { ascending: false }).limit(1);
+                const d = data?.[0] ?? null;
+                setDossier(d);
+                if (d?.university_id) {
+                    const { data: uniData } = await supabase
+                        .from("universities").select("nom")
+                        .eq("id", d.university_id).single();
+                    setUniversityName(uniData?.nom ?? null);
+                }
+            })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [studentId]);
+
     const getPaymentStatusLabel = (status: string) => {
         switch (status) {
             case "paye":
@@ -368,6 +396,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     onDownloadReceipt={studentInfo
                                         ? (p) => downloadReceipt(p, studentInfo)
                                         : undefined}
+                                    onDeclarePayment={(p) => openDeclareModal(p as Payment)}
                                 />
                             </CardContent>
                         </Card>
@@ -478,27 +507,58 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         <CardTitle className="text-base">Étapes</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <ol className="space-y-3">
-                                            {(["en_attente", "document_recu", "en_cours", "admission_validee", "visa_en_cours", "termine"] as const).map((step) => {
-                                                const steps = ["en_attente", "document_recu", "en_cours", "admission_validee", "visa_en_cours", "termine"];
-                                                const currentIdx = steps.indexOf(dossier.status);
-                                                const stepIdx = steps.indexOf(step);
-                                                const done = stepIdx < currentIdx;
-                                                const active = stepIdx === currentIdx;
-                                                return (
-                                                    <li key={step} className="flex items-center gap-3">
-                                                        <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                                                            done ? "bg-green-100 text-green-600" : active ? "bg-red-100 text-red-600" : "bg-slate-100 text-slate-400"
-                                                        }`}>
-                                                            {done ? "✓" : stepIdx + 1}
-                                                        </span>
-                                                        <span className={`text-sm ${active ? "font-semibold text-slate-900" : done ? "text-slate-500 line-through" : "text-slate-400"}`}>
-                                                            {DOSSIER_LABELS[step] ?? step}
-                                                        </span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ol>
+                                        {(() => {
+                                            const STATUS_STEP_MAP: Record<string, number> = {
+                                                document_manquant: 0,
+                                                en_attente: 0,
+                                                document_recu: 1,
+                                                en_cours: 2,
+                                                en_attente_universite: 2,
+                                                admission_validee: 3,
+                                                admission_rejetee: 3,
+                                                visa_en_cours: 4,
+                                                termine: 5,
+                                            };
+                                            const isRejected = dossier.status === "admission_rejetee";
+                                            const currentIdx = STATUS_STEP_MAP[dossier.status] ?? 0;
+                                            const steps = [
+                                                { key: "en_attente", label: "En attente" },
+                                                { key: "document_recu", label: "Documents reçus" },
+                                                { key: "en_cours", label: "En cours de traitement" },
+                                                { key: "admission_validee", label: isRejected ? "Admission rejetée" : "Admission validée" },
+                                                { key: "visa_en_cours", label: "Visa en cours" },
+                                                { key: "termine", label: "Terminé" },
+                                            ];
+                                            return (
+                                                <ol className="space-y-3">
+                                                    {steps.map((step, stepIdx) => {
+                                                        const done = stepIdx < currentIdx;
+                                                        const active = stepIdx === currentIdx;
+                                                        const isRejectStep = isRejected && stepIdx === 3;
+                                                        return (
+                                                            <li key={step.key} className="flex items-center gap-3">
+                                                                <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                                                                    done ? "bg-green-100 text-green-600" :
+                                                                    isRejectStep ? "bg-red-100 text-red-600" :
+                                                                    active ? "bg-red-100 text-red-600" :
+                                                                    "bg-slate-100 text-slate-400"
+                                                                }`}>
+                                                                    {done ? "✓" : isRejectStep ? "✗" : stepIdx + 1}
+                                                                </span>
+                                                                <span className={`text-sm ${
+                                                                    isRejectStep ? "font-semibold text-red-600" :
+                                                                    active ? "font-semibold text-slate-900" :
+                                                                    done ? "text-slate-500" :
+                                                                    "text-slate-400"
+                                                                }`}>
+                                                                    {step.label}
+                                                                </span>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ol>
+                                            );
+                                        })()}
                                     </CardContent>
                                 </Card>
                             </>

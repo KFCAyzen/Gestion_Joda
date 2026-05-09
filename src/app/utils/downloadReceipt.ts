@@ -77,12 +77,37 @@ function numberToWords(num: number): string {
     return `${h > 1 ? numberToWords(h) + " " : ""}cent${h > 1 ? "s" : ""}${r > 0 ? " " + numberToWords(r) : ""}`;
 }
 
-export function downloadReceipt(payment: ReceiptPayment, student: ReceiptStudent) {
-    const dateStr = payment.date_paiement
-        ? new Date(payment.date_paiement).toLocaleDateString("fr-FR")
-        : payment.validated_at
-          ? new Date(payment.validated_at).toLocaleDateString("fr-FR")
-          : new Date().toLocaleDateString("fr-FR");
+async function fetchLogoBase64(): Promise<string | null> {
+    try {
+        const res = await fetch("/Logo.png");
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        return await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(blob);
+        });
+    } catch {
+        return null;
+    }
+}
+
+export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptStudent) {
+    const [dateStr, logoSrc] = await Promise.all([
+        Promise.resolve(
+            payment.date_paiement
+                ? new Date(payment.date_paiement).toLocaleDateString("fr-FR")
+                : payment.validated_at
+                  ? new Date(payment.validated_at).toLocaleDateString("fr-FR")
+                  : new Date().toLocaleDateString("fr-FR")
+        ),
+        fetchLogoBase64(),
+    ]);
+
+    const logoTag = logoSrc
+        ? `<img src="${logoSrc}" alt="Joda Company" style="height:48px;width:auto;display:block;">`
+        : `<span style="font-size:22px;font-weight:bold;color:#dc2626;">JC</span>`;
 
     const html = `
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -91,9 +116,10 @@ export function downloadReceipt(payment: ReceiptPayment, student: ReceiptStudent
 <title>Reçu de Paiement - Joda Company</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-  .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #dc2626; padding-bottom: 20px; }
-  .company-name { font-size: 28px; font-weight: bold; color: #dc2626; margin: 0; }
-  .company-info { font-size: 12px; color: #666; margin: 10px 0; }
+  .header { margin-bottom: 30px; border-bottom: 3px solid #dc2626; padding-bottom: 20px; }
+  .company-name { font-size: 22px; font-weight: bold; color: #dc2626; margin: 0 0 3px 0; }
+  .company-tagline { font-size: 13px; color: #444; margin: 0 0 8px 0; }
+  .company-info { font-size: 11px; color: #666; margin: 0; line-height: 1.5; }
   .receipt-title { font-size: 20px; margin: 20px 0; color: #dc2626; text-align: center; text-decoration: underline; }
   .receipt-number { text-align: right; font-size: 14px; color: #666; margin-bottom: 20px; }
   .section { background: #f9f9f9; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #dc2626; }
@@ -112,13 +138,20 @@ export function downloadReceipt(payment: ReceiptPayment, student: ReceiptStudent
 </head>
 <body>
   <div class="header">
-    <h1 class="company-name">JODA COMPANY</h1>
-    <div class="company-info">
-      Agence de Voyage - Bourses d'Études en Chine<br>
-      BP : 7352 Yaoundé, N° Cont : P116012206442N<br>
-      Tel : (+237) 674 94 44 17 / 699 01 56 81<br>
-      Email: jodacompany@yahoo.com
-    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="vertical-align:middle;width:56px;padding-right:14px;">${logoTag}</td>
+        <td style="vertical-align:middle;">
+          <div class="company-name">JODA COMPANY</div>
+          <div class="company-tagline">Gestion des bourses d'études en Chine</div>
+          <div class="company-info">
+            Agence de Voyage — Bourses d'Études en Chine<br>
+            BP : 7352 Yaoundé, N° Cont : P116012206442N<br>
+            Tel : (+237) 674 94 44 17 / 699 01 56 81 &nbsp;|&nbsp; Email : jodacompany@yahoo.com
+          </div>
+        </td>
+      </tr>
+    </table>
   </div>
 
   <div class="receipt-number">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { CreditCard } from "lucide-react";
 import { MONTANTS_BOURSE, MONTANTS_MANDARIN, MONTANTS_ANGLAIS } from "../types/joda";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 
@@ -223,11 +224,13 @@ export default function PaymentOverview({
     langue,
     payments,
     onDownloadReceipt,
+    onDeclarePayment,
 }: {
     choix: string;
     langue: string;
     payments: Payment[];
     onDownloadReceipt?: (payment: Payment) => void;
+    onDeclarePayment?: (payment: Payment) => void;
 }) {
     const services = useMemo(() => getExpectedServices(choix, langue), [choix, langue]);
 
@@ -426,6 +429,24 @@ export default function PaymentOverview({
                                             >
                                                 Télécharger le reçu
                                             </button>
+                                        )}
+
+                                        {/* Bouton déclarer paiement */}
+                                        {payment && (payment.status === "attente" || payment.status === "retard") && onDeclarePayment && (
+                                            <button
+                                                onClick={() => onDeclarePayment(payment)}
+                                                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                                            >
+                                                <CreditCard className="h-3.5 w-3.5" />
+                                                Déclarer ce paiement
+                                            </button>
+                                        )}
+
+                                        {/* Indicateur en validation */}
+                                        {payment?.status === "en_validation" && (
+                                            <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-center text-xs font-semibold text-blue-700">
+                                                En attente de validation
+                                            </div>
                                         )}
                                     </div>
                                 );
