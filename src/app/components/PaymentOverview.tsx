@@ -231,6 +231,13 @@ function fmt(n: number) {
     return n.toLocaleString("fr-FR") + " FCFA";
 }
 
+export interface TrancheDeclareInfo {
+    type: string;
+    tranche: number;
+    montant: number;
+    label: string;
+}
+
 export default function PaymentOverview({
     choix,
     langue,
@@ -242,7 +249,7 @@ export default function PaymentOverview({
     langue: string;
     payments: Payment[];
     onDownloadReceipt?: (payment: Payment) => void;
-    onDeclarePayment?: (payment: Payment) => void;
+    onDeclarePayment?: (payment: Payment | null, info: TrancheDeclareInfo) => void;
 }) {
     const services = useMemo(() => getExpectedServices(choix, langue, payments), [choix, langue, payments]);
 
@@ -444,13 +451,18 @@ export default function PaymentOverview({
                                         )}
 
                                         {/* Bouton déclarer paiement */}
-                                        {payment && (payment.status === "attente" || payment.status === "retard") && onDeclarePayment && (
+                                        {payment?.status !== "paye" && payment?.status !== "en_validation" && onDeclarePayment && (
                                             <button
-                                                onClick={() => onDeclarePayment(payment)}
+                                                onClick={() => onDeclarePayment(payment ?? null, {
+                                                    type: service.type,
+                                                    tranche: tranche.tranche,
+                                                    montant: tranche.montant,
+                                                    label: tranche.label,
+                                                })}
                                                 className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
                                             >
                                                 <CreditCard className="h-3.5 w-3.5" />
-                                                Déclarer ce paiement
+                                                Effectuer ce paiement
                                             </button>
                                         )}
 

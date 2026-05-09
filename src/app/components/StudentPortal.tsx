@@ -104,7 +104,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [showPasswordChange, setShowPasswordChange] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [universityName, setUniversityName] = useState<string | null>(null);
-    const [declareModal, setDeclareModal] = useState<{ payment: Payment } | null>(null);
+    const [declareModal, setDeclareModal] = useState<{
+        paymentId: string | null;
+        type: string;
+        trancheNum: number;
+        montantTranche: number;
+        label: string;
+        dateLimite: string | null;
+    } | null>(null);
+    const [paymentMode, setPaymentMode] = useState<"complet" | "avance">("complet");
+    const [montantAvance, setMontantAvance] = useState<string>("");
     const [declaring, setDeclaring] = useState(false);
     const [proofDataUrl, setProofDataUrl] = useState<string | null>(null);
     const proofInputRef = useRef<HTMLInputElement>(null);
@@ -215,9 +224,18 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         }
     };
 
-    const openDeclareModal = (payment: Payment) => {
+    const openDeclareModal = (payment: { id?: string; date_limite?: string | null } | null, info: { type: string; tranche: number; montant: number; label: string }) => {
         setProofDataUrl(null);
-        setDeclareModal({ payment });
+        setPaymentMode("complet");
+        setMontantAvance(info.montant.toString());
+        setDeclareModal({
+            paymentId: payment?.id ?? null,
+            type: info.type,
+            trancheNum: info.tranche,
+            montantTranche: info.montant,
+            label: info.label,
+            dateLimite: payment?.date_limite ?? null,
+        });
     };
 
     const handleProofFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -230,14 +248,22 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
     const handleDeclarePayment = async () => {
         if (!declareModal) return;
+        const montantDeclare = paymentMode === "complet"
+            ? declareModal.montantTranche
+            : Math.max(1, parseInt(montantAvance) || 0);
         setDeclaring(true);
         try {
             const res = await fetch("/api/declare-payment", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    payment_id: declareModal.payment.id,
+                    payment_id: declareModal.paymentId,
+                    type: declareModal.type,
+                    tranche_num: declareModal.trancheNum,
+                    montant_declare: montantDeclare,
+                    montant_tranche: declareModal.montantTranche,
                     proof_url: proofDataUrl ?? undefined,
+                    is_avance: paymentMode === "avance",
                 }),
             });
             if (res.ok) {
@@ -396,7 +422,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     onDownloadReceipt={studentInfo
                                         ? (p) => downloadReceipt(p, studentInfo)
                                         : undefined}
-                                    onDeclarePayment={(p) => openDeclareModal(p as Payment)}
+                                    onDeclarePayment={(p, info) => openDeclareModal(p, info)}
                                 />
                             </CardContent>
                         </Card>
@@ -431,13 +457,18 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                         <Badge className={STATUS_COLORS[payment.status]}>{getPaymentStatusLabel(payment.status)}</Badge>
                                                     </div>
                                                 </button>
-                                                {(payment.status === "attente" || payment.status === "retard") && (
+                                                {payment.status !== "paye" && payment.status !== "en_validation" && (
                                                     <button
-                                                        onClick={() => openDeclareModal(payment)}
+                                                        onClick={() => openDeclareModal(payment, {
+                                                            type: payment.type,
+                                                            tranche: payment.tranche ?? 1,
+                                                            montant: payment.montant,
+                                                            label: payment.tranche ? `Tranche ${payment.tranche}` : payment.type,
+                                                        })}
                                                         className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
                                                     >
                                                         <CreditCard className="h-3.5 w-3.5" />
-                                                        Déclarer ce paiement
+                                                        Effectuer ce paiement
                                                     </button>
                                                 )}
                                                 {payment.status === "en_validation" && (
@@ -581,16 +612,15 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             </main>
         </div>
 
-        {/* Modal déclaration de paiement */}
+        {/* Modal paiement étudiant */}
         {declareModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                 <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-                    <div className="mb-5 flex items-start justify-between">
+                    <div className="mb-4 flex items-start justify-between">
                         <div>
-                            <h3 className="text-lg font-semibold text-slate-900">Déclarer un paiement</h3>
+                            <h3 className="text-lg font-semibold text-slate-900">Effectuer un paiement</h3>
                             <p className="mt-0.5 text-sm text-slate-500">
-                                {getPaymentTypeLabel(declareModal.payment.type)}
-                                {declareModal.payment.tranche ? ` — Tranche ${declareModal.payment.tranche}` : ""}
+                                {getPaymentTypeLabel(declareModal.type)} — {declareModal.label}
                             </p>
                         </div>
                         <button onClick={() => setDeclareModal(null)} className="text-slate-400 hover:text-slate-600">
@@ -598,18 +628,54 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </button>
                     </div>
 
-                    <div className="mb-5 space-y-3 text-sm">
+                    <div className="mb-4 space-y-3 text-sm">
+                        {/* Montant attendu */}
                         <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                            <span className="text-slate-500">Montant</span>
-                            <span className="font-bold text-red-600">{formatMontant(declareModal.payment.montant)}</span>
+                            <span className="text-slate-500">Montant attendu</span>
+                            <span className="font-bold text-slate-800">{formatMontant(declareModal.montantTranche)}</span>
                         </div>
-                        {declareModal.payment.date_limite && (
-                            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                                <span className="text-slate-500">Date limite</span>
-                                <span className="font-medium">{new Date(declareModal.payment.date_limite).toLocaleDateString("fr-FR")}</span>
+
+                        {/* Mode de paiement */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => setPaymentMode("complet")}
+                                className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                    paymentMode === "complet"
+                                        ? "border-red-500 bg-red-50 text-red-700"
+                                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                                }`}
+                            >
+                                Paiement complet
+                            </button>
+                            <button
+                                onClick={() => setPaymentMode("avance")}
+                                className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                    paymentMode === "avance"
+                                        ? "border-red-500 bg-red-50 text-red-700"
+                                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                                }`}
+                            >
+                                Acompte
+                            </button>
+                        </div>
+
+                        {/* Montant acompte */}
+                        {paymentMode === "avance" && (
+                            <div className="space-y-1">
+                                <p className="text-xs font-medium text-slate-600">Montant versé (FCFA)</p>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={declareModal.montantTranche}
+                                    value={montantAvance}
+                                    onChange={e => setMontantAvance(e.target.value)}
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-red-400 focus:outline-none"
+                                    placeholder="Montant versé..."
+                                />
                             </div>
                         )}
 
+                        {/* Preuve */}
                         <div className="space-y-1.5">
                             <p className="text-xs font-medium text-slate-600">Preuve de paiement (optionnel)</p>
                             <input
@@ -642,8 +708,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </div>
                     </div>
 
-                    <p className="mb-5 text-xs text-slate-400">
-                        En confirmant, vous déclarez avoir effectué ce paiement. L&apos;équipe Joda vérifiera et validera dans les plus brefs délais.
+                    <p className="mb-4 text-xs text-slate-400">
+                        En confirmant, vous signalez ce paiement. L&apos;équipe Joda vérifiera et validera dans les plus brefs délais.
                     </p>
 
                     <div className="flex gap-3">
