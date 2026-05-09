@@ -91,29 +91,54 @@ export default function ApplicationFeeManagement() {
         }
 
         try {
-            const { error } = await supabase.from("payments").insert({
+            const montant = parseInt(formData.amount, 10);
+            const now = new Date().toISOString();
+
+            const { data: payment, error } = await supabase
+                .from("payments")
+                .insert({
+                    student_id: formData.studentId,
+                    montant,
+                    type: "bourse",
+                    tranche: 1,
+                    status: "paye",
+                    date_limite: formData.date,
+                    date_paiement: formData.date,
+                    validated_by: user?.id,
+                    validated_at: now,
+                })
+                .select()
+                .single();
+
+            if (error) {
+                showNotification("Erreur lors de l'enregistrement", "error");
+                return;
+            }
+
+            // Entrée comptable automatique
+            const student = students.find((s) => s.id === formData.studentId);
+            const studentName = student ? `${student.prenom} ${student.nom}` : "Étudiant";
+            const typeEntree = formData.motif === "Cours de langue" ? "paiement_cours" : "paiement_procedure";
+
+            await supabase.from("entrees_comptables").insert({
+                montant,
+                date: now,
+                type: typeEntree,
+                description: `${formData.motif} — ${studentName}`,
                 student_id: formData.studentId,
-                montant: parseInt(formData.amount, 10),
-                type: "bourse",
-                tranche: 1,
-                status: "paye",
-                date_limite: formData.date,
-                date_paiement: formData.date,
-                validated_by: user?.id,
-                validated_at: new Date().toISOString(),
+                payment_id: payment?.id ?? null,
+                created_by: user?.id,
             });
 
-            if (!error) {
-                showNotification("Frais enregistrés avec succès !", "success");
-                setShowForm(false);
-                setFormData({
-                    studentId: "",
-                    amount: "",
-                    motif: "Inscription",
-                    date: new Date().toISOString().split("T")[0],
-                });
-                await loadData();
-            }
+            showNotification("Frais enregistrés et comptabilisés !", "success");
+            setShowForm(false);
+            setFormData({
+                studentId: "",
+                amount: "",
+                motif: "Inscription",
+                date: new Date().toISOString().split("T")[0],
+            });
+            await loadData();
         } catch {
             showNotification("Erreur lors de l'enregistrement", "error");
         }
