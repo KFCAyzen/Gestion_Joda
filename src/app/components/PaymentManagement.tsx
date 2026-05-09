@@ -264,19 +264,18 @@ export default function PaymentManagement() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Filtrer par étudiant</Label>
-                                <Select value={selectedStudent} onValueChange={(v) => setSelectedStudent(v || "")}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Tous les étudiants" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="">Tous les étudiants</SelectItem>
-                                        {students.map(student => (
-                                            <SelectItem key={student.id} value={student.id}>
-                                                {student.nom} {student.prenom}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <select
+                                    value={selectedStudent}
+                                    onChange={(e) => setSelectedStudent(e.target.value)}
+                                    className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 cursor-pointer"
+                                >
+                                    <option value="">Tous les étudiants</option>
+                                    {students.map(student => (
+                                        <option key={student.id} value={student.id}>
+                                            {student.nom} {student.prenom}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Filtrer par statut</Label>

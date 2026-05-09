@@ -5,6 +5,7 @@ import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
 import DocumentUpload from "./DocumentUpload";
+import PaymentOverview from "./PaymentOverview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,19 +92,23 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [dossier, setDossier] = useState<DossierBourse | null>(null);
     const [loading, setLoading] = useState(true);
     const [studentId, setStudentId] = useState<string | null>(null);
+    const [studentChoix, setStudentChoix] = useState<string>("");
+    const [studentLangue, setStudentLangue] = useState<string>("");
     const load = useCallback(async () => {
         setLoading(true);
         try {
             // Récupérer l'ID étudiant depuis la table students via created_by
             const { data: studentData } = await supabase
                 .from("students")
-                .select("id")
+                .select("id, choix, langue")
                 .eq("created_by", user.id)
                 .single();
 
             const sid = studentData?.id;
             if (!sid) { setLoading(false); return; }
             setStudentId(sid);
+            setStudentChoix(studentData?.choix ?? "");
+            setStudentLangue(studentData?.langue ?? "");
 
             const [pays, docs, dossiers] = await Promise.all([
                 supabase.from("payments").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
@@ -250,33 +255,49 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 )}
 
                 {view === "payments" && (
-                    <Card className="joda-surface border-0 shadow-none">
-                        <CardHeader>
-                            <CardTitle>Mes Paiements</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {payments.length === 0 ? (
-                                <p className="py-8 text-center text-gray-500">Aucun paiement</p>
-                            ) : (
-                                <div className="space-y-3">
-                                    {payments.map((payment) => (
-                                        <div key={payment.id} className="joda-surface-muted flex items-center justify-between p-4">
-                                            <div>
-                                                <p className="font-medium">{payment.type}</p>
-                                                <p className="text-sm text-gray-500">
-                                                    {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString("fr-FR") : "-"}
-                                                </p>
+                    <div className="space-y-6">
+                        <Card className="joda-surface border-0 shadow-none">
+                            <CardHeader>
+                                <CardTitle>Mes Paiements</CardTitle>
+                                <p className="text-sm text-slate-500">
+                                    Suivi de tes échéances selon le service souscrit.
+                                </p>
+                            </CardHeader>
+                            <CardContent>
+                                <PaymentOverview
+                                    choix={studentChoix}
+                                    langue={studentLangue}
+                                    payments={payments}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        {payments.length > 0 && (
+                            <Card className="joda-surface border-0 shadow-none">
+                                <CardHeader>
+                                    <CardTitle className="text-base">Historique des paiements</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        {payments.map((payment) => (
+                                            <div key={payment.id} className="joda-surface-muted flex items-center justify-between p-4">
+                                                <div>
+                                                    <p className="font-medium capitalize">{payment.type}</p>
+                                                    <p className="text-sm text-gray-500">
+                                                        {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString("fr-FR") : "-"}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold text-red-600">{formatMontant(payment.montant)}</p>
+                                                    <Badge className={STATUS_COLORS[payment.status]}>{getPaymentStatusLabel(payment.status)}</Badge>
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-red-600">{formatMontant(payment.montant)}</p>
-                                                <Badge className={STATUS_COLORS[payment.status]}>{getPaymentStatusLabel(payment.status)}</Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
                 )}
 
                 {view === "documents" && (

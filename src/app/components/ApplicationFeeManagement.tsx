@@ -79,12 +79,6 @@ export default function ApplicationFeeManagement() {
         loadData();
     }, []);
 
-    const generateFeeId = () => {
-        const timestamp = Date.now().toString().slice(-4);
-        const random = Math.random().toString(36).substring(2, 3).toUpperCase();
-        return `FEE${timestamp}${random}`;
-    };
-
     const handleSaveFee = async () => {
         if (!formData.studentId || !formData.amount) {
             showNotification("Veuillez remplir tous les champs obligatoires", "error");
@@ -93,7 +87,6 @@ export default function ApplicationFeeManagement() {
 
         try {
             const { error } = await supabase.from("payments").insert({
-                id: generateFeeId(),
                 student_id: formData.studentId,
                 montant: parseInt(formData.amount, 10),
                 type: "bourse",
@@ -180,18 +173,18 @@ export default function ApplicationFeeManagement() {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label style={{ color: "#dc2626" }}>Étudiant *</Label>
-                                <Select value={formData.studentId || ""} onValueChange={(value) => setFormData({ ...formData, studentId: value || "" })}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner un étudiant" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {students.map((student) => (
-                                            <SelectItem key={student.id} value={student.id}>
-                                                {student.prenom} {student.nom}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <select
+                                    value={formData.studentId || ""}
+                                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                                    className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 cursor-pointer"
+                                >
+                                    <option value="" disabled>Sélectionner un étudiant</option>
+                                    {students.map((student) => (
+                                        <option key={student.id} value={student.id}>
+                                            {student.prenom} {student.nom}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="space-y-2">

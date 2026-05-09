@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import SearchBar from "./SearchBar";
 import FilterSelect from "./FilterSelect";
+import PaymentOverview from "./PaymentOverview";
 import { DropdownMenu } from "./shared";
 import { Eye, Edit, Trash2 } from "lucide-react";
 
@@ -81,6 +82,7 @@ export default function StudentManagement() {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
     const [createdAccount, setCreatedAccount] = useState<{ username: string; password: string } | null>(null);
+    const [selectedStudentPayments, setSelectedStudentPayments] = useState<any[]>([]);
     const [submitError, setSubmitError] = useState("");
     const [operationMessage, setOperationMessage] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
@@ -146,6 +148,18 @@ export default function StudentManagement() {
     useEffect(() => {
         loadStudents();
     }, [currentUser?.role]);
+
+    useEffect(() => {
+        if (!selectedStudent) {
+            setSelectedStudentPayments([]);
+            return;
+        }
+        supabase
+            .from("payments")
+            .select("*")
+            .eq("student_id", selectedStudent.id)
+            .then(({ data }) => setSelectedStudentPayments(data || []));
+    }, [selectedStudent?.id]);
 
     const filteredStudents = useMemo(() => {
         return students.filter((student) => {
@@ -548,45 +562,76 @@ export default function StudentManagement() {
                             exit={{ opacity: 0 }}
                         >
                             <motion.div
-                                className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+                                className="flex w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl"
+                                style={{ maxHeight: "90vh" }}
                                 initial={{ scale: 0.94, y: 20, opacity: 0 }}
                                 animate={{ scale: 1, y: 0, opacity: 1 }}
                                 exit={{ scale: 0.94, opacity: 0 }}
                             >
-                                <div className="mb-4 flex items-start justify-between">
-                                    <h3 className="text-xl font-semibold text-slate-900">{selectedStudent.prenom} {selectedStudent.nom}</h3>
+                                {/* En-tête fixe */}
+                                <div className="flex items-start justify-between border-b border-slate-100 p-6 pb-4">
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-slate-900">{selectedStudent.prenom} {selectedStudent.nom}</h3>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            <Badge variant="outline">{selectedStudent.niveau}</Badge>
+                                            <Badge variant="secondary">{selectedStudent.filiere}</Badge>
+                                            <Badge variant="outline">{selectedStudent.sexe === "M" ? "Homme" : "Femme"}</Badge>
+                                        </div>
+                                    </div>
                                     <Button variant="outline" size="sm" onClick={() => setSelectedStudent(null)}>✕</Button>
                                 </div>
-                                <div className="mb-4 flex flex-wrap gap-2">
-                                    <Badge variant="outline">{selectedStudent.niveau}</Badge>
-                                    <Badge variant="secondary">{selectedStudent.filiere}</Badge>
-                                    <Badge variant="outline">{selectedStudent.sexe === "M" ? "Homme" : "Femme"}</Badge>
+
+                                {/* Corps défilable */}
+                                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                                    {/* Infos de base */}
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="rounded-xl border border-slate-200 p-3">
+                                            <p className="text-xs uppercase tracking-wider text-slate-400">Contact</p>
+                                            <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.email}</p>
+                                            <p className="text-sm text-slate-600">{selectedStudent.telephone}</p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-200 p-3">
+                                            <p className="text-xs uppercase tracking-wider text-slate-400">Parcours</p>
+                                            <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.niveau}</p>
+                                            <p className="text-sm text-slate-600">{selectedStudent.diplome_acquis || "Diplôme non renseigné"}</p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-200 p-3">
+                                            <p className="text-xs uppercase tracking-wider text-slate-400">Langue</p>
+                                            <p className="mt-2 text-sm text-slate-900">{selectedStudent.langue || "Non renseignée"}</p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-200 p-3">
+                                            <p className="text-xs uppercase tracking-wider text-slate-400">Service souscrit</p>
+                                            <p className="mt-2 text-sm text-slate-900">
+                                                {selectedStudent.choix === "procedure_seule"
+                                                    ? "Procédure seule"
+                                                    : selectedStudent.choix === "procedure_cours"
+                                                      ? "Procédure + Cours"
+                                                      : selectedStudent.choix === "cours_seuls"
+                                                        ? "Cours seuls"
+                                                        : selectedStudent.choix}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 p-3">
+                                        <p className="text-xs uppercase tracking-wider text-slate-400">Créé le</p>
+                                        <p className="mt-2 text-sm text-slate-900">{new Date(selectedStudent.created_at).toLocaleString("fr-FR")}</p>
+                                    </div>
+
+                                    {/* Échéancier paiements */}
+                                    <div>
+                                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                                            Suivi des paiements
+                                        </p>
+                                        <PaymentOverview
+                                            choix={selectedStudent.choix}
+                                            langue={selectedStudent.langue || ""}
+                                            payments={selectedStudentPayments}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="rounded-xl border border-slate-200 p-3">
-                                        <p className="text-xs uppercase tracking-wider text-slate-400">Contact</p>
-                                        <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.email}</p>
-                                        <p className="text-sm text-slate-600">{selectedStudent.telephone}</p>
-                                    </div>
-                                    <div className="rounded-xl border border-slate-200 p-3">
-                                        <p className="text-xs uppercase tracking-wider text-slate-400">Parcours</p>
-                                        <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.niveau}</p>
-                                        <p className="text-sm text-slate-600">{selectedStudent.diplome_acquis || "Diplôme non renseigné"}</p>
-                                    </div>
-                                    <div className="rounded-xl border border-slate-200 p-3">
-                                        <p className="text-xs uppercase tracking-wider text-slate-400">Langue</p>
-                                        <p className="mt-2 text-sm text-slate-900">{selectedStudent.langue || "Non renseignée"}</p>
-                                    </div>
-                                    <div className="rounded-xl border border-slate-200 p-3">
-                                        <p className="text-xs uppercase tracking-wider text-slate-400">Procédure</p>
-                                        <p className="mt-2 text-sm text-slate-900">{selectedStudent.choix}</p>
-                                    </div>
-                                </div>
-                                <div className="mt-3 rounded-xl border border-slate-200 p-3">
-                                    <p className="text-xs uppercase tracking-wider text-slate-400">Créé le</p>
-                                    <p className="mt-2 text-sm text-slate-900">{new Date(selectedStudent.created_at).toLocaleString("fr-FR")}</p>
-                                </div>
-                                <div className="mt-4 flex flex-wrap justify-end gap-2">
+
+                                {/* Pied fixe */}
+                                <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-6 py-4">
                                     {canEdit && (
                                         <>
                                             <Button variant="outline" onClick={() => { openEditForm(selectedStudent); setSelectedStudent(null); }}>Modifier</Button>
