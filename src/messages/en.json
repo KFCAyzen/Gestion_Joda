@@ -682,6 +682,176 @@
       "extraDetails": "Additional details"
     }
   },
+  "accountingPage": {
+    "loading": "Loading...",
+    "header": {
+      "eyebrow": "Finance operations",
+      "title": "Accounting",
+      "description": "Track income, expenses and daily balances for the business.",
+      "access": "View reserved for agents and admins"
+    },
+    "tabs": {
+      "report": "Report",
+      "entries": "Income",
+      "expenses": "Expenses",
+      "budgets": "Budgets",
+      "categories": "Categories"
+    },
+    "summary": {
+      "totalEntries": "Total Income",
+      "totalExpenses": "Total Expenses",
+      "globalBalance": "Global Balance",
+      "sinceBeginning": "Since the beginning",
+      "currentPeriod": "Current period",
+      "operations": "{count} operation(s)",
+      "shortOperations": "{count} op."
+    },
+    "periods": {
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "year": "This year",
+      "custom": "Custom"
+    },
+    "budgetPeriods": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "report": {
+      "periodEntries": "Income for the period",
+      "periodExpenses": "Expenses for the period",
+      "periodBalance": "Period balance",
+      "categoryStats": "Statistics by category",
+      "percentOfTotal": "{percent}% of total"
+    },
+    "labels": {
+      "entry": "Income",
+      "entries": "Income",
+      "expense": "Expense",
+      "expenses": "Expenses"
+    },
+    "table": {
+      "date": "Date",
+      "description": "Description",
+      "type": "Type",
+      "category": "Category",
+      "status": "Status",
+      "amount": "Amount",
+      "actions": "Actions",
+      "plannedAmount": "Planned amount",
+      "period": "Period",
+      "createdAt": "Created on"
+    },
+    "forms": {
+      "newEntry": "New income",
+      "newExpense": "New expense",
+      "newBudget": "New forecast budget",
+      "newCustomCategory": "New custom category",
+      "amount": "Amount (FCFA)",
+      "plannedAmount": "Planned amount (FCFA)",
+      "type": "Type",
+      "category": "Category",
+      "date": "Date",
+      "period": "Period",
+      "description": "Description",
+      "descriptionPlaceholder": "Description...",
+      "categoryName": "Category name",
+      "categoryNamePlaceholder": "E.g. Marketing"
+    },
+    "actions": {
+      "add": "+ Add",
+      "adding": "Adding...",
+      "delete": "Delete",
+      "details": "View details",
+      "printReceipt": "Print receipt",
+      "validate": "Validate",
+      "close": "Close"
+    },
+    "filters": {
+      "search": "Search..."
+    },
+    "status": {
+      "validated": "Validated",
+      "pending": "Pending"
+    },
+    "empty": {
+      "noPeriodOperations": "No operation for this period",
+      "noResults": "No results",
+      "noEntries": "No income",
+      "noExpenses": "No expenses",
+      "noBudgets": "No budget",
+      "noCustomCategories": "No custom category"
+    },
+    "categories": {
+      "rent": "Rent",
+      "salaries": "Salaries",
+      "operations": "Operations",
+      "equipment": "Equipment",
+      "supplies": "Supplies",
+      "transport": "Transport",
+      "communication": "Communication",
+      "partners": "Partners",
+      "misc": "Miscellaneous",
+      "entryCategories": "Income categories",
+      "expenseCategories": "Expense categories"
+    },
+    "entryTypes": {
+      "procedurePayment": "Procedure payment",
+      "coursePayment": "Course payment",
+      "miscRevenue": "Miscellaneous revenue"
+    },
+    "details": {
+      "entryTitle": "Details - Income",
+      "expenseTitle": "Details - Expense"
+    },
+    "confirm": {
+      "deleteCategoryTitle": "Delete category",
+      "deleteCategoryDescription": "This category will be permanently deleted.",
+      "deleteBudgetTitle": "Delete budget",
+      "deleteBudgetDescription": "This budget will be permanently deleted.",
+      "deleteEntryTitle": "Delete income",
+      "deleteEntryDescription": "This accounting income will be permanently deleted.",
+      "deleteExpenseTitle": "Delete expense",
+      "deleteExpenseDescription": "This accounting expense will be permanently deleted."
+    },
+    "messages": {
+      "entryAdded": "Income added",
+      "entryAddError": "Error while adding income",
+      "expenseAdded": "Expense added",
+      "expenseAddError": "Error while adding expense",
+      "expenseValidated": "Expense validated",
+      "validationError": "Error while validating",
+      "budgetAdded": "Budget added",
+      "budgetAddError": "Error while adding budget",
+      "categoryAdded": "Category added",
+      "categoryAddError": "Error while adding category",
+      "categoryDeleted": "Category deleted",
+      "budgetDeleted": "Budget deleted",
+      "entryDeleted": "Income deleted",
+      "expenseDeleted": "Expense deleted",
+      "entryUpdated": "Income updated",
+      "expenseUpdated": "Expense updated",
+      "deleteError": "Error while deleting",
+      "error": "Error",
+      "excelGenerated": "Excel export generated",
+      "pdfExportError": "Error while exporting PDF"
+    },
+    "activity": {
+      "entryCreated": "Accounting income: {description} - {amount} FCFA",
+      "expenseCreated": "Accounting expense: {description} - {amount} FCFA",
+      "entryUpdated": "Income updated: {description}",
+      "expenseUpdated": "Expense updated: {description}"
+    },
+    "export": {
+      "type": "Type",
+      "date": "Date",
+      "description": "Description",
+      "categoryType": "Category/Type",
+      "amount": "Amount",
+      "pdfTitle": "Accounting Report - {period}"
+    }
+  },
   "applicationManagement": {
     "loading": "Loading applications...",
     "header": {

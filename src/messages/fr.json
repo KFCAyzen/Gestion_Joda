@@ -719,6 +719,176 @@
       "extraDetails": "Détails supplémentaires"
     }
   },
+  "accountingPage": {
+    "loading": "Chargement...",
+    "header": {
+      "eyebrow": "Finance operations",
+      "title": "Comptabilité",
+      "description": "Suivi des entrées, sorties et soldes journaliers de l'activité.",
+      "access": "Vue réservée aux agents et admins"
+    },
+    "tabs": {
+      "report": "Rapport",
+      "entries": "Entrées",
+      "expenses": "Sorties",
+      "budgets": "Budgets",
+      "categories": "Catégories"
+    },
+    "summary": {
+      "totalEntries": "Total Entrées",
+      "totalExpenses": "Total Sorties",
+      "globalBalance": "Solde Global",
+      "sinceBeginning": "Depuis le début",
+      "currentPeriod": "Période actuelle",
+      "operations": "{count} opération(s)",
+      "shortOperations": "{count} op."
+    },
+    "periods": {
+      "today": "Aujourd'hui",
+      "week": "Cette semaine",
+      "month": "Ce mois",
+      "year": "Cette année",
+      "custom": "Personnalisé"
+    },
+    "budgetPeriods": {
+      "monthly": "Mensuel",
+      "quarterly": "Trimestriel",
+      "yearly": "Annuel"
+    },
+    "report": {
+      "periodEntries": "Entrées de la période",
+      "periodExpenses": "Sorties de la période",
+      "periodBalance": "Solde de la période",
+      "categoryStats": "Statistiques par catégorie",
+      "percentOfTotal": "{percent}% du total"
+    },
+    "labels": {
+      "entry": "Entrée",
+      "entries": "Entrées",
+      "expense": "Sortie",
+      "expenses": "Sorties"
+    },
+    "table": {
+      "date": "Date",
+      "description": "Description",
+      "type": "Type",
+      "category": "Catégorie",
+      "status": "Statut",
+      "amount": "Montant",
+      "actions": "Actions",
+      "plannedAmount": "Montant prévu",
+      "period": "Période",
+      "createdAt": "Créé le"
+    },
+    "forms": {
+      "newEntry": "Nouvelle entrée",
+      "newExpense": "Nouvelle sortie",
+      "newBudget": "Nouveau budget prévisionnel",
+      "newCustomCategory": "Nouvelle catégorie personnalisée",
+      "amount": "Montant (FCFA)",
+      "plannedAmount": "Montant prévu (FCFA)",
+      "type": "Type",
+      "category": "Catégorie",
+      "date": "Date",
+      "period": "Période",
+      "description": "Description",
+      "descriptionPlaceholder": "Description...",
+      "categoryName": "Nom de la catégorie",
+      "categoryNamePlaceholder": "Ex: Marketing"
+    },
+    "actions": {
+      "add": "+ Ajouter",
+      "adding": "Ajout...",
+      "delete": "Supprimer",
+      "details": "Voir détails",
+      "printReceipt": "Imprimer reçu",
+      "validate": "Valider",
+      "close": "Fermer"
+    },
+    "filters": {
+      "search": "Rechercher..."
+    },
+    "status": {
+      "validated": "Validé",
+      "pending": "En attente"
+    },
+    "empty": {
+      "noPeriodOperations": "Aucune opération pour cette période",
+      "noResults": "Aucun résultat",
+      "noEntries": "Aucune entrée",
+      "noExpenses": "Aucune sortie",
+      "noBudgets": "Aucun budget",
+      "noCustomCategories": "Aucune catégorie personnalisée"
+    },
+    "categories": {
+      "rent": "Loyer",
+      "salaries": "Salaires",
+      "operations": "Fonctionnement",
+      "equipment": "Matériels",
+      "supplies": "Fournitures",
+      "transport": "Transports",
+      "communication": "Communication",
+      "partners": "Partenaires",
+      "misc": "Divers",
+      "entryCategories": "Catégories d'entrées",
+      "expenseCategories": "Catégories de sorties"
+    },
+    "entryTypes": {
+      "procedurePayment": "Paiement procédure",
+      "coursePayment": "Paiement cours",
+      "miscRevenue": "Revenus divers"
+    },
+    "details": {
+      "entryTitle": "Détails - Entrée",
+      "expenseTitle": "Détails - Sortie"
+    },
+    "confirm": {
+      "deleteCategoryTitle": "Supprimer la catégorie",
+      "deleteCategoryDescription": "Cette catégorie sera définitivement supprimée.",
+      "deleteBudgetTitle": "Supprimer le budget",
+      "deleteBudgetDescription": "Ce budget sera définitivement supprimé.",
+      "deleteEntryTitle": "Supprimer l'entrée",
+      "deleteEntryDescription": "Cette entrée comptable sera définitivement supprimée.",
+      "deleteExpenseTitle": "Supprimer la sortie",
+      "deleteExpenseDescription": "Cette sortie comptable sera définitivement supprimée."
+    },
+    "messages": {
+      "entryAdded": "Entrée ajoutée",
+      "entryAddError": "Erreur lors de l'ajout de l'entrée",
+      "expenseAdded": "Sortie ajoutée",
+      "expenseAddError": "Erreur lors de l'ajout de la sortie",
+      "expenseValidated": "Sortie validée",
+      "validationError": "Erreur lors de la validation",
+      "budgetAdded": "Budget ajouté",
+      "budgetAddError": "Erreur lors de l'ajout du budget",
+      "categoryAdded": "Catégorie ajoutée",
+      "categoryAddError": "Erreur lors de l'ajout de la catégorie",
+      "categoryDeleted": "Catégorie supprimée",
+      "budgetDeleted": "Budget supprimé",
+      "entryDeleted": "Entrée supprimée",
+      "expenseDeleted": "Sortie supprimée",
+      "entryUpdated": "Entrée modifiée",
+      "expenseUpdated": "Sortie modifiée",
+      "deleteError": "Erreur lors de la suppression",
+      "error": "Erreur",
+      "excelGenerated": "Export Excel généré",
+      "pdfExportError": "Erreur lors de l'export PDF"
+    },
+    "activity": {
+      "entryCreated": "Entrée comptable: {description} - {amount} FCFA",
+      "expenseCreated": "Sortie comptable: {description} - {amount} FCFA",
+      "entryUpdated": "Entrée modifiée : {description}",
+      "expenseUpdated": "Sortie modifiée : {description}"
+    },
+    "export": {
+      "type": "Type",
+      "date": "Date",
+      "description": "Description",
+      "categoryType": "Catégorie/Type",
+      "amount": "Montant",
+      "pdfTitle": "Rapport Comptable - {period}"
+    }
+  },
   "applicationManagement": {
     "loading": "Chargement des candidatures...",
     "header": {
