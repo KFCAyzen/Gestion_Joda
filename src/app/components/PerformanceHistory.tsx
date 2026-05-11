@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 import LoadingSpinner from "./LoadingSpinner";
@@ -57,6 +58,9 @@ const toDateKey = (value: string) => new Date(value).toISOString().split("T")[0]
 
 export default function PerformanceHistory() {
     const { user } = useAuth();
+    const t = useTranslations("performanceHistory");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const [payments, setPayments] = useState<PaymentRow[]>([]);
     const [studentsById, setStudentsById] = useState<Record<string, StudentRow>>({});
@@ -141,7 +145,7 @@ export default function PerformanceHistory() {
             setPayments([]);
             setStudentsById({});
             setCreatorOptions([]);
-            setLoadError("Impossible de charger les données de performance pour le moment.");
+            setLoadError(t("states.loadError"));
         } finally {
             setIsLoading(false);
         }
@@ -187,7 +191,7 @@ export default function PerformanceHistory() {
 
     const selectedCreatorLabel =
         selectedCreator === "all"
-            ? "Tous les responsables"
+            ? t("filters.allManagers")
             : creatorOptions.find((option) => option.value === selectedCreator)?.label || selectedCreator;
 
     const totalCourses = dailyStats.reduce((sum, day) => sum + day.courses.count, 0);
@@ -197,22 +201,22 @@ export default function PerformanceHistory() {
     const handleDownloadWord = () => {
         const wordContent = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-        <head><meta charset='utf-8'><title>Historique des performances</title></head>
+        <head><meta charset='utf-8'><title>${t("export.title")}</title></head>
         <body>
             <h1>Joda Company</h1>
-            <h2>Historique des performances</h2>
-            <p><strong>Responsable :</strong> ${selectedCreatorLabel}</p>
-            <p><strong>Généré le :</strong> ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}</p>
-            <p><strong>Total cours :</strong> ${totalCourses}</p>
-            <p><strong>Total procédures :</strong> ${totalProcedures}</p>
-            <p><strong>Encaissements totaux :</strong> ${formatPrice(totalAmount.toString())}</p>
+            <h2>${t("export.title")}</h2>
+            <p><strong>${t("export.manager")} :</strong> ${selectedCreatorLabel}</p>
+            <p><strong>${t("export.generatedAt")} :</strong> ${new Date().toLocaleDateString(dateLocale)} ${t("export.at")} ${new Date().toLocaleTimeString(dateLocale)}</p>
+            <p><strong>${t("export.totalCourses")} :</strong> ${totalCourses}</p>
+            <p><strong>${t("export.totalProcedures")} :</strong> ${totalProcedures}</p>
+            <p><strong>${t("export.totalRevenue")} :</strong> ${formatPrice(totalAmount.toString())}</p>
             <table border='1' cellpadding='6' cellspacing='0'>
-                <tr><th>Date</th><th>Cours</th><th>Montant cours</th><th>Procédures</th><th>Montant procédures</th><th>Total</th></tr>
+                <tr><th>${t("table.date")}</th><th>${t("table.courses")}</th><th>${t("table.courseAmount")}</th><th>${t("table.procedures")}</th><th>${t("table.procedureAmount")}</th><th>${t("table.total")}</th></tr>
                 ${dailyStats
                     .map(
                         (day) => `
                     <tr>
-                        <td>${new Date(day.date).toLocaleDateString("fr-FR")}</td>
+                        <td>${new Date(day.date).toLocaleDateString(dateLocale)}</td>
                         <td>${day.courses.count}</td>
                         <td>${formatPrice(day.courses.amount.toString())}</td>
                         <td>${day.procedures.count}</td>
@@ -230,7 +234,7 @@ export default function PerformanceHistory() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `Historique_Performances_${selectedCreator === "all" ? "Global" : selectedCreator}_${new Date().toISOString().split("T")[0]}.doc`;
+        link.download = `${t("export.filePrefix")}_${selectedCreator === "all" ? t("export.globalScope") : selectedCreator}_${new Date().toISOString().split("T")[0]}.doc`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -243,22 +247,22 @@ export default function PerformanceHistory() {
 
         const printContent = `
         <!DOCTYPE html>
-        <html>
-        <head><title>Historique des performances</title></head>
+        <html lang="${locale}">
+        <head><title>${t("export.title")}</title></head>
         <body>
             <h1>Joda Company</h1>
-            <h2>Historique des performances</h2>
-            <p><strong>Responsable :</strong> ${selectedCreatorLabel}</p>
-            <p><strong>Total cours :</strong> ${totalCourses}</p>
-            <p><strong>Total procédures :</strong> ${totalProcedures}</p>
-            <p><strong>Encaissements totaux :</strong> ${formatPrice(totalAmount.toString())}</p>
+            <h2>${t("export.title")}</h2>
+            <p><strong>${t("export.manager")} :</strong> ${selectedCreatorLabel}</p>
+            <p><strong>${t("export.totalCourses")} :</strong> ${totalCourses}</p>
+            <p><strong>${t("export.totalProcedures")} :</strong> ${totalProcedures}</p>
+            <p><strong>${t("export.totalRevenue")} :</strong> ${formatPrice(totalAmount.toString())}</p>
             <table border="1" cellpadding="6" cellspacing="0">
-                <tr><th>Date</th><th>Cours</th><th>Montant cours</th><th>Procédures</th><th>Montant procédures</th><th>Total</th></tr>
+                <tr><th>${t("table.date")}</th><th>${t("table.courses")}</th><th>${t("table.courseAmount")}</th><th>${t("table.procedures")}</th><th>${t("table.procedureAmount")}</th><th>${t("table.total")}</th></tr>
                 ${dailyStats
                     .map(
                         (day) => `
                     <tr>
-                        <td>${new Date(day.date).toLocaleDateString("fr-FR")}</td>
+                        <td>${new Date(day.date).toLocaleDateString(dateLocale)}</td>
                         <td>${day.courses.count}</td>
                         <td>${formatPrice(day.courses.amount.toString())}</td>
                         <td>${day.procedures.count}</td>
@@ -280,7 +284,7 @@ export default function PerformanceHistory() {
     if (!user) {
         return (
             <div className="p-8 text-center">
-                <p className="text-gray-600">Vous devez être connecté pour accéder à cette page.</p>
+                <p className="text-gray-600">{t("states.authRequired")}</p>
             </div>
         );
     }
@@ -292,20 +296,20 @@ export default function PerformanceHistory() {
             <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                        Reporting activité
+                        {t("header.tag")}
                     </p>
-                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Historique des performances</h1>
+                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t("header.title")}</h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Synthèse des paiements encaissés par date, cours de langue et procédures.
+                        {t("header.subtitle")}
                     </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
                     <Button onClick={handlePrint} style={{ backgroundColor: "#dc2626" }}>
-                        Imprimer
+                        {t("actions.print")}
                     </Button>
                     {isAdmin && (
                         <Button onClick={handleDownloadWord} className="bg-blue-600 hover:bg-blue-700">
-                            Télécharger Word
+                            {t("actions.downloadWord")}
                         </Button>
                     )}
                 </div>
@@ -314,19 +318,19 @@ export default function PerformanceHistory() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card className="joda-surface border-0 shadow-none">
                     <CardContent className="pt-4">
-                        <p className="mb-1 text-xs text-slate-500">Cours encaissés</p>
+                        <p className="mb-1 text-xs text-slate-500">{t("stats.courses")}</p>
                         <p className="text-xl font-bold text-blue-700">{totalCourses}</p>
                     </CardContent>
                 </Card>
                 <Card className="joda-surface border-0 shadow-none">
                     <CardContent className="pt-4">
-                        <p className="mb-1 text-xs text-slate-500">Procédures encaissées</p>
+                        <p className="mb-1 text-xs text-slate-500">{t("stats.procedures")}</p>
                         <p className="text-xl font-bold text-emerald-700">{totalProcedures}</p>
                     </CardContent>
                 </Card>
                 <Card className="joda-surface border-0 shadow-none">
                     <CardContent className="pt-4">
-                        <p className="mb-1 text-xs text-slate-500">Chiffre d'affaires encaissé</p>
+                        <p className="mb-1 text-xs text-slate-500">{t("stats.revenue")}</p>
                         <p className="text-xl font-bold text-rose-700">{formatPrice(totalAmount.toString())}</p>
                     </CardContent>
                 </Card>
@@ -335,15 +339,15 @@ export default function PerformanceHistory() {
             {isAdmin && creatorOptions.length > 0 && (
                 <Card className="joda-surface border-0 shadow-none">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">Filtrer par responsable</CardTitle>
+                        <CardTitle className="text-lg">{t("filters.title")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Select value={selectedCreator} onValueChange={(value) => setSelectedCreator(value || "all")}>
                             <SelectTrigger className="w-full sm:w-[260px]">
-                                <SelectValue placeholder="Tous les responsables" />
+                                <SelectValue placeholder={t("filters.allManagers")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Tous les responsables</SelectItem>
+                                <SelectItem value="all">{t("filters.allManagers")}</SelectItem>
                                 {creatorOptions.map((option) => (
                                     <SelectItem key={option.value} value={option.value}>
                                         {option.label}
@@ -358,19 +362,21 @@ export default function PerformanceHistory() {
             <Card className="joda-surface border-0 shadow-none">
                 <CardHeader>
                     <CardTitle>
-                        Performances {selectedCreator === "all" ? "globales" : `de ${selectedCreatorLabel}`}
+                        {selectedCreator === "all"
+                            ? t("list.titleAll")
+                            : t("list.titleByManager", { manager: selectedCreatorLabel })}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <LoadingSpinner size="lg" text="Chargement des performances..." />
+                        <LoadingSpinner size="lg" text={t("states.loading")} />
                     ) : loadError ? (
                         <div className="py-8 text-center">
                             <p className="text-sm text-rose-600">{loadError}</p>
                         </div>
                     ) : dailyStats.length === 0 ? (
                         <div className="py-8 text-center">
-                            <p className="text-slate-500">Aucune donnée encaissée disponible</p>
+                            <p className="text-slate-500">{t("states.empty")}</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -379,7 +385,7 @@ export default function PerformanceHistory() {
                                     <CardContent className="p-4">
                                         <div className="mb-3 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
                                             <h3 className="font-semibold text-slate-800">
-                                                {new Date(day.date).toLocaleDateString("fr-FR")}
+                                                {new Date(day.date).toLocaleDateString(dateLocale)}
                                             </h3>
                                             <Badge variant="destructive" className="text-sm">
                                                 {formatPrice(day.total.toString())}
@@ -387,13 +393,13 @@ export default function PerformanceHistory() {
                                         </div>
                                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                             <div className="rounded-xl bg-blue-50 p-3">
-                                                <p className="text-sm font-medium text-blue-800">Cours de langue</p>
-                                                <p className="text-xs text-blue-600">{day.courses.count} paiement(s)</p>
+                                                <p className="text-sm font-medium text-blue-800">{t("cards.languageCourses")}</p>
+                                                <p className="text-xs text-blue-600">{t("cards.paymentsCount", { count: day.courses.count })}</p>
                                                 <p className="font-bold text-blue-600">{formatPrice(day.courses.amount.toString())}</p>
                                             </div>
                                             <div className="rounded-xl bg-green-50 p-3">
-                                                <p className="text-sm font-medium text-green-800">Procédures</p>
-                                                <p className="text-xs text-green-600">{day.procedures.count} paiement(s)</p>
+                                                <p className="text-sm font-medium text-green-800">{t("cards.procedures")}</p>
+                                                <p className="text-xs text-green-600">{t("cards.paymentsCount", { count: day.procedures.count })}</p>
                                                 <p className="font-bold text-green-600">{formatPrice(day.procedures.amount.toString())}</p>
                                             </div>
                                         </div>

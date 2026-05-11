@@ -104,6 +104,240 @@
     "french": "Français",
     "english": "English"
   },
+  "dashboard": {
+    "executiveTag": "Executive Dashboard",
+    "title": "Cockpit de pilotage des admissions, revenus et risques",
+    "subtitle": "Vue consolidée pour arbitrer plus vite: flux de candidatures, rendement universités, capacité d'encaissement et alertes opérationnelles.",
+    "activePipeline": "{count} dossiers en cours",
+    "collectionRate": "{rate}% de collecte",
+    "activeUniversities": "{count} universités actives",
+    "refresh": "Actualiser",
+    "injectData": "Injecter des données",
+    "purgeData": "Purger les jeux de test",
+    "insight": "Insight {index}",
+    "loading": "Chargement du cockpit décisionnel...",
+    "cards": {
+      "portfolio": "Portefeuille",
+      "portfolioSub": "{count} étudiants actifs dans le pipeline",
+      "revenue": "Encaissements",
+      "revenueSub": "Taux de collecte global {rate}%",
+      "network": "Réseau",
+      "networkSub": "{count} universités référencées",
+      "networkTrend": "{rate}% actives",
+      "risk": "Risque",
+      "riskSub": "Alertes nécessitant une action rapide",
+      "riskWatch": "À surveiller",
+      "riskOk": "Sous contrôle"
+    },
+    "performance": {
+      "tag": "Performance mensuelle",
+      "title": "Volume, admissions et cash sur 6 mois",
+      "badge": "Focus décision",
+      "lastMonth": "Dernier mois",
+      "lastMonthValue": "{count} dossiers",
+      "lastMonthValueSingle": "0 dossier",
+      "lastMonthDetail": "{count} admissions en {month}",
+      "lastMonthNoTrend": "Aucune tendance",
+      "admissionPeak": "Pic d'admission",
+      "admissionPeakDetail": "{count} admissions validées",
+      "admissionPeakNone": "Pas encore de pic",
+      "avgCash": "Moyenne cash/mois",
+      "avgCashDetail": "Base glissante sur 6 mois"
+    },
+    "conversion": {
+      "tag": "Qualité de conversion",
+      "title": "Taux d'admission final",
+      "label": "Conversion",
+      "globalCollection": "Collecte globale",
+      "studentsTracked": "Étudiants suivis"
+    },
+    "risk": {
+      "tag": "Niveau d'alerte",
+      "title": "Pression opérationnelle",
+      "label": "Alertes",
+      "messageHigh": "Priorité aux paiements en retard et dossiers incomplets pour fluidifier le mois en cours.",
+      "messageLow": "Aucun signal critique détecté sur les flux de paiement et les notifications."
+    },
+    "pipeline": {
+      "tag": "Pipeline",
+      "title": "Répartition des statuts"
+    },
+    "universities": {
+      "tag": "Réseau",
+      "title": "Universités les plus contributrices"
+    },
+    "programs": {
+      "tag": "Mix",
+      "title": "Programmes les plus demandés",
+      "empty": "Pas encore assez de dossiers pour le mix programme."
+    },
+    "weekly": {
+      "tag": "Cadence 7 jours",
+      "title": "Rythme de production et encaissement"
+    },
+    "watchlist": {
+      "tag": "Watchlist",
+      "title": "Répartition des risques",
+      "empty": "Aucun risque significatif détecté."
+    },
+    "nextActions": {
+      "tag": "Next best actions",
+      "title": "Ce que le dashboard recommande maintenant",
+      "badge": "Orchestration business",
+      "priorityTitle": "Priorité stratégique",
+      "priorityText": "Accentuer les relances sur les dossiers incomplets et pousser les universités à plus fort taux de conversion."
+    },
+    "confirm": {
+      "generateTitle": "Générer un jeu de démonstration ?",
+      "clearTitle": "Supprimer les données de démonstration ?",
+      "generateDesc": "Cette action ajoute des étudiants, universités, candidatures et paiements fictifs pour enrichir le cockpit.",
+      "clearDesc": "Cette action nettoie les données de démonstration pour revenir à une base plus propre.",
+      "cancel": "Annuler",
+      "confirm": "Confirmer",
+      "generateSuccess": "Jeu de démonstration généré avec succès.",
+      "generateError": "La génération des données a échoué.",
+      "clearSuccess": "Données de démonstration supprimées.",
+      "clearError": "Le nettoyage a échoué."
+    },
+    "pipelineLabels": {
+      "document_recu": "Documents reçus",
+      "en_attente": "En attente",
+      "en_cours": "En traitement",
+      "document_manquant": "Documents manquants",
+      "en_attente_universite": "Retour université",
+      "visa_en_cours": "Visa en cours",
+      "admission_validee": "Admis",
+      "admission_rejetee": "Refusés",
+      "termine": "Terminés"
+    },
+    "riskLabels": {
+      "latePayments": "Paiements en retard",
+      "missingDocuments": "Documents manquants",
+      "unreadAlerts": "Alertes non lues"
+    },
+    "highlights": {
+      "topUniversity": "{university} porte le plus gros volume avec {count} candidatures et {rate}% d'admission.",
+      "noTopUniversity": "Aucune université ne concentre encore le volume pour le moment.",
+      "peakMonth": "Le mois de {month} concentre le pic d'encaissement avec {amount}.",
+      "noPeakMonth": "Le volet encaissement n'a pas encore de tendance mensuelle exploitable.",
+      "latePayments": "{count} paiement(s) en tension nécessitent une relance rapide côté opérations.",
+      "noLatePayments": "Aucun paiement critique détecté sur la période courante."
+    },
+    "chartLabels": {
+      "applications": "Candidatures",
+      "accepted": "Admissions",
+      "revenue": "Encaissements",
+      "weeklyApplications": "Dossiers ouverts",
+      "weeklyPayments": "Paiements reçus",
+      "volume": "Volume",
+      "admissionRate": "Taux d'admission",
+      "rate": "Taux"
+    },
+    "programLabels": {
+      "unknown": "Non renseigné"
+    }
+  },
+  "students": {
+    "tag": "Gestion académique",
+    "title": "Gestion des Étudiants",
+    "subtitle": "Suivi des profils, parcours et informations des candidats.",
+    "addButton": "+ Ajouter",
+    "loading": "Chargement...",
+    "stats": {
+      "total": "Total",
+      "totalSub": "Étudiants enregistrés",
+      "women": "Femmes",
+      "womenSub": "Profils féminins",
+      "men": "Hommes",
+      "menSub": "Profils masculins",
+      "languages": "Langues",
+      "languagesSub": "Profils avec langue renseignée"
+    },
+    "list": {
+      "title": "Liste des Étudiants",
+      "searchPlaceholder": "Rechercher par nom, email, téléphone, filière...",
+      "filterGender": "Sexe",
+      "filterAll": "Tous les profils",
+      "filterMen": "Hommes",
+      "filterWomen": "Femmes",
+      "empty": "Aucun étudiant trouvé",
+      "emptyHint": "Ajustez les filtres ou ajoutez un nouveau profil.",
+      "colName": "Nom",
+      "colEmail": "Email",
+      "colPhone": "Téléphone",
+      "colLevel": "Niveau",
+      "colField": "Formation",
+      "colActions": "Actions",
+      "male": "Homme",
+      "female": "Femme"
+    },
+    "actions": {
+      "details": "Détails",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "close": "Fermer",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "add": "Ajouter",
+      "modify": "Modifier",
+      "understood": "Compris"
+    },
+    "detail": {
+      "contact": "Contact",
+      "path": "Parcours",
+      "language": "Langue",
+      "languageNone": "Non renseignée",
+      "service": "Service souscrit",
+      "createdAt": "Créé le",
+      "payments": "Suivi des paiements",
+      "documents": "Documents soumis",
+      "diplomaNone": "Diplôme non renseigné",
+      "phoneNone": "Non renseigné",
+      "choices": {
+        "procedure_seule": "Procédure seule",
+        "procedure_cours": "Procédure + Cours",
+        "cours_seuls": "Cours seuls"
+      }
+    },
+    "form": {
+      "titleAdd": "Ajouter un Étudiant",
+      "titleEdit": "Modifier un Étudiant",
+      "requiredHint": "Les champs marqués par une étoile sont obligatoires.",
+      "firstName": "Prénom *",
+      "lastName": "Nom *",
+      "email": "Email *",
+      "phone": "Téléphone *",
+      "age": "Âge *",
+      "gender": "Sexe *",
+      "genderSelect": "Sélectionner",
+      "male": "Homme",
+      "female": "Femme",
+      "level": "Niveau d'études *",
+      "levelPlaceholder": "Bac+2, Master...",
+      "field": "Filière *",
+      "diploma": "Diplôme acquis",
+      "language": "Langue préférée",
+      "choice": "Choix de procédure",
+      "choiceSelect": "Sélectionner",
+      "procedure_seule": "Procédure seule",
+      "procedure_cours": "Procédure + Cours",
+      "cours_seuls": "Cours seuls"
+    },
+    "delete": {
+      "title": "Confirmer la suppression",
+      "message": "Vous allez supprimer le profil de {name}. Cette action est irréversible.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer"
+    },
+    "createdAccount": {
+      "title": "Compte étudiant créé",
+      "subtitle": "Transmettez ces identifiants à l'étudiant",
+      "username": "Nom d'utilisateur",
+      "tempPassword": "Mot de passe temporaire",
+      "info": "Le compte étudiant est créé dans la base et reste lié à ce dossier.",
+      "warning": "Le mot de passe temporaire devra être changé à la première connexion."
+    }
+  },
   "student": {
     "portal": {
       "title": "Portail Étudiant",
@@ -314,6 +548,60 @@
       "noLateToNotify": "Aucun paiement en retard à notifier.",
       "generated": "{count} notification(s) générée(s).",
       "error": "Erreur : {error}"
+    }
+  },
+  "performanceHistory": {
+    "header": {
+      "tag": "Reporting activité",
+      "title": "Historique des performances",
+      "subtitle": "Synthèse des paiements encaissés par date, cours de langue et procédures."
+    },
+    "actions": {
+      "print": "Imprimer",
+      "downloadWord": "Télécharger Word"
+    },
+    "stats": {
+      "courses": "Cours encaissés",
+      "procedures": "Procédures encaissées",
+      "revenue": "Chiffre d'affaires encaissé"
+    },
+    "filters": {
+      "title": "Filtrer par responsable",
+      "allManagers": "Tous les responsables"
+    },
+    "list": {
+      "titleAll": "Performances globales",
+      "titleByManager": "Performances de {manager}"
+    },
+    "cards": {
+      "languageCourses": "Cours de langue",
+      "procedures": "Procédures",
+      "paymentsCount": "{count, plural, one {# paiement} other {# paiements}}"
+    },
+    "table": {
+      "date": "Date",
+      "courses": "Cours",
+      "courseAmount": "Montant cours",
+      "procedures": "Procédures",
+      "procedureAmount": "Montant procédures",
+      "total": "Total"
+    },
+    "states": {
+      "authRequired": "Vous devez être connecté pour accéder à cette page.",
+      "loading": "Chargement des performances...",
+      "loadError": "Impossible de charger les données de performance pour le moment.",
+      "empty": "Aucune donnée encaissée disponible"
+    },
+    "export": {
+      "title": "Historique des performances",
+      "manager": "Responsable",
+      "generatedAt": "Généré le",
+      "at": "à",
+      "totalCourses": "Total cours",
+      "totalProcedures": "Total procédures",
+      "totalRevenue": "Encaissements totaux",
+      "filePrefix": "Historique_Performances",
+      "globalScope": "Global"
     }
   }
 }

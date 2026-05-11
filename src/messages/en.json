@@ -104,6 +104,240 @@
     "french": "French",
     "english": "English"
   },
+  "dashboard": {
+    "executiveTag": "Executive Dashboard",
+    "title": "Admissions, revenue and risk management cockpit",
+    "subtitle": "Consolidated view to decide faster: application flow, university performance, collection capacity and operational alerts.",
+    "activePipeline": "{count} active files",
+    "collectionRate": "{rate}% collection",
+    "activeUniversities": "{count} active universities",
+    "refresh": "Refresh",
+    "injectData": "Inject demo data",
+    "purgeData": "Purge test data",
+    "insight": "Insight {index}",
+    "loading": "Loading decision cockpit...",
+    "cards": {
+      "portfolio": "Portfolio",
+      "portfolioSub": "{count} active students in pipeline",
+      "revenue": "Revenue",
+      "revenueSub": "Global collection rate {rate}%",
+      "network": "Network",
+      "networkSub": "{count} universities listed",
+      "networkTrend": "{rate}% active",
+      "risk": "Risk",
+      "riskSub": "Alerts requiring immediate action",
+      "riskWatch": "Monitor",
+      "riskOk": "Under control"
+    },
+    "performance": {
+      "tag": "Monthly performance",
+      "title": "Volume, admissions and cash over 6 months",
+      "badge": "Decision focus",
+      "lastMonth": "Last month",
+      "lastMonthValue": "{count} files",
+      "lastMonthValueSingle": "0 files",
+      "lastMonthDetail": "{count} admissions in {month}",
+      "lastMonthNoTrend": "No trend",
+      "admissionPeak": "Admission peak",
+      "admissionPeakDetail": "{count} admissions validated",
+      "admissionPeakNone": "No peak yet",
+      "avgCash": "Avg cash/month",
+      "avgCashDetail": "Rolling 6-month base"
+    },
+    "conversion": {
+      "tag": "Conversion quality",
+      "title": "Final admission rate",
+      "label": "Conversion",
+      "globalCollection": "Global collection",
+      "studentsTracked": "Students tracked"
+    },
+    "risk": {
+      "tag": "Alert level",
+      "title": "Operational pressure",
+      "label": "Alerts",
+      "messageHigh": "Priority on late payments and incomplete files to smooth out the current month.",
+      "messageLow": "No critical signal detected on payment flows and notifications."
+    },
+    "pipeline": {
+      "tag": "Pipeline",
+      "title": "Status breakdown"
+    },
+    "universities": {
+      "tag": "Network",
+      "title": "Top contributing universities"
+    },
+    "programs": {
+      "tag": "Mix",
+      "title": "Most requested programs",
+      "empty": "Not enough files yet for the program mix."
+    },
+    "weekly": {
+      "tag": "7-day cadence",
+      "title": "Production and collection rhythm"
+    },
+    "watchlist": {
+      "tag": "Watchlist",
+      "title": "Risk breakdown",
+      "empty": "No significant risk detected."
+    },
+    "nextActions": {
+      "tag": "Next best actions",
+      "title": "What the dashboard recommends now",
+      "badge": "Business orchestration",
+      "priorityTitle": "Strategic priority",
+      "priorityText": "Step up follow-ups on incomplete files and push universities with higher conversion rates."
+    },
+    "confirm": {
+      "generateTitle": "Generate a demo dataset?",
+      "clearTitle": "Delete demo data?",
+      "generateDesc": "This action adds fictional students, universities, applications and payments to enrich the cockpit.",
+      "clearDesc": "This action cleans up demo data to return to a cleaner base.",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "generateSuccess": "Demo dataset generated successfully.",
+      "generateError": "Data generation failed.",
+      "clearSuccess": "Demo data deleted.",
+      "clearError": "Cleanup failed."
+    },
+    "pipelineLabels": {
+      "document_recu": "Documents received",
+      "en_attente": "Pending",
+      "en_cours": "In progress",
+      "document_manquant": "Missing documents",
+      "en_attente_universite": "University response",
+      "visa_en_cours": "Visa processing",
+      "admission_validee": "Admitted",
+      "admission_rejetee": "Rejected",
+      "termine": "Completed"
+    },
+    "riskLabels": {
+      "latePayments": "Late payments",
+      "missingDocuments": "Missing documents",
+      "unreadAlerts": "Unread alerts"
+    },
+    "highlights": {
+      "topUniversity": "{university} leads with {count} applications and {rate}% admission rate.",
+      "noTopUniversity": "No university concentrates volume yet.",
+      "peakMonth": "{month} is the peak collection month with {amount}.",
+      "noPeakMonth": "No exploitable monthly collection trend yet.",
+      "latePayments": "{count} payment(s) under tension require a quick follow-up.",
+      "noLatePayments": "No critical payment detected in the current period."
+    },
+    "chartLabels": {
+      "applications": "Applications",
+      "accepted": "Admissions",
+      "revenue": "Revenue",
+      "weeklyApplications": "Opened files",
+      "weeklyPayments": "Payments received",
+      "volume": "Volume",
+      "admissionRate": "Admission rate",
+      "rate": "Rate"
+    },
+    "programLabels": {
+      "unknown": "Not specified"
+    }
+  },
+  "students": {
+    "tag": "Academic management",
+    "title": "Student Management",
+    "subtitle": "Track profiles, academic paths and candidate information.",
+    "addButton": "+ Add",
+    "loading": "Loading...",
+    "stats": {
+      "total": "Total",
+      "totalSub": "Registered students",
+      "women": "Women",
+      "womenSub": "Female profiles",
+      "men": "Men",
+      "menSub": "Male profiles",
+      "languages": "Languages",
+      "languagesSub": "Profiles with language specified"
+    },
+    "list": {
+      "title": "Student List",
+      "searchPlaceholder": "Search by name, email, phone, field...",
+      "filterGender": "Gender",
+      "filterAll": "All profiles",
+      "filterMen": "Men",
+      "filterWomen": "Women",
+      "empty": "No students found",
+      "emptyHint": "Adjust filters or add a new profile.",
+      "colName": "Name",
+      "colEmail": "Email",
+      "colPhone": "Phone",
+      "colLevel": "Level",
+      "colField": "Field",
+      "colActions": "Actions",
+      "male": "Male",
+      "female": "Female"
+    },
+    "actions": {
+      "details": "Details",
+      "edit": "Edit",
+      "delete": "Delete",
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save",
+      "add": "Add",
+      "modify": "Edit",
+      "understood": "Got it"
+    },
+    "detail": {
+      "contact": "Contact",
+      "path": "Academic path",
+      "language": "Language",
+      "languageNone": "Not specified",
+      "service": "Subscribed service",
+      "createdAt": "Created on",
+      "payments": "Payment tracking",
+      "documents": "Submitted documents",
+      "diplomaNone": "Diploma not specified",
+      "phoneNone": "Not specified",
+      "choices": {
+        "procedure_seule": "Procedure only",
+        "procedure_cours": "Procedure + Courses",
+        "cours_seuls": "Courses only"
+      }
+    },
+    "form": {
+      "titleAdd": "Add a Student",
+      "titleEdit": "Edit Student",
+      "requiredHint": "Fields marked with an asterisk are required.",
+      "firstName": "First name *",
+      "lastName": "Last name *",
+      "email": "Email *",
+      "phone": "Phone *",
+      "age": "Age *",
+      "gender": "Gender *",
+      "genderSelect": "Select",
+      "male": "Male",
+      "female": "Female",
+      "level": "Study level *",
+      "levelPlaceholder": "Bachelor, Master...",
+      "field": "Field *",
+      "diploma": "Obtained diploma",
+      "language": "Preferred language",
+      "choice": "Procedure choice",
+      "choiceSelect": "Select",
+      "procedure_seule": "Procedure only",
+      "procedure_cours": "Procedure + Courses",
+      "cours_seuls": "Courses only"
+    },
+    "delete": {
+      "title": "Confirm deletion",
+      "message": "You are about to delete the profile of {name}. This action is irreversible.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "createdAccount": {
+      "title": "Student account created",
+      "subtitle": "Share these credentials with the student",
+      "username": "Username",
+      "tempPassword": "Temporary password",
+      "info": "The student account is created in the database and linked to this file.",
+      "warning": "The temporary password must be changed at first login."
+    }
+  },
   "student": {
     "portal": {
       "title": "Student Portal",
@@ -277,6 +511,60 @@
       "noLateToNotify": "No late payments to notify.",
       "generated": "{count} notification(s) generated.",
       "error": "Error: {error}"
+    }
+  },
+  "performanceHistory": {
+    "header": {
+      "tag": "Activity reporting",
+      "title": "Performance history",
+      "subtitle": "Summary of collected payments by date, language courses and procedures."
+    },
+    "actions": {
+      "print": "Print",
+      "downloadWord": "Download Word"
+    },
+    "stats": {
+      "courses": "Collected courses",
+      "procedures": "Collected procedures",
+      "revenue": "Collected revenue"
+    },
+    "filters": {
+      "title": "Filter by manager",
+      "allManagers": "All managers"
+    },
+    "list": {
+      "titleAll": "Global performance",
+      "titleByManager": "{manager}'s performance"
+    },
+    "cards": {
+      "languageCourses": "Language courses",
+      "procedures": "Procedures",
+      "paymentsCount": "{count, plural, one {# payment} other {# payments}}"
+    },
+    "table": {
+      "date": "Date",
+      "courses": "Courses",
+      "courseAmount": "Course amount",
+      "procedures": "Procedures",
+      "procedureAmount": "Procedure amount",
+      "total": "Total"
+    },
+    "states": {
+      "authRequired": "You must be signed in to access this page.",
+      "loading": "Loading performance data...",
+      "loadError": "Unable to load performance data right now.",
+      "empty": "No collected payment data available"
+    },
+    "export": {
+      "title": "Performance history",
+      "manager": "Manager",
+      "generatedAt": "Generated on",
+      "at": "at",
+      "totalCourses": "Total courses",
+      "totalProcedures": "Total procedures",
+      "totalRevenue": "Total collected revenue",
+      "filePrefix": "Performance_History",
+      "globalScope": "Global"
     }
   }
 }
