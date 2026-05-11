@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
@@ -51,6 +52,7 @@ interface UserPermission {
 
 export default function UserManagement() {
     const { user: currentUser } = useAuth();
+    const t = useTranslations("userManagement");
     const { showNotification } = useNotificationContext();
     const [activeTab, setActiveTab] = useState("users");
     const [dbUsers, setDbUsers] = useState<DbUser[]>([]);
@@ -93,10 +95,10 @@ export default function UserManagement() {
         } catch (err) {
             console.error("Erreur:", err);
             const message = getFriendlyErrorMessage(err, {
-                fallback: "Impossible de charger la liste des utilisateurs pour le moment.",
+                fallback: t("messages.loadError"),
             });
             setFeedback(message, "");
-            showNotification({ title: "Chargement des utilisateurs", message, type: "error" });
+            showNotification({ title: t("messages.loadTitle"), message, type: "error" });
         } finally {
             setLoading(false);
         }
@@ -111,16 +113,16 @@ export default function UserManagement() {
         setFeedback("", "");
 
         if (!formData.role) {
-            const message = "Selectionnez un role avant de creer le compte.";
+            const message = t("messages.roleRequired");
             setFeedback(message, "");
-            showNotification({ title: "Role requis", message, type: "warning" });
+            showNotification({ title: t("messages.roleRequiredTitle"), message, type: "warning" });
             return;
         }
 
         if (formData.password.trim().length < 8) {
-            const message = "Le mot de passe temporaire doit contenir au moins 8 caracteres.";
+            const message = t("messages.passwordTooShort");
             setFeedback(message, "");
-            showNotification({ title: "Mot de passe trop court", message, type: "warning" });
+            showNotification({ title: t("messages.passwordTooShortTitle"), message, type: "warning" });
             return;
         }
 
@@ -137,18 +139,18 @@ export default function UserManagement() {
 
             if (!res.ok) {
                 const message = getFriendlyErrorMessage(result.error, {
-                    fallback: "Impossible de creer cet utilisateur pour le moment.",
+                    fallback: t("messages.createError"),
                 });
                 setFeedback(message, "");
-                showNotification({ title: "Creation utilisateur", message, type: "error" });
+                showNotification({ title: t("messages.createTitle"), message, type: "error" });
                 return;
             }
 
-            const successMessage = "Utilisateur cree. Un email avec les informations de connexion a ete envoye.";
+            const successMessage = t("messages.createSuccess");
             setFeedback("", successMessage);
             showNotification({
-                title: "Utilisateur cree",
-                message: "Le compte a bien ete ajoute et l'utilisateur peut finaliser son acces par email.",
+                title: t("messages.createSuccessTitle"),
+                message: t("messages.createSuccessDetail"),
                 type: "success",
             });
             if (currentUser) {
@@ -173,10 +175,10 @@ export default function UserManagement() {
             await loadUsers();
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
-                fallback: "La creation de l'utilisateur a echoue. Reessayez dans un instant.",
+                fallback: t("messages.createCatchError"),
             });
             setFeedback(message, "");
-            showNotification({ title: "Creation utilisateur", message, type: "error" });
+            showNotification({ title: t("messages.createTitle"), message, type: "error" });
         }
     };
 
@@ -192,25 +194,25 @@ export default function UserManagement() {
 
             if (!res.ok) {
                 const message = getFriendlyErrorMessage(result.error, {
-                    fallback: "Impossible d'envoyer le lien de reinitialisation pour le moment.",
+                    fallback: t("messages.resetError"),
                 });
                 setFeedback(message, "");
-                showNotification({ title: "Reinitialisation du mot de passe", message, type: "error" });
+                showNotification({ title: t("messages.resetTitle"), message, type: "error" });
             } else {
-                const successMessage = "Email de reinitialisation envoye avec succes.";
+                const successMessage = t("messages.resetSuccess");
                 setFeedback("", successMessage);
                 showNotification({
-                    title: "Lien envoye",
-                    message: "L'utilisateur recevra un email pour choisir un nouveau mot de passe.",
+                    title: t("messages.resetSuccessTitle"),
+                    message: t("messages.resetSuccessDetail"),
                     type: "success",
                 });
             }
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
-                fallback: "Impossible d'envoyer le lien de reinitialisation pour le moment.",
+                fallback: t("messages.resetError"),
             });
             setFeedback(message, "");
-            showNotification({ title: "Reinitialisation du mot de passe", message, type: "error" });
+            showNotification({ title: t("messages.resetTitle"), message, type: "error" });
         }
         setResetLoading(false);
         setUserToReset(null);
@@ -227,16 +229,16 @@ export default function UserManagement() {
 
             if (!res.ok) {
                 const message = getFriendlyErrorMessage(result.error, {
-                    fallback: "La suppression a echoue. Verifiez qu'aucune contrainte ne bloque ce compte.",
+                    fallback: t("messages.deleteConstraintError"),
                 });
                 setFeedback(message, "");
-                showNotification({ title: "Suppression utilisateur", message, type: "error" });
+                showNotification({ title: t("messages.deleteTitle"), message, type: "error" });
             } else {
-                const successMessage = "Utilisateur supprime.";
+                const successMessage = t("messages.deleteSuccess");
                 setFeedback("", successMessage);
                 showNotification({
-                    title: "Utilisateur supprime",
-                    message: "Le compte a bien ete retire de la plateforme.",
+                    title: t("messages.deleteSuccessTitle"),
+                    message: t("messages.deleteSuccessDetail"),
                     type: "success",
                 });
                 if (currentUser) {
@@ -251,10 +253,10 @@ export default function UserManagement() {
             }
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
-                fallback: "La suppression a echoue. Reessayez dans un instant.",
+                fallback: t("messages.deleteCatchError"),
             });
             setFeedback(message, "");
-            showNotification({ title: "Suppression utilisateur", message, type: "error" });
+            showNotification({ title: t("messages.deleteTitle"), message, type: "error" });
         }
         setUserToDelete(null);
     };
@@ -286,21 +288,21 @@ export default function UserManagement() {
             );
 
             const message = nextActive
-                ? `${targetUser.name} peut de nouveau accéder à la plateforme.`
-                : `${targetUser.name} ne pourra plus se connecter tant que le compte reste désactivé.`;
+                ? t("messages.accountActivatedDetail", { name: targetUser.name })
+                : t("messages.accountDeactivatedDetail", { name: targetUser.name });
             setFeedback("", message);
             showNotification({
-                title: nextActive ? "Compte activé" : "Compte désactivé",
+                title: nextActive ? t("messages.accountActivatedTitle") : t("messages.accountDeactivatedTitle"),
                 message,
                 type: "success",
             });
             await loadUsers();
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
-                fallback: "Le statut du compte n'a pas pu être modifié. Réessayez dans un instant.",
+                fallback: t("messages.accountStatusError"),
             });
             setFeedback(message, "");
-            showNotification({ title: "Statut du compte", message, type: "error" });
+            showNotification({ title: t("messages.accountStatusTitle"), message, type: "error" });
         }
     };
 
@@ -321,10 +323,10 @@ export default function UserManagement() {
         } catch (err) {
             console.error("Erreur:", err);
             const message = getFriendlyErrorMessage(err, {
-                fallback: "Impossible de charger les permissions de cet utilisateur.",
+                fallback: t("messages.permissionsLoadError"),
             });
             setFeedback(message, "");
-            showNotification({ title: "Chargement des permissions", message, type: "error" });
+            showNotification({ title: t("messages.permissionsLoadTitle"), message, type: "error" });
         } finally {
             setLoadingPermissions(false);
         }
@@ -360,12 +362,12 @@ export default function UserManagement() {
             }
 
             await loadUserPermissions(userId);
-            setFeedback("", "Permission mise a jour.");
+            setFeedback("", t("messages.permissionUpdated"));
             showNotification({
-                title: "Permissions mises a jour",
+                title: t("messages.permissionsUpdatedTitle"),
                 message: currentlyGranted
-                    ? "La permission personnalisee a ete retiree."
-                    : "La permission personnalisee a ete accordee.",
+                    ? t("messages.permissionRemoved")
+                    : t("messages.permissionGranted"),
                 type: "success",
             });
             if (currentUser) {
@@ -379,10 +381,10 @@ export default function UserManagement() {
             setTimeout(() => setSuccess(""), 2000);
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
-                fallback: "Impossible de modifier cette permission pour le moment.",
+                fallback: t("messages.permissionUpdateError"),
             });
             setFeedback(message, "");
-            showNotification({ title: "Mise a jour des permissions", message, type: "error" });
+            showNotification({ title: t("messages.permissionsUpdateTitle"), message, type: "error" });
         }
     };
 
@@ -401,8 +403,8 @@ export default function UserManagement() {
             super_admin: "Super Admin",
             admin: "Admin",
             agent: "Agent",
-            student: "Etudiant",
-            supervisor: "Superviseur",
+            student: t("roles.student"),
+            supervisor: t("roles.supervisor"),
         })[role] || role;
 
     return (
@@ -410,11 +412,11 @@ export default function UserManagement() {
             <div className="space-y-6 p-4 sm:p-6">
                 <div className="joda-surface">
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                        Administration acces
+                        {t("header.eyebrow")}
                     </p>
-                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Gestion des Utilisateurs</h1>
+                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t("header.title")}</h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Administre les comptes, les roles et les droits de la plateforme.
+                        {t("header.description")}
                     </p>
                 </div>
 
@@ -434,7 +436,7 @@ export default function UserManagement() {
                                             : "bg-white/70 text-slate-500 hover:text-slate-800"
                                     }`}
                                 >
-                                    {tab === "users" ? `Utilisateurs (${dbUsers.length})` : "Creer"}
+                                    {tab === "users" ? t("tabs.users", { count: dbUsers.length }) : t("tabs.create")}
                                 </button>
                             ))}
                         </div>
@@ -446,16 +448,16 @@ export default function UserManagement() {
 
                         {activeTab === "users" && !selectedUser &&
                             (loading ? (
-                                <div className="py-8 text-center text-slate-500">Chargement...</div>
+                                <div className="py-8 text-center text-slate-500">{t("loading")}</div>
                             ) : (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Nom</TableHead>
+                                            <TableHead>{t("table.name")}</TableHead>
                                             <TableHead>Email</TableHead>
-                                            <TableHead>Role</TableHead>
-                                            <TableHead>Statut</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            <TableHead>{t("table.role")}</TableHead>
+                                            <TableHead>{t("table.status")}</TableHead>
+                                            <TableHead>{t("table.actions")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -479,14 +481,14 @@ export default function UserManagement() {
                                                                 : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
                                                         }
                                                     >
-                                                        {entry.is_active === false ? "Désactivé" : "Actif"}
+                                                        {entry.is_active === false ? t("status.disabled") : t("status.active")}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
                                                     <DropdownMenu
                                                         actions={[
                                                             {
-                                                                label: "Permissions",
+                                                                label: t("actions.permissions"),
                                                                 icon: <Shield className="h-4 w-4" />,
                                                                 onClick: () => {
                                                                     setSelectedUser(entry);
@@ -496,7 +498,7 @@ export default function UserManagement() {
                                                             ...(entry.id !== currentUser?.id
                                                                 ? [
                                                                       {
-                                                                          label: "Réinitialiser le mot de passe",
+                                                                          label: t("actions.resetPassword"),
                                                                           icon: <KeyRound className="h-4 w-4" />,
                                                                           onClick: () => setUserToReset(entry),
                                                                       },
@@ -505,7 +507,7 @@ export default function UserManagement() {
                                                             ...((currentUser?.role === "admin" || currentUser?.role === "super_admin") && entry.id !== currentUser?.id
                                                                 ? [
                                                                       {
-                                                                          label: entry.is_active === false ? "Activer le compte" : "Désactiver le compte",
+                                                                          label: entry.is_active === false ? t("actions.activateAccount") : t("actions.deactivateAccount"),
                                                                           icon:
                                                                               entry.is_active === false ? (
                                                                                   <Power className="h-4 w-4" />
@@ -520,7 +522,7 @@ export default function UserManagement() {
                                                             ...(currentUser?.role === "super_admin" && entry.id !== currentUser.id
                                                                 ? [
                                                                       {
-                                                                          label: "Supprimer",
+                                                                          label: t("actions.delete"),
                                                                           icon: <Trash2 className="h-4 w-4" />,
                                                                           onClick: () => setUserToDelete(entry.id),
                                                                           variant: "danger" as const,
@@ -542,16 +544,16 @@ export default function UserManagement() {
                                     <div>
                                         <h3 className="text-lg font-semibold">{selectedUser.name}</h3>
                                         <p className="text-sm text-slate-500">
-                                            Role: {getRoleLabel(selectedUser.role)} - @{selectedUser.username}
+                                            {t("permissions.roleLine", { role: getRoleLabel(selectedUser.role), username: selectedUser.username })}
                                         </p>
                                     </div>
                                     <Button variant="outline" onClick={() => setSelectedUser(null)}>
-                                        Retour
+                                        {t("actions.back")}
                                     </Button>
                                 </div>
 
                                 {loadingPermissions ? (
-                                    <div className="py-8 text-center text-slate-500">Chargement...</div>
+                                    <div className="py-8 text-center text-slate-500">{t("loading")}</div>
                                 ) : (
                                     <div className="space-y-6">
                                         {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => (
@@ -583,12 +585,12 @@ export default function UserManagement() {
                                                                     <div className="flex items-center gap-2">
                                                                         {isCustom && (
                                                                             <Badge variant="outline" className="text-xs">
-                                                                                Personnalise
+                                                                                {t("permissions.custom")}
                                                                             </Badge>
                                                                         )}
                                                                         {isDefault && !isCustom && (
                                                                             <Badge variant="secondary" className="text-xs">
-                                                                                Par defaut
+                                                                                {t("permissions.default")}
                                                                             </Badge>
                                                                         )}
                                                                         {granted ? (
@@ -612,13 +614,13 @@ export default function UserManagement() {
                         {activeTab === "create" && (
                             <Card className="joda-surface-muted max-w-lg border-0 shadow-none">
                                 <CardHeader>
-                                    <CardTitle>Creer un nouvel utilisateur</CardTitle>
-                                    <CardDescription>L'utilisateur recevra un email pour confirmer son compte.</CardDescription>
+                                    <CardTitle>{t("create.title")}</CardTitle>
+                                    <CardDescription>{t("create.description")}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <form onSubmit={handleCreateUser} className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="username">Nom d'utilisateur *</Label>
+                                            <Label htmlFor="username">{t("create.username")}</Label>
                                             <Input
                                                 id="username"
                                                 value={formData.username}
@@ -628,22 +630,22 @@ export default function UserManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="prenom">Prénom *</Label>
+                                            <Label htmlFor="prenom">{t("create.firstName")}</Label>
                                             <Input
                                                 id="prenom"
                                                 value={formData.prenom}
                                                 onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
-                                                placeholder="Prénom"
+                                                placeholder={t("create.firstNamePlaceholder")}
                                                 required
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="nom">Nom *</Label>
+                                            <Label htmlFor="nom">{t("create.lastName")}</Label>
                                             <Input
                                                 id="nom"
                                                 value={formData.nom}
                                                 onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                                                placeholder="Nom de famille"
+                                                placeholder={t("create.lastNamePlaceholder")}
                                                 required
                                             />
                                         </div>
@@ -659,7 +661,7 @@ export default function UserManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="telephone">Téléphone</Label>
+                                            <Label htmlFor="telephone">{t("create.phone")}</Label>
                                             <PhoneInput
                                                 id="telephone"
                                                 countryCode={formData.phoneCountryCode}
@@ -669,26 +671,26 @@ export default function UserManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="role">Role *</Label>
+                                            <Label htmlFor="role">{t("create.role")}</Label>
                                             <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v || "" })}>
                                                 <SelectTrigger className={!formData.role ? "text-slate-400" : ""}>
-                                                    <SelectValue placeholder="Selectionner un role" />
+                                                    <SelectValue placeholder={t("create.rolePlaceholder")} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="student">Etudiant</SelectItem>
+                                                    <SelectItem value="student">{t("roles.student")}</SelectItem>
                                                     <SelectItem value="agent">Agent</SelectItem>
                                                     {currentUser?.role === "super_admin" && (
                                                         <>
-                                                            <SelectItem value="supervisor">Superviseur</SelectItem>
-                                                            <SelectItem value="admin">Administrateur</SelectItem>
-                                                            <SelectItem value="super_admin">Super Administrateur</SelectItem>
+                                                            <SelectItem value="supervisor">{t("roles.supervisor")}</SelectItem>
+                                                            <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                                                            <SelectItem value="super_admin">{t("roles.superAdmin")}</SelectItem>
                                                         </>
                                                     )}
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="password">Mot de passe temporaire *</Label>
+                                            <Label htmlFor="password">{t("create.temporaryPassword")}</Label>
                                             <Input
                                                 id="password"
                                                 type="password"
@@ -697,11 +699,11 @@ export default function UserManagement() {
                                                 required
                                             />
                                             <p className="text-xs text-slate-500">
-                                                L'utilisateur devra changer son mot de passe a la premiere connexion.
+                                                {t("create.passwordHint")}
                                             </p>
                                         </div>
                                         <Button type="submit" className="w-full">
-                                            Creer l'utilisateur
+                                            {t("create.submit")}
                                         </Button>
                                     </form>
                                 </CardContent>
@@ -717,24 +719,24 @@ export default function UserManagement() {
                                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
                                     <KeyRound className="h-5 w-5 text-amber-600" />
                                 </div>
-                                <h3 className="text-lg font-semibold">Reinitialiser le mot de passe</h3>
+                                <h3 className="text-lg font-semibold">{t("reset.title")}</h3>
                             </div>
                             <p className="mb-1 text-sm text-slate-700">
-                                Un email de reinitialisation sera envoye a <strong>{userToReset.name}</strong>.
+                                {t.rich("reset.description", { name: userToReset.name, strong: (chunks) => <strong>{chunks}</strong> })}
                             </p>
                             <p className="mb-6 text-xs text-slate-500">
-                                L'utilisateur recevra un lien valable 24 h pour definir un nouveau mot de passe.
+                                {t("reset.hint")}
                             </p>
                             <div className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => setUserToReset(null)} disabled={resetLoading}>
-                                    Annuler
+                                    {t("actions.cancel")}
                                 </Button>
                                 <Button
                                     onClick={() => void handleResetPassword(userToReset.id)}
                                     disabled={resetLoading}
                                     className="bg-amber-500 text-white hover:bg-amber-600"
                                 >
-                                    {resetLoading ? "Envoi..." : "Envoyer le lien"}
+                                    {resetLoading ? t("reset.sending") : t("reset.sendLink")}
                                 </Button>
                             </div>
                         </div>
@@ -744,14 +746,14 @@ export default function UserManagement() {
                 {userToDelete && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                         <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-                            <h3 className="mb-4 text-lg font-semibold">Confirmer la suppression</h3>
-                            <p className="mb-4">Voulez-vous supprimer cet utilisateur ?</p>
+                            <h3 className="mb-4 text-lg font-semibold">{t("delete.title")}</h3>
+                            <p className="mb-4">{t("delete.description")}</p>
                             <div className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => setUserToDelete(null)}>
-                                    Annuler
+                                    {t("actions.cancel")}
                                 </Button>
                                 <Button variant="destructive" onClick={() => void handleDeleteUser(userToDelete)}>
-                                    Supprimer
+                                    {t("actions.delete")}
                                 </Button>
                             </div>
                         </div>

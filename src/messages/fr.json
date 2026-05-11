@@ -662,6 +662,172 @@
       "aUniversity": "une université"
     }
   },
+  "universityManagement": {
+    "loading": "Chargement des universités...",
+    "header": {
+      "eyebrow": "Réseau partenaires",
+      "title": "Gestion des Universités",
+      "description": "Administre le catalogue des universités et leur disponibilité."
+    },
+    "list": {
+      "title": "Universités Partenaires ({count})",
+      "description": "Vue d'ensemble des destinations actives et des programmes proposés."
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher par nom, ville, programme...",
+      "status": "Statut",
+      "city": "Ville"
+    },
+    "table": {
+      "university": "Université",
+      "city": "Ville",
+      "programs": "Programmes",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "addShort": "+ Université",
+      "addPredefined": "Ajouter les prédéfinies",
+      "add": "Ajouter une université",
+      "edit": "Modifier",
+      "activate": "Activer",
+      "deactivate": "Désactiver",
+      "delete": "Supprimer",
+      "cancel": "Annuler",
+      "save": "Enregistrer"
+    },
+    "empty": {
+      "title": "Aucune université trouvée",
+      "description": "Ajustez les filtres ou ajoutez une nouvelle université."
+    },
+    "form": {
+      "titleAdd": "Ajouter une Université",
+      "titleEdit": "Modifier une Université",
+      "name": "Nom de l'Université",
+      "code": "Code (ex: PKU)",
+      "country": "Pays",
+      "city": "Ville",
+      "studyLevel": "Niveau d'études",
+      "studyLevelPlaceholder": "Licence, Master, Doctorat",
+      "programs": "Programmes",
+      "criteria": "Critères d'admission"
+    },
+    "delete": {
+      "title": "Supprimer {name}",
+      "description": "Cette université sera définitivement supprimée."
+    }
+  },
+  "userManagement": {
+    "loading": "Chargement...",
+    "header": {
+      "eyebrow": "Administration accès",
+      "title": "Gestion des Utilisateurs",
+      "description": "Administre les comptes, les rôles et les droits de la plateforme."
+    },
+    "tabs": {
+      "users": "Utilisateurs ({count})",
+      "create": "Créer"
+    },
+    "table": {
+      "name": "Nom",
+      "role": "Rôle",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Actif",
+      "disabled": "Désactivé"
+    },
+    "roles": {
+      "student": "Étudiant",
+      "supervisor": "Superviseur",
+      "admin": "Administrateur",
+      "superAdmin": "Super Administrateur"
+    },
+    "actions": {
+      "permissions": "Permissions",
+      "resetPassword": "Réinitialiser le mot de passe",
+      "activateAccount": "Activer le compte",
+      "deactivateAccount": "Désactiver le compte",
+      "delete": "Supprimer",
+      "back": "Retour",
+      "cancel": "Annuler"
+    },
+    "permissions": {
+      "roleLine": "Rôle : {role} - @{username}",
+      "custom": "Personnalisé",
+      "default": "Par défaut"
+    },
+    "create": {
+      "title": "Créer un nouvel utilisateur",
+      "description": "L'utilisateur recevra un email pour confirmer son compte.",
+      "username": "Nom d'utilisateur *",
+      "firstName": "Prénom *",
+      "firstNamePlaceholder": "Prénom",
+      "lastName": "Nom *",
+      "lastNamePlaceholder": "Nom de famille",
+      "phone": "Téléphone",
+      "role": "Rôle *",
+      "rolePlaceholder": "Sélectionner un rôle",
+      "temporaryPassword": "Mot de passe temporaire *",
+      "passwordHint": "L'utilisateur devra changer son mot de passe à la première connexion.",
+      "submit": "Créer l'utilisateur"
+    },
+    "reset": {
+      "title": "Réinitialiser le mot de passe",
+      "description": "Un email de réinitialisation sera envoyé à <strong>{name}</strong>.",
+      "hint": "L'utilisateur recevra un lien valable 24 h pour définir un nouveau mot de passe.",
+      "sending": "Envoi...",
+      "sendLink": "Envoyer le lien"
+    },
+    "delete": {
+      "title": "Confirmer la suppression",
+      "description": "Voulez-vous supprimer cet utilisateur ?"
+    },
+    "messages": {
+      "loadTitle": "Chargement des utilisateurs",
+      "loadError": "Impossible de charger la liste des utilisateurs pour le moment.",
+      "roleRequiredTitle": "Rôle requis",
+      "roleRequired": "Sélectionnez un rôle avant de créer le compte.",
+      "passwordTooShortTitle": "Mot de passe trop court",
+      "passwordTooShort": "Le mot de passe temporaire doit contenir au moins 8 caractères.",
+      "createTitle": "Création utilisateur",
+      "createError": "Impossible de créer cet utilisateur pour le moment.",
+      "createCatchError": "La création de l'utilisateur a échoué. Réessayez dans un instant.",
+      "createSuccess": "Utilisateur créé. Un email avec les informations de connexion a été envoyé.",
+      "createSuccessTitle": "Utilisateur créé",
+      "createSuccessDetail": "Le compte a bien été ajouté et l'utilisateur peut finaliser son accès par email.",
+      "resetTitle": "Réinitialisation du mot de passe",
+      "resetError": "Impossible d'envoyer le lien de réinitialisation pour le moment.",
+      "resetSuccess": "Email de réinitialisation envoyé avec succès.",
+      "resetSuccessTitle": "Lien envoyé",
+      "resetSuccessDetail": "L'utilisateur recevra un email pour choisir un nouveau mot de passe.",
+      "deleteTitle": "Suppression utilisateur",
+      "deleteConstraintError": "La suppression a échoué. Vérifiez qu'aucune contrainte ne bloque ce compte.",
+      "deleteCatchError": "La suppression a échoué. Réessayez dans un instant.",
+      "deleteSuccess": "Utilisateur supprimé.",
+      "deleteSuccessTitle": "Utilisateur supprimé",
+      "deleteSuccessDetail": "Le compte a bien été retiré de la plateforme.",
+      "accountActivatedTitle": "Compte activé",
+      "accountDeactivatedTitle": "Compte désactivé",
+      "accountActivatedDetail": "{name} peut de nouveau accéder à la plateforme.",
+      "accountDeactivatedDetail": "{name} ne pourra plus se connecter tant que le compte reste désactivé.",
+      "accountStatusTitle": "Statut du compte",
+      "accountStatusError": "Le statut du compte n'a pas pu être modifié. Réessayez dans un instant.",
+      "permissionsLoadTitle": "Chargement des permissions",
+      "permissionsLoadError": "Impossible de charger les permissions de cet utilisateur.",
+      "permissionUpdated": "Permission mise à jour.",
+      "permissionsUpdatedTitle": "Permissions mises à jour",
+      "permissionRemoved": "La permission personnalisée a été retirée.",
+      "permissionGranted": "La permission personnalisée a été accordée.",
+      "permissionsUpdateTitle": "Mise à jour des permissions",
+      "permissionUpdateError": "Impossible de modifier cette permission pour le moment."
+    }
+  },
   "paymentManagement": {
     "title": "Gestion des Paiements",
     "filters": {

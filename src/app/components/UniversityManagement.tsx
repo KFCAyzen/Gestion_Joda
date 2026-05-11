@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { logActivity } from "../utils/activityLogger";
@@ -44,6 +45,7 @@ const predefinedUniversities: Omit<University, "id" | "created_at">[] = [
 
 export default function UniversityManagement() {
     const { user } = useAuth();
+    const t = useTranslations("universityManagement");
     const supabase = createClient();
     const [universities, setUniversities] = useState<University[]>([]);
     const [loading, setLoading] = useState(true);
@@ -201,15 +203,15 @@ export default function UniversityManagement() {
         <ProtectedRoute requiredRole="user">
             <div className="space-y-6 p-4 sm:p-6">
                 <PageHeader
-                    eyebrow="Réseau partenaires"
-                    title="Gestion des Universités"
-                    description="Administre le catalogue des universités et leur disponibilité."
+                    eyebrow={t("header.eyebrow")}
+                    title={t("header.title")}
+                    description={t("header.description")}
                     action={canEdit ? {
-                        label: "+ Université",
+                        label: t("actions.addShort"),
                         onClick: () => setActiveTab("form")
                     } : undefined}
                     secondaryAction={canEdit && universities.length === 0 ? {
-                        label: "Ajouter les prédéfinies",
+                        label: t("actions.addPredefined"),
                         onClick: handleSeed,
                         variant: "outline"
                     } : undefined}
@@ -218,9 +220,9 @@ export default function UniversityManagement() {
                 {activeTab === "list" && (
                     <Card className="joda-surface border-0 shadow-none">
                         <CardHeader>
-                            <CardTitle>Universités Partenaires ({filteredUniversities.length})</CardTitle>
+                            <CardTitle>{t("list.title", { count: filteredUniversities.length })}</CardTitle>
                             <CardDescription>
-                                Vue d'ensemble des destinations actives et des programmes proposés.
+                                {t("list.description")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -228,33 +230,33 @@ export default function UniversityManagement() {
                                 <SearchBar
                                     value={searchTerm}
                                     onChange={setSearchTerm}
-                                    placeholder="Rechercher par nom, ville, programme..."
+                                    placeholder={t("filters.searchPlaceholder")}
                                 />
                                 <FilterSelect
-                                    label="Statut"
+                                    label={t("filters.status")}
                                     value={statusFilter}
                                     onChange={setStatusFilter}
                                     options={[
-                                        { value: "active", label: "Active" },
-                                        { value: "inactive", label: "Inactive" },
+                                        { value: "active", label: t("status.active") },
+                                        { value: "inactive", label: t("status.inactive") },
                                     ]}
                                 />
                                 <FilterSelect
-                                    label="Ville"
+                                    label={t("filters.city")}
                                     value={cityFilter}
                                     onChange={setCityFilter}
                                     options={cities}
                                 />
                             </div>
                             {loading ? (
-                                <LoadingState message="Chargement des universités..." />
+                                <LoadingState message={t("loading")} />
                             ) : filteredUniversities.length === 0 ? (
                                 <EmptyState
                                     icon={Building2}
-                                    title="Aucune université trouvée"
-                                    description="Ajustez les filtres ou ajoutez une nouvelle université."
+                                    title={t("empty.title")}
+                                    description={t("empty.description")}
                                     action={canEdit ? {
-                                        label: "Ajouter une université",
+                                        label: t("actions.add"),
                                         onClick: () => setActiveTab("form")
                                     } : undefined}
                                 />
@@ -262,11 +264,11 @@ export default function UniversityManagement() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Université</TableHead>
-                                            <TableHead>Ville</TableHead>
-                                            <TableHead>Programmes</TableHead>
-                                            <TableHead>Statut</TableHead>
-                                            {canEdit && <TableHead>Actions</TableHead>}
+                                            <TableHead>{t("table.university")}</TableHead>
+                                            <TableHead>{t("table.city")}</TableHead>
+                                            <TableHead>{t("table.programs")}</TableHead>
+                                            <TableHead>{t("table.status")}</TableHead>
+                                            {canEdit && <TableHead>{t("table.actions")}</TableHead>}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -288,7 +290,7 @@ export default function UniversityManagement() {
                                                         <DropdownMenu
                                                             actions={[
                                                                 {
-                                                                    label: "Modifier",
+                                                                    label: t("actions.edit"),
                                                                     icon: <Edit className="h-4 w-4" />,
                                                                     onClick: () => {
                                                                         setEditingUni(u);
@@ -306,17 +308,17 @@ export default function UniversityManagement() {
                                                                     },
                                                                 },
                                                                 {
-                                                                    label: u.active ? "Désactiver" : "Activer",
+                                                                    label: u.active ? t("actions.deactivate") : t("actions.activate"),
                                                                     icon: <Power className="h-4 w-4" />,
                                                                     onClick: () => handleToggle(u.id, u.active),
                                                                 },
                                                                 ...(canDelete ? [{
-                                                                    label: "Supprimer",
+                                                                    label: t("actions.delete"),
                                                                     icon: <Trash2 className="h-4 w-4" />,
                                                                     onClick: () => setConfirmDialog({
                                                                         open: true,
-                                                                        title: `Supprimer ${u.nom}`,
-                                                                        description: "Cette université sera définitivement supprimée.",
+                                                                        title: t("delete.title", { name: u.nom }),
+                                                                        description: t("delete.description"),
                                                                         onConfirm: () => { closeConfirm(); handleDelete(u.id); },
                                                                     }),
                                                                     variant: "danger" as const,
@@ -337,49 +339,49 @@ export default function UniversityManagement() {
                 {activeTab === "form" && canEdit && (
                     <Card className="joda-surface max-w-2xl border-0 shadow-none">
                         <CardHeader>
-                            <CardTitle>{editingUni ? "Modifier" : "Ajouter"} une Université</CardTitle>
+                            <CardTitle>{editingUni ? t("form.titleEdit") : t("form.titleAdd")}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <FormField
-                                        label="Nom de l'Université"
+                                        label={t("form.name")}
                                         id="nom"
                                         value={formData.nom}
                                         onChange={(value) => setFormData({ ...formData, nom: value })}
                                         required
                                     />
                                     <FormField
-                                        label="Code (ex: PKU)"
+                                        label={t("form.code")}
                                         id="code"
                                         value={formData.code}
                                         onChange={(value) => setFormData({ ...formData, code: value.toUpperCase() })}
                                         placeholder="PKU"
                                     />
                                     <FormField
-                                        label="Pays"
+                                        label={t("form.country")}
                                         id="pays"
                                         value={formData.pays}
                                         onChange={(value) => setFormData({ ...formData, pays: value })}
                                         required
                                     />
                                     <FormField
-                                        label="Ville"
+                                        label={t("form.city")}
                                         id="ville"
                                         value={formData.ville}
                                         onChange={(value) => setFormData({ ...formData, ville: value })}
                                         required
                                     />
                                     <FormField
-                                        label="Niveau d'études"
+                                        label={t("form.studyLevel")}
                                         id="niveau"
                                         value={formData.niveau_etude}
                                         onChange={(value) => setFormData({ ...formData, niveau_etude: value })}
-                                        placeholder="Licence, Master, Doctorat"
+                                        placeholder={t("form.studyLevelPlaceholder")}
                                     />
                                     <div className="sm:col-span-2">
                                         <FormField
-                                            label="Programmes"
+                                            label={t("form.programs")}
                                             id="programme"
                                             value={formData.programme}
                                             onChange={(value) => setFormData({ ...formData, programme: value })}
@@ -387,7 +389,7 @@ export default function UniversityManagement() {
                                     </div>
                                     <div className="sm:col-span-2">
                                         <FormField
-                                            label="Critères d'admission"
+                                            label={t("form.criteria")}
                                             id="criteres"
                                             value={formData.criteres_admission}
                                             onChange={(value) => setFormData({ ...formData, criteres_admission: value })}
@@ -395,8 +397,8 @@ export default function UniversityManagement() {
                                     </div>
                                 </div>
                                 <div className="flex justify-end gap-2 pt-4">
-                                    <Button type="button" variant="outline" onClick={resetForm}>Annuler</Button>
-                                    <Button type="submit">{editingUni ? "Enregistrer" : "Ajouter"}</Button>
+                                    <Button type="button" variant="outline" onClick={resetForm}>{t("actions.cancel")}</Button>
+                                    <Button type="submit">{editingUni ? t("actions.save") : t("actions.add")}</Button>
                                 </div>
                             </form>
                         </CardContent>
@@ -409,7 +411,7 @@ export default function UniversityManagement() {
             onConfirm={confirmDialog.onConfirm}
             title={confirmDialog.title}
             description={confirmDialog.description}
-            confirmLabel="Supprimer"
+            confirmLabel={t("actions.delete")}
         />
         </ProtectedRoute>
     );

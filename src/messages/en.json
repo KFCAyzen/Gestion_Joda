@@ -625,6 +625,172 @@
       "aUniversity": "a university"
     }
   },
+  "universityManagement": {
+    "loading": "Loading universities...",
+    "header": {
+      "eyebrow": "Partner network",
+      "title": "University Management",
+      "description": "Manage the university catalog and availability."
+    },
+    "list": {
+      "title": "Partner Universities ({count})",
+      "description": "Overview of active destinations and offered programs."
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name, city, program...",
+      "status": "Status",
+      "city": "City"
+    },
+    "table": {
+      "university": "University",
+      "city": "City",
+      "programs": "Programs",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "addShort": "+ University",
+      "addPredefined": "Add predefined",
+      "add": "Add a university",
+      "edit": "Edit",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "empty": {
+      "title": "No university found",
+      "description": "Adjust filters or add a new university."
+    },
+    "form": {
+      "titleAdd": "Add a University",
+      "titleEdit": "Edit a University",
+      "name": "University name",
+      "code": "Code (e.g. PKU)",
+      "country": "Country",
+      "city": "City",
+      "studyLevel": "Study level",
+      "studyLevelPlaceholder": "Bachelor, Master, Doctorate",
+      "programs": "Programs",
+      "criteria": "Admission criteria"
+    },
+    "delete": {
+      "title": "Delete {name}",
+      "description": "This university will be permanently deleted."
+    }
+  },
+  "userManagement": {
+    "loading": "Loading...",
+    "header": {
+      "eyebrow": "Access administration",
+      "title": "User Management",
+      "description": "Manage accounts, roles and platform permissions."
+    },
+    "tabs": {
+      "users": "Users ({count})",
+      "create": "Create"
+    },
+    "table": {
+      "name": "Name",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "roles": {
+      "student": "Student",
+      "supervisor": "Supervisor",
+      "admin": "Administrator",
+      "superAdmin": "Super Administrator"
+    },
+    "actions": {
+      "permissions": "Permissions",
+      "resetPassword": "Reset password",
+      "activateAccount": "Activate account",
+      "deactivateAccount": "Deactivate account",
+      "delete": "Delete",
+      "back": "Back",
+      "cancel": "Cancel"
+    },
+    "permissions": {
+      "roleLine": "Role: {role} - @{username}",
+      "custom": "Custom",
+      "default": "Default"
+    },
+    "create": {
+      "title": "Create a new user",
+      "description": "The user will receive an email to confirm the account.",
+      "username": "Username *",
+      "firstName": "First name *",
+      "firstNamePlaceholder": "First name",
+      "lastName": "Last name *",
+      "lastNamePlaceholder": "Last name",
+      "phone": "Phone",
+      "role": "Role *",
+      "rolePlaceholder": "Select a role",
+      "temporaryPassword": "Temporary password *",
+      "passwordHint": "The user must change their password on first login.",
+      "submit": "Create user"
+    },
+    "reset": {
+      "title": "Reset password",
+      "description": "A reset email will be sent to <strong>{name}</strong>.",
+      "hint": "The user will receive a link valid for 24 hours to set a new password.",
+      "sending": "Sending...",
+      "sendLink": "Send link"
+    },
+    "delete": {
+      "title": "Confirm deletion",
+      "description": "Do you want to delete this user?"
+    },
+    "messages": {
+      "loadTitle": "Loading users",
+      "loadError": "Unable to load the user list right now.",
+      "roleRequiredTitle": "Role required",
+      "roleRequired": "Select a role before creating the account.",
+      "passwordTooShortTitle": "Password too short",
+      "passwordTooShort": "The temporary password must contain at least 8 characters.",
+      "createTitle": "User creation",
+      "createError": "Unable to create this user right now.",
+      "createCatchError": "User creation failed. Try again in a moment.",
+      "createSuccess": "User created. An email with login information has been sent.",
+      "createSuccessTitle": "User created",
+      "createSuccessDetail": "The account was added and the user can finish access setup by email.",
+      "resetTitle": "Password reset",
+      "resetError": "Unable to send the reset link right now.",
+      "resetSuccess": "Reset email sent successfully.",
+      "resetSuccessTitle": "Link sent",
+      "resetSuccessDetail": "The user will receive an email to choose a new password.",
+      "deleteTitle": "User deletion",
+      "deleteConstraintError": "Deletion failed. Check that no constraint blocks this account.",
+      "deleteCatchError": "Deletion failed. Try again in a moment.",
+      "deleteSuccess": "User deleted.",
+      "deleteSuccessTitle": "User deleted",
+      "deleteSuccessDetail": "The account was removed from the platform.",
+      "accountActivatedTitle": "Account activated",
+      "accountDeactivatedTitle": "Account deactivated",
+      "accountActivatedDetail": "{name} can access the platform again.",
+      "accountDeactivatedDetail": "{name} cannot sign in while the account remains disabled.",
+      "accountStatusTitle": "Account status",
+      "accountStatusError": "The account status could not be changed. Try again in a moment.",
+      "permissionsLoadTitle": "Loading permissions",
+      "permissionsLoadError": "Unable to load this user's permissions.",
+      "permissionUpdated": "Permission updated.",
+      "permissionsUpdatedTitle": "Permissions updated",
+      "permissionRemoved": "The custom permission was removed.",
+      "permissionGranted": "The custom permission was granted.",
+      "permissionsUpdateTitle": "Permission update",
+      "permissionUpdateError": "Unable to update this permission right now."
+    }
+  },
   "paymentManagement": {
     "title": "Payment Management",
     "filters": {
