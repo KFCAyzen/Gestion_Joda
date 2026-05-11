@@ -168,43 +168,6 @@
       "completed": "Completed",
       "noFile": "No file registered for now."
     },
-    "notifications": {
-      "title": "Notifications",
-      "unread": "Unread",
-      "header": {
-        "alertsCenter": "Alerts Center",
-        "notificationsTitle": "Notifications",
-        "allRead": "All read",
-        "unreadCount": "{count} unread"
-      },
-      "filters": {
-        "all": "All ({count})",
-        "unread": "Unread ({count})",
-        "latePayments": "Late payments",
-        "documents": "Documents",
-        "payments": "Payments",
-        "files": "Files"
-      },
-      "actions": {
-        "checkLate": "Check late payments",
-        "markAllRead": "Mark all read",
-        "refresh": "Refresh"
-      },
-      "types": {
-        "document_manquant": "Missing document",
-        "paiement_valide": "Payment validated",
-        "retard_paiement": "Late payment",
-        "mise_a_jour_dossier": "File update"
-      },
-      "empty": "No notifications",
-      "status": {
-        "generating": "Generating…",
-        "noLatePayments": "No late payments found.",
-        "noLateToNotify": "No late payments to notify.",
-        "generated": "{count} notification(s) generated.",
-        "error": "Error: {error}"
-      }
-    },
     "messages": {
       "paymentDeclared": "Payment declared - awaiting validation",
       "paymentError": "Error during declaration",
@@ -224,62 +187,6 @@
       "valid": "Valid",
       "pending": "Pending",
       "non_compliant": "Non-compliant"
-    }
-  }
-}
-    },
-    "dashboard": {
-      "title": "Dashboard",
-      "welcome": "Welcome",
-      "name": "Name",
-      "applicationStatus": "Application Status",
-      "scholarshipStatus": "Scholarship Status",
-      "documentsStatus": "Documents",
-      "paymentStatus": "Payments",
-      "noApplications": "No applications",
-      "noDocuments": "No documents",
-      "noPayments": "No payments"
-    },
-    "payments": {
-      "title": "Payment Management",
-      "scholarship": "Scholarship Procedure",
-      "mandarin": "Mandarin Course",
-      "english": "English Course",
-      "amount": "Amount",
-      "status": "Status",
-      "dueDate": "Due Date",
-      "paymentDate": "Payment Date",
-      "receipt": "Receipt",
-      "downloadReceipt": "Download receipt",
-      "pending": "Pending",
-      "paid": "Paid",
-      "late": "Late",
-      "validation": "Validation"
-    },
-    "documents": {
-      "title": "Required Documents",
-      "subtitle": "Upload required documents for your application",
-      "upload": "Upload",
-      "required": "Required",
-      "uploaded": "Uploaded",
-      "missing": "Missing",
-      "passport": "Passport",
-      "criminalRecord": "Criminal Record",
-      "photo": "ID Photo",
-      "medicalCertificate": "Medical Certificate",
-      "birthCertificate": "Birth Certificate",
-      "diplomas": "Diplomas",
-      "transcripts": "Transcripts",
-      "other": "Other document"
-    },
-    "dossier": {
-      "title": "My Application File",
-      "subtitle": "Track your application and scholarship file",
-      "applicationDate": "Application Date",
-      "university": "University",
-      "program": "Program",
-      "currentStep": "Current Step",
-      "timeline": "Timeline"
     },
     "status": {
       "document_received": "Documents received",
@@ -291,6 +198,43 @@
       "waiting_university": "Waiting for university",
       "visa_processing": "Visa processing",
       "completed": "Completed"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "Unread",
+    "header": {
+      "alertsCenter": "Alerts Center",
+      "notificationsTitle": "Notifications",
+      "allRead": "All read",
+      "unreadCount": "{count} unread"
+    },
+    "filters": {
+      "all": "All ({count})",
+      "unread": "Unread ({count})",
+      "latePayments": "Late payments",
+      "documents": "Documents",
+      "payments": "Payments",
+      "files": "Files"
+    },
+    "actions": {
+      "checkLate": "Check late payments",
+      "markAllRead": "Mark all read",
+      "refresh": "Refresh"
+    },
+    "types": {
+      "document_manquant": "Missing document",
+      "paiement_valide": "Payment validated",
+      "retard_paiement": "Late payment",
+      "mise_a_jour_dossier": "File update"
+    },
+    "empty": "No notifications",
+    "status": {
+      "generating": "Generating…",
+      "noLatePayments": "No late payments found.",
+      "noLateToNotify": "No late payments to notify.",
+      "generated": "{count} notification(s) generated.",
+      "error": "Error: {error}"
     }
   }
 }

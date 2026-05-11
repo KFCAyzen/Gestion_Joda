@@ -36,6 +36,32 @@
     "online": "En ligne",
     "offline": "Hors ligne"
   },
+  "login": {
+    "title": "Connexion",
+    "subtitle": "Accéder à votre espace",
+    "identifier": "Email ou nom d'utilisateur",
+    "identifierPlaceholder": "email@exemple.com ou prenom.nom",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Se connecter",
+    "submitting": "Connexion en cours...",
+    "errorDefault": "Impossible de se connecter. Vérifiez vos identifiants et réessayez.",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotTitle": "Mot de passe oublié",
+    "forgotDescription": "Entrez votre email (staff) ou nom d'utilisateur (étudiant) pour recevoir un lien de réinitialisation.",
+    "forgotInputPlaceholder": "email@exemple.com ou prenom.nom",
+    "sendLink": "Envoyer le lien de réinitialisation",
+    "sending": "Envoi en cours...",
+    "cancel": "Annuler",
+    "emailSent": "Email envoyé",
+    "emailSentMessage": "Si un compte existe, vous recevrez un lien de réinitialisation valable 24 heures.",
+    "backToLogin": "Retour à la connexion",
+    "darkMode": "Mode sombre",
+    "lightMode": "Mode clair",
+    "changeLanguage": "Changer de langue",
+    "french": "Français",
+    "english": "English"
+  },
   "student": {
     "portal": {
       "title": "Portail Étudiant",
@@ -142,6 +168,75 @@
       "completed": "Terminé",
       "noFile": "Aucun dossier enregistré pour le moment."
     },
+    "messages": {
+      "paymentDeclared": "Paiement déclaré - en attente de validation",
+      "paymentError": "Erreur lors de la déclaration",
+      "networkError": "Erreur réseau"
+    },
+    "paymentTypes": {
+      "scholarship": "Bourse",
+      "mandarin": "Cours de Mandarin",
+      "english": "Cours d'Anglais"
+    },
+    "paymentStatus": {
+      "paid": "Payé",
+      "pending": "En attente",
+      "late": "En retard"
+    },
+    "documentStatus": {
+      "valid": "Valide",
+      "pending": "En attente",
+      "non_compliant": "Non conforme"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "Non lues",
+      "header": {
+        "alertsCenter": "Centre alertes",
+        "notificationsTitle": "Notifications",
+        "allRead": "Tout est lu",
+        "unreadCount": "{count} non lue(s)"
+      },
+      "filters": {
+        "all": "Toutes ({count})",
+        "unread": "Non lues ({count})",
+        "latePayments": "Retards",
+        "documents": "Documents",
+        "payments": "Paiements",
+        "files": "Dossiers"
+      },
+      "actions": {
+        "checkLate": "Vérifier retards",
+        "markAllRead": "Tout lire",
+        "refresh": "Actualiser"
+      },
+      "types": {
+        "document_manquant": "Document manquant",
+        "paiement_valide": "Paiement valide",
+        "retard_paiement": "Retard de paiement",
+        "mise_a_jour_dossier": "Mise à jour dossier"
+      },
+      "empty": "Aucune notification",
+      "status": {
+        "generating": "Génération en cours…",
+        "noLatePayments": "Aucun paiement en retard trouvé.",
+        "noLateToNotify": "Aucun paiement en retard à notifier.",
+        "generated": "{count} notification(s) générée(s).",
+        "error": "Erreur : {error}"
+      }
+    },
+    "status": {
+      "document_received": "Documents reçus",
+      "pending": "En attente",
+      "in_progress": "En cours",
+      "missing_documents": "Documents manquants",
+      "admission_approved": "Admission approuvée",
+      "admission_rejected": "Admission rejetée",
+      "waiting_university": "En attente université",
+      "visa_processing": "Visa en cours",
+      "completed": "Terminé"
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "unread": "Non lues",
@@ -178,7 +273,5 @@
       "generated": "{count} notification(s) générée(s).",
       "error": "Erreur : {error}"
     }
-  }
-}
   }
 }
