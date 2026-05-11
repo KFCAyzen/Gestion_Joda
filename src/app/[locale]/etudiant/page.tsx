@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
-import StudentPortal from "../components/StudentPortal";
-import { useNotification } from "../hooks/useNotification";
-import Notification from "../components/Notification";
-import { NotificationProvider } from "../context/NotificationContext";
+import { useAuth } from "../../context/AuthContext";
+import StudentPortal from "../../components/StudentPortal";
+import { useNotification } from "../../hooks/useNotification";
+import Notification from "../../components/Notification";
+import { NotificationProvider } from "../../context/NotificationContext";
 
 function StudentPortalPage() {
     const router = useRouter();

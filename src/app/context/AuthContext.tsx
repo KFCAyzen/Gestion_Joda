@@ -107,6 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (error) {
                 if (error.message.includes("refresh_token") || error.message.includes("Refresh Token")) {
                     await supabase.auth.signOut();
+                    setUser(null);
+                    if (typeof window !== "undefined") {
+                        localStorage.removeItem("currentUser");
+                    }
                 }
                 return;
             }
@@ -116,6 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         } catch (error) {
             console.error("Erreur vérification session:", error);
+            await supabase.auth.signOut();
+            setUser(null);
+            if (typeof window !== "undefined") {
+                localStorage.removeItem("currentUser");
+            }
         } finally {
             setLoading(false);
         }

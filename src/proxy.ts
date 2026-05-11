@@ -4,6 +4,29 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export default async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Static files bypass all middleware
+  const isStaticFile = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|pdf|sw\.js)$/.test(pathname) || pathname.startsWith('/_next');
+  
+  if (isStaticFile) {
+    return NextResponse.next();
+  }
+
+  // Extract locale from pathname
+  const pathSegments = pathname.split('/');
+  const potentialLocale = pathSegments[1];
+  const hasLocale = locales.includes(potentialLocale as any);
+  const locale = hasLocale ? potentialLocale : defaultLocale;
+  
+  // Remove locale from pathname for route checking
+  const pathnameWithoutLocale = hasLocale ? '/' + pathSegments.slice(2).join('/') : pathname;
+  
+  const isLoginPage = pathnameWithoutLocale === '/login' || pathnameWithoutLocale === '';
+  const isAuthCallback = pathnameWithoutLocale.startsWith('/auth/callback');
+  const isEtudiantPortal = pathnameWithoutLocale === '/etudiant';
+  const isApiRoute = pathname.startsWith('/api/');
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -25,63 +48,77 @@ export default async function proxy(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
-
-  // Extract locale from pathname
-  const pathHasLocale = locales.some(l => pathname.startsWith(`/${l}`));
-  const locale = pathHasLocale 
-    ? (pathname.split('/')[1] as typeof locales[number])
-    : defaultLocale;
-
-  // Check if this is a login page (with or without locale prefix)
-  const loginPaths = locales.map(l => `/${l}/login`);
-  const isLoginPage = pathname === '/login' || loginPaths.includes(pathname);
-  const isApiRoute = pathname.startsWith('/api/');
-  const isAuthCallback = pathname === '/auth/callback' || locales.some(l => pathname.startsWith(`/${l}/auth/callback`));
-  const isStaticFile = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|pdf|sw\.js)$/.test(pathname);
-
-  if (isApiRoute || isStaticFile) {
-    return supabaseResponse;
-  }
-
-  // For auth callback, let the auth flow handle it
-  if (isAuthCallback) {
-    const intlResponse = NextResponse.next({ request });
-    supabaseResponse.cookies.getAll().forEach(cookie => {
-      intlResponse.cookies.set(cookie.name, cookie.value, cookie);
+  // Check authentication
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  // Clear invalid tokens
+  if (authError) {
+    const response = NextResponse.next({ request });
+    // Delete all auth cookies
+    request.cookies.getAll().forEach(cookie => {
+      if (cookie.name.includes('sb-') || cookie.name.includes('auth-token')) {
+        response.cookies.delete(cookie.name);
+      }
     });
+    
+    // Allow access to public routes only
+    if (!isLoginPage && !isAuthCallback && !isEtudiantPortal && !isApiRoute) {
+      return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
+    }
+    
+    // Apply intl middleware for public routes
+    const intlMiddleware = createMiddleware({
+      locales,
+      defaultLocale,
+      localePrefix: 'always'
+    });
+    const intlResponse = intlMiddleware(request);
+    
+    // Preserve cookie deletions
+    request.cookies.getAll().forEach(cookie => {
+      if (cookie.name.includes('sb-') || cookie.name.includes('auth-token')) {
+        intlResponse.cookies.delete(cookie.name);
+      }
+    });
+    
     return intlResponse;
   }
 
-  // Redirect root path to default locale dashboard
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL(`/${defaultLocale}/tableau-de-bord`, request.url));
+  // Auth callback handling
+  if (isAuthCallback) {
+    return supabaseResponse;
   }
 
-  // Redirect locale-less paths to localized versions
-  if (!pathHasLocale && !isApiRoute && pathname !== '/') {
-    const localizedPath = `/${defaultLocale}${pathname}`;
-    return NextResponse.redirect(new URL(localizedPath, request.url));
+  // Redirect root to dashboard or login
+  if (pathname === '/' || (hasLocale && pathnameWithoutLocale === '')) {
+    if (user) {
+      return NextResponse.redirect(new URL(`/${locale}/tableau-de-bord`, request.url));
+    }
+    return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
   }
 
-  // Redirect to /login if no session
-  if (!user && !isLoginPage) {
+  // Protect all routes except login and etudiant portal
+  if (!user && !isLoginPage && !isEtudiantPortal) {
     const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect to dashboard if already connected and on /login
+  // Redirect to dashboard if already logged in and on login page
   if (user && isLoginPage) {
     return NextResponse.redirect(new URL(`/${locale}/tableau-de-bord`, request.url));
+  }
+
+  // API routes: verify user session exists
+  if (isApiRoute && !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // Apply next-intl middleware for locale routing
   const intlMiddleware = createMiddleware({
     locales,
     defaultLocale,
-    localePrefix: 'as-needed'
+    localePrefix: 'always'
   });
 
   const response = intlMiddleware(request);

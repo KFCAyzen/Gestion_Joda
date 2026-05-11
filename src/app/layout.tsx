@@ -3,8 +3,6 @@ import { Inter, Geist } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils";
 import { Providers } from "./providers";
-import { getLocale, getMessages } from 'next-intl/server';
-import { defaultLocale } from '@/i18n/config';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -15,18 +13,15 @@ export const metadata: Metadata = {
   description: 'Plateforme de gestion des bourses d\'études en Chine',
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const locale = await getLocale();
-  const messages = await getMessages();
-
   return (
-    <html lang={locale} suppressHydrationWarning className={cn("font-sans", geist.variable)}>
+    <html suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <body className={inter.className} suppressHydrationWarning>
-        <Providers locale={locale} messages={messages}>
+        <Providers>
           {children}
         </Providers>
       </body>

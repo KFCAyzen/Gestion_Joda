@@ -22,17 +22,17 @@ import {
     Users,
     WalletCards,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { ThemeToggle } from "../components/ThemeToggle";
-import { LanguageSwitcher } from "../components/LanguageSwitcher";
-import { useNotification } from "../hooks/useNotification";
-import Notification from "../components/Notification";
-import { NotificationProvider } from "../context/NotificationContext";
-import ChangePasswordModal from "../components/ChangePasswordModal";
-import ChangePassword from "../components/ChangePassword";
-import { ErrorBoundary } from "../components/ErrorBoundary";
-import { createClient } from "../lib/supabase/client";
-import type { UserRole } from "../types/joda";
+import { useAuth } from "../../context/AuthContext";
+import { ThemeToggle } from "../../components/ThemeToggle";
+import { LanguageSwitcher } from "../../components/LanguageSwitcher";
+import { useNotification } from "../../hooks/useNotification";
+import Notification from "../../components/Notification";
+import { NotificationProvider } from "../../context/NotificationContext";
+import ChangePasswordModal from "../../components/ChangePasswordModal";
+import ChangePassword from "../../components/ChangePassword";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
+import { createClient } from "../../lib/supabase/client";
+import type { UserRole } from "../../types/joda";
 
 type RouteId =
     | "home"
