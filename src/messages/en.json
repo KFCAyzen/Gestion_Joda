@@ -35,5 +35,31 @@
   "status": {
     "online": "Online",
     "offline": "Offline"
+  },
+  "login": {
+    "title": "Login",
+    "subtitle": "Access your space",
+    "identifier": "Email or username",
+    "identifierPlaceholder": "email@example.com or firstname.lastname",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "errorDefault": "Unable to connect. Check your credentials and try again.",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Forgot Password",
+    "forgotDescription": "Enter your email (staff) or username (student) to receive a reset link.",
+    "forgotInputPlaceholder": "email@example.com or firstname.lastname",
+    "sendLink": "Send Reset Link",
+    "sending": "Sending...",
+    "cancel": "Cancel",
+    "emailSent": "Email sent",
+    "emailSentMessage": "If an account exists, you will receive a reset link valid for 24 hours.",
+    "backToLogin": "Back to Login",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
+    "changeLanguage": "Change language",
+    "french": "French",
+    "english": "English"
   }
 }

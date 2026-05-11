@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRouter as useIntlRouter, usePathname } from "@/i18n/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { useTheme } from "../context/ThemeContext";
+import { locales, defaultLocale } from "@/i18n/config";
 import { buildStudentAuthEmail } from "../lib/student-auth";
 import {
     slideUp,
@@ -20,8 +23,12 @@ import {
 
 export default function LoginPage() {
     const router = useRouter();
+    const intlRouter = useIntlRouter();
+    const pathname = usePathname();
     const { login, user } = useAuth();
+    const { theme, setTheme } = useTheme();
     const locale = useLocale();
+    const t = useTranslations("login");
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -32,12 +39,42 @@ export default function LoginPage() {
     const [forgotInput, setForgotInput] = useState("");
     const [forgotLoading, setForgotLoading] = useState(false);
     const [forgotSent, setForgotSent] = useState(false);
+    const [showLangMenu, setShowLangMenu] = useState(false);
+    const langMenuRef = useRef<HTMLDivElement>(null);
+
+    // Close language menu when clicking outside or pressing Escape
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && showLangMenu) {
+                setShowLangMenu(false);
+            }
+        };
+
+        if (showLangMenu) {
+            document.addEventListener("keydown", handleEscape);
+            return () => document.removeEventListener("keydown", handleEscape);
+        }
+    }, [showLangMenu]);
+
+    // Close language menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+                setShowLangMenu(false);
+            }
+        };
+
+        if (showLangMenu) {
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => document.removeEventListener("mousedown", handleClickOutside);
+        }
+    }, [showLangMenu]);
 
     useEffect(() => {
         if (user) {
-            router.push(`/${locale}${user.role === "student" ? "/etudiant" : "/tableau-de-bord"}`);
+            router.push(user.role === "student" ? "/etudiant" : "/tableau-de-bord");
         }
-    }, [user, router, locale]);
+    }, [user, router]);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -72,10 +109,10 @@ export default function LoginPage() {
 
             if (result.success) return; // useEffect handles redirect
 
-            setError(result.message || "Connexion impossible. Vérifiez vos identifiants puis réessayez.");
+            setError(result.message || t("errorDefault"));
             triggerShake();
         } catch {
-            setError("Connexion impossible. Vérifiez vos identifiants puis réessayez.");
+            setError(t("errorDefault"));
             triggerShake();
         }
 
@@ -108,6 +145,19 @@ export default function LoginPage() {
         setShowForgotPassword(false);
         setForgotInput("");
         setForgotSent(false);
+    };
+
+    const toggleTheme = () => {
+        setTheme(theme === "dark" ? "light" : "dark");
+    };
+
+    const switchLocale = (newLocale: string) => {
+        intlRouter.replace(pathname, { locale: newLocale });
+        setShowLangMenu(false);
+    };
+
+    const getThemeLabel = () => {
+        return theme === "dark" ? t("lightMode") : t("darkMode");
     };
 
     const EyeIcon = ({ visible }: { visible: boolean }) =>
@@ -161,6 +211,84 @@ export default function LoginPage() {
                 initial="initial"
                 animate="animate"
             >
+                {/* Settings Buttons - Top Right */}
+                <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+                    {/* Dark Mode Toggle */}
+                    <motion.button
+                        onClick={toggleTheme}
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg transition-colors hover:bg-gray-100 dark:bg-gray-800/90 dark:hover:bg-gray-700"
+                        aria-label={getThemeLabel()}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={buttonTap}
+                    >
+                        {theme === "dark" ? (
+                            <svg className="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                            </svg>
+                        ) : (
+                            <svg className="h-5 w-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                            </svg>
+                        )}
+                    </motion.button>
+
+                    {/* Language Switcher */}
+                    <div className="relative" ref={langMenuRef}>
+                        <motion.button
+                            onClick={() => setShowLangMenu(!showLangMenu)}
+                            className="flex h-10 items-center gap-1.5 rounded-full bg-white/90 px-3 backdrop-blur-sm shadow-lg transition-colors hover:bg-gray-100 dark:bg-gray-800/90 dark:hover:bg-gray-700"
+                            aria-label={t("changeLanguage")}
+                            aria-haspopup="true"
+                            aria-expanded={showLangMenu}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={buttonTap}
+                        >
+                            <svg className="h-4 w-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                            </svg>
+                            <span className="text-sm font-medium uppercase text-gray-700 dark:text-gray-300">
+                                {locale === "fr" ? "FR" : "EN"}
+                            </span>
+                            <svg className="h-3 w-3 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </motion.button>
+
+                        {/* Language Dropdown */}
+                        <AnimatePresence>
+                            {showLangMenu && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute right-0 mt-2 w-32 rounded-xl bg-white/95 backdrop-blur-sm shadow-xl border border-gray-100 overflow-hidden z-50"
+                                >
+                                    {locales.map((loc) => (
+                                        <button
+                                            key={loc}
+                                            onClick={() => switchLocale(loc)}
+                                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-red-50 ${
+                                                locale === loc ? "text-red-600 bg-red-50" : "text-gray-700"
+                                            }`}
+                                        >
+                                            <span className="flex h-4 w-4 items-center justify-center text-xs font-bold uppercase">
+                                                {loc === "fr" ? "🇫🇷" : "🇬🇧"}
+                                            </span>
+                                            {loc === "fr" ? t("french") : t("english")}
+                                            {locale === loc && (
+                                                <svg className="ml-auto h-4 w-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+
                 <motion.div
                     className="relative h-full w-full overflow-hidden sm:rounded-2xl"
                     style={{
@@ -233,8 +361,8 @@ export default function LoginPage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.2, duration: 0.5 }}
                                 >
-                                    <h2 className="mb-1 text-2xl font-light lg:text-3xl">Connexion</h2>
-                                    <p className="text-sm text-gray-500">Accédez à votre espace</p>
+                                    <h2 className="mb-1 text-2xl font-light lg:text-3xl">{t("title")}</h2>
+                                    <p className="text-sm text-gray-500">{t("subtitle")}</p>
                                 </motion.div>
 
                                 <motion.form
@@ -245,14 +373,14 @@ export default function LoginPage() {
                                 >
                                     <div className="space-y-1">
                                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                            Email ou nom d'utilisateur
+                                            {t("identifier")}
                                         </label>
                                         <motion.input
                                             type="text"
                                             value={identifier}
                                             onChange={(e) => setIdentifier(e.target.value)}
                                             className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
-                                            placeholder="email@exemple.com ou prénom.nom"
+                                            placeholder={t("identifierPlaceholder")}
                                             required
                                             autoComplete="username"
                                             whileFocus={{ scale: 1.01 }}
@@ -263,7 +391,7 @@ export default function LoginPage() {
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                            Mot de passe
+                                            {t("password")}
                                         </label>
                                         <motion.div className="relative" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.38 }}>
                                             <input
@@ -271,7 +399,7 @@ export default function LoginPage() {
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-12 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
-                                                placeholder="••••••••"
+                                                placeholder={t("passwordPlaceholder")}
                                                 required
                                                 autoComplete="current-password"
                                             />
@@ -312,10 +440,10 @@ export default function LoginPage() {
                                     >
                                         {loading ? (
                                             <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
-                                                Connexion...
+                                                {t("submitting")}
                                             </motion.span>
                                         ) : (
-                                            "Se connecter"
+                                            t("submit")
                                         )}
                                     </motion.button>
                                 </motion.form>
@@ -331,7 +459,7 @@ export default function LoginPage() {
                                         onClick={() => { setShowForgotPassword(true); setForgotInput(""); setForgotSent(false); }}
                                         className="text-sm text-gray-400 hover:text-red-600 transition-colors"
                                     >
-                                        Mot de passe oublié ?
+                                        {t("forgotPassword")}
                                     </button>
                                 </motion.div>
                             </motion.div>
@@ -359,29 +487,29 @@ export default function LoginPage() {
                             onClick={(e) => e.stopPropagation()}
                         >
                             {forgotSent ? (
-                                <div className="text-center py-4">
-                                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-                                        <svg className="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
+                                    <div className="text-center py-4">
+                                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                                            <svg className="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="mb-2 text-lg font-semibold text-gray-900">{t("emailSent")}</h3>
+                                        <p className="mb-6 text-sm text-gray-500 leading-relaxed">
+                                            {t("emailSentMessage")}
+                                        </p>
+                                        <button
+                                            onClick={closeForgotPassword}
+                                            className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+                                        >
+                                            {t("backToLogin")}
+                                        </button>
                                     </div>
-                                    <h3 className="mb-2 text-lg font-semibold text-gray-900">Email envoyé</h3>
-                                    <p className="mb-6 text-sm text-gray-500 leading-relaxed">
-                                        Si un compte correspond, vous recevrez un lien de réinitialisation valable 24 h.
-                                    </p>
-                                    <button
-                                        onClick={closeForgotPassword}
-                                        className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
-                                    >
-                                        Retour à la connexion
-                                    </button>
-                                </div>
                             ) : (
                                 <>
                                     <div className="mb-5">
-                                        <h3 className="text-lg font-semibold text-gray-900">Mot de passe oublié</h3>
+                                        <h3 className="text-lg font-semibold text-gray-900">{t("forgotTitle")}</h3>
                                         <p className="mt-1 text-sm text-gray-500">
-                                            Entrez votre email (staff) ou nom d'utilisateur (étudiant) pour recevoir un lien de réinitialisation.
+                                            {t("forgotDescription")}
                                         </p>
                                     </div>
                                     <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -389,7 +517,7 @@ export default function LoginPage() {
                                             type="text"
                                             value={forgotInput}
                                             onChange={(e) => setForgotInput(e.target.value)}
-                                            placeholder="email@exemple.com ou prénom.nom"
+                                            placeholder={t("forgotInputPlaceholder")}
                                             required
                                             className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
                                         />
@@ -398,14 +526,14 @@ export default function LoginPage() {
                                             disabled={forgotLoading}
                                             className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(220,38,38,0.3)] hover:bg-red-700 disabled:opacity-50 transition-colors"
                                         >
-                                            {forgotLoading ? "Envoi..." : "Envoyer le lien"}
+                                            {forgotLoading ? t("sending") : t("sendLink")}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={closeForgotPassword}
                                             className="w-full rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
                                         >
-                                            Annuler
+                                            {t("cancel")}
                                         </button>
                                     </form>
                                 </>

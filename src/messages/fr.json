@@ -35,5 +35,31 @@
   "status": {
     "online": "En ligne",
     "offline": "Hors ligne"
+  },
+  "login": {
+    "title": "Connexion",
+    "subtitle": "Accédez à votre espace",
+    "identifier": "Email ou nom d'utilisateur",
+    "identifierPlaceholder": "email@exemple.com ou prénom.nom",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Se connecter",
+    "submitting": "Connexion...",
+    "errorDefault": "Connexion impossible. Vérifiez vos identifiants puis réessayez.",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotTitle": "Mot de passe oublié",
+    "forgotDescription": "Entrez votre email (staff) ou nom d'utilisateur (étudiant) pour recevoir un lien de réinitialisation.",
+    "forgotInputPlaceholder": "email@exemple.com ou prénom.nom",
+    "sendLink": "Envoyer le lien",
+    "sending": "Envoi...",
+    "cancel": "Annuler",
+    "emailSent": "Email envoyé",
+    "emailSentMessage": "Si un compte correspond, vous recevrez un lien de réinitialisation valable 24 h.",
+    "backToLogin": "Retour à la connexion",
+    "darkMode": "Mode sombre",
+    "lightMode": "Mode clair",
+    "changeLanguage": "Changer de langue",
+    "french": "Français",
+    "english": "English"
   }
 }
