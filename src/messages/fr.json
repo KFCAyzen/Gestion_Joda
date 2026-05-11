@@ -142,29 +142,43 @@
       "completed": "Terminé",
       "noFile": "Aucun dossier enregistré pour le moment."
     },
-    "notifications": {
-      "title": "Notifications",
-      "unread": "Non lues"
+  "notifications": {
+    "title": "Notifications",
+    "unread": "Non lues",
+    "header": {
+      "alertsCenter": "Centre alertes",
+      "notificationsTitle": "Notifications",
+      "allRead": "Tout est lu",
+      "unreadCount": "{count} non lue(s)"
     },
-    "messages": {
-      "paymentDeclared": "Paiement déclaré — en attente de validation",
-      "paymentError": "Erreur lors de la déclaration",
-      "networkError": "Erreur réseau"
+    "filters": {
+      "all": "Toutes ({count})",
+      "unread": "Non lues ({count})",
+      "latePayments": "Retards",
+      "documents": "Documents",
+      "payments": "Paiements",
+      "files": "Dossiers"
     },
-    "paymentTypes": {
-      "scholarship": "Bourse",
-      "mandarin": "Cours Mandarin",
-      "english": "Cours Anglais"
+    "actions": {
+      "checkLate": "Vérifier retards",
+      "markAllRead": "Tout lire",
+      "refresh": "Actualiser"
     },
-    "paymentStatus": {
-      "paid": "Payé",
-      "pending": "En attente",
-      "late": "En retard"
+    "types": {
+      "document_manquant": "Document manquant",
+      "paiement_valide": "Paiement valide",
+      "retard_paiement": "Retard de paiement",
+      "mise_a_jour_dossier": "Mise à jour dossier"
     },
-    "documentStatus": {
-      "valid": "Valide",
-      "pending": "En attente",
-      "non_compliant": "Non conforme"
+    "empty": "Aucune notification",
+    "status": {
+      "generating": "Génération en cours…",
+      "noLatePayments": "Aucun paiement en retard trouvé.",
+      "noLateToNotify": "Aucun paiement en retard à notifier.",
+      "generated": "{count} notification(s) générée(s).",
+      "error": "Erreur : {error}"
     }
+  }
+}
   }
 }

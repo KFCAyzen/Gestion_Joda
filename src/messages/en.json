@@ -170,7 +170,40 @@
     },
     "notifications": {
       "title": "Notifications",
-      "unread": "Unread"
+      "unread": "Unread",
+      "header": {
+        "alertsCenter": "Alerts Center",
+        "notificationsTitle": "Notifications",
+        "allRead": "All read",
+        "unreadCount": "{count} unread"
+      },
+      "filters": {
+        "all": "All ({count})",
+        "unread": "Unread ({count})",
+        "latePayments": "Late payments",
+        "documents": "Documents",
+        "payments": "Payments",
+        "files": "Files"
+      },
+      "actions": {
+        "checkLate": "Check late payments",
+        "markAllRead": "Mark all read",
+        "refresh": "Refresh"
+      },
+      "types": {
+        "document_manquant": "Missing document",
+        "paiement_valide": "Payment validated",
+        "retard_paiement": "Late payment",
+        "mise_a_jour_dossier": "File update"
+      },
+      "empty": "No notifications",
+      "status": {
+        "generating": "Generating…",
+        "noLatePayments": "No late payments found.",
+        "noLateToNotify": "No late payments to notify.",
+        "generated": "{count} notification(s) generated.",
+        "error": "Error: {error}"
+      }
     },
     "messages": {
       "paymentDeclared": "Payment declared - awaiting validation",
