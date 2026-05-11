@@ -336,6 +336,22 @@
       "tempPassword": "Temporary password",
       "info": "The student account is created in the database and linked to this file.",
       "warning": "The temporary password must be changed at first login."
+    },
+    "messages": {
+      "loadTitle": "Loading students",
+      "loadError": "Unable to load the student list right now.",
+      "ageInvalidTitle": "Invalid age",
+      "ageInvalid": "Enter a valid age before saving this student.",
+      "updateTitle": "Student update",
+      "updateError": "The student profile could not be updated.",
+      "updateSuccess": "Student updated successfully.",
+      "createAccountError": "Unable to create the student account.",
+      "saveTitle": "Student registration",
+      "saveProfileError": "The student profile could not be saved in the database.",
+      "createSuccess": "Student added successfully.",
+      "submitError": "An error occurred while saving the student.",
+      "deleteSuccess": "Student deleted successfully.",
+      "deleteError": "Unable to delete this student."
     }
   },
   "student": {

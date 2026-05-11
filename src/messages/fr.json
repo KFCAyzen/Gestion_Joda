@@ -336,6 +336,22 @@
       "tempPassword": "Mot de passe temporaire",
       "info": "Le compte étudiant est créé dans la base et reste lié à ce dossier.",
       "warning": "Le mot de passe temporaire devra être changé à la première connexion."
+    },
+    "messages": {
+      "loadTitle": "Chargement des étudiants",
+      "loadError": "Impossible de charger la liste des étudiants pour le moment.",
+      "ageInvalidTitle": "Âge invalide",
+      "ageInvalid": "Renseignez un âge valide avant d'enregistrer cet étudiant.",
+      "updateTitle": "Modification de l'étudiant",
+      "updateError": "La fiche étudiante n'a pas pu être mise à jour.",
+      "updateSuccess": "Étudiant mis à jour avec succès.",
+      "createAccountError": "Impossible de créer le compte étudiant.",
+      "saveTitle": "Enregistrement de l'étudiant",
+      "saveProfileError": "Le profil étudiant n'a pas pu être enregistré dans la base.",
+      "createSuccess": "Étudiant ajouté avec succès.",
+      "submitError": "Une erreur est survenue pendant l'enregistrement de l'étudiant.",
+      "deleteSuccess": "Étudiant supprimé avec succès.",
+      "deleteError": "Impossible de supprimer cet étudiant."
     }
   },
   "student": {

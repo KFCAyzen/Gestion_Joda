@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
@@ -80,6 +81,9 @@ const emptyFormData = {
 export default function StudentManagement() {
     const { user } = useAuth();
     const { showNotification } = useNotificationContext();
+    const t = useTranslations("students");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const [localUser, setLocalUser] = useState<{ id: string; role: string } | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
@@ -101,6 +105,15 @@ export default function StudentManagement() {
     const setFeedback = (nextError = "", nextSuccess = "") => {
         setSubmitError(nextError);
         setOperationMessage(nextSuccess);
+    };
+
+    const getGenderLabel = (gender: string) => (gender === "M" ? t("list.male") : t("list.female"));
+
+    const getChoiceLabel = (choice: string) => {
+        if (choice === "procedure_seule") return t("detail.choices.procedure_seule");
+        if (choice === "procedure_cours") return t("detail.choices.procedure_cours");
+        if (choice === "cours_seuls") return t("detail.choices.cours_seuls");
+        return choice;
     };
 
     useEffect(() => {
@@ -143,10 +156,10 @@ export default function StudentManagement() {
         } catch (err) {
             console.error("Erreur:", err);
             const message = getFriendlyErrorMessage(err, {
-                fallback: "Impossible de charger la liste des etudiants pour le moment.",
+                fallback: t("messages.loadError"),
             });
             setFeedback(message, "");
-            showNotification({ title: "Chargement des etudiants", message, type: "error" });
+            showNotification({ title: t("messages.loadTitle"), message, type: "error" });
         } finally {
             setLoading(false);
         }
@@ -292,9 +305,9 @@ export default function StudentManagement() {
         };
 
         if (studentData.age <= 0) {
-            const message = "Renseignez un age valide avant d'enregistrer cet etudiant.";
+            const message = t("messages.ageInvalid");
             setFeedback(message, "");
-            showNotification({ title: "Age invalide", message, type: "warning" });
+            showNotification({ title: t("messages.ageInvalidTitle"), message, type: "warning" });
             return;
         }
 
@@ -309,16 +322,16 @@ export default function StudentManagement() {
 
                 if (error) {
                     const message = getFriendlyErrorMessage(error, {
-                        fallback: "La fiche etudiante n'a pas pu etre mise a jour.",
+                        fallback: t("messages.updateError"),
                     });
                     setFeedback(message, "");
-                    showNotification({ title: "Modification de l'etudiant", message, type: "error" });
+                    showNotification({ title: t("messages.updateTitle"), message, type: "error" });
                     return;
                 }
 
                 setSelectedStudent(data);
                 setEditingStudent(null);
-                setOperationMessage("Étudiant mis à jour avec succès.");
+                setOperationMessage(t("messages.updateSuccess"));
                 if (currentUser) {
                     await logActivity(
                         currentUser.id, (currentUser as any).name || currentUser.id, currentUser.role,
@@ -381,7 +394,7 @@ export default function StudentManagement() {
             const result = await res.json();
 
             if (!res.ok) {
-                setSubmitError(result.error || "Impossible de créer le compte étudiant.");
+                setSubmitError(result.error || t("messages.createAccountError"));
                 return;
             }
 
@@ -397,10 +410,10 @@ export default function StudentManagement() {
 
             if (error) {
                 const message = getFriendlyErrorMessage(error, {
-                    fallback: "Le profil etudiant n'a pas pu etre enregistre dans la base.",
+                    fallback: t("messages.saveProfileError"),
                 });
                 setFeedback(message, "");
-                showNotification({ title: "Enregistrement de l'etudiant", message, type: "error" });
+                showNotification({ title: t("messages.saveTitle"), message, type: "error" });
                 return;
             }
 
@@ -420,7 +433,7 @@ export default function StudentManagement() {
 
             setCreatedAccount({ username, password: temporaryPassword });
             setSelectedStudent(data);
-            setOperationMessage("Étudiant ajouté avec succès.");
+            setOperationMessage(t("messages.createSuccess"));
             if (currentUser) {
                 await logActivity(
                     currentUser.id, (currentUser as any).name || currentUser.id, currentUser.role,
@@ -434,7 +447,7 @@ export default function StudentManagement() {
             await loadStudents();
         } catch (err) {
             console.error("Erreur:", err);
-            setSubmitError("Une erreur est survenue pendant l'enregistrement de l'étudiant.");
+            setSubmitError(t("messages.submitError"));
         }
     };
 
@@ -465,7 +478,7 @@ export default function StudentManagement() {
             }
 
             setStudentToDelete(null);
-            setOperationMessage("Étudiant supprimé avec succès.");
+            setOperationMessage(t("messages.deleteSuccess"));
             if (currentUser) {
                 await logActivity(
                     currentUser.id, (currentUser as any).name || currentUser.id, currentUser.role,
@@ -477,7 +490,7 @@ export default function StudentManagement() {
             await loadStudents();
         } catch (err) {
             console.error("Erreur:", err);
-            setSubmitError("Impossible de supprimer cet étudiant.");
+            setSubmitError(t("messages.deleteError"));
         }
     };
 
@@ -504,45 +517,45 @@ export default function StudentManagement() {
                     <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                                Gestion académique
+                                {t("tag")}
                             </p>
                             <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                                Gestion des Étudiants
+                                {t("title")}
                             </h1>
                             <p className="mt-1 text-sm text-slate-500">
-                                Suivi des profils, parcours et informations des candidats.
+                                {t("subtitle")}
                             </p>
                         </div>
-                        {canEdit && <Button onClick={openCreateForm}>+ Ajouter</Button>}
+                        {canEdit && <Button onClick={openCreateForm}>{t("addButton")}</Button>}
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <Card className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
-                                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Total</p>
+                                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("stats.total")}</p>
                                 <p className="mt-2 text-3xl font-semibold text-slate-900">{stats.total}</p>
-                                <p className="mt-1 text-sm text-slate-500">Étudiants enregistrés</p>
+                                <p className="mt-1 text-sm text-slate-500">{t("stats.totalSub")}</p>
                             </CardContent>
                         </Card>
                         <Card className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
-                                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Femmes</p>
+                                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("stats.women")}</p>
                                 <p className="mt-2 text-3xl font-semibold text-slate-900">{stats.women}</p>
-                                <p className="mt-1 text-sm text-slate-500">Profils féminins</p>
+                                <p className="mt-1 text-sm text-slate-500">{t("stats.womenSub")}</p>
                             </CardContent>
                         </Card>
                         <Card className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
-                                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Hommes</p>
+                                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("stats.men")}</p>
                                 <p className="mt-2 text-3xl font-semibold text-slate-900">{stats.men}</p>
-                                <p className="mt-1 text-sm text-slate-500">Profils masculins</p>
+                                <p className="mt-1 text-sm text-slate-500">{t("stats.menSub")}</p>
                             </CardContent>
                         </Card>
                         <Card className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
-                                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Langues</p>
+                                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("stats.languages")}</p>
                                 <p className="mt-2 text-3xl font-semibold text-slate-900">{stats.withLanguages}</p>
-                                <p className="mt-1 text-sm text-slate-500">Profils avec langue renseignée</p>
+                                <p className="mt-1 text-sm text-slate-500">{t("stats.languagesSub")}</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -564,34 +577,34 @@ export default function StudentManagement() {
                             <Card className="joda-surface border-0 shadow-none">
                                 <CardHeader className="gap-4">
                                     <div>
-                                        <CardTitle>Liste des Étudiants</CardTitle>
+                                        <CardTitle>{t("list.title")}</CardTitle>
                                     </div>
                                     <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
                                         <SearchBar
                                             value={searchTerm}
                                             onChange={setSearchTerm}
-                                            placeholder="Rechercher par nom, email, téléphone, filière..."
+                                            placeholder={t("list.searchPlaceholder")}
                                         />
                                         <FilterSelect
-                                            label="Sexe"
+                                            label={t("list.filterGender")}
                                             value={genderFilter}
                                             onChange={setGenderFilter}
                                             options={[
-                                                { value: "M", label: "Hommes" },
-                                                { value: "F", label: "Femmes" },
+                                                { value: "M", label: t("list.filterMen") },
+                                                { value: "F", label: t("list.filterWomen") },
                                             ]}
-                                            placeholder="Tous les profils"
+                                            placeholder={t("list.filterAll")}
                                         />
                                     </div>
                                 </CardHeader>
                                 <CardContent>
                                     {loading ? (
-                                        <div className="py-8 text-center text-slate-500">Chargement...</div>
+                                        <div className="py-8 text-center text-slate-500">{t("loading")}</div>
                                     ) : filteredStudents.length === 0 ? (
                                         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
-                                            <p className="text-lg font-medium text-slate-700">Aucun étudiant trouvé</p>
+                                            <p className="text-lg font-medium text-slate-700">{t("list.empty")}</p>
                                             <p className="mt-2 text-sm text-slate-500">
-                                                Ajustez les filtres ou ajoutez un nouveau profil.
+                                                {t("list.emptyHint")}
                                             </p>
                                         </div>
                                     ) : (
@@ -599,12 +612,12 @@ export default function StudentManagement() {
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
-                                                        <TableHead>Nom</TableHead>
-                                                        <TableHead>Email</TableHead>
-                                                        <TableHead>Téléphone</TableHead>
-                                                        <TableHead>Niveau</TableHead>
-                                                        <TableHead>Formation</TableHead>
-                                                        <TableHead>Actions</TableHead>
+                                                        <TableHead>{t("list.colName")}</TableHead>
+                                                        <TableHead>{t("list.colEmail")}</TableHead>
+                                                        <TableHead>{t("list.colPhone")}</TableHead>
+                                                        <TableHead>{t("list.colLevel")}</TableHead>
+                                                        <TableHead>{t("list.colField")}</TableHead>
+                                                        <TableHead>{t("list.colActions")}</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -618,7 +631,7 @@ export default function StudentManagement() {
                                                                 {student.prenom} {student.nom}
                                                             </div>
                                                             <div className="text-sm text-slate-500">
-                                                                {student.sexe === "M" ? "Homme" : "Femme"}
+                                                                {getGenderLabel(student.sexe)}
                                                             </div>
                                                         </TableCell>
                                                         <TableCell>{student.email}</TableCell>
@@ -631,20 +644,20 @@ export default function StudentManagement() {
                                                             <DropdownMenu
                                                                 actions={[
                                                                     {
-                                                                        label: "Détails",
+                                                                        label: t("actions.details"),
                                                                         icon: <Eye className="h-4 w-4" />,
                                                                         onClick: () => setSelectedStudent(student),
                                                                     },
                                                                     ...(canEdit ? [
                                                                         {
-                                                                            label: "Modifier",
+                                                                            label: t("actions.edit"),
                                                                             icon: <Edit className="h-4 w-4" />,
                                                                             onClick: () => openEditForm(student),
                                                                         },
                                                                     ] : []),
                                                                     ...(canDelete ? [
                                                                         {
-                                                                            label: "Supprimer",
+                                                                            label: t("actions.delete"),
                                                                             icon: <Trash2 className="h-4 w-4" />,
                                                                             onClick: () => setStudentToDelete(student),
                                                                             variant: "danger" as const,
@@ -694,7 +707,7 @@ export default function StudentManagement() {
                                         <div className="mt-2 flex flex-wrap gap-2">
                                             <Badge variant="outline">{selectedStudent.niveau}</Badge>
                                             <Badge variant="secondary">{selectedStudent.filiere}</Badge>
-                                            <Badge variant="outline">{selectedStudent.sexe === "M" ? "Homme" : "Femme"}</Badge>
+                                            <Badge variant="outline">{getGenderLabel(selectedStudent.sexe)}</Badge>
                                         </div>
                                     </div>
                                     <Button variant="outline" size="sm" onClick={() => setSelectedStudent(null)}>✕</Button>
@@ -705,41 +718,35 @@ export default function StudentManagement() {
                                     {/* Infos de base */}
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <div className="rounded-xl border border-slate-200 p-3">
-                                            <p className="text-xs uppercase tracking-wider text-slate-400">Contact</p>
+                                            <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.contact")}</p>
                                             <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.email}</p>
-                                            <p className="text-sm text-slate-600">{(selectedStudent.telephone || "").replace(/^undefined\s*/i, "") || "Non renseigné"}</p>
+                                            <p className="text-sm text-slate-600">{(selectedStudent.telephone || "").replace(/^undefined\s*/i, "") || t("detail.phoneNone")}</p>
                                         </div>
                                         <div className="rounded-xl border border-slate-200 p-3">
-                                            <p className="text-xs uppercase tracking-wider text-slate-400">Parcours</p>
+                                            <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.path")}</p>
                                             <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.niveau}</p>
-                                            <p className="text-sm text-slate-600">{selectedStudent.diplome_acquis || "Diplôme non renseigné"}</p>
+                                            <p className="text-sm text-slate-600">{selectedStudent.diplome_acquis || t("detail.diplomaNone")}</p>
                                         </div>
                                         <div className="rounded-xl border border-slate-200 p-3">
-                                            <p className="text-xs uppercase tracking-wider text-slate-400">Langue</p>
-                                            <p className="mt-2 text-sm text-slate-900">{selectedStudent.langue || "Non renseignée"}</p>
+                                            <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.language")}</p>
+                                            <p className="mt-2 text-sm text-slate-900">{selectedStudent.langue || t("detail.languageNone")}</p>
                                         </div>
                                         <div className="rounded-xl border border-slate-200 p-3">
-                                            <p className="text-xs uppercase tracking-wider text-slate-400">Service souscrit</p>
+                                            <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.service")}</p>
                                             <p className="mt-2 text-sm text-slate-900">
-                                                {selectedStudent.choix === "procedure_seule"
-                                                    ? "Procédure seule"
-                                                    : selectedStudent.choix === "procedure_cours"
-                                                      ? "Procédure + Cours"
-                                                      : selectedStudent.choix === "cours_seuls"
-                                                        ? "Cours seuls"
-                                                        : selectedStudent.choix}
+                                                {getChoiceLabel(selectedStudent.choix)}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="rounded-xl border border-slate-200 p-3">
-                                        <p className="text-xs uppercase tracking-wider text-slate-400">Créé le</p>
-                                        <p className="mt-2 text-sm text-slate-900">{new Date(selectedStudent.created_at).toLocaleString("fr-FR")}</p>
+                                        <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.createdAt")}</p>
+                                        <p className="mt-2 text-sm text-slate-900">{new Date(selectedStudent.created_at).toLocaleString(dateLocale)}</p>
                                     </div>
 
                                     {/* Échéancier paiements */}
                                     <div>
                                         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                                            Suivi des paiements
+                                            {t("detail.payments")}
                                         </p>
                                         <PaymentOverview
                                             choix={selectedStudent.choix}
@@ -761,7 +768,7 @@ export default function StudentManagement() {
                                     {/* Documents */}
                                     <div>
                                         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                                            Documents soumis
+                                            {t("detail.documents")}
                                         </p>
                                         <DocumentManagement
                                             studentId={selectedStudent.id}
@@ -781,10 +788,10 @@ export default function StudentManagement() {
                                             }}
                                         >
                                             <Edit className="mr-2 h-4 w-4" />
-                                            Modifier
+                                            {t("actions.edit")}
                                         </Button>
                                     )}
-                                    <Button onClick={() => setSelectedStudent(null)}>Fermer</Button>
+                                    <Button onClick={() => setSelectedStudent(null)}>{t("actions.close")}</Button>
                                 </div>
                             </motion.div>
                         </motion.div>
@@ -796,11 +803,11 @@ export default function StudentManagement() {
                             <CardHeader className="border-b border-slate-100">
                                 <div className="flex items-start justify-between gap-4">
                                     <div>
-                                        <CardTitle>{editingStudent ? "Modifier" : "Ajouter"} un Étudiant</CardTitle>
-                                        <CardDescription>Les champs marqués par une étoile sont obligatoires.</CardDescription>
+                                        <CardTitle>{editingStudent ? t("form.titleEdit") : t("form.titleAdd")}</CardTitle>
+                                        <CardDescription>{t("form.requiredHint")}</CardDescription>
                                     </div>
                                     <Button type="button" variant="outline" size="sm" onClick={resetForm}>
-                                        Fermer
+                                        {t("actions.close")}
                                     </Button>
                                 </div>
                             </CardHeader>
@@ -813,7 +820,7 @@ export default function StudentManagement() {
                                     )}
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label htmlFor="prenom">Prénom *</Label>
+                                            <Label htmlFor="prenom">{t("form.firstName")}</Label>
                                             <Input
                                                 id="prenom"
                                                 value={formData.prenom}
@@ -822,7 +829,7 @@ export default function StudentManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="nom">Nom *</Label>
+                                            <Label htmlFor="nom">{t("form.lastName")}</Label>
                                             <Input
                                                 id="nom"
                                                 value={formData.nom}
@@ -831,7 +838,7 @@ export default function StudentManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="email">Email *</Label>
+                                            <Label htmlFor="email">{t("form.email")}</Label>
                                             <Input
                                                 id="email"
                                                 type="email"
@@ -841,7 +848,7 @@ export default function StudentManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="telephone">Téléphone *</Label>
+                                            <Label htmlFor="telephone">{t("form.phone")}</Label>
                                             <PhoneInput
                                                 id="telephone"
                                                 countryCode={formData.phoneCountryCode}
@@ -852,7 +859,7 @@ export default function StudentManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="age">Âge *</Label>
+                                            <Label htmlFor="age">{t("form.age")}</Label>
                                             <Input
                                                 id="age"
                                                 type="number"
@@ -862,32 +869,32 @@ export default function StudentManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="sexe">Sexe *</Label>
+                                            <Label htmlFor="sexe">{t("form.gender")}</Label>
                                             <Select
                                                 value={formData.sexe || "M"}
                                                 onValueChange={(value) => setFormData({ ...formData, sexe: value || "M" })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Sélectionner" />
+                                                    <SelectValue placeholder={t("form.genderSelect")} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="M">Homme</SelectItem>
-                                                    <SelectItem value="F">Femme</SelectItem>
+                                                    <SelectItem value="M">{t("form.male")}</SelectItem>
+                                                    <SelectItem value="F">{t("form.female")}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="niveau">Niveau d'études *</Label>
+                                            <Label htmlFor="niveau">{t("form.level")}</Label>
                                             <Input
                                                 id="niveau"
                                                 value={formData.niveau}
                                                 onChange={(e) => setFormData({ ...formData, niveau: e.target.value })}
-                                                placeholder="Bac+2, Master..."
+                                                placeholder={t("form.levelPlaceholder")}
                                                 required
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="filiere">Filière *</Label>
+                                            <Label htmlFor="filiere">{t("form.field")}</Label>
                                             <Input
                                                 id="filiere"
                                                 value={formData.filiere}
@@ -896,7 +903,7 @@ export default function StudentManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="diplome">Diplôme acquis</Label>
+                                            <Label htmlFor="diplome">{t("form.diploma")}</Label>
                                             <Input
                                                 id="diplome"
                                                 value={formData.diplome_acquis}
@@ -904,7 +911,7 @@ export default function StudentManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="langue">Langue préférée</Label>
+                                            <Label htmlFor="langue">{t("form.language")}</Label>
                                             <Input
                                                 id="langue"
                                                 value={formData.langue}
@@ -912,28 +919,28 @@ export default function StudentManagement() {
                                             />
                                         </div>
                                         <div className="space-y-2 sm:col-span-2">
-                                            <Label htmlFor="choix">Choix de procédure</Label>
+                                            <Label htmlFor="choix">{t("form.choice")}</Label>
                                             <Select
                                                 value={formData.choix || "procedure_seule"}
                                                 onValueChange={(value) => setFormData({ ...formData, choix: value || "procedure_seule" })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Sélectionner" />
+                                                    <SelectValue placeholder={t("form.choiceSelect")} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="procedure_seule">Procédure seule</SelectItem>
-                                                    <SelectItem value="procedure_cours">Procédure + Cours</SelectItem>
-                                                    <SelectItem value="cours_seuls">Cours seuls</SelectItem>
+                                                    <SelectItem value="procedure_seule">{t("form.procedure_seule")}</SelectItem>
+                                                    <SelectItem value="procedure_cours">{t("form.procedure_cours")}</SelectItem>
+                                                    <SelectItem value="cours_seuls">{t("form.cours_seuls")}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     </div>
                                     <div className="flex justify-end gap-2 pt-4">
                                         <Button type="button" variant="outline" onClick={resetForm}>
-                                            Annuler
+                                            {t("actions.cancel")}
                                         </Button>
                                         <Button type="submit">
-                                            {editingStudent ? "Enregistrer" : "Ajouter"}
+                                            {editingStudent ? t("actions.save") : t("actions.add")}
                                         </Button>
                                     </div>
                                 </form>
@@ -958,16 +965,16 @@ export default function StudentManagement() {
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             exit={{ scale: 0.94, opacity: 0 }}
                         >
-                            <h3 className="text-lg font-semibold text-slate-900">Confirmer la suppression</h3>
+                            <h3 className="text-lg font-semibold text-slate-900">{t("delete.title")}</h3>
                             <p className="mt-2 text-sm text-slate-500">
-                                Vous allez supprimer le profil de {studentToDelete.prenom} {studentToDelete.nom}. Cette action est irréversible.
+                                {t("delete.message", { name: `${studentToDelete.prenom} ${studentToDelete.nom}` })}
                             </p>
                             <div className="mt-6 flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => setStudentToDelete(null)}>
-                                    Annuler
+                                    {t("delete.cancel")}
                                 </Button>
                                 <Button variant="destructive" onClick={handleDelete}>
-                                    Supprimer
+                                    {t("delete.confirm")}
                                 </Button>
                             </div>
                         </motion.div>
@@ -996,30 +1003,30 @@ export default function StudentManagement() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-900">Compte étudiant créé</h3>
-                                <p className="mt-1 text-sm text-gray-500">Transmettez ces identifiants à l'étudiant</p>
+                                <h3 className="text-lg font-bold text-gray-900">{t("createdAccount.title")}</h3>
+                                <p className="mt-1 text-sm text-gray-500">{t("createdAccount.subtitle")}</p>
                             </div>
                             <div className="mb-5 space-y-3 rounded-xl bg-gray-50 p-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-medium text-gray-500">Nom d'utilisateur</span>
+                                    <span className="text-xs font-medium text-gray-500">{t("createdAccount.username")}</span>
                                     <span className="font-mono text-sm font-bold text-gray-900">{createdAccount.username}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-medium text-gray-500">Mot de passe temporaire</span>
+                                    <span className="text-xs font-medium text-gray-500">{t("createdAccount.tempPassword")}</span>
                                     <span className="font-mono text-sm font-bold text-red-600">{createdAccount.password}</span>
                                 </div>
                             </div>
                             <p className="mb-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
-                                Le compte étudiant est créé dans la base et reste lié à ce dossier.
+                                {t("createdAccount.info")}
                             </p>
                             <p className="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-600">
-                                Le mot de passe temporaire devra être changé à la première connexion.
+                                {t("createdAccount.warning")}
                             </p>
                             <button
                                 onClick={() => setCreatedAccount(null)}
                                 className="w-full rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700"
                             >
-                                Compris
+                                {t("actions.understood")}
                             </button>
                         </motion.div>
                     </motion.div>
