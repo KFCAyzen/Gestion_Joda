@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -54,6 +55,9 @@ interface ScholarshipApplication {
 
 export default function ApplicationManagement() {
     const { user } = useAuth();
+    const t = useTranslations("applicationManagement");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [confirmDialog, setConfirmDialog] = useState<{
@@ -74,7 +78,7 @@ export default function ApplicationManagement() {
 
     const canDelete = user?.role === "admin" || user?.role === "super_admin";
 
-    const [formData, setFormData] = useState({
+    const defaultFormData = {
         studentId: "",
         universityId: "",
         desiredProgram: "",
@@ -82,7 +86,13 @@ export default function ApplicationManagement() {
         languageLevel: "HSK 3",
         scholarshipType: "Complete",
         applicationFee: "",
-    });
+    };
+
+    const [formData, setFormData] = useState(defaultFormData);
+
+    const resetForm = () => {
+        setFormData(defaultFormData);
+    };
 
     const loadData = async () => {
         setIsLoading(true);
@@ -140,7 +150,7 @@ export default function ApplicationManagement() {
 
     const handleSaveApplication = async () => {
         if (!formData.studentId || !formData.universityId || !formData.desiredProgram) {
-            showNotification("Veuillez remplir tous les champs obligatoires", "error");
+            showNotification(t("messages.requiredFields"), "error");
             return;
         }
 
@@ -157,7 +167,7 @@ export default function ApplicationManagement() {
                 }).eq("id", editingApplication.id);
 
                 if (error) {
-                    showNotification("Erreur lors de la modification", "error");
+                    showNotification(t("messages.updateError"), "error");
                     return;
                 }
 
@@ -167,23 +177,15 @@ export default function ApplicationManagement() {
                     await logActivity(
                         user.id, user.name, user.role,
                         "application_update", "dossier_bourses", editingApplication.id,
-                        `Candidature modifiée — ${student ? `${student.prenom} ${student.nom}` : "Étudiant"} — ${university?.nom || "Université"} — ${formData.desiredProgram}`,
+                        `Candidature modifiée — ${student ? `${student.prenom} ${student.nom}` : t("fallback.student")} — ${university?.nom || t("fallback.university")} — ${formData.desiredProgram}`,
                         { student_id: formData.studentId, university_id: formData.universityId }
                     );
                 }
 
-                showNotification("Candidature modifiée avec succès !", "success");
+                showNotification(t("messages.updateSuccess"), "success");
                 setShowForm(false);
                 setEditingApplication(null);
-                setFormData({
-                    studentId: "",
-                    universityId: "",
-                    desiredProgram: "",
-                    studyLevel: "Licence",
-                    languageLevel: "HSK 3",
-                    scholarshipType: "Complete",
-                    applicationFee: "",
-                });
+                resetForm();
                 await loadData();
                 return;
             }
@@ -208,7 +210,7 @@ export default function ApplicationManagement() {
                     await logActivity(
                         user.id, user.name, user.role,
                         "application_create", "dossier_bourses", dossier.id,
-                        `Candidature créée — ${studentCreated ? `${studentCreated.prenom} ${studentCreated.nom}` : "Étudiant"} — ${universityCreated?.nom || "Université"} — ${formData.desiredProgram}`,
+                        `Candidature créée — ${studentCreated ? `${studentCreated.prenom} ${studentCreated.nom}` : t("fallback.student")} — ${universityCreated?.nom || t("fallback.university")} — ${formData.desiredProgram}`,
                         { student_id: formData.studentId, university_id: formData.universityId }
                     );
                 }
@@ -227,8 +229,11 @@ export default function ApplicationManagement() {
                     await supabase.from("notifications").insert({
                         user_id: studentUser.created_by,
                         type: "mise_a_jour_dossier",
-                        titre: "Nouvelle candidature créée",
-                        message: `Votre dossier de candidature pour ${university?.nom || "une université"} (${formData.desiredProgram}) a été ouvert. Veuillez uploader vos documents pour faire avancer votre dossier.`,
+                        titre: t("studentNotification.title"),
+                        message: t("studentNotification.message", {
+                            university: university?.nom || t("fallback.aUniversity"),
+                            program: formData.desiredProgram,
+                        }),
                         read: false,
                     });
                 }
@@ -248,24 +253,16 @@ export default function ApplicationManagement() {
                     }).catch(err => console.warn("Email candidature:", err));
                 }
 
-                showNotification("Candidature enregistrée avec succès !", "success");
+                showNotification(t("messages.createSuccess"), "success");
                 setShowForm(false);
                 setEditingApplication(null);
-                setFormData({
-                    studentId: "",
-                    universityId: "",
-                    desiredProgram: "",
-                    studyLevel: "Licence",
-                    languageLevel: "HSK 3",
-                    scholarshipType: "Complete",
-                    applicationFee: "",
-                });
+                resetForm();
                 await loadData();
             } else if (error) {
-                showNotification("Erreur lors de l'enregistrement", "error");
+                showNotification(t("messages.saveError"), "error");
             }
         } catch (error) {
-            showNotification("Erreur lors de l'enregistrement", "error");
+            showNotification(t("messages.saveError"), "error");
         }
     };
 
@@ -286,8 +283,8 @@ export default function ApplicationManagement() {
     const deleteApplication = (applicationId: string) => {
         setConfirmDialog({
             open: true,
-            title: 'Supprimer la candidature',
-            description: 'Cette candidature sera définitivement supprimée. Cette action est irréversible.',
+            title: t("delete.title"),
+            description: t("delete.description"),
             onConfirm: async () => {
                 closeConfirm();
                 try {
@@ -301,11 +298,11 @@ export default function ApplicationManagement() {
                             { application_id: applicationId }
                         );
                     }
-                    showNotification("Candidature supprimée", "success");
+                    showNotification(t("messages.deleteSuccess"), "success");
                     await loadData();
                 } catch (error) {
                     console.error("Erreur suppression:", error);
-                    showNotification("Erreur lors de la suppression", "error");
+                    showNotification(t("messages.deleteError"), "error");
                 }
             },
         });
@@ -340,23 +337,23 @@ export default function ApplicationManagement() {
     const getStatusLabel = (status: string) => {
         switch (status) {
             case "document_recu":
-                return "Document reçu";
+                return t("status.documentReceived");
             case "en_attente":
-                return "En attente";
+                return t("status.pending");
             case "en_cours":
-                return "En cours";
+                return t("status.inProgress");
             case "document_manquant":
-                return "En attente de documents";
+                return t("status.missingDocuments");
             case "admission_validee":
-                return "Acceptée";
+                return t("status.accepted");
             case "admission_rejetee":
-                return "Refusée";
+                return t("status.rejected");
             case "en_attente_universite":
-                return "En attente université";
+                return t("status.waitingUniversity");
             case "visa_en_cours":
-                return "Visa en cours";
+                return t("status.visaProcessing");
             case "termine":
-                return "Terminé";
+                return t("status.completed");
             default:
                 return status;
         }
@@ -367,7 +364,7 @@ export default function ApplicationManagement() {
             <div className="flex min-h-[400px] items-center justify-center">
                 <div className="text-center">
                     <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
-                    <p className="text-slate-600">Chargement des candidatures...</p>
+                    <p className="text-slate-600">{t("loading")}</p>
                 </div>
             </div>
         );
@@ -378,29 +375,21 @@ export default function ApplicationManagement() {
             <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                        Pipeline admissions
+                        {t("header.tag")}
                     </p>
                     <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                        Gestion des Candidatures de Bourses
+                        {t("header.title")}
                     </h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Crée, visualise et fais progresser les dossiers de candidature.
+                        {t("header.subtitle")}
                     </p>
                 </div>
                 <Button onClick={() => {
                     setEditingApplication(null);
-                    setFormData({
-                        studentId: "",
-                        universityId: "",
-                        desiredProgram: "",
-                        studyLevel: "Licence",
-                        languageLevel: "HSK 3",
-                        scholarshipType: "Complete",
-                        applicationFee: "",
-                    });
+                    resetForm();
                     setShowForm(true);
                 }} style={{ backgroundColor: "#dc2626" }}>
-                    Nouvelle Candidature
+                    {t("actions.new")}
                 </Button>
             </div>
 
@@ -408,28 +397,28 @@ export default function ApplicationManagement() {
                 <Card className="joda-surface border-0 shadow-none">
                     <CardHeader>
                         <CardTitle style={{ color: "#dc2626" }}>
-                            {editingApplication ? "Modifier la Candidature" : "Nouvelle Candidature de Bourse"}
+                            {editingApplication ? t("form.titleEdit") : t("form.titleNew")}
                         </CardTitle>
                         <CardDescription>
                             {editingApplication 
-                                ? "Modifiez les informations de la candidature."
-                                : "Renseigne les informations essentielles pour ouvrir un nouveau dossier."}
+                                ? t("form.descriptionEdit")
+                                : t("form.descriptionNew")}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Étudiant *</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.student")}</Label>
                                 <Select 
                                     value={formData.studentId || ""} 
                                     onValueChange={(v) => setFormData({ ...formData, studentId: v || "" })}
                                     disabled={!!editingApplication}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner un étudiant">
+                                        <SelectValue placeholder={t("form.studentPlaceholder")}>
                                             {formData.studentId
-                                                ? (() => { const s = students.find(s => s.id === formData.studentId); return s ? `${s.prenom} ${s.nom}` : "Sélectionner un étudiant"; })()
-                                                : "Sélectionner un étudiant"}
+                                                ? (() => { const s = students.find(s => s.id === formData.studentId); return s ? `${s.prenom} ${s.nom}` : t("form.studentPlaceholder"); })()
+                                                : t("form.studentPlaceholder")}
                                         </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
@@ -441,13 +430,13 @@ export default function ApplicationManagement() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Université *</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.university")}</Label>
                                 <Select value={formData.universityId || ""} onValueChange={(v) => setFormData({ ...formData, universityId: v || "" })}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner une université">
+                                        <SelectValue placeholder={t("form.universityPlaceholder")}>
                                             {formData.universityId
-                                                ? (() => { const u = universities.find(u => u.id === formData.universityId); return u ? u.nom : "Sélectionner une université"; })()
-                                                : "Sélectionner une université"}
+                                                ? (() => { const u = universities.find(u => u.id === formData.universityId); return u ? u.nom : t("form.universityPlaceholder"); })()
+                                                : t("form.universityPlaceholder")}
                                         </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
@@ -459,32 +448,32 @@ export default function ApplicationManagement() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Programme souhaité *</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.program")}</Label>
                                 <Input
-                                    placeholder="Programme souhaité"
+                                    placeholder={t("form.programPlaceholder")}
                                     value={formData.desiredProgram}
                                     onChange={(e) => setFormData({ ...formData, desiredProgram: e.target.value })}
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Niveau d'études</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.studyLevel")}</Label>
                                 <Select value={formData.studyLevel || "Licence"} onValueChange={(v) => setFormData({ ...formData, studyLevel: v || "Licence" })}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Licence">Licence</SelectItem>
-                                        <SelectItem value="Master">Master</SelectItem>
-                                        <SelectItem value="Doctorat">Doctorat</SelectItem>
+                                        <SelectItem value="Licence">{t("studyLevels.licence")}</SelectItem>
+                                        <SelectItem value="Master">{t("studyLevels.master")}</SelectItem>
+                                        <SelectItem value="Doctorat">{t("studyLevels.doctorate")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Niveau chinois</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.languageLevel")}</Label>
                                 <Select value={formData.languageLevel || "HSK 3"} onValueChange={(v) => setFormData({ ...formData, languageLevel: v || "HSK 3" })}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Debutant">Débutant</SelectItem>
+                                        <SelectItem value="Debutant">{t("languageLevels.beginner")}</SelectItem>
                                         <SelectItem value="HSK 1">HSK 1</SelectItem>
                                         <SelectItem value="HSK 2">HSK 2</SelectItem>
                                         <SelectItem value="HSK 3">HSK 3</SelectItem>
@@ -496,13 +485,13 @@ export default function ApplicationManagement() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Type de bourse</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.scholarshipType")}</Label>
                                 <Select value={formData.scholarshipType || "Complete"} onValueChange={(v) => setFormData({ ...formData, scholarshipType: v || "Complete" })}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Complete">Bourse complète</SelectItem>
-                                        <SelectItem value="Partielle">Bourse partielle</SelectItem>
-                                        <SelectItem value="Aucune">Aucune bourse</SelectItem>
+                                        <SelectItem value="Complete">{t("scholarshipTypes.complete")}</SelectItem>
+                                        <SelectItem value="Partielle">{t("scholarshipTypes.partial")}</SelectItem>
+                                        <SelectItem value="Aucune">{t("scholarshipTypes.none")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -510,22 +499,14 @@ export default function ApplicationManagement() {
 
                         <div className="mt-6 flex gap-3">
                             <Button onClick={handleSaveApplication} style={{ backgroundColor: "#dc2626" }}>
-                                {editingApplication ? "Modifier" : "Enregistrer"}
+                                {editingApplication ? t("actions.edit") : t("actions.save")}
                             </Button>
                             <Button variant="outline" onClick={() => {
                                 setShowForm(false);
                                 setEditingApplication(null);
-                                setFormData({
-                                    studentId: "",
-                                    universityId: "",
-                                    desiredProgram: "",
-                                    studyLevel: "Licence",
-                                    languageLevel: "HSK 3",
-                                    scholarshipType: "Complete",
-                                    applicationFee: "",
-                                });
+                                resetForm();
                             }}>
-                                Annuler
+                                {t("actions.cancel")}
                             </Button>
                         </div>
                     </CardContent>
@@ -535,42 +516,42 @@ export default function ApplicationManagement() {
             <Card className="joda-surface border-0 shadow-none">
                 <CardHeader>
                     <div className="flex items-center justify-between mb-4">
-                        <CardTitle>Liste des Candidatures ({filteredApplications.length})</CardTitle>
-                        <Button variant="outline" onClick={loadData}>Actualiser</Button>
+                        <CardTitle>{t("list.title", { count: filteredApplications.length })}</CardTitle>
+                        <Button variant="outline" onClick={loadData}>{t("actions.refresh")}</Button>
                     </div>
                     
                     {/* Barre de recherche et filtres */}
                     <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_200px_200px]">
                         <Input
-                            placeholder="Rechercher par nom, université, programme..."
+                            placeholder={t("filters.searchPlaceholder")}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                         
                         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Filtrer par statut" />
+                                <SelectValue placeholder={t("filters.statusPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Tous les statuts</SelectItem>
-                                <SelectItem value="document_manquant">Document manquant</SelectItem>
-                                <SelectItem value="document_recu">Document reçu</SelectItem>
-                                <SelectItem value="en_attente">En attente</SelectItem>
-                                <SelectItem value="en_cours">En cours</SelectItem>
-                                <SelectItem value="admission_validee">Acceptée</SelectItem>
-                                <SelectItem value="admission_rejetee">Refusée</SelectItem>
-                                <SelectItem value="en_attente_universite">En attente université</SelectItem>
-                                <SelectItem value="visa_en_cours">Visa en cours</SelectItem>
-                                <SelectItem value="termine">Terminé</SelectItem>
+                                <SelectItem value="all">{t("filters.allStatuses")}</SelectItem>
+                                <SelectItem value="document_manquant">{t("status.documentMissing")}</SelectItem>
+                                <SelectItem value="document_recu">{t("status.documentReceived")}</SelectItem>
+                                <SelectItem value="en_attente">{t("status.pending")}</SelectItem>
+                                <SelectItem value="en_cours">{t("status.inProgress")}</SelectItem>
+                                <SelectItem value="admission_validee">{t("status.accepted")}</SelectItem>
+                                <SelectItem value="admission_rejetee">{t("status.rejected")}</SelectItem>
+                                <SelectItem value="en_attente_universite">{t("status.waitingUniversity")}</SelectItem>
+                                <SelectItem value="visa_en_cours">{t("status.visaProcessing")}</SelectItem>
+                                <SelectItem value="termine">{t("status.completed")}</SelectItem>
                             </SelectContent>
                         </Select>
                         
                         <Select value={universityFilter} onValueChange={(v) => setUniversityFilter(v || "all")}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Filtrer par université" />
+                                <SelectValue placeholder={t("filters.universityPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Toutes les universités</SelectItem>
+                                <SelectItem value="all">{t("filters.allUniversities")}</SelectItem>
                                 {universities.map((u) => (
                                     <SelectItem key={u.id} value={u.id}>{u.nom}</SelectItem>
                                 ))}
@@ -583,8 +564,8 @@ export default function ApplicationManagement() {
                         <div className="py-12 text-center">
                             <p className="text-slate-500">
                                 {applications.length === 0 
-                                    ? "Aucune candidature pour le moment" 
-                                    : "Aucune candidature ne correspond aux filtres"}
+                                    ? t("empty.noApplications")
+                                    : t("empty.noResults")}
                             </p>
                             {(searchTerm || statusFilter !== "all" || universityFilter !== "all") && (
                                 <Button 
@@ -597,7 +578,7 @@ export default function ApplicationManagement() {
                                         setUniversityFilter("all");
                                     }}
                                 >
-                                    Réinitialiser les filtres
+                                    {t("actions.resetFilters")}
                                 </Button>
                             )}
                         </div>
@@ -613,10 +594,10 @@ export default function ApplicationManagement() {
                                         <div className="mb-4 flex items-start justify-between">
                                             <div>
                                                 <h3 className="font-semibold text-slate-800">
-                                                    {student ? `${student.prenom} ${student.nom}` : "Étudiant"}
+                                                    {student ? `${student.prenom} ${student.nom}` : t("fallback.student")}
                                                 </h3>
                                                 <p className="text-sm text-slate-600">
-                                                    {university?.nom || "Université"}
+                                                    {university?.nom || t("fallback.university")}
                                                 </p>
                                             </div>
                                             <Badge className={getStatusColor(application.status)}>
@@ -626,9 +607,9 @@ export default function ApplicationManagement() {
 
                                         <div className="mb-4 space-y-2 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-slate-600">Date:</span>
+                                                <span className="text-slate-600">{t("card.date")}:</span>
                                                 <span className="font-medium">
-                                                    {application.created_at ? new Date(application.created_at).toLocaleDateString("fr-FR") : "-"}
+                                                    {application.created_at ? new Date(application.created_at).toLocaleDateString(dateLocale) : "-"}
                                                 </span>
                                             </div>
                                         </div>
@@ -637,26 +618,26 @@ export default function ApplicationManagement() {
                                             <Select value={application.status} onValueChange={(v) => updateApplicationStatus(application.id, v || application.status)}>
                                                 <SelectTrigger className="w-[180px] text-xs font-medium"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="document_recu">Document reçu</SelectItem>
-                                                    <SelectItem value="en_attente">En attente</SelectItem>
-                                                    <SelectItem value="en_cours">En cours</SelectItem>
-                                                    <SelectItem value="document_manquant">Document manquant</SelectItem>
-                                                    <SelectItem value="admission_validee">Acceptée</SelectItem>
-                                                    <SelectItem value="admission_rejetee">Refusée</SelectItem>
-                                                    <SelectItem value="termine">Terminé</SelectItem>
+                                                    <SelectItem value="document_recu">{t("status.documentReceived")}</SelectItem>
+                                                    <SelectItem value="en_attente">{t("status.pending")}</SelectItem>
+                                                    <SelectItem value="en_cours">{t("status.inProgress")}</SelectItem>
+                                                    <SelectItem value="document_manquant">{t("status.documentMissing")}</SelectItem>
+                                                    <SelectItem value="admission_validee">{t("status.accepted")}</SelectItem>
+                                                    <SelectItem value="admission_rejetee">{t("status.rejected")}</SelectItem>
+                                                    <SelectItem value="termine">{t("status.completed")}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <DropdownMenu
                                                 actions={[
                                                     {
-                                                        label: "Modifier",
+                                                        label: t("actions.edit"),
                                                         icon: <Edit className="h-4 w-4" />,
                                                         onClick: () => openEditForm(application),
                                                     },
                                                     ...(canDelete
                                                         ? [
                                                               {
-                                                                  label: "Supprimer",
+                                                                  label: t("actions.delete"),
                                                                   icon: <Trash2 className="h-4 w-4" />,
                                                                   onClick: () => deleteApplication(application.id),
                                                                   variant: "danger" as const,
@@ -689,7 +670,7 @@ export default function ApplicationManagement() {
             onConfirm={confirmDialog.onConfirm}
             title={confirmDialog.title}
             description={confirmDialog.description}
-            confirmLabel="Supprimer"
+            confirmLabel={t("actions.delete")}
         />
         </div>
     );

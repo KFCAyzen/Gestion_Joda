@@ -566,6 +566,102 @@
       "error": "Erreur : {error}"
     }
   },
+  "applicationManagement": {
+    "loading": "Chargement des candidatures...",
+    "header": {
+      "tag": "Pipeline admissions",
+      "title": "Gestion des Candidatures de Bourses",
+      "subtitle": "Crée, visualise et fais progresser les dossiers de candidature."
+    },
+    "actions": {
+      "new": "Nouvelle Candidature",
+      "edit": "Modifier",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "refresh": "Actualiser",
+      "resetFilters": "Réinitialiser les filtres",
+      "delete": "Supprimer"
+    },
+    "form": {
+      "titleNew": "Nouvelle Candidature de Bourse",
+      "titleEdit": "Modifier la Candidature",
+      "descriptionNew": "Renseigne les informations essentielles pour ouvrir un nouveau dossier.",
+      "descriptionEdit": "Modifiez les informations de la candidature.",
+      "student": "Étudiant *",
+      "studentPlaceholder": "Sélectionner un étudiant",
+      "university": "Université *",
+      "universityPlaceholder": "Sélectionner une université",
+      "program": "Programme souhaité *",
+      "programPlaceholder": "Programme souhaité",
+      "studyLevel": "Niveau d'études",
+      "languageLevel": "Niveau chinois",
+      "scholarshipType": "Type de bourse"
+    },
+    "studyLevels": {
+      "licence": "Licence",
+      "master": "Master",
+      "doctorate": "Doctorat"
+    },
+    "languageLevels": {
+      "beginner": "Débutant"
+    },
+    "scholarshipTypes": {
+      "complete": "Bourse complète",
+      "partial": "Bourse partielle",
+      "none": "Aucune bourse"
+    },
+    "list": {
+      "title": "Liste des Candidatures ({count})"
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher par nom, université, programme...",
+      "statusPlaceholder": "Filtrer par statut",
+      "universityPlaceholder": "Filtrer par université",
+      "allStatuses": "Tous les statuts",
+      "allUniversities": "Toutes les universités"
+    },
+    "status": {
+      "documentMissing": "Document manquant",
+      "missingDocuments": "En attente de documents",
+      "documentReceived": "Document reçu",
+      "pending": "En attente",
+      "inProgress": "En cours",
+      "accepted": "Acceptée",
+      "rejected": "Refusée",
+      "waitingUniversity": "En attente université",
+      "visaProcessing": "Visa en cours",
+      "completed": "Terminé"
+    },
+    "empty": {
+      "noApplications": "Aucune candidature pour le moment",
+      "noResults": "Aucune candidature ne correspond aux filtres"
+    },
+    "card": {
+      "date": "Date"
+    },
+    "delete": {
+      "title": "Supprimer la candidature",
+      "description": "Cette candidature sera définitivement supprimée. Cette action est irréversible."
+    },
+    "messages": {
+      "requiredFields": "Veuillez remplir tous les champs obligatoires",
+      "updateError": "Erreur lors de la modification",
+      "updateSuccess": "Candidature modifiée avec succès !",
+      "createSuccess": "Candidature enregistrée avec succès !",
+      "saveError": "Erreur lors de l'enregistrement",
+      "deleteSuccess": "Candidature supprimée",
+      "deleteError": "Erreur lors de la suppression"
+    },
+    "studentNotification": {
+      "title": "Nouvelle candidature créée",
+      "message": "Votre dossier de candidature pour {university} ({program}) a été ouvert. Veuillez uploader vos documents pour faire avancer votre dossier."
+    },
+    "fallback": {
+      "student": "Étudiant",
+      "university": "Université",
+      "aUniversity": "une université"
+    }
+  },
   "paymentManagement": {
     "title": "Gestion des Paiements",
     "filters": {

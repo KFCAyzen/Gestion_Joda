@@ -529,6 +529,102 @@
       "error": "Error: {error}"
     }
   },
+  "applicationManagement": {
+    "loading": "Loading applications...",
+    "header": {
+      "tag": "Admissions pipeline",
+      "title": "Scholarship Application Management",
+      "subtitle": "Create, review and move application files forward."
+    },
+    "actions": {
+      "new": "New Application",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "refresh": "Refresh",
+      "resetFilters": "Reset filters",
+      "delete": "Delete"
+    },
+    "form": {
+      "titleNew": "New Scholarship Application",
+      "titleEdit": "Edit Application",
+      "descriptionNew": "Enter the essential information to open a new file.",
+      "descriptionEdit": "Update the application information.",
+      "student": "Student *",
+      "studentPlaceholder": "Select a student",
+      "university": "University *",
+      "universityPlaceholder": "Select a university",
+      "program": "Desired program *",
+      "programPlaceholder": "Desired program",
+      "studyLevel": "Study level",
+      "languageLevel": "Chinese level",
+      "scholarshipType": "Scholarship type"
+    },
+    "studyLevels": {
+      "licence": "Bachelor",
+      "master": "Master",
+      "doctorate": "Doctorate"
+    },
+    "languageLevels": {
+      "beginner": "Beginner"
+    },
+    "scholarshipTypes": {
+      "complete": "Full scholarship",
+      "partial": "Partial scholarship",
+      "none": "No scholarship"
+    },
+    "list": {
+      "title": "Application List ({count})"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name, university, program...",
+      "statusPlaceholder": "Filter by status",
+      "universityPlaceholder": "Filter by university",
+      "allStatuses": "All statuses",
+      "allUniversities": "All universities"
+    },
+    "status": {
+      "documentMissing": "Missing document",
+      "missingDocuments": "Waiting for documents",
+      "documentReceived": "Document received",
+      "pending": "Pending",
+      "inProgress": "In progress",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "waitingUniversity": "Waiting for university",
+      "visaProcessing": "Visa processing",
+      "completed": "Completed"
+    },
+    "empty": {
+      "noApplications": "No applications yet",
+      "noResults": "No application matches the filters"
+    },
+    "card": {
+      "date": "Date"
+    },
+    "delete": {
+      "title": "Delete application",
+      "description": "This application will be permanently deleted. This action cannot be undone."
+    },
+    "messages": {
+      "requiredFields": "Please fill in all required fields",
+      "updateError": "Error while updating",
+      "updateSuccess": "Application updated successfully!",
+      "createSuccess": "Application saved successfully!",
+      "saveError": "Error while saving",
+      "deleteSuccess": "Application deleted",
+      "deleteError": "Error while deleting"
+    },
+    "studentNotification": {
+      "title": "New application created",
+      "message": "Your application file for {university} ({program}) has been opened. Please upload your documents to move your file forward."
+    },
+    "fallback": {
+      "student": "Student",
+      "university": "University",
+      "aUniversity": "a university"
+    }
+  },
   "paymentManagement": {
     "title": "Payment Management",
     "filters": {
