@@ -23,6 +23,7 @@ import {
     WalletCards,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { ThemeToggle } from "../components/ThemeToggle";
 import { useNotification } from "../hooks/useNotification";
 import Notification from "../components/Notification";
 import { NotificationProvider } from "../context/NotificationContext";
@@ -413,6 +414,7 @@ function AppShell({ children }: { children: ReactNode }) {
                             </div>
                         </div>
                         <div className="flex items-center space-x-4">
+                            <ThemeToggle />
                             <button
                                 onClick={() => navigateTo("notifications")}
                                 className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
