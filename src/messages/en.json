@@ -526,7 +526,109 @@
       "noLatePayments": "No late payments found.",
       "noLateToNotify": "No late payments to notify.",
       "generated": "{count} notification(s) generated.",
-      "error": "Error: {error}"
+      "error": "Error: {error}",
+      "unknownError": "Unknown error"
+    },
+    "messages": {
+      "latePayment": "Installment {installment} is late - {penalties} FCFA in penalties"
+    }
+  },
+  "studentNotifications": {
+    "title": "My Notifications",
+    "loading": "Loading...",
+    "empty": "No notifications",
+    "allRead": "All read",
+    "unreadCount": "{count} unread",
+    "filters": {
+      "all": "All ({count})",
+      "latePayments": "Late payments",
+      "documents": "Documents",
+      "payments": "Payments",
+      "files": "Files"
+    },
+    "actions": {
+      "back": "Back",
+      "markAllRead": "Mark all read",
+      "refresh": "Refresh"
+    },
+    "types": {
+      "document_manquant": "Missing document",
+      "paiement_valide": "Payment validated",
+      "retard_paiement": "Late payment",
+      "mise_a_jour_dossier": "File update"
+    }
+  },
+  "activityLogs": {
+    "header": {
+      "eyebrow": "Administration",
+      "title": "Activity Logs",
+      "description": "History of sensitive actions performed in the application",
+      "adminOnly": "Admin only"
+    },
+    "stats": {
+      "total": "Total activities",
+      "agents": "Agent actions",
+      "admins": "Admin actions",
+      "today": "Today"
+    },
+    "filters": {
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search by user or action...",
+      "role": "Role",
+      "action": "Action",
+      "period": "Period"
+    },
+    "roles": {
+      "all": "All roles",
+      "agent": "Agents",
+      "admin": "Admins",
+      "superAdmin": "Super Admins"
+    },
+    "periods": {
+      "all": "All dates",
+      "today": "Today",
+      "week": "Last 7 days",
+      "month": "Last 30 days"
+    },
+    "activityTypes": {
+      "all": "All actions",
+      "student_create": "Student created",
+      "student_update": "Student updated",
+      "student_delete": "Student deleted",
+      "application_create": "Application created",
+      "application_update": "Application updated",
+      "application_delete": "Application deleted",
+      "application_status_change": "Application status changed",
+      "dossier_update": "File updated",
+      "dossier_delete": "File deleted",
+      "dossier_status_change": "File status changed",
+      "university_create": "University created",
+      "university_update": "University updated",
+      "university_delete": "University deleted",
+      "payment_create": "Payment created",
+      "payment_update": "Payment updated",
+      "payment_validate": "Payment validated",
+      "accounting_entry": "Accounting entry",
+      "accounting_expense": "Accounting expense",
+      "document_upload": "Document uploaded",
+      "document_validate": "Document validated",
+      "document_reject": "Document rejected",
+      "user_create": "User created",
+      "user_update": "User updated",
+      "user_delete": "User deleted",
+      "login": "Login",
+      "logout": "Logout"
+    },
+    "empty": {
+      "title": "No activity log found",
+      "description": "Adjust the filters to see more results"
+    },
+    "actions": {
+      "resetFilters": "Reset filters"
+    },
+    "log": {
+      "entity": "Entity",
+      "extraDetails": "Additional details"
     }
   },
   "applicationManagement": {

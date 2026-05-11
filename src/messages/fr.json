@@ -563,7 +563,109 @@
       "noLatePayments": "Aucun paiement en retard trouvé.",
       "noLateToNotify": "Aucun paiement en retard à notifier.",
       "generated": "{count} notification(s) générée(s).",
-      "error": "Erreur : {error}"
+      "error": "Erreur : {error}",
+      "unknownError": "Erreur inconnue"
+    },
+    "messages": {
+      "latePayment": "Tranche {installment} en retard - {penalties} FCFA de pénalités"
+    }
+  },
+  "studentNotifications": {
+    "title": "Mes Notifications",
+    "loading": "Chargement...",
+    "empty": "Aucune notification",
+    "allRead": "Tout est lu",
+    "unreadCount": "{count} non lue(s)",
+    "filters": {
+      "all": "Toutes ({count})",
+      "latePayments": "Retards",
+      "documents": "Documents",
+      "payments": "Paiements",
+      "files": "Dossiers"
+    },
+    "actions": {
+      "back": "Retour",
+      "markAllRead": "Tout lire",
+      "refresh": "Actualiser"
+    },
+    "types": {
+      "document_manquant": "Document manquant",
+      "paiement_valide": "Paiement valide",
+      "retard_paiement": "Retard de paiement",
+      "mise_a_jour_dossier": "Mise à jour dossier"
+    }
+  },
+  "activityLogs": {
+    "header": {
+      "eyebrow": "Administration",
+      "title": "Logs d'Activités",
+      "description": "Historique des actions sensibles effectuées dans l'application",
+      "adminOnly": "Admin uniquement"
+    },
+    "stats": {
+      "total": "Total activités",
+      "agents": "Actions agents",
+      "admins": "Actions admins",
+      "today": "Aujourd'hui"
+    },
+    "filters": {
+      "searchLabel": "Recherche",
+      "searchPlaceholder": "Rechercher par utilisateur, action...",
+      "role": "Rôle",
+      "action": "Action",
+      "period": "Période"
+    },
+    "roles": {
+      "all": "Tous les rôles",
+      "agent": "Agents",
+      "admin": "Admins",
+      "superAdmin": "Super Admins"
+    },
+    "periods": {
+      "all": "Toutes les dates",
+      "today": "Aujourd'hui",
+      "week": "7 derniers jours",
+      "month": "30 derniers jours"
+    },
+    "activityTypes": {
+      "all": "Toutes les actions",
+      "student_create": "Création étudiant",
+      "student_update": "Modification étudiant",
+      "student_delete": "Suppression étudiant",
+      "application_create": "Création candidature",
+      "application_update": "Modification candidature",
+      "application_delete": "Suppression candidature",
+      "application_status_change": "Changement statut candidature",
+      "dossier_update": "Modification dossier",
+      "dossier_delete": "Suppression dossier",
+      "dossier_status_change": "Changement statut dossier",
+      "university_create": "Création université",
+      "university_update": "Modification université",
+      "university_delete": "Suppression université",
+      "payment_create": "Création paiement",
+      "payment_update": "Modification paiement",
+      "payment_validate": "Validation paiement",
+      "accounting_entry": "Entrée comptable",
+      "accounting_expense": "Sortie comptable",
+      "document_upload": "Upload document",
+      "document_validate": "Validation document",
+      "document_reject": "Rejet document",
+      "user_create": "Création utilisateur",
+      "user_update": "Modification utilisateur",
+      "user_delete": "Suppression utilisateur",
+      "login": "Connexion",
+      "logout": "Déconnexion"
+    },
+    "empty": {
+      "title": "Aucun log d'activité trouvé",
+      "description": "Ajustez les filtres pour voir plus de résultats"
+    },
+    "actions": {
+      "resetFilters": "Réinitialiser les filtres"
+    },
+    "log": {
+      "entity": "Entité",
+      "extraDetails": "Détails supplémentaires"
     }
   },
   "applicationManagement": {

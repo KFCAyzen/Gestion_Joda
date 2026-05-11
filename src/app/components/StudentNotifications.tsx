@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,14 +28,17 @@ interface Props {
     onBack?: () => void;
 }
 
-const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-    document_manquant: { label: "Document manquant", color: "text-orange-600", bg: "bg-orange-100", icon: "DOC" },
-    paiement_valide: { label: "Paiement valide", color: "text-green-600", bg: "bg-green-100", icon: "PAY" },
-    retard_paiement: { label: "Retard de paiement", color: "text-red-600", bg: "bg-red-100", icon: "!" },
-    mise_a_jour_dossier: { label: "Mise à jour dossier", color: "text-blue-600", bg: "bg-blue-100", icon: "UPD" },
+const TYPE_CONFIG: Record<string, { labelKey: string; color: string; bg: string; icon: string }> = {
+    document_manquant: { labelKey: "document_manquant", color: "text-orange-600", bg: "bg-orange-100", icon: "DOC" },
+    paiement_valide: { labelKey: "paiement_valide", color: "text-green-600", bg: "bg-green-100", icon: "PAY" },
+    retard_paiement: { labelKey: "retard_paiement", color: "text-red-600", bg: "bg-red-100", icon: "!" },
+    mise_a_jour_dossier: { labelKey: "mise_a_jour_dossier", color: "text-blue-600", bg: "bg-blue-100", icon: "UPD" },
 };
 
 export default function StudentNotifications({ user, onBack }: Props) {
+    const t = useTranslations("studentNotifications");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
@@ -76,11 +80,11 @@ export default function StudentNotifications({ user, onBack }: Props) {
     const unreadCount = notifications.filter((n) => !n.read).length;
 
     const filterBtns: { key: string; label: string }[] = [
-        { key: "all", label: `Toutes (${notifications.length})` },
-        { key: "retard_paiement", label: "Retards" },
-        { key: "document_manquant", label: "Documents" },
-        { key: "paiement_valide", label: "Paiements" },
-        { key: "mise_a_jour_dossier", label: "Dossiers" },
+        { key: "all", label: t("filters.all", { count: notifications.length }) },
+        { key: "retard_paiement", label: t("filters.latePayments") },
+        { key: "document_manquant", label: t("filters.documents") },
+        { key: "paiement_valide", label: t("filters.payments") },
+        { key: "mise_a_jour_dossier", label: t("filters.files") },
     ];
 
     return (
@@ -89,19 +93,19 @@ export default function StudentNotifications({ user, onBack }: Props) {
                 <div className="flex items-center gap-3">
                     {onBack && (
                         <Button variant="ghost" size="sm" onClick={onBack}>
-                            Retour
+                            {t("actions.back")}
                         </Button>
                     )}
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Mes Notifications</h2>
-                        <p className="text-sm text-slate-500">{unreadCount > 0 ? `${unreadCount} non lue(s)` : "Tout est lu"}</p>
+                        <h2 className="text-xl font-bold text-slate-900">{t("title")}</h2>
+                        <p className="text-sm text-slate-500">{unreadCount > 0 ? t("unreadCount", { count: unreadCount }) : t("allRead")}</p>
                     </div>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={unreadCount === 0}>
-                        Tout lire
+                        {t("actions.markAllRead")}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={load}>Actualiser</Button>
+                    <Button variant="outline" size="sm" onClick={load}>{t("actions.refresh")}</Button>
                 </div>
             </div>
 
@@ -124,13 +128,13 @@ export default function StudentNotifications({ user, onBack }: Props) {
             <Card className="joda-surface border-0 shadow-none">
                 <CardContent className="p-0">
                     {loading ? (
-                        <div className="py-12 text-center">Chargement...</div>
+                        <div className="py-12 text-center">{t("loading")}</div>
                     ) : filtered.length === 0 ? (
-                        <div className="py-12 text-center text-gray-400">Aucune notification</div>
+                        <div className="py-12 text-center text-gray-400">{t("empty")}</div>
                     ) : (
                         <div className="divide-y divide-slate-100">
                             {filtered.map((notif) => {
-                                const cfg = TYPE_CONFIG[notif.type] || { label: notif.type, color: "text-slate-600", bg: "bg-slate-100", icon: "INF" };
+                                const cfg = TYPE_CONFIG[notif.type] || { labelKey: "unknown", color: "text-slate-600", bg: "bg-slate-100", icon: "INF" };
                                 return (
                                     <div
                                         key={notif.id}
@@ -144,11 +148,11 @@ export default function StudentNotifications({ user, onBack }: Props) {
                                             <div className="flex items-start justify-between gap-2">
                                                 <p className={`text-sm font-semibold ${notif.read ? "text-slate-600" : "text-slate-900"}`}>{notif.titre}</p>
                                                 <span className="whitespace-nowrap text-xs text-slate-400">
-                                                    {notif.created_at ? new Date(notif.created_at).toLocaleDateString("fr-FR") : "-"}
+                                                    {notif.created_at ? new Date(notif.created_at).toLocaleDateString(dateLocale) : "-"}
                                                 </span>
                                             </div>
                                             <p className="mt-0.5 text-sm text-slate-500">{notif.message}</p>
-                                            <Badge className={`mt-1 ${cfg.bg} ${cfg.color}`}>{cfg.label}</Badge>
+                                            <Badge className={`mt-1 ${cfg.bg} ${cfg.color}`}>{cfg.labelKey === "unknown" ? notif.type : t(`types.${cfg.labelKey}`)}</Badge>
                                         </div>
                                         {!notif.read && <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />}
                                     </div>

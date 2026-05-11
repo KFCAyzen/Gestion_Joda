@@ -40,6 +40,7 @@ const TYPE_STYLES: Record<string, { color: string; bg: string; icon: string }> =
 export default function NotificationsPage() {
     const t = useTranslations("notifications");
     const locale = useLocale();
+    const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const { user } = useAuth();
     const supabase = createClient();
 
@@ -104,7 +105,10 @@ export default function NotificationsPage() {
                         user_id: payment.student_id,
                         type: "retard_paiement",
                         titre: t("types.retard_paiement"),
-                        message: `${t("payments.installment", { installment: payment.tranche ?? "-" })} en retard — ${(payment.penalites ?? 0).toLocaleString("fr-FR")} FCFA de pénalités`,
+                        message: t("messages.latePayment", {
+                            installment: payment.tranche ?? "-",
+                            penalties: (payment.penalites ?? 0).toLocaleString(dateLocale),
+                        }),
                         read: false,
                     });
                 },
@@ -115,7 +119,7 @@ export default function NotificationsPage() {
             setAutoNotifStatus(t("status.generated", { count: overduePayments.length }));
             await load();
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Erreur inconnue";
+            const msg = err instanceof Error ? err.message : t("status.unknownError");
             setAutoNotifStatus(t("status.error", { error: msg }));
         }
     }, [user, load, t]);
@@ -240,7 +244,7 @@ export default function NotificationsPage() {
                                             <div className="flex items-start justify-between gap-2">
                                                 <p className={`text-sm font-semibold ${notif.read ? "text-slate-600" : "text-slate-900"}`}>{notif.titre}</p>
                                                 <span className="whitespace-nowrap text-xs text-slate-400">
-                                                    {new Date(notif.created_at).toLocaleDateString(locale)}
+                                                    {new Date(notif.created_at).toLocaleDateString(dateLocale)}
                                                 </span>
                                             </div>
                                             <p className="mt-0.5 text-sm text-slate-500">{notif.message}</p>
