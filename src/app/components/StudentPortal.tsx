@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ChangePasswordModal from "./ChangePasswordModal";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 
 interface User {
     id: string;
@@ -89,6 +91,8 @@ const DOSSIER_LABELS: Record<string, string> = {
 type View = "dashboard" | "payments" | "documents" | "dossier" | "notifications";
 
 export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
+    const t = useTranslations("student");
+    const locale = useLocale();
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [view, setView] = useState<View>("dashboard");
@@ -199,32 +203,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     }, [studentId]);
 
     const getPaymentStatusLabel = (status: string) => {
-        switch (status) {
-            case "paye":
-                return "Payé";
-            case "attente":
-                return "En attente";
-            case "retard":
-                return "En retard";
-            default:
-                return status;
-        }
+        return t(`paymentStatus.${status}`, { fallback: status });
     };
 
     const getDocumentStatusLabel = (status: string) => {
-        switch (status) {
-            case "valide":
-                return "Valide";
-            case "en_attente":
-                return "En attente";
-            case "non_conforme":
-                return "Non conforme";
-            default:
-                return status;
-        }
+        return t(`documentStatus.${status}`, { fallback: status });
     };
 
-    const openDeclareModal = (payment: { id?: string; date_limite?: string | null } | null, info: { type: string; tranche: number; montant: number; label: string }) => {
+    const openDeclareModal = (payment: { id?: string; date_limite?: string | null } | null, info: { type: string; tranche: number; montant: number }) => {
         setProofDataUrl(null);
         setPaymentMode("complet");
         setMontantAvance(info.montant.toString());
@@ -233,7 +219,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             type: info.type,
             trancheNum: info.tranche,
             montantTranche: info.montant,
-            label: info.label,
+            label: info.tranche ? t("payments.installment", { installment: info.tranche }) : getPaymentTypeLabel(info.type),
             dateLimite: payment?.date_limite ?? null,
         });
     };
@@ -267,27 +253,22 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 }),
             });
             if (res.ok) {
-                showNotification("Paiement déclaré — en attente de validation", "success");
+                showNotification(t("messages.paymentDeclared"), "success");
                 setDeclareModal(null);
                 void load();
             } else {
                 const data = await res.json();
-                showNotification(data.error ?? "Erreur lors de la déclaration", "error");
+                showNotification(data.error ?? t("messages.paymentError"), "error");
             }
         } catch {
-            showNotification("Erreur réseau", "error");
+            showNotification(t("messages.networkError"), "error");
         } finally {
             setDeclaring(false);
         }
     };
 
     const getPaymentTypeLabel = (type: string) => {
-        switch (type) {
-            case "bourse": return "Bourse";
-            case "mandarin": return "Cours Mandarin";
-            case "anglais": return "Cours Anglais";
-            default: return type;
-        }
+        return t(`paymentTypes.${type}`, { fallback: type });
     };
 
     if (loading) {
@@ -308,16 +289,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
                     <div>
                         <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                            Portail étudiant
+                            {t("portal.title")}
                         </p>
                         <h1 className="text-2xl font-bold text-slate-900">Gestion Joda</h1>
-                        <p className="text-sm text-slate-500">Bienvenue, {user.name}</p>
+                        <p className="text-sm text-slate-500">{t("portal.welcome")}, {user.name}</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setView("notifications")}
                             className="relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
-                            aria-label="Notifications"
+                            aria-label={t("portal.nav.notifications")}
                         >
                             <Bell className="h-5 w-5" />
                             {unreadCount > 0 && (
@@ -327,7 +308,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             )}
                         </button>
                         <span className="hidden text-sm text-slate-500 sm:inline-block">{user.name}</span>
-                        <Button variant="outline" size="sm" onClick={onLogout}>Déconnexion</Button>
+                        <Button variant="outline" size="sm" onClick={onLogout}>{t("portal.logout")}</Button>
                     </div>
                 </div>
             </header>
@@ -346,12 +327,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 }`}
                             >
                                 {v === "dashboard"
-                                    ? "Tableau de bord"
+                                    ? t("portal.nav.dashboard")
                                     : v === "payments"
-                                      ? "Paiements"
+                                      ? t("portal.nav.payments")
                                       : v === "documents"
-                                        ? "Documents"
-                                        : "Mon dossier"}
+                                        ? t("portal.nav.documents")
+                                        : t("portal.nav.dossier")}
                             </button>
                         ))}
                     </div>
@@ -363,30 +344,30 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     <div className="space-y-6">
                         <div className="joda-surface">
                             <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                                Vue d'ensemble
+                                {t("dashboard.overview")}
                             </p>
-                            <h2 className="text-2xl font-bold text-slate-900">Mon espace étudiant</h2>
+                            <h2 className="text-2xl font-bold text-slate-900">{t("dashboard.mySpace")}</h2>
                             <p className="mt-1 text-sm text-slate-500">
-                                Suis tes paiements, tes documents et l'avancement global de ton dossier.
+                                {t("dashboard.followPayments")}
                             </p>
                         </div>
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                             <Card className="joda-surface border-0 shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-sm">Paiements</CardTitle>
+                                    <CardTitle className="text-sm">{t("payments.title")}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-2xl font-bold">{payments.length}</p>
-                                    <p className="text-xs text-slate-500">Total paiements</p>
+                                    <p className="text-xs text-slate-500">{t("dashboard.totalPayments")}</p>
                                 </CardContent>
                             </Card>
                             <Card className="joda-surface border-0 shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-sm">Documents</CardTitle>
+                                    <CardTitle className="text-sm">{t("documents.title")}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-2xl font-bold">{documents.length}</p>
-                                    <p className="text-xs text-slate-500">Documents uploadés</p>
+                                    <p className="text-xs text-slate-500">{t("dashboard.uploadedDocuments")}</p>
                                 </CardContent>
                             </Card>
                             <button
@@ -394,11 +375,11 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 onClick={() => setView("dossier")}
                             >
                                 <div className="p-6">
-                                    <p className="mb-2 text-sm font-medium text-slate-700">Statut dossier</p>
+                                    <p className="mb-2 text-sm font-medium text-slate-700">{t("dossier.fileStatus")}</p>
                                     <Badge className={STATUS_COLORS[dossier?.status || "en_attente"]}>
-                                        {DOSSIER_LABELS[dossier?.status || "en_attente"]}
+                                        {t(`status.${dossier?.status || "pending"}`)}
                                     </Badge>
-                                    <p className="mt-3 text-xs text-slate-400">Voir les détails →</p>
+                                    <p className="mt-3 text-xs text-slate-400">{t("dashboard.seeDetails")}</p>
                                 </div>
                             </button>
                         </div>
@@ -409,9 +390,9 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     <div className="space-y-6">
                         <Card className="joda-surface border-0 shadow-none">
                             <CardHeader>
-                                <CardTitle>Mes Paiements</CardTitle>
+                                <CardTitle>{t("payments.title")}</CardTitle>
                                 <p className="text-sm text-slate-500">
-                                    Suivi de tes échéances selon le service souscrit.
+                                    {t("payments.description")}
                                 </p>
                             </CardHeader>
                             <CardContent>
@@ -430,7 +411,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         {payments.length > 0 && (
                             <Card className="joda-surface border-0 shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base">Historique des paiements</CardTitle>
+                                    <CardTitle className="text-base">{t("payments.paymentHistory")}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -446,10 +427,10 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                     <div className="min-w-0">
                                                         <p className="truncate text-sm font-medium">{getPaymentTypeLabel(payment.type)}</p>
                                                         {payment.tranche && (
-                                                            <p className="text-xs text-slate-500">Tranche {payment.tranche}</p>
+                                                            <p className="text-xs text-slate-500">{t("payments.installment", { installment: payment.tranche })}</p>
                                                         )}
                                                         <p className="text-xs text-slate-400">
-                                                            {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString("fr-FR") : "-"}
+                                                            {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString(locale) : "-"}
                                                         </p>
                                                     </div>
                                                     <div className="shrink-0 text-right">
@@ -463,17 +444,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                             type: payment.type,
                                                             tranche: payment.tranche ?? 1,
                                                             montant: payment.montant,
-                                                            label: payment.tranche ? `Tranche ${payment.tranche}` : payment.type,
                                                         })}
                                                         className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
                                                     >
                                                         <CreditCard className="h-3.5 w-3.5" />
-                                                        Effectuer ce paiement
+                                                        {t("payments.makePayment")}
                                                     </button>
                                                 )}
                                                 {payment.status === "en_validation" && (
                                                     <span className="rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-center text-xs font-semibold text-blue-700">
-                                                        En attente de validation
+                                                        {t("payments.waitingValidation")}
                                                     </span>
                                                 )}
                                             </div>
@@ -492,31 +472,33 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 {view === "dossier" && (
                     <div className="space-y-6">
                         <div className="joda-surface">
-                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">Mon dossier</p>
-                            <h2 className="text-2xl font-bold text-slate-900">Dossier de bourse</h2>
-                            <p className="mt-1 text-sm text-slate-500">Suivi de l'avancement de ta candidature.</p>
+                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">{t("dossier.title")}</p>
+                            <h2 className="text-2xl font-bold text-slate-900">{t("dossier.subtitle")}</h2>
+                            <p className="mt-1 text-sm text-slate-500">
+                                {t("dossier.description")}
+                            </p>
                         </div>
                         {dossier ? (
                             <>
                                 <Card className="joda-surface border-0 shadow-none">
                                     <CardHeader>
-                                        <CardTitle className="text-base">Informations</CardTitle>
+                                        <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="flex items-center justify-between border-b pb-3">
-                                            <span className="text-sm text-slate-500">Statut</span>
-                                            <Badge className={STATUS_COLORS[dossier.status]}>{DOSSIER_LABELS[dossier.status]}</Badge>
+                                            <span className="text-sm text-slate-500">{t("dossier.currentStep")}</span>
+                                            <Badge className={STATUS_COLORS[dossier.status]}>{t(`status.${dossier.status}`)}</Badge>
                                         </div>
                                         {universityName && (
                                             <div className="flex items-center justify-between border-b pb-3">
-                                                <span className="text-sm text-slate-500">Université</span>
+                                                <span className="text-sm text-slate-500">{t("dossier.university")}</span>
                                                 <span className="text-sm font-medium text-slate-900">{universityName}</span>
                                             </div>
                                         )}
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-slate-500">Date de création</span>
+                                            <span className="text-sm text-slate-500">{t("dossier.applicationDate")}</span>
                                             <span className="text-sm font-medium text-slate-900">
-                                                {new Date(dossier.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                                                {new Date(dossier.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
                                             </span>
                                         </div>
                                     </CardContent>
@@ -525,7 +507,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 {dossier.notes_internes && (
                                     <Card className="joda-surface border-0 shadow-none">
                                         <CardHeader>
-                                            <CardTitle className="text-base">Message de l'équipe</CardTitle>
+                                            <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <p className="text-sm text-slate-700 leading-relaxed">{dossier.notes_internes}</p>
@@ -535,7 +517,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
                                 <Card className="joda-surface border-0 shadow-none">
                                     <CardHeader>
-                                        <CardTitle className="text-base">Étapes</CardTitle>
+                                        <CardTitle className="text-base">{t("dossier.steps")}</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         {(() => {
@@ -553,12 +535,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                             const isRejected = dossier.status === "admission_rejetee";
                                             const currentIdx = STATUS_STEP_MAP[dossier.status] ?? 0;
                                             const steps = [
-                                                { key: "en_attente", label: "En attente" },
-                                                { key: "document_recu", label: "Documents reçus" },
-                                                { key: "en_cours", label: "En cours de traitement" },
-                                                { key: "admission_validee", label: isRejected ? "Admission rejetée" : "Admission validée" },
-                                                { key: "visa_en_cours", label: "Visa en cours" },
-                                                { key: "termine", label: "Terminé" },
+                                                { key: "en_attente", label: t("status.pending") },
+                                                { key: "document_recu", label: t("status.document_received") },
+                                                { key: "en_cours", label: t("status.in_progress") },
+                                                { key: "admission_validee", label: isRejected ? t("status.admission_rejected") : t("status.admission_approved") },
+                                                { key: "visa_en_cours", label: t("status.visa_processing") },
+                                                { key: "termine", label: t("status.completed") },
                                             ];
                                             return (
                                                 <ol className="space-y-3">
@@ -596,7 +578,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         ) : (
                             <Card className="joda-surface border-0 shadow-none">
                                 <CardContent>
-                                    <p className="py-8 text-center text-slate-400">Aucun dossier enregistré pour le moment.</p>
+                                    <p className="py-8 text-center text-slate-400">{t("dossier.noFile")}</p>
                                 </CardContent>
                             </Card>
                         )}
@@ -618,7 +600,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
                     <div className="mb-4 flex items-start justify-between">
                         <div>
-                            <h3 className="text-lg font-semibold text-slate-900">Effectuer un paiement</h3>
+                            <h3 className="text-lg font-semibold text-slate-900">{t("payments.makePayment")}</h3>
                             <p className="mt-0.5 text-sm text-slate-500">
                                 {getPaymentTypeLabel(declareModal.type)} — {declareModal.label}
                             </p>
@@ -631,7 +613,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     <div className="mb-4 space-y-3 text-sm">
                         {/* Montant attendu */}
                         <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                            <span className="text-slate-500">Montant attendu</span>
+                            <span className="text-slate-500">{t("payments.expectedAmount")}</span>
                             <span className="font-bold text-slate-800">{formatMontant(declareModal.montantTranche)}</span>
                         </div>
 
@@ -645,7 +627,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
                                 }`}
                             >
-                                Paiement complet
+                                {t("payments.fullPayment")}
                             </button>
                             <button
                                 onClick={() => setPaymentMode("avance")}
@@ -655,14 +637,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
                                 }`}
                             >
-                                Acompte
+                                {t("payments.deposit")}
                             </button>
                         </div>
 
                         {/* Montant acompte */}
                         {paymentMode === "avance" && (
                             <div className="space-y-1">
-                                <p className="text-xs font-medium text-slate-600">Montant versé (FCFA)</p>
+                                <p className="text-xs font-medium text-slate-600">{t("payments.amountPaid")}</p>
                                 <input
                                     type="number"
                                     min={1}
@@ -670,14 +652,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     value={montantAvance}
                                     onChange={e => setMontantAvance(e.target.value)}
                                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-red-400 focus:outline-none"
-                                    placeholder="Montant versé..."
+                                    placeholder={t("payments.amountPaid")}
                                 />
                             </div>
                         )}
 
                         {/* Preuve */}
                         <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-slate-600">Preuve de paiement (optionnel)</p>
+                            <p className="text-xs font-medium text-slate-600">{t("payments.proofUpload")}</p>
                             <input
                                 ref={proofInputRef}
                                 type="file"
@@ -688,7 +670,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             {proofDataUrl ? (
                                 <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
                                     <Upload className="h-4 w-4 text-green-600" />
-                                    <span className="flex-1 text-xs text-green-700">Fichier joint</span>
+                                    <span className="flex-1 text-xs text-green-700">{t("payments.fileAttached")}</span>
                                     <button
                                         onClick={() => { setProofDataUrl(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
                                         className="text-slate-400 hover:text-slate-600"
@@ -702,26 +684,26 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     className="flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-xs text-slate-500 transition-colors hover:border-red-300 hover:text-red-600"
                                 >
                                     <Upload className="h-4 w-4" />
-                                    Joindre un reçu ou screenshot
+                                    {t("payments.uploadReceipt")}
                                 </button>
                             )}
                         </div>
                     </div>
 
                     <p className="mb-4 text-xs text-slate-400">
-                        En confirmant, vous signalez ce paiement. L&apos;équipe Joda vérifiera et validera dans les plus brefs délais.
+                        {t("payments.confirmMessage")}
                     </p>
 
                     <div className="flex gap-3">
                         <Button variant="outline" className="flex-1" onClick={() => setDeclareModal(null)} disabled={declaring}>
-                            Annuler
+                            {t("payments.cancel")}
                         </Button>
                         <Button
                             className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                             onClick={handleDeclarePayment}
                             disabled={declaring}
                         >
-                            {declaring ? "Envoi..." : "Confirmer"}
+                            {declaring ? t("payments.sending") : t("payments.confirm")}
                         </Button>
                     </div>
                 </div>
@@ -733,17 +715,17 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                 <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">Détails du paiement</h3>
+                        <h3 className="text-lg font-semibold">{t("payments.detailsTitle")}</h3>
                         <button onClick={() => setDetailPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
                     </div>
                     <div className="space-y-3 text-sm">
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Service</span><span className="font-medium capitalize">{detailPayment.type}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Montant</span><span className="font-bold text-red-600">{formatMontant(detailPayment.montant)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Statut</span>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.type")}</span><span className="font-medium capitalize">{getPaymentTypeLabel(detailPayment.type)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.amount")}</span><span className="font-bold text-red-600">{formatMontant(detailPayment.montant)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.status")}</span>
                             <Badge className={STATUS_COLORS[detailPayment.status]}>{getPaymentStatusLabel(detailPayment.status)}</Badge>
                         </div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Date limite</span><span className="font-medium">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString("fr-FR") : "—"}</span></div>
-                        <div className="flex justify-between"><span className="text-slate-500">Date paiement</span><span className="font-medium">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString("fr-FR") : "—"}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.dueDate")}</span><span className="font-medium">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(locale) : "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">{t("payments.paymentDate")}</span><span className="font-medium">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(locale) : "—"}</span></div>
                     </div>
                     <div className="mt-5 flex gap-2">
                         {detailPayment.status === "paye" && studentInfo && (
@@ -751,10 +733,10 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 onClick={() => downloadReceipt(detailPayment as any, studentInfo)}
                                 className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
                             >
-                                Télécharger reçu
+                                {t("payments.downloadReceipt")}
                             </button>
                         )}
-                        <button onClick={() => setDetailPayment(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600">Fermer</button>
+                        <button onClick={() => setDetailPayment(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600">{t("common.close")}</button>
                     </div>
                 </div>
             </div>

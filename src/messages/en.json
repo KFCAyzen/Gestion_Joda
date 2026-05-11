@@ -61,5 +61,203 @@
     "changeLanguage": "Change language",
     "french": "French",
     "english": "English"
+  },
+  "student": {
+    "portal": {
+      "title": "Student Portal",
+      "welcome": "Welcome",
+      "logout": "Logout",
+      "nav": {
+        "dashboard": "Dashboard",
+        "payments": "Payments",
+        "documents": "Documents",
+        "dossier": "My File",
+        "notifications": "Notifications"
+      }
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome",
+      "name": "Name",
+      "applicationStatus": "Application Status",
+      "scholarshipStatus": "Scholarship Status",
+      "documentsStatus": "Documents",
+      "paymentStatus": "Payments",
+      "noApplications": "No applications",
+      "noDocuments": "No documents",
+      "noPayments": "No payments",
+      "overview": "Overview",
+      "mySpace": "Student space",
+      "followPayments": "Track your payments, documents, and overall application progress.",
+      "totalPayments": "Total payments",
+      "uploadedDocuments": "Uploaded documents",
+      "fileStatus": "File status",
+      "seeDetails": "See details →"
+    },
+    "payments": {
+      "title": "Payment Management",
+      "scholarship": "Scholarship Procedure",
+      "mandarin": "Mandarin Course",
+      "english": "English Course",
+      "amount": "Amount",
+      "status": "Status",
+      "dueDate": "Due Date",
+      "paymentDate": "Payment Date",
+      "receipt": "Receipt",
+      "downloadReceipt": "Download receipt",
+      "pending": "Pending",
+      "paid": "Paid",
+      "late": "Late",
+      "validation": "Validation",
+      "paymentHistory": "Payment history",
+      "makePayment": "Make this payment",
+      "waitingValidation": "Waiting for validation",
+      "expectedAmount": "Expected amount",
+      "paymentMode": "Payment mode",
+      "fullPayment": "Full payment",
+      "deposit": "Deposit",
+      "amountPaid": "Amount paid (FCFA)",
+      "proofUpload": "Proof of payment (optional)",
+      "fileAttached": "File attached",
+      "uploadReceipt": "Attach receipt or screenshot",
+      "confirmMessage": "By confirming, you report this payment. The Joda team will verify and validate as soon as possible.",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "sending": "Sending...",
+      "paymentError": "Error during declaration",
+      "networkError": "Network error",
+      "installment": "Installment {installment}",
+      "detailsTitle": "Payment Details",
+      "type": "Service"
+    },
+    "documents": {
+      "title": "Required Documents",
+      "subtitle": "Upload required documents for your application",
+      "upload": "Upload",
+      "required": "Required",
+      "uploaded": "Uploaded",
+      "missing": "Missing",
+      "passport": "Passport",
+      "criminalRecord": "Criminal Record",
+      "photo": "ID Photo",
+      "medicalCertificate": "Medical Certificate",
+      "birthCertificate": "Birth Certificate",
+      "diplomas": "Diplomas",
+      "transcripts": "Transcripts",
+      "other": "Other document"
+    },
+    "dossier": {
+      "title": "My File",
+      "subtitle": "Scholarship File",
+      "description": "Track your application progress.",
+      "applicationDate": "Application Date",
+      "university": "University",
+      "program": "Program",
+      "currentStep": "Current Step",
+      "timeline": "Timeline",
+      "infoTab": "Information",
+      "teamMessage": "Message from the team",
+      "steps": "Steps",
+      "waiting": "Waiting",
+      "documentsReceived": "Documents received",
+      "inProgress": "In progress",
+      "admissionValidated": "Admission validated",
+      "admissionRejected": "Admission rejected",
+      "waitingUniversity": "Waiting for university",
+      "visaProcessing": "Visa processing",
+      "completed": "Completed",
+      "noFile": "No file registered for now."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "Unread"
+    },
+    "messages": {
+      "paymentDeclared": "Payment declared - awaiting validation",
+      "paymentError": "Error during declaration",
+      "networkError": "Network error"
+    },
+    "paymentTypes": {
+      "scholarship": "Scholarship",
+      "mandarin": "Mandarin Course",
+      "english": "English Course"
+    },
+    "paymentStatus": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "late": "Late"
+    },
+    "documentStatus": {
+      "valid": "Valid",
+      "pending": "Pending",
+      "non_compliant": "Non-compliant"
+    }
+  }
+}
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome",
+      "name": "Name",
+      "applicationStatus": "Application Status",
+      "scholarshipStatus": "Scholarship Status",
+      "documentsStatus": "Documents",
+      "paymentStatus": "Payments",
+      "noApplications": "No applications",
+      "noDocuments": "No documents",
+      "noPayments": "No payments"
+    },
+    "payments": {
+      "title": "Payment Management",
+      "scholarship": "Scholarship Procedure",
+      "mandarin": "Mandarin Course",
+      "english": "English Course",
+      "amount": "Amount",
+      "status": "Status",
+      "dueDate": "Due Date",
+      "paymentDate": "Payment Date",
+      "receipt": "Receipt",
+      "downloadReceipt": "Download receipt",
+      "pending": "Pending",
+      "paid": "Paid",
+      "late": "Late",
+      "validation": "Validation"
+    },
+    "documents": {
+      "title": "Required Documents",
+      "subtitle": "Upload required documents for your application",
+      "upload": "Upload",
+      "required": "Required",
+      "uploaded": "Uploaded",
+      "missing": "Missing",
+      "passport": "Passport",
+      "criminalRecord": "Criminal Record",
+      "photo": "ID Photo",
+      "medicalCertificate": "Medical Certificate",
+      "birthCertificate": "Birth Certificate",
+      "diplomas": "Diplomas",
+      "transcripts": "Transcripts",
+      "other": "Other document"
+    },
+    "dossier": {
+      "title": "My Application File",
+      "subtitle": "Track your application and scholarship file",
+      "applicationDate": "Application Date",
+      "university": "University",
+      "program": "Program",
+      "currentStep": "Current Step",
+      "timeline": "Timeline"
+    },
+    "status": {
+      "document_received": "Documents received",
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "missing_documents": "Missing documents",
+      "admission_approved": "Admission approved",
+      "admission_rejected": "Admission rejected",
+      "waiting_university": "Waiting for university",
+      "visa_processing": "Visa processing",
+      "completed": "Completed"
+    }
   }
 }
