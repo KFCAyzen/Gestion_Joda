@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
     Bell,
     BookOpen,
@@ -145,8 +146,78 @@ function AppShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const { user, logout, loading } = useAuth();
     const supabase = createClient();
+    const t = useTranslations('layout');
+    const tNav = useTranslations('nav');
     const { notifications, showNotification, removeNotification } = useNotification();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const menuSections: MenuSection[] = useMemo(() => [
+        {
+            id: "pilotage",
+            label: t('sections.pilotage'),
+            items: [
+                { id: "home", label: tNav('dashboard'), icon: <LayoutDashboard className={iconCls} /> },
+                { id: "performance", label: tNav('performance'), icon: <TrendingUp className={iconCls} /> },
+            ],
+        },
+        {
+            id: "operations",
+            label: t('sections.operations'),
+            items: [
+                { id: "reservations", label: tNav('applications'), icon: <FileClock className={iconCls} /> },
+                { id: "clients", label: tNav('students'), icon: <GraduationCap className={iconCls} /> },
+                { id: "dossiers", label: tNav('scholarshipFiles'), icon: <FileArchive className={iconCls} /> },
+            ],
+        },
+        {
+            id: "ressources",
+            label: t('sections.ressources'),
+            items: [
+                { id: "chambres", label: tNav('universities'), icon: <Building2 className={iconCls} /> },
+                { id: "facturation", label: tNav('fees'), icon: <WalletCards className={iconCls} /> },
+                { id: "cours_langues", label: tNav('languageCourses'), icon: <BookOpen className={iconCls} /> },
+            ],
+        },
+        {
+            id: "finance",
+            label: t('sections.finance'),
+            roles: ["agent", "admin", "super_admin"] as UserRole[],
+            items: [
+                { id: "comptabilite", label: tNav('accounting'), icon: <HandCoins className={iconCls} /> },
+            ],
+        },
+        {
+            id: "administration",
+            label: t('sections.administration'),
+            roles: ["admin", "super_admin"] as UserRole[],
+            items: [
+                { id: "users", label: tNav('users'), icon: <Users className={iconCls} /> },
+                { id: "activity_logs", label: tNav('activityLogs'), icon: <FileClock className={iconCls} /> },
+            ],
+        },
+        {
+            id: "systeme",
+            label: t('sections.systeme'),
+            roles: ["super_admin"] as UserRole[],
+            items: [
+                { id: "storage", label: tNav('storage'), icon: <Database className={iconCls} /> },
+            ],
+        },
+    ], [t, tNav]);
+
+    const PAGE_DESCRIPTIONS: Record<RouteId, string> = useMemo(() => ({
+        home: t('descriptions.home'),
+        reservations: t('descriptions.applications'),
+        chambres: t('descriptions.universities'),
+        clients: t('descriptions.students'),
+        facturation: t('descriptions.fees'),
+        dossiers: t('descriptions.scholarshipFiles'),
+        cours_langues: t('descriptions.languageCourses'),
+        users: t('descriptions.users'),
+        performance: t('descriptions.performance'),
+        notifications: t('descriptions.notifications'),
+        comptabilite: t('descriptions.accounting'),
+        storage: t('descriptions.storage'),
+        activity_logs: t('descriptions.activityLogs'),
+    }), [t]);
     const [showPasswordChange, setShowPasswordChange] = useState(false);
     const [showUserPasswordChange, setShowUserPasswordChange] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -184,7 +255,7 @@ function AppShell({ children }: { children: ReactNode }) {
             if (!section.roles) return true;
             return user?.role && section.roles.includes(user.role as UserRole);
         });
-    }, [user?.role]);
+    }, [user?.role, menuSections]);
 
     const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
         menuSections.reduce<Record<string, boolean>>((acc, section, index) => {
@@ -222,7 +293,7 @@ function AppShell({ children }: { children: ReactNode }) {
     if (loading || !user) {
         return (
             <div className="fixed inset-0 bg-white flex items-center justify-center">
-                <div className="text-slate-500 text-base">Chargement...</div>
+                <div className="text-slate-500 text-base">{t('loading')}</div>
             </div>
         );
     }
@@ -266,12 +337,12 @@ function AppShell({ children }: { children: ReactNode }) {
                         <img src="/Logo.png" alt="Joda Company Logo" className="h-9 w-auto object-contain" />
                     </div>
                     <div className="min-w-0">
-                        <p className="sidebar-eyebrow">Workspace Joda</p>
-                        <h1 className="text-lg font-semibold text-slate-900 tracking-tight truncate">Joda Company</h1>
-                        <p className="text-xs text-slate-500 truncate">Gestion des bourses et opérations</p>
+                        <p className="sidebar-eyebrow">{t('workspace')}</p>
+                        <h1 className="text-lg font-semibold text-slate-900 tracking-tight truncate">{t('companyName')}</h1>
+                        <p className="text-xs text-slate-500 truncate">{t('companyDescription')}</p>
                         <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
                             <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.8)]" />
-                            Système actif
+                            {t('systemActive')}
                         </div>
                     </div>
                 </div>
@@ -301,7 +372,7 @@ function AppShell({ children }: { children: ReactNode }) {
                                             <div className="text-left">
                                                 <span className="block">{section.label}</span>
                                                 <span className="text-[11px] font-medium text-slate-400">
-                                                    {section.items.length} module{section.items.length > 1 ? "s" : ""}
+                                                    {section.items.length} {section.items.length > 1 ? t('modulesPlural') : t('modules')}
                                                 </span>
                                             </div>
                                         </div>
@@ -358,10 +429,10 @@ function AppShell({ children }: { children: ReactNode }) {
                                     }`}
                                 >
                                     {user.role === "super_admin"
-                                        ? "Super Admin"
+                                        ? t('roles.super_admin')
                                         : user.role === "admin"
-                                          ? "Admin"
-                                          : "Utilisateur"}
+                                          ? t('roles.admin')
+                                          : t('roles.user')}
                                 </p>
                             </div>
                         </div>
@@ -374,14 +445,14 @@ function AppShell({ children }: { children: ReactNode }) {
                                 className="sidebar-user-action text-slate-600 hover:text-slate-900"
                             >
                                 <KeyRound className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
-                                Changer mot de passe
+                                {t('changePassword')}
                             </button>
                             <button
                                 onClick={() => void handleLogout()}
                                 className="sidebar-user-action text-rose-600 hover:text-rose-700"
                             >
                                 <LogOut className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
-                                Déconnexion
+                                {t('logout')}
                             </button>
                         </div>
                     </div>
@@ -430,14 +501,14 @@ function AppShell({ children }: { children: ReactNode }) {
                             </button>
                             <div className="app-status-pill hidden md:flex">
                                 <ShieldUser className="w-3.5 h-3.5 text-emerald-600" />
-                                En ligne
+                                {t('online')}
                             </div>
                         </div>
                     </div>
 
                     <div className="app-breadcrumb mt-3 flex flex-wrap items-center gap-2 text-sm">
                         <button onClick={() => navigateTo("home")} className="app-breadcrumb-chip">
-                            Accueil
+                            {t('home')}
                         </button>
                         {activeSection && (
                             <>

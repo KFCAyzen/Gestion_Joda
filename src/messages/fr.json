@@ -13,7 +13,49 @@
     "users": "Utilisateurs",
     "services": "Demandes de services",
     "languageCourses": "Cours de langues",
-    "storage": "Stockage"
+    "storage": "Stockage",
+    "fees": "Frais"
+  },
+  "layout": {
+    "workspace": "Workspace Joda",
+    "companyName": "Joda Company",
+    "companyDescription": "Gestion des bourses et opérations",
+    "systemActive": "Système actif",
+    "changePassword": "Changer mot de passe",
+    "logout": "Déconnexion",
+    "online": "En ligne",
+    "home": "Accueil",
+    "loading": "Chargement...",
+    "sections": {
+      "pilotage": "Pilotage",
+      "operations": "Opérations",
+      "ressources": "Ressources",
+      "finance": "Finance",
+      "administration": "Administration",
+      "systeme": "Système"
+    },
+    "modules": "module",
+    "modulesPlural": "modules",
+    "roles": {
+      "super_admin": "Super Admin",
+      "admin": "Admin",
+      "user": "Utilisateur"
+    },
+    "descriptions": {
+      "home": "Vue d'ensemble de la gestion des bourses",
+      "applications": "Suivi des candidatures et demandes en cours",
+      "universities": "Gestion des universités partenaires",
+      "students": "Pilotage des étudiants et de leurs profils",
+      "fees": "Gestion des frais et paiements associés",
+      "scholarshipFiles": "Suivi des dossiers de bourse",
+      "languageCourses": "Cours de Mandarin et d'Anglais pour étudiants",
+      "users": "Administration des comptes utilisateurs",
+      "performance": "Indicateurs et performances de l'équipe",
+      "notifications": "Centre de notifications et alertes",
+      "accounting": "Suivi comptable et financier",
+      "storage": "Monitoring du stockage et de la base de données",
+      "activityLogs": "Logs des activités sensibles des agents"
+    }
   },
   "common": {
     "search": "Rechercher...",

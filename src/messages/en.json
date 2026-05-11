@@ -13,7 +13,49 @@
     "users": "Users",
     "services": "Service Requests",
     "languageCourses": "Language Courses",
-    "storage": "Storage"
+    "storage": "Storage",
+    "fees": "Fees"
+  },
+  "layout": {
+    "workspace": "Joda Workspace",
+    "companyName": "Joda Company",
+    "companyDescription": "Scholarship and operations management",
+    "systemActive": "System active",
+    "changePassword": "Change password",
+    "logout": "Logout",
+    "online": "Online",
+    "home": "Home",
+    "loading": "Loading...",
+    "sections": {
+      "pilotage": "Management",
+      "operations": "Operations",
+      "ressources": "Resources",
+      "finance": "Finance",
+      "administration": "Administration",
+      "systeme": "System"
+    },
+    "modules": "module",
+    "modulesPlural": "modules",
+    "roles": {
+      "super_admin": "Super Admin",
+      "admin": "Admin",
+      "user": "User"
+    },
+    "descriptions": {
+      "home": "Scholarship management overview",
+      "applications": "Track applications and ongoing requests",
+      "universities": "Manage partner universities",
+      "students": "Manage students and their profiles",
+      "fees": "Manage fees and associated payments",
+      "scholarshipFiles": "Track scholarship files",
+      "languageCourses": "Mandarin and English courses for students",
+      "users": "User account administration",
+      "performance": "Team performance indicators",
+      "notifications": "Notifications and alerts center",
+      "accounting": "Accounting and financial tracking",
+      "storage": "Storage and database monitoring",
+      "activityLogs": "Agent sensitive activity logs"
+    }
   },
   "common": {
     "search": "Search...",
