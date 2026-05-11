@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendPaymentReminder } from '@/app/lib/emailService';
+import { DEFAULT_PAYMENT_CONFIGS, getBourseServiceType } from '@/app/types/payment-config';
+import type { ServiceType } from '@/app/types/payment-config';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,6 +20,18 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Charger la config des frais depuis la DB (avec fallback sur les defaults)
+    const feeConfigs = { ...DEFAULT_PAYMENT_CONFIGS };
+    const { data: configRows } = await supabaseAdmin.from('payment_config').select('*');
+    if (configRows) {
+      for (const row of configRows) {
+        const st = row.service_type as ServiceType;
+        if (feeConfigs[st]) {
+          feeConfigs[st] = { ...feeConfigs[st], ...row, tranches: row.tranches ?? feeConfigs[st].tranches };
+        }
+      }
+    }
+
     const today = new Date();
     const results = {
       checked: 0,
@@ -60,17 +74,32 @@ export async function GET(req: NextRequest) {
     results.checked = payments.length;
 
     for (const payment of payments) {
+      // Déterminer la config applicable
+      const serviceType: ServiceType = payment.type === 'bourse'
+        ? getBourseServiceType((payment as any).niveau)
+        : (payment.type as ServiceType);
+      const cfg = feeConfigs[serviceType] ?? DEFAULT_PAYMENT_CONFIGS[serviceType];
+      const graceDays = cfg?.grace_days ?? 3;
+
       const dueDate = new Date(payment.date_limite);
-      const diffTime = today.getTime() - dueDate.getTime();
+      const graceEnd = new Date(dueDate.getTime() + graceDays * 24 * 60 * 60 * 1000);
+      const diffTime = today.getTime() - graceEnd.getTime();
       const daysLate = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
       if (daysLate > 0) {
         results.late++;
 
+        // Mettre à jour le statut et les pénalités
+        const penalties = daysLate * (cfg?.daily_penalty ?? 10000);
         if (payment.status !== 'retard') {
           await supabaseAdmin
             .from('payments')
-            .update({ status: 'retard' })
+            .update({ status: 'retard', penalites: penalties })
+            .eq('id', payment.id);
+        } else {
+          await supabaseAdmin
+            .from('payments')
+            .update({ penalites: penalties })
             .eq('id', payment.id);
         }
 

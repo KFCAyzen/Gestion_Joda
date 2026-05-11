@@ -21,9 +21,15 @@ interface PaymentReminderData {
 
 export async function sendPaymentReminder(data: PaymentReminderData): Promise<boolean> {
   const paymentTypeLabels = {
-    bourse: 'Frais de bourse',
+    bourse: 'Procédure Bourse',
     mandarin: 'Cours de Mandarin',
     anglais: 'Cours d\'Anglais',
+  };
+
+  const bourseTrancheLabels: Record<number, string> = {
+    1: 'Ouverture de dossier',
+    2: 'Caution',
+    3: 'Visa',
   };
 
   const formatCurrency = (amount: number) => {
@@ -94,7 +100,7 @@ export async function sendPaymentReminder(data: PaymentReminderData): Promise<bo
                   <tr>
                     <td style="padding:8px 0;font-size:13px;color:#6b7280;width:140px;">Type de paiement</td>
                     <td style="padding:8px 0;font-size:13px;color:#111827;font-weight:600;">
-                      ${paymentTypeLabels[data.paymentType]} - Tranche ${data.tranche}
+                      ${data.paymentType === 'bourse' && bourseTrancheLabels[data.tranche] ? `${paymentTypeLabels[data.paymentType]} — ${bourseTrancheLabels[data.tranche]}` : `${paymentTypeLabels[data.paymentType]} — Tranche ${data.tranche}`}
                     </td>
                   </tr>
                   <tr>

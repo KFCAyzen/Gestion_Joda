@@ -14,7 +14,8 @@
     "services": "Service Requests",
     "languageCourses": "Language Courses",
     "storage": "Storage",
-    "fees": "Fees"
+    "fees": "Fees",
+    "feeConfig": "Fee Config."
   },
   "layout": {
     "workspace": "Joda Workspace",
@@ -54,7 +55,8 @@
       "notifications": "Notifications and alerts center",
       "accounting": "Accounting and financial tracking",
       "storage": "Storage and database monitoring",
-      "activityLogs": "Agent sensitive activity logs"
+      "activityLogs": "Agent sensitive activity logs",
+      "feeConfig": "Installment, penalty and deadline configuration"
     }
   },
   "common": {
@@ -1118,7 +1120,7 @@
     "header": {
       "tag": "Language training",
       "title": "Language Courses",
-      "subtitle": "Mandarin (121,000 FCFA) · English (91,000 FCFA) · Penalty 1,000 FCFA/day after 30 days"
+      "subtitle": "Mandarin (150,000 FCFA) · English (91,000 FCFA) · Penalty 1,000 FCFA/day after 15 days"
     },
     "courses": {
       "mandarin": "Mandarin",
@@ -1146,7 +1148,7 @@
       "student": "Student",
       "studentPlaceholder": "Select a student",
       "course": "Course",
-      "mandarinOption": "Mandarin — 121,000 FCFA",
+      "mandarinOption": "Mandarin — 150,000 FCFA",
       "englishOption": "English — 91,000 FCFA",
       "dueDate": "Payment due date",
       "amount": "Amount"

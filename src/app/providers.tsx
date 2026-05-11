@@ -3,6 +3,7 @@
 import { QueryProvider } from "./lib/providers/query-provider";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { PaymentConfigProvider } from "./context/PaymentConfigContext";
 import { ReactNode } from 'react';
 
 interface ProvidersProps {
@@ -14,7 +15,9 @@ export function Providers({ children }: ProvidersProps) {
         <ThemeProvider>
             <QueryProvider>
                 <AuthProvider>
-                    {children}
+                    <PaymentConfigProvider>
+                        {children}
+                    </PaymentConfigProvider>
                 </AuthProvider>
             </QueryProvider>
         </ThemeProvider>

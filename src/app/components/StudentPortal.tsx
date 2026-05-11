@@ -399,6 +399,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <PaymentOverview
                                     choix={studentChoix}
                                     langue={studentLangue}
+                                    niveau={studentInfo?.niveau ?? ""}
                                     payments={payments}
                                     onDownloadReceipt={studentInfo
                                         ? (p) => downloadReceipt(p, studentInfo)

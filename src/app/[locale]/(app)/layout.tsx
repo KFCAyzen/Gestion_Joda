@@ -18,6 +18,7 @@ import {
     LayoutDashboard,
     LogOut,
     Menu,
+    Settings2,
     ShieldUser,
     TrendingUp,
     Users,
@@ -48,7 +49,8 @@ type RouteId =
     | "notifications"
     | "comptabilite"
     | "storage"
-    | "activity_logs";
+    | "activity_logs"
+    | "fee_config";
 
 const ROUTES: Record<RouteId, string> = {
     home: "/tableau-de-bord",
@@ -64,6 +66,7 @@ const ROUTES: Record<RouteId, string> = {
     comptabilite: "/comptabilite",
     storage: "/stockage",
     activity_logs: "/logs-activites",
+    fee_config: "/configuration-frais",
 };
 
 const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
@@ -80,6 +83,7 @@ const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
     comptabilite: "Suivi comptable et financier",
     storage: "Monitoring du stockage et de la base de données",
     activity_logs: "Logs des activités sensibles des agents",
+    fee_config: "Configuration des tranches, pénalités et délais",
 };
 
 type MenuItem = { id: RouteId; label: string; icon: ReactNode };
@@ -129,6 +133,7 @@ const menuSections: MenuSection[] = [
         items: [
             { id: "users", label: "Utilisateurs", icon: <Users className={iconCls} /> },
             { id: "activity_logs", label: "Logs Activités", icon: <FileClock className={iconCls} /> },
+            { id: "fee_config", label: "Config. Frais", icon: <Settings2 className={iconCls} /> },
         ],
     },
     {
@@ -191,6 +196,7 @@ function AppShell({ children }: { children: ReactNode }) {
             items: [
                 { id: "users", label: tNav('users'), icon: <Users className={iconCls} /> },
                 { id: "activity_logs", label: tNav('activityLogs'), icon: <FileClock className={iconCls} /> },
+                { id: "fee_config", label: tNav('feeConfig'), icon: <Settings2 className={iconCls} /> },
             ],
         },
         {
@@ -217,6 +223,7 @@ function AppShell({ children }: { children: ReactNode }) {
         comptabilite: t('descriptions.accounting'),
         storage: t('descriptions.storage'),
         activity_logs: t('descriptions.activityLogs'),
+        fee_config: t('descriptions.feeConfig'),
     }), [t]);
     const [showPasswordChange, setShowPasswordChange] = useState(false);
     const [showUserPasswordChange, setShowUserPasswordChange] = useState(false);

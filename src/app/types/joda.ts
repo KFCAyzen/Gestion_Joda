@@ -210,18 +210,18 @@ export interface Rapport {
 
 // Constantes pour les montants
 export const MONTANTS_BOURSE = {
-  TRANCHE_1: 100000, // Inscription
-  TRANCHE_2: 500000, // Dépôt des dossiers
-  TRANCHE_3: 1000000, // Admission
-  TRANCHE_4: 1390000, // Visa
+  OUVERTURE: 150000,      // Ouverture de dossier
+  CAUTION: 500000,        // Caution
+  VISA_BACHELOR: 1000000, // Visa — niveau Bachelor
+  VISA_MASTER: 1300000,   // Visa — niveau Master
 } as const;
 
 export const MONTANTS_MANDARIN = {
-  INSCRIPTION: 10000,
-  LIVRE: 11000,
-  TRANCHE_1: 50000,
-  TRANCHE_2: 50000,
-  TOTAL: 121000,
+  INSCRIPTION: 30000,
+  LIVRE: 20000,
+  TRANCHE_1: 70000,
+  TRANCHE_2: 30000,
+  TOTAL: 150000,
 } as const;
 
 export const MONTANTS_ANGLAIS = {

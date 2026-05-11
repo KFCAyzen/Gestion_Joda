@@ -15,7 +15,8 @@ import {
     buildStudentUsername,
     generateTemporaryPassword,
 } from "../lib/student-auth";
-import { MONTANTS_BOURSE, MONTANTS_MANDARIN, MONTANTS_ANGLAIS } from "../types/joda";
+import { usePaymentConfig } from "../context/PaymentConfigContext";
+import { getBourseServiceType } from "../types/payment-config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,6 +83,7 @@ export default function StudentManagement() {
     const { user } = useAuth();
     const { showNotification } = useNotificationContext();
     const t = useTranslations("students");
+    const { getConfig, getBourseConfig } = usePaymentConfig();
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
@@ -245,7 +247,7 @@ export default function StudentManagement() {
     };
 
     // Crée les tranches manquantes selon le service souscrit — sans toucher aux paiements existants
-    const syncPaymentsForStudent = async (studentId: string, choix: string, langue: string) => {
+    const syncPaymentsForStudent = async (studentId: string, choix: string, langue: string, niveau: string) => {
         const { data: existing } = await supabase
             .from("payments")
             .select("type")
@@ -259,12 +261,10 @@ export default function StudentManagement() {
         }[] = [];
 
         if ((choix === "procedure_seule" || choix === "procedure_cours") && !existingTypes.has("bourse")) {
-            [
-                { tranche: 1, montant: MONTANTS_BOURSE.TRANCHE_1 },
-                { tranche: 2, montant: MONTANTS_BOURSE.TRANCHE_2 },
-                { tranche: 3, montant: MONTANTS_BOURSE.TRANCHE_3 },
-                { tranche: 4, montant: MONTANTS_BOURSE.TRANCHE_4 },
-            ].forEach(t => toInsert.push({ student_id: studentId, type: "bourse", ...t, status: "attente", penalites: 0 }));
+            const bourseCfg = getBourseConfig(niveau);
+            bourseCfg.tranches.forEach(tr =>
+                toInsert.push({ student_id: studentId, type: "bourse", tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0 })
+            );
         }
 
         const langueKey = langue?.toLowerCase().includes("mandarin") ? "mandarin"
@@ -272,20 +272,10 @@ export default function StudentManagement() {
             : null;
 
         if ((choix === "cours_seuls" || choix === "procedure_cours") && langueKey && !existingTypes.has(langueKey)) {
-            const coursTransches = langueKey === "mandarin"
-                ? [
-                    { tranche: 1, montant: MONTANTS_MANDARIN.INSCRIPTION },
-                    { tranche: 2, montant: MONTANTS_MANDARIN.LIVRE },
-                    { tranche: 3, montant: MONTANTS_MANDARIN.TRANCHE_1 },
-                    { tranche: 4, montant: MONTANTS_MANDARIN.TRANCHE_2 },
-                ]
-                : [
-                    { tranche: 1, montant: MONTANTS_ANGLAIS.INSCRIPTION },
-                    { tranche: 2, montant: MONTANTS_ANGLAIS.LIVRE },
-                    { tranche: 3, montant: MONTANTS_ANGLAIS.TRANCHE_1 },
-                    { tranche: 4, montant: MONTANTS_ANGLAIS.TRANCHE_2 },
-                ];
-            coursTransches.forEach(t => toInsert.push({ student_id: studentId, type: langueKey, ...t, status: "attente", penalites: 0 }));
+            const coursCfg = getConfig(langueKey as "mandarin" | "anglais");
+            coursCfg.tranches.forEach(tr =>
+                toInsert.push({ student_id: studentId, type: langueKey, tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0 })
+            );
         }
 
         if (toInsert.length > 0) {
@@ -359,7 +349,7 @@ export default function StudentManagement() {
                 }
 
                 // Synchroniser les paiements manquants selon le nouveau choix/langue
-                await syncPaymentsForStudent(editingStudent.id, formData.choix, formData.langue);
+                await syncPaymentsForStudent(editingStudent.id, formData.choix, formData.langue, formData.niveau);
 
                 await loadStudents();
                 setActiveTab("list");
@@ -429,7 +419,7 @@ export default function StudentManagement() {
             }
 
             // Auto-créer les tranches de paiement selon les services souscrits
-            await syncPaymentsForStudent(data.id, formData.choix, formData.langue);
+            await syncPaymentsForStudent(data.id, formData.choix, formData.langue, formData.niveau);
 
             setCreatedAccount({ username, password: temporaryPassword });
             setSelectedStudent(data);
@@ -751,6 +741,7 @@ export default function StudentManagement() {
                                         <PaymentOverview
                                             choix={selectedStudent.choix}
                                             langue={selectedStudent.langue || ""}
+                                            niveau={selectedStudent.niveau || ""}
                                             payments={selectedStudentPayments}
                                             onDownloadReceipt={(p) =>
                                                 downloadReceipt(p, {

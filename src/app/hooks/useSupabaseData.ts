@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from "../lib/supabase/client";
-import type { 
+import type {
   Student, Document, DossierBourse, DossierHistoryEntry,
   Payment, CoursLangue, EntreeComptable, SortieComptable, Notification
 } from '../types/joda';
+import { calculatePenalty } from '../utils/penaltyCalculator';
+import { usePaymentConfig } from '../context/PaymentConfigContext';
+import { getBourseServiceType } from '../types/payment-config';
 
 const supabase = createClient();
 
@@ -384,6 +387,7 @@ export function usePayments(studentId?: string) {
   const [overduePayments, setOverduePayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { getConfig } = usePaymentConfig();
 
   const loadPayments = useCallback(async () => {
     try {
@@ -499,22 +503,15 @@ export function usePayments(studentId?: string) {
       
       if (latePayments) {
         for (const p of latePayments) {
-          const dateLimite = new Date(p.date_limite);
-          dateLimite.setHours(0, 0, 0, 0);
-          
-          // 3 jours de grâce
-          const graceDate = new Date(dateLimite);
-          graceDate.setDate(graceDate.getDate() + 3);
-          
-          if (today > graceDate) {
-            const daysLate = Math.floor((today.getTime() - graceDate.getTime()) / (1000 * 60 * 60 * 24));
-            const penalties = daysLate * 10000; // 10 000 Fcfa par jour
-            
-            await supabase
-              .from('payments')
-              .update({ penalites: penalties })
-              .eq('id', p.id);
-          }
+          const serviceType = p.type === 'bourse'
+            ? getBourseServiceType(p.niveau)
+            : p.type as 'mandarin' | 'anglais';
+          const cfg = getConfig(serviceType as any);
+          const penalties = calculatePenalty(p, cfg ? { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty } : undefined);
+          await supabase
+            .from('payments')
+            .update({ penalites: penalties })
+            .eq('id', p.id);
         }
       }
       

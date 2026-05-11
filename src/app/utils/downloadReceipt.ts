@@ -23,10 +23,9 @@ export interface ReceiptStudent {
 
 const TRANCHE_LABELS: Record<string, Record<number, string>> = {
     bourse: {
-        1: "Bourse — Tranche 1 (Inscription)",
-        2: "Bourse — Tranche 2 (Dépôt de dossier)",
-        3: "Bourse — Tranche 3 (Admission)",
-        4: "Bourse — Tranche 4 (Visa)",
+        1: "Procédure Bourse — Ouverture de dossier",
+        2: "Procédure Bourse — Caution",
+        3: "Procédure Bourse — Visa",
     },
     mandarin: {
         1: "Mandarin — Inscription",

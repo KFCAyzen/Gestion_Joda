@@ -30,7 +30,8 @@ export type ActivityType =
   | "user_update"
   | "user_delete"
   | "login"
-  | "logout";
+  | "logout"
+  | "config_update";
 
 export interface ActivityLog {
   id?: string;
@@ -165,4 +166,5 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   user_delete: "Suppression utilisateur",
   login: "Connexion",
   logout: "Déconnexion",
+  config_update: "Modification configuration frais",
 };

@@ -2,8 +2,9 @@
 
 import { useMemo } from "react";
 import { CreditCard } from "lucide-react";
-import { MONTANTS_BOURSE, MONTANTS_MANDARIN, MONTANTS_ANGLAIS } from "../types/joda";
 import { calculatePenalty } from "../utils/penaltyCalculator";
+import { usePaymentConfig } from "../context/PaymentConfigContext";
+import { getBourseServiceType, PaymentConfig } from "../types/payment-config";
 
 interface Payment {
     id: string;
@@ -31,11 +32,12 @@ interface Service {
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-function getGraceDays(type: string): number {
-    return type === "mandarin" || type === "anglais" ? 30 : 3;
-}
-
-function computeTrancheState(payment: Payment | undefined, serviceType: string) {
+function computeTrancheState(
+    payment: Payment | undefined,
+    serviceType: string,
+    graceDays: number,
+    penaltyConfig: { grace_days: number; daily_penalty: number }
+) {
     // No payment record yet
     if (!payment) {
         return {
@@ -96,12 +98,11 @@ function computeTrancheState(payment: Payment | undefined, serviceType: string) 
     const deadline = new Date(payment.date_limite);
     deadline.setHours(0, 0, 0, 0);
 
-    const graceDays = getGraceDays(serviceType);
     const graceEnd = new Date(deadline.getTime() + graceDays * MS_PER_DAY);
 
     const daysToDeadline = Math.ceil((deadline.getTime() - today.getTime()) / MS_PER_DAY);
     const daysToGraceEnd = Math.ceil((graceEnd.getTime() - today.getTime()) / MS_PER_DAY);
-    const penalty = calculatePenalty(payment);
+    const penalty = calculatePenalty(payment, penaltyConfig);
 
     // Before deadline
     if (daysToDeadline > 0) {
@@ -166,65 +167,13 @@ function computeTrancheState(payment: Payment | undefined, serviceType: string) 
     };
 }
 
-const MANDARIN_SERVICE: Service = {
-    type: "mandarin",
-    label: "Cours de Mandarin",
-    total: MONTANTS_MANDARIN.TOTAL,
-    tranches: [
-        { tranche: 1, label: "Inscription", montant: MONTANTS_MANDARIN.INSCRIPTION },
-        { tranche: 2, label: "Livre", montant: MONTANTS_MANDARIN.LIVRE },
-        { tranche: 3, label: "1re tranche de cours", montant: MONTANTS_MANDARIN.TRANCHE_1 },
-        { tranche: 4, label: "2e tranche de cours", montant: MONTANTS_MANDARIN.TRANCHE_2 },
-    ],
-};
-
-const ANGLAIS_SERVICE: Service = {
-    type: "anglais",
-    label: "Cours d'Anglais",
-    total: MONTANTS_ANGLAIS.TOTAL,
-    tranches: [
-        { tranche: 1, label: "Inscription", montant: MONTANTS_ANGLAIS.INSCRIPTION },
-        { tranche: 2, label: "Livre", montant: MONTANTS_ANGLAIS.LIVRE },
-        { tranche: 3, label: "1re tranche de cours", montant: MONTANTS_ANGLAIS.TRANCHE_1 },
-        { tranche: 4, label: "2e tranche de cours", montant: MONTANTS_ANGLAIS.TRANCHE_2 },
-    ],
-};
-
-function getExpectedServices(choix: string, langue: string, payments: Payment[]): Service[] {
-    const services: Service[] = [];
-    const lc = langue.toLowerCase();
-
-    if (choix === "procedure_seule" || choix === "procedure_cours") {
-        services.push({
-            type: "bourse",
-            label: "Procédure Bourse",
-            total: Object.values(MONTANTS_BOURSE).reduce((a, b) => a + b, 0),
-            tranches: [
-                { tranche: 1, label: "Inscription", montant: MONTANTS_BOURSE.TRANCHE_1 },
-                { tranche: 2, label: "Dépôt de dossier", montant: MONTANTS_BOURSE.TRANCHE_2 },
-                { tranche: 3, label: "Admission", montant: MONTANTS_BOURSE.TRANCHE_3 },
-                { tranche: 4, label: "Visa", montant: MONTANTS_BOURSE.TRANCHE_4 },
-            ],
-        });
-    }
-
-    if (choix === "cours_seuls" || choix === "procedure_cours") {
-        if (lc.includes("mandarin")) {
-            services.push(MANDARIN_SERVICE);
-        } else if (lc.includes("anglais")) {
-            services.push(ANGLAIS_SERVICE);
-        }
-    }
-
-    // Add course services detected from actual payments (e.g. enrolled via CoursLangues)
-    if (payments.some(p => p.type === "mandarin") && !services.some(s => s.type === "mandarin")) {
-        services.push(MANDARIN_SERVICE);
-    }
-    if (payments.some(p => p.type === "anglais") && !services.some(s => s.type === "anglais")) {
-        services.push(ANGLAIS_SERVICE);
-    }
-
-    return services;
+function configToService(cfg: PaymentConfig, type: string): Service {
+    return {
+        type,
+        label: cfg.label,
+        total: cfg.tranches.reduce((s, t) => s + t.montant, 0),
+        tranches: cfg.tranches,
+    };
 }
 
 function fmt(n: number) {
@@ -241,23 +190,53 @@ export interface TrancheDeclareInfo {
 export default function PaymentOverview({
     choix,
     langue,
+    niveau,
     payments,
     onDownloadReceipt,
     onDeclarePayment,
 }: {
     choix: string;
     langue: string;
+    niveau?: string;
     payments: Payment[];
     onDownloadReceipt?: (payment: Payment) => void;
     onDeclarePayment?: (payment: Payment | null, info: TrancheDeclareInfo) => void;
 }) {
-    const services = useMemo(() => getExpectedServices(choix, langue, payments), [choix, langue, payments]);
+    const { getConfig, getBourseConfig } = usePaymentConfig();
+
+    const services = useMemo((): Service[] => {
+        const list: Service[] = [];
+        const lc = langue.toLowerCase();
+
+        if (choix === "procedure_seule" || choix === "procedure_cours") {
+            const cfg = getBourseConfig(niveau);
+            list.push(configToService(cfg, "bourse"));
+        }
+
+        if (choix === "cours_seuls" || choix === "procedure_cours") {
+            if (lc.includes("mandarin")) list.push(configToService(getConfig("mandarin"), "mandarin"));
+            else if (lc.includes("anglais")) list.push(configToService(getConfig("anglais"), "anglais"));
+        }
+
+        if (payments.some(p => p.type === "mandarin") && !list.some(s => s.type === "mandarin"))
+            list.push(configToService(getConfig("mandarin"), "mandarin"));
+        if (payments.some(p => p.type === "anglais") && !list.some(s => s.type === "anglais"))
+            list.push(configToService(getConfig("anglais"), "anglais"));
+
+        return list;
+    }, [choix, langue, niveau, payments, getConfig, getBourseConfig]);
 
     const totalDu = services.reduce((sum, s) => sum + s.total, 0);
-    const totalPenalties = useMemo(
-        () => payments.filter((p) => p.status !== "paye").reduce((sum, p) => sum + calculatePenalty(p), 0),
-        [payments]
-    );
+
+    const totalPenalties = useMemo(() => {
+        return payments.filter((p) => p.status !== "paye").reduce((sum, p) => {
+            const isLangue = p.type === "mandarin" || p.type === "anglais";
+            const cfg = isLangue
+                ? getConfig(p.type as "mandarin" | "anglais")
+                : getBourseConfig(niveau);
+            return sum + calculatePenalty(p, { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty });
+        }, 0);
+    }, [payments, getConfig, getBourseConfig, niveau]);
     const totalPaye = payments
         .filter((p) => p.status === "paye")
         .reduce((sum, p) => sum + p.montant, 0);
@@ -328,6 +307,12 @@ export default function PaymentOverview({
 
             {/* Échéancier par service */}
             {services.map((service) => {
+                const isLangue = service.type === "mandarin" || service.type === "anglais";
+                const serviceCfg = isLangue
+                    ? getConfig(service.type as "mandarin" | "anglais")
+                    : getBourseConfig(niveau);
+                const penaltyConfig = { grace_days: serviceCfg.grace_days, daily_penalty: serviceCfg.daily_penalty };
+
                 const sPayments = payments.filter((p) => p.type === service.type);
                 const sPaid = sPayments
                     .filter((p) => p.status === "paye")
@@ -361,7 +346,7 @@ export default function PaymentOverview({
                                 const payment = sPayments.find(
                                     (p) => p.tranche === tranche.tranche
                                 );
-                                const state = computeTrancheState(payment, service.type);
+                                const state = computeTrancheState(payment, service.type, serviceCfg.grace_days, penaltyConfig);
 
                                 return (
                                     <div

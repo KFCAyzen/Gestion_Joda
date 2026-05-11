@@ -268,10 +268,9 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
 
     const getPaymentTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
-            "bourse_tranche1": "Bourse d'Études - Tranche 1 (Inscription)",
-            "bourse_tranche2": "Bourse d'Études - Tranche 2 (Dépôt dossiers)",
-            "bourse_tranche3": "Bourse d'Études - Tranche 3 (Admission)",
-            "bourse_tranche4": "Bourse d'Études - Tranche 4 (Visa)",
+            "bourse_tranche1": "Procédure Bourse - Ouverture de dossier",
+            "bourse_tranche2": "Procédure Bourse - Caution",
+            "bourse_tranche3": "Procédure Bourse - Visa",
             "cours_mandarin_inscription": "Cours de Mandarin - Inscription",
             "cours_mandarin_livre": "Cours de Mandarin - Livre",
             "cours_mandarin_tranche1": "Cours de Mandarin - Tranche 1",
