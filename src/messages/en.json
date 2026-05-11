@@ -791,6 +791,148 @@
       "permissionUpdateError": "Unable to update this permission right now."
     }
   },
+  "languageCourses": {
+    "header": {
+      "tag": "Language training",
+      "title": "Language Courses",
+      "subtitle": "Mandarin (121,000 FCFA) · English (91,000 FCFA) · Penalty 1,000 FCFA/day after 30 days"
+    },
+    "courses": {
+      "mandarin": "Mandarin",
+      "english": "English"
+    },
+    "installments": {
+      "registration": "Registration",
+      "book": "Book",
+      "first": "1st installment",
+      "second": "2nd installment"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "enrollStudent": "+ Enroll a student",
+      "saving": "Saving...",
+      "saveEnrollment": "Save enrollment",
+      "markPaid": "Mark paid"
+    },
+    "stats": {
+      "total": "Total enrolled",
+      "late": "Late"
+    },
+    "form": {
+      "title": "Enroll a student",
+      "student": "Student",
+      "studentPlaceholder": "Select a student",
+      "course": "Course",
+      "mandarinOption": "Mandarin — 121,000 FCFA",
+      "englishOption": "English — 91,000 FCFA",
+      "dueDate": "Payment due date",
+      "amount": "Amount"
+    },
+    "list": {
+      "title": "Enrollments ({count})",
+      "loading": "Loading...",
+      "empty": "No enrollment registered"
+    },
+    "table": {
+      "student": "Student",
+      "course": "Course",
+      "installment": "Installment",
+      "amount": "Amount",
+      "penalty": "Penalty",
+      "dueDate": "Due date",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "paid": "Paid",
+      "late": "Late",
+      "pending": "Pending"
+    },
+    "messages": {
+      "enrollError": "Enrollment error: {error}",
+      "paymentCreateError": "Payment creation error: {error}",
+      "enrollSuccess": "{course} course enrollment saved",
+      "validationError": "Validation error",
+      "paymentValidated": "Payment validated"
+    },
+    "fallback": {
+      "unknown": "Unknown"
+    }
+  },
+  "scholarshipFiles": {
+    "loading": "Loading files...",
+    "header": {
+      "tag": "File management",
+      "title": "File Management",
+      "subtitle": "Advanced scholarship application tracking"
+    },
+    "stats": {
+      "total": "Total",
+      "approved": "Approved",
+      "inProgress": "In progress"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name, university or program...",
+      "status": "Status"
+    },
+    "status": {
+      "documentReceived": "Document received",
+      "pending": "Pending",
+      "inProgress": "In progress",
+      "missingDocuments": "Missing documents",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "waitingUniversity": "Waiting for university",
+      "visaProcessing": "Visa processing",
+      "completed": "Completed"
+    },
+    "detail": {
+      "info": "Information",
+      "submittedOn": "Submitted on {date}",
+      "updatedOn": "Updated on {date}",
+      "status": "File status",
+      "notes": "Notes & Comments",
+      "notesPlaceholder": "Add notes or observations...",
+      "documents": "Documents"
+    },
+    "actions": {
+      "back": "Back",
+      "save": "Save",
+      "saving": "Saving...",
+      "delete": "Delete",
+      "deleteFile": "Delete file",
+      "deleting": "Deleting..."
+    },
+    "card": {
+      "targetUniversity": "Target university",
+      "deposit": "Submitted",
+      "followUpNote": "Follow-up note"
+    },
+    "empty": "No file found.",
+    "delete": {
+      "title": "Delete this file",
+      "description": "This action cannot be undone. The file will be permanently deleted."
+    },
+    "messages": {
+      "loadTitle": "Loading files",
+      "loadError": "Unable to load files.",
+      "statusUpdatedTitle": "Status updated",
+      "statusUpdated": "Status → \"{status}\".",
+      "errorTitle": "Error",
+      "statusUpdateError": "Unable to update status.",
+      "notesSavedTitle": "Notes saved",
+      "notesSaved": "Notes have been updated.",
+      "notesSaveError": "Unable to save notes.",
+      "deleteSuccessTitle": "File deleted",
+      "deleteSuccess": "{name} has been removed.",
+      "deleteError": "Unable to delete."
+    },
+    "fallback": {
+      "unknownStudent": "Unknown student",
+      "unknownUniversity": "Unknown university",
+      "noProgram": "Program not specified"
+    }
+  },
   "paymentManagement": {
     "title": "Payment Management",
     "filters": {

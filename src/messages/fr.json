@@ -828,6 +828,148 @@
       "permissionUpdateError": "Impossible de modifier cette permission pour le moment."
     }
   },
+  "languageCourses": {
+    "header": {
+      "tag": "Formation linguistique",
+      "title": "Cours de langues",
+      "subtitle": "Mandarin (121 000 FCFA) · Anglais (91 000 FCFA) · Pénalité 1 000 FCFA/j après 30 j"
+    },
+    "courses": {
+      "mandarin": "Mandarin",
+      "english": "Anglais"
+    },
+    "installments": {
+      "registration": "Inscription",
+      "book": "Livre",
+      "first": "1re tranche",
+      "second": "2e tranche"
+    },
+    "actions": {
+      "cancel": "Annuler",
+      "enrollStudent": "+ Inscrire un étudiant",
+      "saving": "Enregistrement...",
+      "saveEnrollment": "Enregistrer l'inscription",
+      "markPaid": "Marquer payé"
+    },
+    "stats": {
+      "total": "Total inscrits",
+      "late": "En retard"
+    },
+    "form": {
+      "title": "Inscrire un étudiant",
+      "student": "Étudiant",
+      "studentPlaceholder": "Sélectionner un étudiant",
+      "course": "Cours",
+      "mandarinOption": "Mandarin — 121 000 FCFA",
+      "englishOption": "Anglais — 91 000 FCFA",
+      "dueDate": "Date limite de paiement",
+      "amount": "Montant"
+    },
+    "list": {
+      "title": "Inscriptions ({count})",
+      "loading": "Chargement...",
+      "empty": "Aucune inscription enregistrée"
+    },
+    "table": {
+      "student": "Étudiant",
+      "course": "Cours",
+      "installment": "Tranche",
+      "amount": "Montant",
+      "penalty": "Pénalité",
+      "dueDate": "Date limite",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "status": {
+      "paid": "Payé",
+      "late": "En retard",
+      "pending": "En attente"
+    },
+    "messages": {
+      "enrollError": "Erreur inscription : {error}",
+      "paymentCreateError": "Erreur création paiement : {error}",
+      "enrollSuccess": "Inscription au cours de {course} enregistrée",
+      "validationError": "Erreur validation",
+      "paymentValidated": "Paiement validé"
+    },
+    "fallback": {
+      "unknown": "Inconnu"
+    }
+  },
+  "scholarshipFiles": {
+    "loading": "Chargement des dossiers...",
+    "header": {
+      "tag": "Gestion dossiers",
+      "title": "Gestion des Dossiers",
+      "subtitle": "Suivi avancé des candidatures de bourses"
+    },
+    "stats": {
+      "total": "Total",
+      "approved": "Approuvés",
+      "inProgress": "En cours"
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher par nom, université ou programme...",
+      "status": "Statut"
+    },
+    "status": {
+      "documentReceived": "Document reçu",
+      "pending": "En attente",
+      "inProgress": "En cours",
+      "missingDocuments": "Documents manquants",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "waitingUniversity": "En attente université",
+      "visaProcessing": "Visa en cours",
+      "completed": "Terminé"
+    },
+    "detail": {
+      "info": "Informations",
+      "submittedOn": "Soumis le {date}",
+      "updatedOn": "Mis à jour le {date}",
+      "status": "Statut du dossier",
+      "notes": "Notes & Commentaires",
+      "notesPlaceholder": "Ajouter des notes ou observations...",
+      "documents": "Documents"
+    },
+    "actions": {
+      "back": "Retour",
+      "save": "Sauvegarder",
+      "saving": "Sauvegarde...",
+      "delete": "Supprimer",
+      "deleteFile": "Supprimer le dossier",
+      "deleting": "Suppression..."
+    },
+    "card": {
+      "targetUniversity": "Université cible",
+      "deposit": "Dépôt",
+      "followUpNote": "Note de suivi"
+    },
+    "empty": "Aucun dossier trouvé.",
+    "delete": {
+      "title": "Supprimer ce dossier",
+      "description": "Cette action est irréversible. Le dossier sera définitivement supprimé."
+    },
+    "messages": {
+      "loadTitle": "Chargement des dossiers",
+      "loadError": "Impossible de charger les dossiers.",
+      "statusUpdatedTitle": "Statut mis à jour",
+      "statusUpdated": "Statut → \"{status}\".",
+      "errorTitle": "Erreur",
+      "statusUpdateError": "Mise à jour du statut impossible.",
+      "notesSavedTitle": "Notes sauvegardées",
+      "notesSaved": "Les notes ont été mises à jour.",
+      "notesSaveError": "Sauvegarde des notes impossible.",
+      "deleteSuccessTitle": "Dossier supprimé",
+      "deleteSuccess": "{name} a été retiré.",
+      "deleteError": "Suppression impossible."
+    },
+    "fallback": {
+      "unknownStudent": "Étudiant inconnu",
+      "unknownUniversity": "Université inconnue",
+      "noProgram": "Programme non renseigné"
+    }
+  },
   "paymentManagement": {
     "title": "Gestion des Paiements",
     "filters": {

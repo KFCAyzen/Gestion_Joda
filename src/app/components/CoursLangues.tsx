@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -32,11 +33,6 @@ import {
 const COURSE_PRICES: Record<string, number> = {
     mandarin: MONTANTS_MANDARIN.TOTAL,
     anglais: MONTANTS_ANGLAIS.TOTAL,
-};
-
-const COURSE_LABELS: Record<string, string> = {
-    mandarin: "Mandarin",
-    anglais: "Anglais",
 };
 
 const COURSE_TRANCHES = {
@@ -83,6 +79,9 @@ function formatPrice(n: number): string {
 
 export default function CoursLangues() {
     const { user } = useAuth();
+    const t = useTranslations("languageCourses");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
 
@@ -120,7 +119,21 @@ export default function CoursLangues() {
 
     const getStudentName = (id: string) => {
         const s = students.find(s => s.id === id);
-        return s ? `${s.prenom} ${s.nom}` : "Inconnu";
+        return s ? `${s.prenom} ${s.nom}` : t("fallback.unknown");
+    };
+
+    const getCourseLabel = (type: string) => {
+        if (type === "mandarin") return t("courses.mandarin");
+        if (type === "anglais") return t("courses.english");
+        return type;
+    };
+
+    const getTrancheLabel = (label: string) => {
+        if (label === "Inscription") return t("installments.registration");
+        if (label === "Livre") return t("installments.book");
+        if (label === "1re tranche") return t("installments.first");
+        if (label === "2e tranche") return t("installments.second");
+        return label;
     };
 
     const handleEnroll = async (e: React.FormEvent) => {
@@ -141,7 +154,7 @@ export default function CoursLangues() {
                 .single();
 
             if (coursError) {
-                showNotification("Erreur inscription : " + coursError.message, "error");
+                showNotification(t("messages.enrollError", { error: coursError.message }), "error");
                 return;
             }
 
@@ -171,19 +184,19 @@ export default function CoursLangues() {
                 if (payError) {
                     // Rollback : supprimer l'inscription créée pour rester cohérent
                     await supabase.from("cours_langues").delete().eq("id", coursRow.id);
-                    showNotification("Erreur création paiement : " + payError.message, "error");
+                    showNotification(t("messages.paymentCreateError", { error: payError.message }), "error");
                     return;
                 }
             }
 
-            showNotification(`Inscription au cours de ${COURSE_LABELS[formData.type]} enregistrée`, "success");
+            showNotification(t("messages.enrollSuccess", { course: getCourseLabel(formData.type) }), "success");
             if (user) {
                 const s = students.find(st => st.id === formData.studentId);
                 const sName = s ? `${s.nom} ${s.prenom}` : formData.studentId;
                 await logActivity(
                     user.id, (user as any).name || user.id, (user as any).role || "agent",
                     "payment_create", "cours_langues", coursRow.id,
-                    `Inscription ${COURSE_LABELS[formData.type]} — ${sName}`
+                    `Inscription ${getCourseLabel(formData.type)} — ${sName}`
                 );
             }
             setShowForm(false);
@@ -207,10 +220,10 @@ export default function CoursLangues() {
             validated_at: new Date().toISOString(),
         }).eq("id", paymentId);
         if (error) {
-            showNotification("Erreur validation", "error");
+            showNotification(t("messages.validationError"), "error");
             return;
         }
-        showNotification("Paiement validé", "success");
+        showNotification(t("messages.paymentValidated"), "success");
         await loadData();
     };
 
@@ -232,9 +245,9 @@ export default function CoursLangues() {
     };
 
     const getStatusLabel = (status: string) => {
-        if (status === "paye") return "Payé";
-        if (status === "retard") return "En retard";
-        return "En attente";
+        if (status === "paye") return t("status.paid");
+        if (status === "retard") return t("status.late");
+        return t("status.pending");
     };
 
     return (
@@ -243,25 +256,25 @@ export default function CoursLangues() {
                 <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                            Formation linguistique
+                            {t("header.tag")}
                         </p>
-                        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Cours de langues</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t("header.title")}</h1>
                         <p className="mt-1 text-sm text-slate-500">
-                            Mandarin (121 000 FCFA) · Anglais (91 000 FCFA) · Pénalité 1 000 FCFA/j après 30 j
+                            {t("header.subtitle")}
                         </p>
                     </div>
                     <Button onClick={() => setShowForm(!showForm)}>
-                        {showForm ? "Annuler" : "+ Inscrire un étudiant"}
+                        {showForm ? t("actions.cancel") : t("actions.enrollStudent")}
                     </Button>
                 </div>
 
                 {/* Stats */}
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {[
-                        { label: "Total inscrits", value: stats.total },
-                        { label: "Mandarin", value: stats.mandarin },
-                        { label: "Anglais", value: stats.anglais },
-                        { label: "En retard", value: stats.late, red: true },
+                        { label: t("stats.total"), value: stats.total },
+                        { label: t("courses.mandarin"), value: stats.mandarin },
+                        { label: t("courses.english"), value: stats.anglais },
+                        { label: t("stats.late"), value: stats.late, red: true },
                     ].map(({ label, value, red }) => (
                         <Card key={label} className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
@@ -276,18 +289,18 @@ export default function CoursLangues() {
                 {showForm && (
                     <Card className="joda-surface border-0 shadow-none">
                         <CardHeader>
-                            <CardTitle className="text-base">Inscrire un étudiant</CardTitle>
+                            <CardTitle className="text-base">{t("form.title")}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleEnroll} className="grid gap-4 sm:grid-cols-3">
                                 <div className="space-y-2">
-                                    <Label>Étudiant</Label>
+                                    <Label>{t("form.student")}</Label>
                                     <Select
                                         value={formData.studentId}
                                         onValueChange={v => setFormData({ ...formData, studentId: v ?? "" })}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Sélectionner un étudiant" />
+                                            <SelectValue placeholder={t("form.studentPlaceholder")} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {students.map(s => (
@@ -299,7 +312,7 @@ export default function CoursLangues() {
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Cours</Label>
+                                    <Label>{t("form.course")}</Label>
                                     <Select
                                         value={formData.type}
                                         onValueChange={v => setFormData({ ...formData, type: v ?? "mandarin" })}
@@ -308,13 +321,13 @@ export default function CoursLangues() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="mandarin">Mandarin — 121 000 FCFA</SelectItem>
-                                            <SelectItem value="anglais">Anglais — 91 000 FCFA</SelectItem>
+                                            <SelectItem value="mandarin">{t("form.mandarinOption")}</SelectItem>
+                                            <SelectItem value="anglais">{t("form.englishOption")}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Date limite de paiement</Label>
+                                    <Label>{t("form.dueDate")}</Label>
                                     <Input
                                         type="date"
                                         value={formData.dateLimit}
@@ -324,10 +337,10 @@ export default function CoursLangues() {
                                 </div>
                                 <div className="sm:col-span-3">
                                     <p className="mb-3 text-sm text-slate-500">
-                                        Montant : <strong>{formatPrice(COURSE_PRICES[formData.type])}</strong>
+                                        {t("form.amount")} : <strong>{formatPrice(COURSE_PRICES[formData.type])}</strong>
                                     </p>
                                     <Button type="submit" disabled={submitting || !formData.studentId}>
-                                        {submitting ? "Enregistrement..." : "Enregistrer l'inscription"}
+                                        {submitting ? t("actions.saving") : t("actions.saveEnrollment")}
                                     </Button>
                                 </div>
                             </form>
@@ -338,25 +351,25 @@ export default function CoursLangues() {
                 {/* Table */}
                 <Card className="joda-surface border-0 shadow-none">
                     <CardHeader>
-                        <CardTitle className="text-base">Inscriptions ({payments.length})</CardTitle>
+                        <CardTitle className="text-base">{t("list.title", { count: payments.length })}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {loading ? (
-                            <div className="py-8 text-center text-slate-400">Chargement...</div>
+                            <div className="py-8 text-center text-slate-400">{t("list.loading")}</div>
                         ) : payments.length === 0 ? (
-                            <div className="py-12 text-center text-slate-400">Aucune inscription enregistrée</div>
+                            <div className="py-12 text-center text-slate-400">{t("list.empty")}</div>
                         ) : (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Étudiant</TableHead>
-                                        <TableHead>Cours</TableHead>
-                                        <TableHead>Tranche</TableHead>
-                                        <TableHead>Montant</TableHead>
-                                        <TableHead>Pénalité</TableHead>
-                                        <TableHead>Date limite</TableHead>
-                                        <TableHead>Statut</TableHead>
-                                        <TableHead>Actions</TableHead>
+                                        <TableHead>{t("table.student")}</TableHead>
+                                        <TableHead>{t("table.course")}</TableHead>
+                                        <TableHead>{t("table.installment")}</TableHead>
+                                        <TableHead>{t("table.amount")}</TableHead>
+                                        <TableHead>{t("table.penalty")}</TableHead>
+                                        <TableHead>{t("table.dueDate")}</TableHead>
+                                        <TableHead>{t("table.status")}</TableHead>
+                                        <TableHead>{t("table.actions")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -367,17 +380,17 @@ export default function CoursLangues() {
                                                 <TableCell className="font-medium">
                                                     {getStudentName(payment.student_id)}
                                                 </TableCell>
-                                                <TableCell>{COURSE_LABELS[payment.type] ?? payment.type}</TableCell>
+                                                <TableCell>{getCourseLabel(payment.type)}</TableCell>
                                                 <TableCell className="text-slate-500">
                                                     {payment.tranche
-                                                        ? `T${payment.tranche} — ${COURSE_TRANCHES[payment.type as keyof typeof COURSE_TRANCHES]?.find(t => t.tranche === payment.tranche)?.label ?? ""}`
+                                                        ? `T${payment.tranche} — ${getTrancheLabel(COURSE_TRANCHES[payment.type as keyof typeof COURSE_TRANCHES]?.find(t => t.tranche === payment.tranche)?.label ?? "")}`
                                                         : "—"}
                                                 </TableCell>
                                                 <TableCell>
                                                     <div>{formatPrice(payment.montant)}</div>
                                                     {penalty > 0 && (
                                                         <div className="text-xs text-red-600">
-                                                            + {formatPrice(penalty)} pénalité
+                                                            + {formatPrice(penalty)} {t("table.penalty").toLowerCase()}
                                                         </div>
                                                     )}
                                                 </TableCell>
@@ -386,7 +399,7 @@ export default function CoursLangues() {
                                                 </TableCell>
                                                 <TableCell>
                                                     {payment.date_limite
-                                                        ? new Date(payment.date_limite).toLocaleDateString("fr-FR")
+                                                        ? new Date(payment.date_limite).toLocaleDateString(dateLocale)
                                                         : "—"}
                                                 </TableCell>
                                                 <TableCell>
@@ -401,12 +414,12 @@ export default function CoursLangues() {
                                                             variant="outline"
                                                             onClick={() => handleMarkPaid(payment.id)}
                                                         >
-                                                            Marquer payé
+                                                            {t("actions.markPaid")}
                                                         </Button>
                                                     )}
                                                     {payment.date_paiement && (
                                                         <p className="mt-1 text-xs text-slate-400">
-                                                            {new Date(payment.date_paiement).toLocaleDateString("fr-FR")}
+                                                            {new Date(payment.date_paiement).toLocaleDateString(dateLocale)}
                                                         </p>
                                                     )}
                                                 </TableCell>
