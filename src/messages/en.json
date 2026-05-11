@@ -1524,5 +1524,62 @@
       "filePrefix": "Performance_History",
       "globalScope": "Global"
     }
+  },
+  "scholarshipDashboard": {
+    "loading": "Loading dashboard...",
+    "export": {
+      "title": "Scholarship Dashboard",
+      "print": "Print",
+      "downloadPdf": "Download PDF"
+    },
+    "filters": {
+      "allUniversities": "All universities",
+      "exportFiltered": "Export filtered data"
+    },
+    "stats": {
+      "totalStudents": "Total students",
+      "activeUniversities": "Active universities",
+      "totalApplications": "Total applications",
+      "collectionRate": "Collection rate"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "universities": "Universities",
+      "timeline": "Timeline"
+    },
+    "overview": {
+      "totalStudents": "Total students",
+      "activeUniversities": "Active universities",
+      "totalApplications": "Total applications",
+      "collectionRate": "Collection rate",
+      "applications": "applications",
+      "collection": "collection"
+    },
+    "pipelineLabels": {
+      "document_recu": "Documents received",
+      "en_attente": "Pending",
+      "en_cours": "In progress",
+      "document_manquant": "Missing documents",
+      "en_attente_universite": "University response",
+      "visa_en_cours": "Visa processing",
+      "admission_validee": "Admitted",
+      "admission_rejetee": "Rejected",
+      "termine": "Completed"
+    },
+    "chartLabels": {
+      "applications": "Applications",
+      "accepted": "Accepted",
+      "payments": "Payments"
+    },
+    "periods": {
+      "week": "This week",
+      "month": "This month",
+      "semester": "This semester",
+      "year": "This year"
+    },
+    "noData": "No data available",
+    "noUniversity": "No university data",
+    "printTitle": "Scholarship Dashboard - Performance Report",
+    "generatedAt": "Generated at"
   }
 }

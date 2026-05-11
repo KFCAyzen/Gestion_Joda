@@ -1561,5 +1561,62 @@
       "filePrefix": "Historique_Performances",
       "globalScope": "Global"
     }
+  },
+  "scholarshipDashboard": {
+    "loading": "Chargement du tableau de bord...",
+    "export": {
+      "title": "Tableau de bord des bourses",
+      "print": "Imprimer",
+      "downloadPdf": "Télécharger le PDF"
+    },
+    "filters": {
+      "allUniversities": "Toutes les universités",
+      "exportFiltered": "Exporter les données filtrées"
+    },
+    "stats": {
+      "totalStudents": "Total étudiants",
+      "activeUniversities": "Universités actives",
+      "totalApplications": "Total candidatures",
+      "collectionRate": "Taux de collecte"
+    },
+    "tabs": {
+      "overview": "Vue d'ensemble",
+      "universities": "Universités",
+      "timeline": "Chronologie"
+    },
+    "overview": {
+      "totalStudents": "Total étudiants",
+      "activeUniversities": "Universités actives",
+      "totalApplications": "Total candidatures",
+      "collectionRate": "Taux de collecte",
+      "applications": "candidatures",
+      "collection": "collecte"
+    },
+    "pipelineLabels": {
+      "document_recu": "Documents reçus",
+      "en_attente": "En attente",
+      "en_cours": "En traitement",
+      "document_manquant": "Documents manquants",
+      "en_attente_universite": "Retour université",
+      "visa_en_cours": "Visa en cours",
+      "admission_validee": "Admis",
+      "admission_rejetee": "Refusés",
+      "termine": "Terminés"
+    },
+    "chartLabels": {
+      "applications": "Candidatures",
+      "accepted": "Admissions",
+      "payments": "Paiements"
+    },
+    "periods": {
+      "week": "Cette semaine",
+      "month": "Ce mois",
+      "semester": "Ce semestre",
+      "year": "Cette année"
+    },
+    "noData": "Aucune donnée disponible",
+    "noUniversity": "Aucune donnée universitaire",
+    "printTitle": "Tableau de bord des bourses - Rapport de performance",
+    "generatedAt": "Généré le"
   }
 }

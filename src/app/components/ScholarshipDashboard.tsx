@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/chart";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
+import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { generateAllScholarshipTestData, clearAllScholarshipData } from "../utils/scholarshipData";
 import { formatPrice } from "../utils/formatPrice";
@@ -234,6 +235,7 @@ function buildSnapshot(
     applications: ApplicationRow[],
     payments: PaymentRow[],
     notifications: NotificationRow[],
+    pipelineLabels: Record<string, string>,
 ): DashboardSnapshot {
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
@@ -468,6 +470,7 @@ export default function ScholarshipDashboard() {
     const { user } = useAuth();
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
+    const t = useTranslations("scholarshipDashboard");
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [snapshot, setSnapshot] = useState<DashboardSnapshot>(emptySnapshot);
