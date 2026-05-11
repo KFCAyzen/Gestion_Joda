@@ -78,6 +78,57 @@
     "online": "En ligne",
     "offline": "Hors ligne"
   },
+  "changePasswordFlow": {
+    "change": {
+      "title": "Modifier le mot de passe",
+      "subtitle": "Choisissez un mot de passe sécurisé"
+    },
+    "required": {
+      "title": "Changement de mot de passe requis",
+      "subtitle": "Définissez un mot de passe personnel avant de continuer",
+      "notice": "Votre mot de passe temporaire doit être remplacé pour accéder à l'application."
+    },
+    "fields": {
+      "current": "Mot de passe actuel",
+      "new": "Nouveau mot de passe",
+      "confirm": "Confirmer le mot de passe",
+      "confirmNew": "Confirmer le nouveau mot de passe",
+      "hint": "Minimum 8 caractères, majuscule, chiffre et symbole recommandés",
+      "match": "Les mots de passe correspondent",
+      "mismatch": "Les mots de passe ne correspondent pas"
+    },
+    "strength": {
+      "weak": "Faible",
+      "medium": "Moyen",
+      "good": "Bon",
+      "strong": "Fort"
+    },
+    "actions": {
+      "cancel": "Annuler",
+      "update": "Modifier le mot de passe",
+      "define": "Définir mon mot de passe",
+      "updating": "Modification en cours..."
+    },
+    "errors": {
+      "currentRequired": "Renseignez votre mot de passe actuel avant de continuer.",
+      "mismatch": "Les mots de passe ne correspondent pas.",
+      "tooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+      "sessionExpired": "Votre session a expiré. Reconnectez-vous puis recommencez.",
+      "accountCheck": "Impossible de vérifier votre compte. Reconnectez-vous puis recommencez.",
+      "currentIncorrect": "Le mot de passe actuel est incorrect.",
+      "updateFailed": "Le mot de passe n'a pas pu être modifié. Réessayez dans un instant.",
+      "defineFailed": "Le mot de passe n'a pas pu être défini. Réessayez dans un instant.",
+      "profileUpdate": "Impossible de mettre à jour le profil.",
+      "generic": "Une erreur est survenue pendant le changement de mot de passe.",
+      "defineGeneric": "Une erreur est survenue pendant la mise à jour du mot de passe."
+    },
+    "notifications": {
+      "updatedTitle": "Mot de passe mis à jour",
+      "updatedMessage": "Votre nouveau mot de passe est désormais actif.",
+      "activatedTitle": "Mot de passe activé",
+      "activatedMessage": "Votre mot de passe personnel est enregistré. Vous pouvez continuer."
+    }
+  },
   "login": {
     "title": "Connexion",
     "subtitle": "Accéder à votre espace",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 import { getFriendlyErrorMessage } from "../lib/feedback";
@@ -10,6 +11,7 @@ interface ChangePasswordModalProps {
 }
 
 function StrengthBar({ password }: { password: string }) {
+    const t = useTranslations("changePasswordFlow.strength");
     const score = [
         password.length >= 8,
         /[A-Z]/.test(password),
@@ -18,7 +20,7 @@ function StrengthBar({ password }: { password: string }) {
     ].filter(Boolean).length;
 
     const colors = ["", "bg-red-500", "bg-orange-400", "bg-yellow-400", "bg-emerald-500"];
-    const labels = ["", "Faible", "Moyen", "Bon", "Fort"];
+    const labels = ["", t("weak"), t("medium"), t("good"), t("strong")];
     const textColors = ["", "text-red-500", "text-orange-400", "text-yellow-500", "text-emerald-500"];
 
     if (!password) return null;
@@ -95,6 +97,7 @@ function PasswordInput({
 }
 
 export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswordModalProps) {
+    const t = useTranslations("changePasswordFlow");
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [newPassword, setNewPassword] = useState("");
@@ -110,11 +113,11 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
         setError("");
 
         if (newPassword.length < 8) {
-            setError("Le mot de passe doit contenir au moins 8 caracteres.");
+            setError(t("errors.tooShort"));
             return;
         }
         if (newPassword !== confirmPassword) {
-            setError("Les mots de passe ne correspondent pas.");
+            setError(t("errors.mismatch"));
             return;
         }
 
@@ -124,7 +127,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                 data: { user },
             } = await supabase.auth.getUser();
             if (!user) {
-                setError("Votre session a expiré. Reconnectez-vous puis recommencez.");
+                setError(t("errors.sessionExpired"));
                 return;
             }
 
@@ -132,7 +135,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
             if (pwErr) {
                 setError(
                     getFriendlyErrorMessage(pwErr, {
-                        fallback: "Le mot de passe n'a pas pu être défini. Réessayez dans un instant.",
+                        fallback: t("errors.defineFailed"),
                     }),
                 );
                 return;
@@ -141,7 +144,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
             // Utiliser l'API route pour bypasser le RLS (le student n'a pas de droit UPDATE sur users)
             const res = await fetch("/api/clear-password-flag", { method: "POST" });
             if (!res.ok) {
-                throw new Error("Impossible de mettre à jour le profil.");
+                throw new Error(t("errors.profileUpdate"));
             }
 
             const saved = localStorage.getItem("currentUser");
@@ -152,15 +155,15 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
             }
 
             showNotification({
-                title: "Mot de passe activé",
-                message: "Votre mot de passe personnel est enregistré. Vous pouvez continuer.",
+                title: t("notifications.activatedTitle"),
+                message: t("notifications.activatedMessage"),
                 type: "success",
             });
             onPasswordChanged();
         } catch (error) {
             setError(
                 getFriendlyErrorMessage(error, {
-                    fallback: "Une erreur est survenue pendant la mise à jour du mot de passe.",
+                    fallback: t("errors.defineGeneric"),
                 }),
             );
         } finally {
@@ -184,8 +187,8 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                             </svg>
                         </div>
                         <div>
-                            <h2 className="text-xl font-semibold text-white">Changement de mot de passe requis</h2>
-                            <p className="mt-1 text-sm text-slate-400">Definissez un mot de passe personnel avant de continuer</p>
+                            <h2 className="text-xl font-semibold text-white">{t("required.title")}</h2>
+                            <p className="mt-1 text-sm text-slate-400">{t("required.subtitle")}</p>
                         </div>
                     </div>
                     <div className="mt-5 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
@@ -198,7 +201,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                             />
                         </svg>
                         <p className="text-xs text-amber-300">
-                            Votre mot de passe temporaire doit etre remplace pour acceder a l'application.
+                            {t("required.notice")}
                         </p>
                     </div>
                 </div>
@@ -207,10 +210,10 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                     <div>
                         <PasswordInput
                             id="new"
-                            label="Nouveau mot de passe"
+                            label={t("fields.new")}
                             value={newPassword}
                             onChange={setNewPassword}
-                            hint="Minimum 8 caracteres, majuscule, chiffre et symbole recommandes"
+                            hint={t("fields.hint")}
                         />
                         <StrengthBar password={newPassword} />
                     </div>
@@ -218,7 +221,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                     <div>
                         <PasswordInput
                             id="confirm"
-                            label="Confirmer le mot de passe"
+                            label={t("fields.confirm")}
                             value={confirmPassword}
                             onChange={setConfirmPassword}
                         />
@@ -227,7 +230,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
-                                Les mots de passe correspondent
+                                {t("fields.match")}
                             </p>
                         )}
                         {mismatch && (
@@ -235,7 +238,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
-                                Les mots de passe ne correspondent pas
+                                {t("fields.mismatch")}
                             </p>
                         )}
                     </div>
@@ -247,7 +250,7 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                         disabled={loading || mismatch}
                         className="w-full rounded-xl bg-red-600 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(220,38,38,0.3)] transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {loading ? "Modification en cours..." : "Definir mon mot de passe"}
+                        {loading ? t("actions.updating") : t("actions.define")}
                     </button>
                 </form>
             </div>

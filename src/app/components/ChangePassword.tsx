@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 import { getFriendlyErrorMessage } from "../lib/feedback";
@@ -10,6 +11,7 @@ interface ChangePasswordProps {
 }
 
 function StrengthBar({ password }: { password: string }) {
+    const t = useTranslations("changePasswordFlow.strength");
     const checks = [
         password.length >= 8,
         /[A-Z]/.test(password),
@@ -17,7 +19,7 @@ function StrengthBar({ password }: { password: string }) {
         /[^A-Za-z0-9]/.test(password),
     ];
     const score = checks.filter(Boolean).length;
-    const labels = ["", "Faible", "Moyen", "Bon", "Fort"];
+    const labels = ["", t("weak"), t("medium"), t("good"), t("strong")];
     const colors = ["", "bg-red-500", "bg-orange-400", "bg-yellow-400", "bg-emerald-500"];
 
     if (!password) return null;
@@ -105,6 +107,7 @@ function PasswordInput({
 }
 
 export default function ChangePassword({ onClose }: ChangePasswordProps) {
+    const t = useTranslations("changePasswordFlow");
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [currentPassword, setCurrentPassword] = useState("");
@@ -121,15 +124,15 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
         setError("");
 
         if (!currentPassword.trim()) {
-            setError("Renseignez votre mot de passe actuel avant de continuer.");
+            setError(t("errors.currentRequired"));
             return;
         }
         if (newPassword !== confirmPassword) {
-            setError("Les mots de passe ne correspondent pas.");
+            setError(t("errors.mismatch"));
             return;
         }
         if (newPassword.length < 8) {
-            setError("Le mot de passe doit contenir au moins 8 caracteres.");
+            setError(t("errors.tooShort"));
             return;
         }
 
@@ -139,11 +142,11 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                 data: { user },
             } = await supabase.auth.getUser();
             if (!user) {
-                setError("Votre session a expiré. Reconnectez-vous puis recommencez.");
+                setError(t("errors.sessionExpired"));
                 return;
             }
             if (!user.email) {
-                setError("Impossible de vérifier votre compte. Reconnectez-vous puis recommencez.");
+                setError(t("errors.accountCheck"));
                 return;
             }
 
@@ -152,7 +155,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                 password: currentPassword,
             });
             if (signInError) {
-                setError("Le mot de passe actuel est incorrect.");
+                setError(t("errors.currentIncorrect"));
                 return;
             }
 
@@ -160,22 +163,22 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
             if (err) {
                 setError(
                     getFriendlyErrorMessage(err, {
-                        fallback: "Le mot de passe n'a pas pu être modifié. Réessayez dans un instant.",
+                        fallback: t("errors.updateFailed"),
                     }),
                 );
                 return;
             }
 
             showNotification({
-                title: "Mot de passe mis à jour",
-                message: "Votre nouveau mot de passe est désormais actif.",
+                title: t("notifications.updatedTitle"),
+                message: t("notifications.updatedMessage"),
                 type: "success",
             });
             onClose();
         } catch (error) {
             setError(
                 getFriendlyErrorMessage(error, {
-                    fallback: "Une erreur est survenue pendant le changement de mot de passe.",
+                    fallback: t("errors.generic"),
                 }),
             );
         } finally {
@@ -199,8 +202,8 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                             </svg>
                         </div>
                         <div>
-                            <h2 className="text-xl font-semibold text-white">Modifier le mot de passe</h2>
-                            <p className="mt-0.5 text-sm text-slate-400">Choisissez un mot de passe securise</p>
+                            <h2 className="text-xl font-semibold text-white">{t("change.title")}</h2>
+                            <p className="mt-0.5 text-sm text-slate-400">{t("change.subtitle")}</p>
                         </div>
                     </div>
                     <button
@@ -214,15 +217,15 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                 </div>
 
                 <form onSubmit={handleChangePassword} className="space-y-5 px-8 py-7">
-                    <PasswordInput id="current" label="Mot de passe actuel" value={currentPassword} onChange={setCurrentPassword} />
+                    <PasswordInput id="current" label={t("fields.current")} value={currentPassword} onChange={setCurrentPassword} />
 
                     <div>
                         <PasswordInput
                             id="new"
-                            label="Nouveau mot de passe"
+                            label={t("fields.new")}
                             value={newPassword}
                             onChange={setNewPassword}
-                            hint="Minimum 8 caracteres, majuscule, chiffre et symbole recommandes"
+                            hint={t("fields.hint")}
                         />
                         <StrengthBar password={newPassword} />
                     </div>
@@ -230,7 +233,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                     <div>
                         <PasswordInput
                             id="confirm"
-                            label="Confirmer le nouveau mot de passe"
+                            label={t("fields.confirmNew")}
                             value={confirmPassword}
                             onChange={setConfirmPassword}
                         />
@@ -239,7 +242,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
-                                Les mots de passe correspondent
+                                {t("fields.match")}
                             </p>
                         )}
                         {mismatch && (
@@ -247,7 +250,7 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
-                                Les mots de passe ne correspondent pas
+                                {t("fields.mismatch")}
                             </p>
                         )}
                     </div>
@@ -260,14 +263,14 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                             onClick={onClose}
                             className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                         >
-                            Annuler
+                            {t("actions.cancel")}
                         </button>
                         <button
                             type="submit"
                             disabled={loading || mismatch}
                             className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(220,38,38,0.3)] transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {loading ? "Modification..." : "Modifier le mot de passe"}
+                            {loading ? t("actions.updating") : t("actions.update")}
                         </button>
                     </div>
                 </form>

@@ -78,6 +78,57 @@
     "online": "Online",
     "offline": "Offline"
   },
+  "changePasswordFlow": {
+    "change": {
+      "title": "Change password",
+      "subtitle": "Choose a secure password"
+    },
+    "required": {
+      "title": "Password change required",
+      "subtitle": "Set a personal password before continuing",
+      "notice": "Your temporary password must be replaced before you can access the application."
+    },
+    "fields": {
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm password",
+      "confirmNew": "Confirm new password",
+      "hint": "Minimum 8 characters, uppercase letter, number and symbol recommended",
+      "match": "Passwords match",
+      "mismatch": "Passwords do not match"
+    },
+    "strength": {
+      "weak": "Weak",
+      "medium": "Medium",
+      "good": "Good",
+      "strong": "Strong"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "update": "Change password",
+      "define": "Set my password",
+      "updating": "Updating..."
+    },
+    "errors": {
+      "currentRequired": "Enter your current password before continuing.",
+      "mismatch": "Passwords do not match.",
+      "tooShort": "The password must contain at least 8 characters.",
+      "sessionExpired": "Your session has expired. Sign in again, then try once more.",
+      "accountCheck": "Unable to verify your account. Sign in again, then try once more.",
+      "currentIncorrect": "The current password is incorrect.",
+      "updateFailed": "The password could not be changed. Try again in a moment.",
+      "defineFailed": "The password could not be set. Try again in a moment.",
+      "profileUpdate": "Unable to update the profile.",
+      "generic": "An error occurred while changing the password.",
+      "defineGeneric": "An error occurred while updating the password."
+    },
+    "notifications": {
+      "updatedTitle": "Password updated",
+      "updatedMessage": "Your new password is now active.",
+      "activatedTitle": "Password activated",
+      "activatedMessage": "Your personal password has been saved. You can continue."
+    }
+  },
   "login": {
     "title": "Login",
     "subtitle": "Access your space",
