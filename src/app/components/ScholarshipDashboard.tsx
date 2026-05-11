@@ -773,7 +773,7 @@ export default function ScholarshipDashboard() {
                                         barSize={14}
                                     >
                                         <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                                        <RadialBar dataKey="value" background fill="var(--color-value)" cornerRadius={999} />
+                                        <RadialBar dataKey="value" background cornerRadius={999} />
                                     </RadialBarChart>
                                 </ChartContainer>
                                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
