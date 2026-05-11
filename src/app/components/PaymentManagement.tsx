@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -64,6 +65,9 @@ function formatPrice(amount: number): string {
 
 export default function PaymentManagement() {
     const { user } = useAuth();
+    const t = useTranslations("paymentManagement");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [confirmDialog, setConfirmDialog] = useState<{
@@ -109,7 +113,7 @@ export default function PaymentManagement() {
 
     const getStudentName = (studentId: string) => {
         const student = students.find(s => s.id === studentId);
-        return student ? `${student.nom} ${student.prenom}` : "Étudiant inconnu";
+        return student ? `${student.nom} ${student.prenom}` : t("fallback.unknownStudent");
     };
 
 
@@ -148,11 +152,11 @@ export default function PaymentManagement() {
                 `Paiement soumis pour validation`,
                 { payment_id: paymentId }
             );
-            showNotification("Paiement soumis pour validation", "success");
+            showNotification(t("messages.submitSuccess"), "success");
             loadData();
         } catch (error) {
             console.error("Erreur soumission:", error);
-            showNotification("Erreur lors de la soumission", "error");
+            showNotification(t("messages.submitError"), "error");
         }
     };
 
@@ -189,8 +193,8 @@ export default function PaymentManagement() {
                 : 'paiement_procedure';
             const studentName = payment.students
                 ? `${payment.students.nom} ${payment.students.prenom}`
-                : 'Étudiant';
-            const description = `Paiement ${getTypeLabel(payment.type)} - Tranche ${payment.tranche || 'N/A'} - ${studentName}`;
+                : t("fallback.student");
+            const description = `${t("detail.type")} ${getTypeLabel(payment.type)} - ${t("detail.installment")} ${payment.tranche || 'N/A'} - ${studentName}`;
 
             if (isValid) {
                 await supabase.from('entrees_comptables').insert({
@@ -220,11 +224,11 @@ export default function PaymentManagement() {
                     { montant: payment.montant, type: typeEntree }
                 );
             }
-            showNotification(isValid ? "Paiement approuvé" : "Paiement rejeté", isValid ? "success" : "error");
+            showNotification(isValid ? t("messages.approveSuccess") : t("messages.rejectSuccess"), isValid ? "success" : "error");
             loadData();
         } catch (error) {
             console.error("Erreur validation:", error);
-            showNotification("Erreur lors de la validation", "error");
+            showNotification(t("messages.validateError"), "error");
         }
     };
 
@@ -254,11 +258,11 @@ export default function PaymentManagement() {
                 `Paiement modifié — ${getStudentName(editingPayment.student_id)}`,
                 { payment_id: editingPayment.id }
             );
-            showNotification("Paiement mis à jour", "success");
+            showNotification(t("messages.updateSuccess"), "success");
             setEditingPayment(null);
             loadData();
         } catch (err) {
-            showNotification("Erreur lors de la modification", "error");
+            showNotification(t("messages.updateError"), "error");
         } finally {
             setSaving(false);
         }
@@ -270,8 +274,8 @@ export default function PaymentManagement() {
         printThermalReceipt({
             refId: payment.id,
             date: payment.date_paiement
-                ? new Date(payment.date_paiement).toLocaleDateString("fr-FR")
-                : new Date().toLocaleDateString("fr-FR"),
+                ? new Date(payment.date_paiement).toLocaleDateString(dateLocale)
+                : new Date().toLocaleDateString(dateLocale),
             studentName: student ? `${student.nom} ${student.prenom}` : undefined,
             service: getTypeLabel(payment.type),
             tranche: payment.tranche ? `${payment.tranche}` : undefined,
@@ -283,8 +287,8 @@ export default function PaymentManagement() {
     const confirmApprove = (paymentId: string) => {
         setConfirmDialog({
             open: true,
-            title: "Approuver ce paiement",
-            description: "Le paiement sera marqué comme payé et une entrée comptable sera créée automatiquement.",
+            title: t("confirm.approveTitle"),
+            description: t("confirm.approveDescription"),
             onConfirm: async () => { closeConfirm(); await handleValidatePayment(paymentId, true); },
         });
     };
@@ -292,8 +296,8 @@ export default function PaymentManagement() {
     const confirmReject = (paymentId: string) => {
         setConfirmDialog({
             open: true,
-            title: "Rejeter ce paiement",
-            description: "Le paiement sera remis en statut retard.",
+            title: t("confirm.rejectTitle"),
+            description: t("confirm.rejectDescription"),
             onConfirm: async () => { closeConfirm(); await handleValidatePayment(paymentId, false); },
         });
     };
@@ -316,19 +320,19 @@ export default function PaymentManagement() {
 
     const getStatusLabel = (status: string) => {
         switch (status) {
-            case "paye": return "Payé";
-            case "attente": return "En attente";
-            case "retard": return "En retard";
-            case "en_validation": return "En validation";
+            case "paye": return t("status.paid");
+            case "attente": return t("status.pending");
+            case "retard": return t("status.late");
+            case "en_validation": return t("status.validation");
             default: return status;
         }
     };
 
     const getTypeLabel = (type: string) => {
         switch (type) {
-            case "bourse": return "Bourse";
-            case "mandarin": return "Cours Mandarin";
-            case "anglais": return "Cours Anglais";
+            case "bourse": return t("types.scholarship");
+            case "mandarin": return t("types.mandarin");
+            case "anglais": return t("types.english");
             default: return type;
         }
     };
@@ -343,7 +347,7 @@ export default function PaymentManagement() {
             <div className="p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl sm:text-3xl font-bold" style={{color: '#dc2626'}}>
-                        Gestion des Paiements
+                        {t("title")}
                     </h1>
                 </div>
 
@@ -351,13 +355,13 @@ export default function PaymentManagement() {
                     <CardContent className="pt-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Filtrer par étudiant</Label>
+                                <Label>{t("filters.student")}</Label>
                                 <select
                                     value={selectedStudent}
                                     onChange={(e) => setSelectedStudent(e.target.value)}
                                     className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 cursor-pointer"
                                 >
-                                    <option value="">Tous les étudiants</option>
+                                    <option value="">{t("filters.allStudents")}</option>
                                     {students.map(student => (
                                         <option key={student.id} value={student.id}>
                                             {student.nom} {student.prenom}
@@ -366,17 +370,17 @@ export default function PaymentManagement() {
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Filtrer par statut</Label>
+                                <Label>{t("filters.status")}</Label>
                                 <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v || "all")}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Tous les statuts" />
+                                        <SelectValue placeholder={t("filters.allStatuses")} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Tous les statuts</SelectItem>
-                                        <SelectItem value="attente">En attente</SelectItem>
-                                        <SelectItem value="en_validation">En validation</SelectItem>
-                                        <SelectItem value="paye">Payé</SelectItem>
-                                        <SelectItem value="retard">En retard</SelectItem>
+                                        <SelectItem value="all">{t("filters.allStatuses")}</SelectItem>
+                                        <SelectItem value="attente">{t("status.pending")}</SelectItem>
+                                        <SelectItem value="en_validation">{t("status.validation")}</SelectItem>
+                                        <SelectItem value="paye">{t("status.paid")}</SelectItem>
+                                        <SelectItem value="retard">{t("status.late")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -386,22 +390,22 @@ export default function PaymentManagement() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Liste des Paiements ({filteredPayments.length})</CardTitle>
+                        <CardTitle>{t("list.title", { count: filteredPayments.length })}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {loading ? (
-                            <div className="text-center py-8">Chargement...</div>
+                            <div className="text-center py-8">{t("list.loading")}</div>
                         ) : (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Étudiant</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Montant</TableHead>
-                                        <TableHead>Pénalité</TableHead>
-                                        <TableHead>Date limite</TableHead>
-                                        <TableHead>Statut</TableHead>
-                                        <TableHead>Actions</TableHead>
+                                        <TableHead>{t("table.student")}</TableHead>
+                                        <TableHead>{t("table.type")}</TableHead>
+                                        <TableHead>{t("table.amount")}</TableHead>
+                                        <TableHead>{t("table.penalty")}</TableHead>
+                                        <TableHead>{t("table.dueDate")}</TableHead>
+                                        <TableHead>{t("table.status")}</TableHead>
+                                        <TableHead>{t("table.actions")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -415,7 +419,7 @@ export default function PaymentManagement() {
                                                     <div className="font-medium">{getStudentName(payment.student_id)}</div>
                                                     {payment.initiated_by_student && (
                                                         <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                                                            Déclaré par l&apos;étudiant
+                                                            {t("badges.declaredByStudent")}
                                                         </span>
                                                     )}
                                                 </TableCell>
@@ -424,7 +428,7 @@ export default function PaymentManagement() {
                                                     <div>{formatPrice(payment.montant)}</div>
                                                     {penalty > 0 && (
                                                         <div className="text-xs text-red-600">
-                                                            + {formatPrice(penalty)} (pénalité)
+                                                            + {formatPrice(penalty)} ({t("table.penalty").toLowerCase()})
                                                         </div>
                                                     )}
                                                 </TableCell>
@@ -433,7 +437,7 @@ export default function PaymentManagement() {
                                                 </TableCell>
                                                 <TableCell>
                                                     {payment.date_limite
-                                                        ? new Date(payment.date_limite).toLocaleDateString('fr-FR')
+                                                        ? new Date(payment.date_limite).toLocaleDateString(dateLocale)
                                                         : "-"}
                                                 </TableCell>
                                                 <TableCell>
@@ -445,14 +449,14 @@ export default function PaymentManagement() {
                                                     <DropdownMenu
                                                         actions={[
                                                             {
-                                                                label: "Détails",
+                                                                label: t("actions.details"),
                                                                 icon: <Eye className="h-4 w-4" />,
                                                                 onClick: () => setDetailPayment(payment),
                                                             },
                                                             ...(canValidate
                                                                 ? [
                                                                       {
-                                                                          label: "Modifier",
+                                                                          label: t("actions.edit"),
                                                                           icon: <Edit className="h-4 w-4" />,
                                                                           onClick: () => openEdit(payment),
                                                                       },
@@ -461,7 +465,7 @@ export default function PaymentManagement() {
                                                             ...(payment.status === "paye"
                                                                 ? [
                                                                       {
-                                                                          label: "Imprimer le reçu",
+                                                                          label: t("actions.printReceipt"),
                                                                           icon: <Printer className="h-4 w-4" />,
                                                                           onClick: () => handlePrintReceipt(payment),
                                                                       },
@@ -470,7 +474,7 @@ export default function PaymentManagement() {
                                                             ...(user?.role === "agent" && !payment.initiated_by_student && (payment.status === "attente" || payment.status === "retard")
                                                                 ? [
                                                                       {
-                                                                          label: "Soumettre",
+                                                                          label: t("actions.submit"),
                                                                           icon: <Send className="h-4 w-4" />,
                                                                           onClick: () => handleSubmitForValidation(payment.id),
                                                                       },
@@ -479,12 +483,12 @@ export default function PaymentManagement() {
                                                             ...(canValidatePayment(payment) && payment.status === "en_validation"
                                                                 ? [
                                                                       {
-                                                                          label: "Approuver",
+                                                                          label: t("actions.approve"),
                                                                           icon: <CheckCircle2 className="h-4 w-4" />,
                                                                           onClick: () => confirmApprove(payment.id),
                                                                       },
                                                                       {
-                                                                          label: "Rejeter",
+                                                                          label: t("actions.reject"),
                                                                           icon: <XCircle className="h-4 w-4" />,
                                                                           onClick: () => confirmReject(payment.id),
                                                                           variant: "danger" as const,
@@ -494,7 +498,7 @@ export default function PaymentManagement() {
                                                             ...(canValidate && (payment.status === "attente" || payment.status === "retard")
                                                                 ? [
                                                                       {
-                                                                          label: "Valider",
+                                                                          label: t("actions.validate"),
                                                                           icon: <CheckCircle2 className="h-4 w-4" />,
                                                                           onClick: () => confirmApprove(payment.id),
                                                                       },
@@ -503,7 +507,7 @@ export default function PaymentManagement() {
                                                             ...(payment.facture_url
                                                                 ? [
                                                                       {
-                                                                          label: payment.initiated_by_student ? "Voir la preuve" : "Voir la facture",
+                                                                          label: payment.initiated_by_student ? t("actions.viewProof") : t("actions.viewInvoice"),
                                                                           icon: <FileText className="h-4 w-4" />,
                                                                           onClick: () => window.open(payment.facture_url!, "_blank", "noopener,noreferrer"),
                                                                       },
@@ -520,7 +524,7 @@ export default function PaymentManagement() {
                         )}
                         {filteredPayments.length === 0 && !loading && (
                             <div className="text-center py-8 text-gray-500">
-                                Aucun paiement trouvé avec les filtres sélectionnés.
+                                {t("list.empty")}
                             </div>
                         )}
                     </CardContent>
@@ -532,7 +536,7 @@ export default function PaymentManagement() {
             onConfirm={confirmDialog.onConfirm}
             title={confirmDialog.title}
             description={confirmDialog.description}
-            confirmLabel="Confirmer"
+            confirmLabel={t("actions.confirm")}
         />
 
         {/* Modal détails paiement */}
@@ -540,56 +544,56 @@ export default function PaymentManagement() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                 <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">Détails du paiement</h3>
+                        <h3 className="text-lg font-semibold">{t("detail.title")}</h3>
                         <button onClick={() => setDetailPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
                     </div>
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">Étudiant</span>
+                            <span className="text-slate-500">{t("detail.student")}</span>
                             <span className="font-medium">{getStudentName(detailPayment.student_id)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">Type</span>
+                            <span className="text-slate-500">{t("detail.type")}</span>
                             <span className="font-medium">{getTypeLabel(detailPayment.type)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">Tranche</span>
+                            <span className="text-slate-500">{t("detail.installment")}</span>
                             <span className="font-medium">{detailPayment.tranche ?? "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">Montant</span>
+                            <span className="text-slate-500">{t("detail.amount")}</span>
                             <span className="font-medium text-emerald-600">{formatPrice(detailPayment.montant)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">Pénalité</span>
+                            <span className="text-slate-500">{t("detail.penalty")}</span>
                             <span className="font-medium text-red-600">{calculatePenalty(detailPayment) > 0 ? formatPrice(calculatePenalty(detailPayment)) : "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">Date limite</span>
-                            <span className="font-medium">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString("fr-FR") : "-"}</span>
+                            <span className="text-slate-500">{t("detail.dueDate")}</span>
+                            <span className="font-medium">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(dateLocale) : "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">Date paiement</span>
-                            <span className="font-medium">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString("fr-FR") : "-"}</span>
+                            <span className="text-slate-500">{t("detail.paymentDate")}</span>
+                            <span className="font-medium">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(dateLocale) : "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">Statut</span>
+                            <span className="text-slate-500">{t("detail.status")}</span>
                             <span className={`font-medium ${detailPayment.status === "paye" ? "text-emerald-600" : detailPayment.status === "retard" ? "text-red-600" : "text-amber-600"}`}>
                                 {getStatusLabel(detailPayment.status)}
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-slate-500">Créé le</span>
-                            <span className="font-medium">{new Date(detailPayment.created_at).toLocaleDateString("fr-FR")}</span>
+                            <span className="text-slate-500">{t("detail.createdAt")}</span>
+                            <span className="font-medium">{new Date(detailPayment.created_at).toLocaleDateString(dateLocale)}</span>
                         </div>
                     </div>
                     <div className="mt-5 flex gap-2">
                         {detailPayment.status === "paye" && (
                             <Button size="sm" onClick={() => handlePrintReceipt(detailPayment)} className="bg-emerald-600 hover:bg-emerald-700">
-                                Imprimer reçu
+                                {t("actions.printReceiptShort")}
                             </Button>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => setDetailPayment(null)}>Fermer</Button>
+                        <Button variant="outline" size="sm" onClick={() => setDetailPayment(null)}>{t("actions.close")}</Button>
                     </div>
                 </div>
             </div>
@@ -600,39 +604,39 @@ export default function PaymentManagement() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                 <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">Modifier le paiement</h3>
+                        <h3 className="text-lg font-semibold">{t("edit.title")}</h3>
                         <button onClick={() => setEditingPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <Label>Montant (FCFA)</Label>
+                            <Label>{t("edit.amount")}</Label>
                             <Input type="number" value={editForm.montant} onChange={e => setEditForm(f => ({ ...f, montant: e.target.value }))} />
                         </div>
                         <div>
-                            <Label>Type</Label>
+                            <Label>{t("edit.type")}</Label>
                             <Select value={editForm.type} onValueChange={v => setEditForm(f => ({ ...f, type: v || f.type }))}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="bourse">Bourse</SelectItem>
-                                    <SelectItem value="mandarin">Cours Mandarin</SelectItem>
-                                    <SelectItem value="anglais">Cours Anglais</SelectItem>
+                                    <SelectItem value="bourse">{t("types.scholarship")}</SelectItem>
+                                    <SelectItem value="mandarin">{t("types.mandarin")}</SelectItem>
+                                    <SelectItem value="anglais">{t("types.english")}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div>
-                            <Label>Tranche</Label>
+                            <Label>{t("edit.installment")}</Label>
                             <Input type="number" min="1" value={editForm.tranche} onChange={e => setEditForm(f => ({ ...f, tranche: e.target.value }))} />
                         </div>
                         <div>
-                            <Label>Date limite</Label>
+                            <Label>{t("edit.dueDate")}</Label>
                             <Input type="date" value={editForm.date_limite} onChange={e => setEditForm(f => ({ ...f, date_limite: e.target.value }))} />
                         </div>
                     </div>
                     <div className="mt-5 flex gap-2">
                         <Button onClick={handleUpdatePayment} disabled={saving} style={{ backgroundColor: "#dc2626" }}>
-                            {saving ? "Enregistrement..." : "Enregistrer"}
+                            {saving ? t("actions.saving") : t("actions.save")}
                         </Button>
-                        <Button variant="outline" onClick={() => setEditingPayment(null)}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setEditingPayment(null)}>{t("actions.cancel")}</Button>
                     </div>
                 </div>
             </div>

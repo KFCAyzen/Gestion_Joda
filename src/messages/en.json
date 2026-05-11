@@ -529,6 +529,98 @@
       "error": "Error: {error}"
     }
   },
+  "paymentManagement": {
+    "title": "Payment Management",
+    "filters": {
+      "student": "Filter by student",
+      "allStudents": "All students",
+      "status": "Filter by status",
+      "allStatuses": "All statuses"
+    },
+    "list": {
+      "title": "Payment List ({count})",
+      "loading": "Loading...",
+      "empty": "No payment found with the selected filters."
+    },
+    "table": {
+      "student": "Student",
+      "type": "Type",
+      "amount": "Amount",
+      "penalty": "Penalty",
+      "dueDate": "Due date",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "late": "Late",
+      "validation": "In validation"
+    },
+    "types": {
+      "scholarship": "Scholarship",
+      "mandarin": "Mandarin Course",
+      "english": "English Course"
+    },
+    "actions": {
+      "details": "Details",
+      "edit": "Edit",
+      "printReceipt": "Print receipt",
+      "printReceiptShort": "Print receipt",
+      "submit": "Submit",
+      "approve": "Approve",
+      "reject": "Reject",
+      "validate": "Validate",
+      "viewProof": "View proof",
+      "viewInvoice": "View invoice",
+      "confirm": "Confirm",
+      "close": "Close",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel"
+    },
+    "badges": {
+      "declaredByStudent": "Declared by student"
+    },
+    "detail": {
+      "title": "Payment details",
+      "student": "Student",
+      "type": "Type",
+      "installment": "Installment",
+      "amount": "Amount",
+      "penalty": "Penalty",
+      "dueDate": "Due date",
+      "paymentDate": "Payment date",
+      "status": "Status",
+      "createdAt": "Created on"
+    },
+    "edit": {
+      "title": "Edit payment",
+      "amount": "Amount (FCFA)",
+      "type": "Type",
+      "installment": "Installment",
+      "dueDate": "Due date"
+    },
+    "confirm": {
+      "approveTitle": "Approve this payment",
+      "approveDescription": "The payment will be marked as paid and an accounting entry will be created automatically.",
+      "rejectTitle": "Reject this payment",
+      "rejectDescription": "The payment will be moved back to late status."
+    },
+    "messages": {
+      "submitSuccess": "Payment submitted for validation",
+      "submitError": "Error while submitting",
+      "approveSuccess": "Payment approved",
+      "rejectSuccess": "Payment rejected",
+      "validateError": "Error during validation",
+      "updateSuccess": "Payment updated",
+      "updateError": "Error while updating"
+    },
+    "fallback": {
+      "unknownStudent": "Unknown student",
+      "student": "Student"
+    }
+  },
   "performanceHistory": {
     "header": {
       "tag": "Activity reporting",

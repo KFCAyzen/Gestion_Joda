@@ -566,6 +566,98 @@
       "error": "Erreur : {error}"
     }
   },
+  "paymentManagement": {
+    "title": "Gestion des Paiements",
+    "filters": {
+      "student": "Filtrer par étudiant",
+      "allStudents": "Tous les étudiants",
+      "status": "Filtrer par statut",
+      "allStatuses": "Tous les statuts"
+    },
+    "list": {
+      "title": "Liste des Paiements ({count})",
+      "loading": "Chargement...",
+      "empty": "Aucun paiement trouvé avec les filtres sélectionnés."
+    },
+    "table": {
+      "student": "Étudiant",
+      "type": "Type",
+      "amount": "Montant",
+      "penalty": "Pénalité",
+      "dueDate": "Date limite",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "status": {
+      "paid": "Payé",
+      "pending": "En attente",
+      "late": "En retard",
+      "validation": "En validation"
+    },
+    "types": {
+      "scholarship": "Bourse",
+      "mandarin": "Cours Mandarin",
+      "english": "Cours Anglais"
+    },
+    "actions": {
+      "details": "Détails",
+      "edit": "Modifier",
+      "printReceipt": "Imprimer le reçu",
+      "printReceiptShort": "Imprimer reçu",
+      "submit": "Soumettre",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "validate": "Valider",
+      "viewProof": "Voir la preuve",
+      "viewInvoice": "Voir la facture",
+      "confirm": "Confirmer",
+      "close": "Fermer",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "cancel": "Annuler"
+    },
+    "badges": {
+      "declaredByStudent": "Déclaré par l'étudiant"
+    },
+    "detail": {
+      "title": "Détails du paiement",
+      "student": "Étudiant",
+      "type": "Type",
+      "installment": "Tranche",
+      "amount": "Montant",
+      "penalty": "Pénalité",
+      "dueDate": "Date limite",
+      "paymentDate": "Date paiement",
+      "status": "Statut",
+      "createdAt": "Créé le"
+    },
+    "edit": {
+      "title": "Modifier le paiement",
+      "amount": "Montant (FCFA)",
+      "type": "Type",
+      "installment": "Tranche",
+      "dueDate": "Date limite"
+    },
+    "confirm": {
+      "approveTitle": "Approuver ce paiement",
+      "approveDescription": "Le paiement sera marqué comme payé et une entrée comptable sera créée automatiquement.",
+      "rejectTitle": "Rejeter ce paiement",
+      "rejectDescription": "Le paiement sera remis en statut retard."
+    },
+    "messages": {
+      "submitSuccess": "Paiement soumis pour validation",
+      "submitError": "Erreur lors de la soumission",
+      "approveSuccess": "Paiement approuvé",
+      "rejectSuccess": "Paiement rejeté",
+      "validateError": "Erreur lors de la validation",
+      "updateSuccess": "Paiement mis à jour",
+      "updateError": "Erreur lors de la modification"
+    },
+    "fallback": {
+      "unknownStudent": "Étudiant inconnu",
+      "student": "Étudiant"
+    }
+  },
   "performanceHistory": {
     "header": {
       "tag": "Reporting activité",
