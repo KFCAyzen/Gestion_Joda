@@ -970,6 +970,129 @@
       "noProgram": "Programme non renseigné"
     }
   },
+  "applicationFees": {
+    "loading": "Chargement des frais...",
+    "header": {
+      "eyebrow": "Suivi paiements",
+      "title": "Gestion des Frais de Candidature",
+      "description": "Enregistre et consulte les paiements liés aux procédures de bourse."
+    },
+    "actions": {
+      "newPayment": "Nouveau Paiement",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "refresh": "Actualiser",
+      "details": "Voir détails",
+      "edit": "Modifier",
+      "thermalReceipt": "Reçu thermique",
+      "downloadReceipt": "Télécharger reçu",
+      "printReceipt": "Imprimer reçu",
+      "close": "Fermer",
+      "saving": "Enregistrement..."
+    },
+    "form": {
+      "title": "Nouveau Paiement",
+      "student": "Étudiant *",
+      "studentPlaceholder": "Sélectionner un étudiant",
+      "amount": "Montant (FCFA) *",
+      "amountPlaceholder": "Montant",
+      "reason": "Motif",
+      "reasonPlaceholder": "Sélectionner",
+      "date": "Date"
+    },
+    "motifs": {
+      "Inscription": "Inscription",
+      "Frais de dossier": "Frais de dossier",
+      "Cours de langue": "Cours de langue",
+      "Autre": "Autre"
+    },
+    "list": {
+      "title": "Liste des Paiements ({count})",
+      "empty": "Aucun paiement pour le moment"
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher par étudiant ou ID...",
+      "status": "Statut"
+    },
+    "status": {
+      "paid": "Payé",
+      "pending": "En attente",
+      "late": "En retard"
+    },
+    "detail": {
+      "title": "Détails du paiement",
+      "student": "Étudiant",
+      "amount": "Montant",
+      "date": "Date",
+      "type": "Type",
+      "status": "Statut"
+    },
+    "edit": {
+      "title": "Modifier le paiement",
+      "amount": "Montant (FCFA)",
+      "date": "Date"
+    },
+    "receipt": {
+      "service": "Frais de candidature"
+    },
+    "messages": {
+      "requiredFields": "Veuillez remplir tous les champs obligatoires",
+      "saveError": "Erreur lors de l'enregistrement",
+      "saveSuccess": "Frais enregistrés et comptabilisés !",
+      "updateSuccess": "Paiement mis à jour",
+      "error": "Erreur"
+    },
+    "activity": {
+      "paymentCreated": "Paiement enregistré : {motif} - {student} - {amount} FCFA",
+      "accountingEntryCreated": "Entrée comptable créée : {motif} - {student} - {amount} FCFA",
+      "paymentUpdated": "Paiement modifié - frais"
+    },
+    "fallback": {
+      "student": "Étudiant"
+    }
+  },
+  "documentManagement": {
+    "loading": "Chargement des documents...",
+    "title": "Documents de {student}",
+    "completed": "Complété",
+    "validatedCount": "{valid} sur {total} documents validés",
+    "required": "Document obligatoire",
+    "optional": "Document optionnel",
+    "uploading": "Upload en cours...",
+    "uploadCta": "Cliquer pour uploader",
+    "uploadHint": "PDF, JPG, PNG (max 5MB)",
+    "uploadedOn": "Uploadé le {date}",
+    "rejectionReason": "Motif de rejet :",
+    "types": {
+      "passport": "Passeport",
+      "criminalRecord": "Casier judiciaire",
+      "idPhoto": "Photo d'identité",
+      "transcript": "Relevé de notes",
+      "diploma": "Diplôme",
+      "motivationLetter": "Lettre de motivation",
+      "recommendationLetter": "Lettre de recommandation",
+      "hskCertificate": "Certificat HSK"
+    },
+    "status": {
+      "valid": "Validé",
+      "nonCompliant": "Non conforme",
+      "pending": "En attente"
+    },
+    "actions": {
+      "view": "Voir le document",
+      "validate": "Valider",
+      "reject": "Rejeter",
+      "cancel": "Annuler"
+    },
+    "modal": {
+      "validateTitle": "Valider le document",
+      "rejectTitle": "Rejeter le document",
+      "validateQuestion": "Êtes-vous sûr de vouloir valider ce document ?",
+      "rejectQuestion": "Êtes-vous sûr de vouloir rejeter ce document ?",
+      "reasonLabel": "Motif du rejet *",
+      "reasonPlaceholder": "Expliquez pourquoi ce document est rejeté..."
+    }
+  },
   "paymentManagement": {
     "title": "Gestion des Paiements",
     "filters": {

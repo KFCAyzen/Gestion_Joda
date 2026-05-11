@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
@@ -50,6 +51,9 @@ const MOTIFS = ["Inscription", "Frais de dossier", "Cours de langue", "Autre"];
 
 export default function ApplicationFeeManagement() {
     const { user } = useAuth();
+    const t = useTranslations("applicationFees");
+    const locale = useLocale();
+    const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [fees, setFees] = useState<ApplicationFee[]>([]);
@@ -81,7 +85,7 @@ export default function ApplicationFeeManagement() {
             setFees(feesRes.data || []);
             setStudents(studentsRes.data || []);
         } catch (error) {
-            console.warn("Erreur chargement donnees:", error);
+            console.warn("Data loading error:", error);
         } finally {
             setIsLoading(false);
         }
@@ -93,7 +97,7 @@ export default function ApplicationFeeManagement() {
 
     const handleSaveFee = async () => {
         if (!formData.studentId || !formData.amount) {
-            showNotification("Veuillez remplir tous les champs obligatoires", "error");
+            showNotification(t("messages.requiredFields"), "error");
             return;
         }
 
@@ -118,13 +122,13 @@ export default function ApplicationFeeManagement() {
                 .single();
 
             if (error) {
-                showNotification("Erreur lors de l'enregistrement", "error");
+                showNotification(t("messages.saveError"), "error");
                 return;
             }
 
-            // Entrée comptable automatique
+            // Automatic accounting entry.
             const student = students.find((s) => s.id === formData.studentId);
-            const studentName = student ? `${student.prenom} ${student.nom}` : "Étudiant";
+            const studentName = student ? `${student.prenom} ${student.nom}` : t("fallback.student");
             const typeEntree = formData.motif === "Cours de langue" ? "paiement_cours" : "paiement_procedure";
 
             await supabase.from("entrees_comptables").insert({
@@ -141,18 +145,26 @@ export default function ApplicationFeeManagement() {
                 await logActivity(
                     user.id, user.name, user.role,
                     "payment_create", "payment", payment?.id ?? null,
-                    `Paiement enregistré : ${formData.motif} — ${studentName} — ${montant.toLocaleString("fr-FR")} FCFA`,
+                    t("activity.paymentCreated", {
+                        motif: t(`motifs.${formData.motif}`),
+                        student: studentName,
+                        amount: montant.toLocaleString(dateLocale),
+                    }),
                     { montant, motif: formData.motif, student_id: formData.studentId }
                 );
                 await logActivity(
                     user.id, user.name, user.role,
                     "accounting_entry", "entrees_comptables", payment?.id ?? null,
-                    `Entrée comptable créée : ${formData.motif} — ${studentName} — ${montant.toLocaleString("fr-FR")} FCFA`,
+                    t("activity.accountingEntryCreated", {
+                        motif: t(`motifs.${formData.motif}`),
+                        student: studentName,
+                        amount: montant.toLocaleString(dateLocale),
+                    }),
                     { montant, type: typeEntree }
                 );
             }
 
-            showNotification("Frais enregistrés et comptabilisés !", "success");
+            showNotification(t("messages.saveSuccess"), "success");
             setShowForm(false);
             setFormData({
                 studentId: "",
@@ -162,7 +174,7 @@ export default function ApplicationFeeManagement() {
             });
             await loadData();
         } catch {
-            showNotification("Erreur lors de l'enregistrement", "error");
+            showNotification(t("messages.saveError"), "error");
         }
     };
 
@@ -182,21 +194,21 @@ export default function ApplicationFeeManagement() {
             }).eq("id", editingFee.id);
             if (user) {
                 await logActivity(user.id, user.name, user.role, "payment_update", "payment", editingFee.id,
-                    `Paiement modifié — frais`, { payment_id: editingFee.id });
+                    t("activity.paymentUpdated"), { payment_id: editingFee.id });
             }
-            showNotification("Paiement mis à jour", "success");
+            showNotification(t("messages.updateSuccess"), "success");
             setEditingFee(null);
             await loadData();
-        } catch { showNotification("Erreur", "error"); }
+        } catch { showNotification(t("messages.error"), "error"); }
         setSavingFee(false);
     };
 
     const handlePrintFeeThermal = (fee: ApplicationFee, student: Student | undefined) => {
         printThermalReceipt({
             refId: fee.id,
-            date: fee.date ? new Date(fee.date).toLocaleDateString("fr-FR") : new Date().toLocaleDateString("fr-FR"),
+            date: fee.date ? new Date(fee.date).toLocaleDateString(dateLocale) : new Date().toLocaleDateString(dateLocale),
             studentName: student ? `${student.prenom} ${student.nom}` : undefined,
-            service: "Frais de candidature",
+            service: t("receipt.service"),
             montant: fee.montant,
         });
     };
@@ -217,11 +229,11 @@ export default function ApplicationFeeManagement() {
     const getStatusLabel = (status: string) => {
         switch (status) {
             case "paye":
-                return "Payé";
+                return t("status.paid");
             case "attente":
-                return "En attente";
+                return t("status.pending");
             case "retard":
-                return "En retard";
+                return t("status.late");
             default:
                 return status;
         }
@@ -236,18 +248,18 @@ export default function ApplicationFeeManagement() {
     });
 
     if (isLoading) {
-        return <LoadingState message="Chargement des frais..." />;
+        return <LoadingState message={t("loading")} />;
     }
 
     return (
         <>
         <div className="space-y-6 p-4 sm:p-6 lg:p-8">
             <PageHeader
-                eyebrow="Suivi paiements"
-                title="Gestion des Frais de Candidature"
-                description="Enregistre et consulte les paiements liés aux procédures de bourse."
+                eyebrow={t("header.eyebrow")}
+                title={t("header.title")}
+                description={t("header.description")}
                 action={{
-                    label: "Nouveau Paiement",
+                    label: t("actions.newPayment"),
                     onClick: () => setShowForm(true)
                 }}
             />
@@ -255,18 +267,18 @@ export default function ApplicationFeeManagement() {
             {showForm && (
                 <Card className="joda-surface border-0 shadow-none">
                     <CardHeader>
-                        <CardTitle style={{ color: "#dc2626" }}>Nouveau Paiement</CardTitle>
+                        <CardTitle style={{ color: "#dc2626" }}>{t("form.title")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Étudiant *</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.student")}</Label>
                                 <select
                                     value={formData.studentId || ""}
                                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
                                     className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 cursor-pointer"
                                 >
-                                    <option value="" disabled>Sélectionner un étudiant</option>
+                                    <option value="" disabled>{t("form.studentPlaceholder")}</option>
                                     {students.map((student) => (
                                         <option key={student.id} value={student.id}>
                                             {student.prenom} {student.nom}
@@ -276,31 +288,31 @@ export default function ApplicationFeeManagement() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Montant (FCFA) *</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.amount")}</Label>
                                 <Input
                                     type="number"
-                                    placeholder="Montant"
+                                    placeholder={t("form.amountPlaceholder")}
                                     value={formData.amount}
                                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Motif</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.reason")}</Label>
                                 <Select value={formData.motif || MOTIFS[0]} onValueChange={(value) => setFormData({ ...formData, motif: value || MOTIFS[0] })}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Sélectionner" />
+                                        <SelectValue placeholder={t("form.reasonPlaceholder")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {MOTIFS.map((motif) => (
-                                            <SelectItem key={motif} value={motif}>{motif}</SelectItem>
+                                            <SelectItem key={motif} value={motif}>{t(`motifs.${motif}`)}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label style={{ color: "#dc2626" }}>Date</Label>
+                                <Label style={{ color: "#dc2626" }}>{t("form.date")}</Label>
                                 <Input
                                     type="date"
                                     value={formData.date}
@@ -311,10 +323,10 @@ export default function ApplicationFeeManagement() {
 
                         <div className="mt-6 flex gap-3">
                             <Button onClick={handleSaveFee} style={{ backgroundColor: "#dc2626" }}>
-                                Enregistrer
+                                {t("actions.save")}
                             </Button>
                             <Button variant="outline" onClick={() => setShowForm(false)}>
-                                Annuler
+                                {t("actions.cancel")}
                             </Button>
                         </div>
                     </CardContent>
@@ -324,23 +336,23 @@ export default function ApplicationFeeManagement() {
             <Card className="joda-surface border-0 shadow-none">
                 <CardHeader>
                     <div className="flex items-center justify-between">
-                        <CardTitle>Liste des Paiements ({filteredFees.length})</CardTitle>
-                        <Button variant="outline" onClick={loadData}>Actualiser</Button>
+                        <CardTitle>{t("list.title", { count: filteredFees.length })}</CardTitle>
+                        <Button variant="outline" onClick={loadData}>{t("actions.refresh")}</Button>
                     </div>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <SearchBar
                             value={searchTerm}
                             onChange={setSearchTerm}
-                            placeholder="Rechercher par étudiant ou ID..."
+                            placeholder={t("filters.searchPlaceholder")}
                         />
                         <FilterSelect
-                            label="Statut"
+                            label={t("filters.status")}
                             value={statusFilter}
                             onChange={setStatusFilter}
                             options={[
-                                { value: "paye", label: "Payé" },
-                                { value: "attente", label: "En attente" },
-                                { value: "retard", label: "En retard" },
+                                { value: "paye", label: t("status.paid") },
+                                { value: "attente", label: t("status.pending") },
+                                { value: "retard", label: t("status.late") },
                             ]}
                         />
                     </div>
@@ -348,7 +360,7 @@ export default function ApplicationFeeManagement() {
                 <CardContent>
                     {filteredFees.length === 0 ? (
                         <div className="py-12 text-center">
-                            <p className="text-slate-500">Aucun paiement pour le moment</p>
+                            <p className="text-slate-500">{t("list.empty")}</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -360,10 +372,10 @@ export default function ApplicationFeeManagement() {
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="font-semibold text-slate-800">
-                                                    {student ? `${student.prenom} ${student.nom}` : "Étudiant"}
+                                                    {student ? `${student.prenom} ${student.nom}` : t("fallback.student")}
                                                 </p>
                                                 <p className="text-sm text-slate-600">
-                                                    {fee.date ? new Date(fee.date).toLocaleDateString("fr-FR") : "-"}
+                                                    {fee.date ? new Date(fee.date).toLocaleDateString(dateLocale) : "-"}
                                                 </p>
                                             </div>
                                             <div className="text-right">
@@ -375,11 +387,11 @@ export default function ApplicationFeeManagement() {
                                         </div>
                                         <div className="mt-3 flex justify-end">
                                             <DropdownMenu actions={[
-                                                { label: "Voir détails", icon: <Eye className="h-4 w-4" />, onClick: () => setDetailFee(fee) },
-                                                ...((user?.role === "admin" || user?.role === "super_admin") ? [{ label: "Modifier", icon: <Edit className="h-4 w-4" />, onClick: () => openEditFee(fee) }] : []),
+                                                { label: t("actions.details"), icon: <Eye className="h-4 w-4" />, onClick: () => setDetailFee(fee) },
+                                                ...((user?.role === "admin" || user?.role === "super_admin") ? [{ label: t("actions.edit"), icon: <Edit className="h-4 w-4" />, onClick: () => openEditFee(fee) }] : []),
                                                 ...(fee.status === "paye" && student ? [
-                                                    { label: "Reçu thermique", icon: <Printer className="h-4 w-4" />, onClick: () => handlePrintFeeThermal(fee, student) },
-                                                    { label: "Télécharger reçu", icon: <Download className="h-4 w-4" />, onClick: () => downloadReceipt(
+                                                    { label: t("actions.thermalReceipt"), icon: <Printer className="h-4 w-4" />, onClick: () => handlePrintFeeThermal(fee, student) },
+                                                    { label: t("actions.downloadReceipt"), icon: <Download className="h-4 w-4" />, onClick: () => downloadReceipt(
                                                         { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
                                                         { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere }
                                                     )},
@@ -402,23 +414,23 @@ export default function ApplicationFeeManagement() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
                         <div className="mb-4 flex items-center justify-between">
-                            <h3 className="text-lg font-semibold">Détails du paiement</h3>
+                            <h3 className="text-lg font-semibold">{t("detail.title")}</h3>
                             <button onClick={() => setDetailFee(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
                         </div>
                         <div className="space-y-3 text-sm">
-                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Étudiant</span><span className="font-medium">{student ? `${student.prenom} ${student.nom}` : "—"}</span></div>
-                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Montant</span><span className="font-bold text-red-600">{detailFee.montant?.toLocaleString("fr-FR")} FCFA</span></div>
-                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Date</span><span className="font-medium">{detailFee.date ? new Date(detailFee.date).toLocaleDateString("fr-FR") : "—"}</span></div>
-                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">Type</span><span className="font-medium">{detailFee.type}</span></div>
-                            <div className="flex justify-between"><span className="text-slate-500">Statut</span><span className={`font-medium ${detailFee.status === "paye" ? "text-emerald-600" : "text-amber-600"}`}>{getStatusLabel(detailFee.status)}</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("detail.student")}</span><span className="font-medium">{student ? `${student.prenom} ${student.nom}` : "—"}</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("detail.amount")}</span><span className="font-bold text-red-600">{detailFee.montant?.toLocaleString(dateLocale)} FCFA</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("detail.date")}</span><span className="font-medium">{detailFee.date ? new Date(detailFee.date).toLocaleDateString(dateLocale) : "—"}</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("detail.type")}</span><span className="font-medium">{detailFee.type}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-500">{t("detail.status")}</span><span className={`font-medium ${detailFee.status === "paye" ? "text-emerald-600" : "text-amber-600"}`}>{getStatusLabel(detailFee.status)}</span></div>
                         </div>
                         <div className="mt-5 flex gap-2">
                             {detailFee.status === "paye" && (
                                 <button onClick={() => handlePrintFeeThermal(detailFee, student)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
-                                    Imprimer reçu
+                                    {t("actions.printReceipt")}
                                 </button>
                             )}
-                            <button onClick={() => setDetailFee(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600">Fermer</button>
+                            <button onClick={() => setDetailFee(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600">{t("actions.close")}</button>
                         </div>
                     </div>
                 </div>
@@ -430,24 +442,24 @@ export default function ApplicationFeeManagement() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                 <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">Modifier le paiement</h3>
+                        <h3 className="text-lg font-semibold">{t("edit.title")}</h3>
                         <button onClick={() => setEditingFee(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <Label style={{ color: "#dc2626" }}>Montant (FCFA)</Label>
+                            <Label style={{ color: "#dc2626" }}>{t("edit.amount")}</Label>
                             <Input type="number" value={editFeeForm.montant} onChange={e => setEditFeeForm(f => ({ ...f, montant: e.target.value }))} />
                         </div>
                         <div>
-                            <Label style={{ color: "#dc2626" }}>Date</Label>
+                            <Label style={{ color: "#dc2626" }}>{t("edit.date")}</Label>
                             <Input type="date" value={editFeeForm.date} onChange={e => setEditFeeForm(f => ({ ...f, date: e.target.value }))} />
                         </div>
                     </div>
                     <div className="mt-5 flex gap-2">
                         <Button onClick={handleUpdateFee} disabled={savingFee} style={{ backgroundColor: "#dc2626" }}>
-                            {savingFee ? "Enregistrement..." : "Enregistrer"}
+                            {savingFee ? t("actions.saving") : t("actions.save")}
                         </Button>
-                        <Button variant="outline" onClick={() => setEditingFee(null)}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setEditingFee(null)}>{t("actions.cancel")}</Button>
                     </div>
                 </div>
             </div>

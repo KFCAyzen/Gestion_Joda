@@ -933,6 +933,129 @@
       "noProgram": "Program not specified"
     }
   },
+  "applicationFees": {
+    "loading": "Loading fees...",
+    "header": {
+      "eyebrow": "Payment tracking",
+      "title": "Application Fee Management",
+      "description": "Record and review payments linked to scholarship procedures."
+    },
+    "actions": {
+      "newPayment": "New Payment",
+      "save": "Save",
+      "cancel": "Cancel",
+      "refresh": "Refresh",
+      "details": "View details",
+      "edit": "Edit",
+      "thermalReceipt": "Thermal receipt",
+      "downloadReceipt": "Download receipt",
+      "printReceipt": "Print receipt",
+      "close": "Close",
+      "saving": "Saving..."
+    },
+    "form": {
+      "title": "New Payment",
+      "student": "Student *",
+      "studentPlaceholder": "Select a student",
+      "amount": "Amount (FCFA) *",
+      "amountPlaceholder": "Amount",
+      "reason": "Reason",
+      "reasonPlaceholder": "Select",
+      "date": "Date"
+    },
+    "motifs": {
+      "Inscription": "Registration",
+      "Frais de dossier": "Application fee",
+      "Cours de langue": "Language course",
+      "Autre": "Other"
+    },
+    "list": {
+      "title": "Payment List ({count})",
+      "empty": "No payment yet"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by student or ID...",
+      "status": "Status"
+    },
+    "status": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "late": "Late"
+    },
+    "detail": {
+      "title": "Payment details",
+      "student": "Student",
+      "amount": "Amount",
+      "date": "Date",
+      "type": "Type",
+      "status": "Status"
+    },
+    "edit": {
+      "title": "Edit payment",
+      "amount": "Amount (FCFA)",
+      "date": "Date"
+    },
+    "receipt": {
+      "service": "Application fee"
+    },
+    "messages": {
+      "requiredFields": "Please fill in all required fields",
+      "saveError": "Error while saving",
+      "saveSuccess": "Fees recorded and posted to accounting!",
+      "updateSuccess": "Payment updated",
+      "error": "Error"
+    },
+    "activity": {
+      "paymentCreated": "Payment recorded: {motif} - {student} - {amount} FCFA",
+      "accountingEntryCreated": "Accounting entry created: {motif} - {student} - {amount} FCFA",
+      "paymentUpdated": "Payment updated - fees"
+    },
+    "fallback": {
+      "student": "Student"
+    }
+  },
+  "documentManagement": {
+    "loading": "Loading documents...",
+    "title": "{student}'s documents",
+    "completed": "Completed",
+    "validatedCount": "{valid} of {total} documents validated",
+    "required": "Required document",
+    "optional": "Optional document",
+    "uploading": "Uploading...",
+    "uploadCta": "Click to upload",
+    "uploadHint": "PDF, JPG, PNG (max 5MB)",
+    "uploadedOn": "Uploaded on {date}",
+    "rejectionReason": "Rejection reason:",
+    "types": {
+      "passport": "Passport",
+      "criminalRecord": "Criminal record",
+      "idPhoto": "ID photo",
+      "transcript": "Transcript",
+      "diploma": "Diploma",
+      "motivationLetter": "Motivation letter",
+      "recommendationLetter": "Recommendation letter",
+      "hskCertificate": "HSK certificate"
+    },
+    "status": {
+      "valid": "Validated",
+      "nonCompliant": "Non-compliant",
+      "pending": "Pending"
+    },
+    "actions": {
+      "view": "View document",
+      "validate": "Validate",
+      "reject": "Reject",
+      "cancel": "Cancel"
+    },
+    "modal": {
+      "validateTitle": "Validate document",
+      "rejectTitle": "Reject document",
+      "validateQuestion": "Are you sure you want to validate this document?",
+      "rejectQuestion": "Are you sure you want to reject this document?",
+      "reasonLabel": "Rejection reason *",
+      "reasonPlaceholder": "Explain why this document is rejected..."
+    }
+  },
   "paymentManagement": {
     "title": "Payment Management",
     "filters": {
