@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "students": "Students",
+    "applications": "Applications",
+    "scholarshipFiles": "Scholarship Files",
+    "universities": "Universities",
+    "payments": "Payments",
+    "accounting": "Accounting",
+    "notifications": "Notifications",
+    "performance": "Performance",
+    "activityLogs": "Activity Logs",
+    "users": "Users",
+    "services": "Service Requests",
+    "languageCourses": "Language Courses",
+    "storage": "Storage"
+  },
+  "common": {
+    "search": "Search...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm",
+    "actions": "Actions"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline"
+  }
+}

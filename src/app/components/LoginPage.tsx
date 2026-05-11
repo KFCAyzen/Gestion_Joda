@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
+import { useLocale } from "next-intl";
 import { buildStudentAuthEmail } from "../lib/student-auth";
 import {
     slideUp,
@@ -20,6 +21,7 @@ import {
 export default function LoginPage() {
     const router = useRouter();
     const { login, user } = useAuth();
+    const locale = useLocale();
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -33,9 +35,9 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (user) {
-            router.push(user.role === "student" ? "/etudiant" : "/tableau-de-bord");
+            router.push(`/${locale}${user.role === "student" ? "/etudiant" : "/tableau-de-bord"}`);
         }
-    }, [user, router]);
+    }, [user, router, locale]);
 
     useEffect(() => {
         if (typeof window !== "undefined") {

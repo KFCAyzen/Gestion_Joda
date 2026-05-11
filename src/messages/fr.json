@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "students": "Étudiants",
+    "applications": "Candidatures",
+    "scholarshipFiles": "Dossiers bourse",
+    "universities": "Universités",
+    "payments": "Paiements",
+    "accounting": "Comptabilité",
+    "notifications": "Notifications",
+    "performance": "Performances",
+    "activityLogs": "Logs d'activité",
+    "users": "Utilisateurs",
+    "services": "Demandes de services",
+    "languageCourses": "Cours de langues",
+    "storage": "Stockage"
+  },
+  "common": {
+    "search": "Rechercher...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "actions": "Actions"
+  },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "email": "Email",
+    "password": "Mot de passe"
+  },
+  "status": {
+    "online": "En ligne",
+    "offline": "Hors ligne"
+  }
+}
