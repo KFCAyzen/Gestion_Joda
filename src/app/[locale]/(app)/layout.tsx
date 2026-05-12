@@ -18,6 +18,7 @@ import {
     LayoutDashboard,
     LogOut,
     Menu,
+    MessageSquareText,
     Settings2,
     ShieldUser,
     TrendingUp,
@@ -44,6 +45,7 @@ type RouteId =
     | "facturation"
     | "dossiers"
     | "cours_langues"
+    | "com"
     | "users"
     | "performance"
     | "notifications"
@@ -60,6 +62,7 @@ const ROUTES: Record<RouteId, string> = {
     facturation: "/frais",
     dossiers: "/dossiers",
     cours_langues: "/cours-langues",
+    com: "/communication",
     users: "/utilisateurs",
     performance: "/performances",
     notifications: "/notifications",
@@ -77,6 +80,7 @@ const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
     facturation: "Gestion des frais et paiements associés",
     dossiers: "Suivi des dossiers de bourse",
     cours_langues: "Cours de Mandarin et d'Anglais pour étudiants",
+    com: "Messagerie vers les étudiants",
     users: "Administration des comptes utilisateurs",
     performance: "Indicateurs et performances de l'équipe",
     notifications: "Centre de notifications et alertes",
@@ -170,6 +174,7 @@ function AppShell({ children }: { children: ReactNode }) {
                 { id: "reservations", label: tNav('applications'), icon: <FileClock className={iconCls} /> },
                 { id: "clients", label: tNav('students'), icon: <GraduationCap className={iconCls} /> },
                 { id: "dossiers", label: tNav('scholarshipFiles'), icon: <FileArchive className={iconCls} /> },
+                { id: "com", label: tNav('com'), icon: <MessageSquareText className={iconCls} /> },
             ],
         },
         {
@@ -217,6 +222,7 @@ function AppShell({ children }: { children: ReactNode }) {
         facturation: t('descriptions.fees'),
         dossiers: t('descriptions.scholarshipFiles'),
         cours_langues: t('descriptions.languageCourses'),
+        com: t('descriptions.com'),
         users: t('descriptions.users'),
         performance: t('descriptions.performance'),
         notifications: t('descriptions.notifications'),
@@ -225,6 +231,7 @@ function AppShell({ children }: { children: ReactNode }) {
         activity_logs: t('descriptions.activityLogs'),
         fee_config: t('descriptions.feeConfig'),
     }), [t]);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showPasswordChange, setShowPasswordChange] = useState(false);
     const [showUserPasswordChange, setShowUserPasswordChange] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);

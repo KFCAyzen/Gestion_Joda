@@ -15,7 +15,8 @@
     "languageCourses": "Language Courses",
     "storage": "Storage",
     "fees": "Fees",
-    "feeConfig": "Fee Config."
+    "feeConfig": "Fee Config.",
+    "com": "Communication"
   },
   "layout": {
     "workspace": "Joda Workspace",
@@ -56,7 +57,8 @@
       "accounting": "Accounting and financial tracking",
       "storage": "Storage and database monitoring",
       "activityLogs": "Agent sensitive activity logs",
-      "feeConfig": "Installment, penalty and deadline configuration"
+      "feeConfig": "Installment, penalty and deadline configuration",
+      "com": "Student communication"
     }
   },
   "common": {
@@ -629,7 +631,9 @@
       "searchPlaceholder": "Search by user or action...",
       "role": "Role",
       "action": "Action",
-      "period": "Period"
+      "period": "Period",
+      "startDate": "Start date",
+      "endDate": "End date"
     },
     "roles": {
       "all": "All roles",
@@ -641,7 +645,8 @@
       "all": "All dates",
       "today": "Today",
       "week": "Last 7 days",
-      "month": "Last 30 days"
+      "month": "Last 30 days",
+      "custom": "Custom range"
     },
     "activityTypes": {
       "all": "All actions",
@@ -767,8 +772,14 @@
       "delete": "Delete",
       "details": "View details",
       "printReceipt": "Print receipt",
+      "printReport": "Print report",
       "validate": "Validate",
       "close": "Close"
+    },
+    "reportScopes": {
+      "all": "Entries & Expenses",
+      "entriesOnly": "Entries only",
+      "expensesOnly": "Expenses only"
     },
     "filters": {
       "search": "Search..."
@@ -837,6 +848,7 @@
       "deleteError": "Error while deleting",
       "error": "Error",
       "excelGenerated": "Excel export generated",
+      "printError": "Error while printing the report",
       "pdfExportError": "Error while exporting PDF"
     },
     "activity": {
@@ -852,6 +864,42 @@
       "categoryType": "Category/Type",
       "amount": "Amount",
       "pdfTitle": "Accounting Report - {period}"
+    }
+  },
+  "comPage": {
+    "header": {
+      "eyebrow": "Communication",
+      "title": "Communication",
+      "description": "Send messages to students (single or bulk).",
+      "recipients": "{count} recipient(s) selected"
+    },
+    "students": {
+      "title": "Recipients",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search a student...",
+      "selectAll": "Select all",
+      "clear": "Clear",
+      "loading": "Loading students...",
+      "empty": "No student found",
+      "noAccount": "No linked account"
+    },
+    "composer": {
+      "title": "Composer",
+      "subject": "Subject",
+      "subjectPlaceholder": "Message subject",
+      "message": "Message",
+      "messagePlaceholder": "Write your message...",
+      "send": "Send",
+      "sending": "Sending...",
+      "hint": "Students will also receive a notification."
+    },
+    "messages": {
+      "loadError": "Error while loading students",
+      "missingFields": "Subject and message are required",
+      "noRecipients": "Select at least one student",
+      "authRequired": "Authentication required",
+      "sendError": "Error while sending",
+      "sent": "Message sent to {count} student(s)"
     }
   },
   "applicationManagement": {

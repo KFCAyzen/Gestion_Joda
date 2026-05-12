@@ -29,6 +29,7 @@ import {
 import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search, Eye, Edit } from "lucide-react";
 import { printThermalReceipt } from "../utils/thermalReceipt";
 import { generateAccountingReport } from "../lib/pdfGenerator";
+import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
 import DropdownMenu from "./shared/DropdownMenu";
@@ -60,6 +61,7 @@ interface SortieComptable {
 
 type Tab = "entrees" | "sorties" | "rapport" | "budgets" | "categories";
 type PeriodFilter = "jour" | "semaine" | "mois" | "annee" | "personnalise";
+type ReportScope = "all" | "entrees" | "sorties";
 
 interface Budget {
     id: string;
@@ -125,6 +127,7 @@ export default function AccountingPage() {
     const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("mois");
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
+    const [reportScope, setReportScope] = useState<ReportScope>("all");
 
     const today = new Date();
     const [reportDate, setReportDate] = useState(today.toISOString().slice(0, 10));
@@ -629,10 +632,52 @@ export default function AccountingPage() {
                     totalSorties: totalSortiesPeriod,
                     balance: soldePeriod,
                 },
+            }, {
+                includeEntrees: reportScope !== "sorties",
+                includeSorties: reportScope !== "entrees",
             });
         } catch (err) {
             console.error("PDF export error:", err);
             showNotification(t("messages.pdfExportError"), "error");
+        }
+        setExporting(false);
+    };
+
+    const printReport = async () => {
+        setExporting(true);
+        try {
+            const ops = [
+                ...entreesPeriod.map(e => ({
+                    date: e.date,
+                    description: e.description,
+                    category: getEntryTypeLabel(e.type),
+                    amount: e.montant,
+                    type: "entree" as const,
+                })),
+                ...sortiesPeriod.map(s => ({
+                    date: s.date,
+                    description: s.description,
+                    category: getCategoryLabel(s.categorie),
+                    amount: s.montant,
+                    type: "sortie" as const,
+                })),
+            ];
+
+            await printAccountingHtmlReport({
+                title: t("export.pdfTitle", { period: getPeriodLabel(periodFilter) }),
+                period: { start: startOfPeriod.toISOString(), end: endOfPeriod.toISOString() },
+                entries: ops,
+                summary: {
+                    totalEntrees: totalEntreesPeriod,
+                    totalSorties: totalSortiesPeriod,
+                    balance: soldePeriod,
+                },
+                scope: reportScope,
+                locale: dateLocale,
+            });
+        } catch (err) {
+            console.error("Print report error:", err);
+            showNotification(t("messages.printError"), "error");
         }
         setExporting(false);
     };
@@ -735,6 +780,20 @@ export default function AccountingPage() {
                             </div>
                             {tab === "rapport" && (
                                 <div className="flex gap-2">
+                                    <Select value={reportScope} onValueChange={(v) => setReportScope(v as ReportScope)}>
+                                        <SelectTrigger className="w-[200px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">{t("reportScopes.all")}</SelectItem>
+                                            <SelectItem value="entrees">{t("reportScopes.entriesOnly")}</SelectItem>
+                                            <SelectItem value="sorties">{t("reportScopes.expensesOnly")}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Button variant="outline" size="sm" onClick={printReport} disabled={exporting}>
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {t("actions.printReport")}
+                                    </Button>
                                     <Button variant="outline" size="sm" onClick={exportToExcel} disabled={exporting}>
                                         <FileSpreadsheet className="h-4 w-4 mr-2" />
                                         Excel

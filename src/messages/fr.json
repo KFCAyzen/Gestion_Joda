@@ -15,7 +15,8 @@
     "languageCourses": "Cours de langues",
     "storage": "Stockage",
     "fees": "Frais",
-    "feeConfig": "Config. Frais"
+    "feeConfig": "Config. Frais",
+    "com": "Communication"
   },
   "layout": {
     "workspace": "Workspace Joda",
@@ -56,7 +57,8 @@
       "accounting": "Suivi comptable et financier",
       "storage": "Monitoring du stockage et de la base de données",
       "activityLogs": "Logs des activités sensibles des agents",
-      "feeConfig": "Configuration des tranches, pénalités et délais"
+      "feeConfig": "Configuration des tranches, pénalités et délais",
+      "com": "Communication avec les étudiants"
     }
   },
   "common": {
@@ -666,7 +668,9 @@
       "searchPlaceholder": "Rechercher par utilisateur, action...",
       "role": "Rôle",
       "action": "Action",
-      "period": "Période"
+      "period": "Période",
+      "startDate": "Date début",
+      "endDate": "Date fin"
     },
     "roles": {
       "all": "Tous les rôles",
@@ -678,7 +682,8 @@
       "all": "Toutes les dates",
       "today": "Aujourd'hui",
       "week": "7 derniers jours",
-      "month": "30 derniers jours"
+      "month": "30 derniers jours",
+      "custom": "Plage personnalisée"
     },
     "activityTypes": {
       "all": "Toutes les actions",
@@ -804,8 +809,14 @@
       "delete": "Supprimer",
       "details": "Voir détails",
       "printReceipt": "Imprimer reçu",
+      "printReport": "Imprimer rapport",
       "validate": "Valider",
       "close": "Fermer"
+    },
+    "reportScopes": {
+      "all": "Entrées & Sorties",
+      "entriesOnly": "Entrées uniquement",
+      "expensesOnly": "Sorties uniquement"
     },
     "filters": {
       "search": "Rechercher..."
@@ -874,6 +885,7 @@
       "deleteError": "Erreur lors de la suppression",
       "error": "Erreur",
       "excelGenerated": "Export Excel généré",
+      "printError": "Erreur lors de l'impression du rapport",
       "pdfExportError": "Erreur lors de l'export PDF"
     },
     "activity": {
@@ -889,6 +901,42 @@
       "categoryType": "Catégorie/Type",
       "amount": "Montant",
       "pdfTitle": "Rapport Comptable - {period}"
+    }
+  },
+  "comPage": {
+    "header": {
+      "eyebrow": "Communication",
+      "title": "Communication",
+      "description": "Envoyez des messages aux étudiants (unitaire ou en masse).",
+      "recipients": "{count} destinataire(s) sélectionné(s)"
+    },
+    "students": {
+      "title": "Destinataires",
+      "searchLabel": "Recherche",
+      "searchPlaceholder": "Rechercher un étudiant...",
+      "selectAll": "Tout sélectionner",
+      "clear": "Vider",
+      "loading": "Chargement des étudiants...",
+      "empty": "Aucun étudiant trouvé",
+      "noAccount": "Compte non lié"
+    },
+    "composer": {
+      "title": "Composer",
+      "subject": "Objet",
+      "subjectPlaceholder": "Objet du message",
+      "message": "Message",
+      "messagePlaceholder": "Écrivez votre message...",
+      "send": "Envoyer",
+      "sending": "Envoi...",
+      "hint": "Les étudiants recevront aussi une notification."
+    },
+    "messages": {
+      "loadError": "Erreur lors du chargement des étudiants",
+      "missingFields": "Objet et message requis",
+      "noRecipients": "Sélectionnez au moins un étudiant",
+      "authRequired": "Connexion requise",
+      "sendError": "Erreur lors de l'envoi",
+      "sent": "Message envoyé à {count} étudiant(s)"
     }
   },
   "applicationManagement": {

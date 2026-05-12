@@ -42,6 +42,11 @@ interface AccountingReport {
   };
 }
 
+interface AccountingReportOptions {
+  includeEntrees?: boolean;
+  includeSorties?: boolean;
+}
+
 interface StudentReport {
   student: {
     name: string;
@@ -375,7 +380,10 @@ export const generatePaymentReceipt = async (receipt: PaymentReceipt): Promise<v
 };
 
 // ─── 2. Rapport comptable ────────────────────────────────────────────────────
-export const generateAccountingReport = async (report: AccountingReport): Promise<void> => {
+export const generateAccountingReport = async (
+  report: AccountingReport,
+  options: AccountingReportOptions = {}
+): Promise<void> => {
   const doc = new jsPDF();
   const logo = await loadLogoWhiteBase64();
   const startY = addHeader(doc, report.title.toUpperCase(), logo);
@@ -389,7 +397,15 @@ export const generateAccountingReport = async (report: AccountingReport): Promis
     105, startY + 2, { align: 'center' },
   );
 
-  const tableData = report.entries.map(e => [
+  const includeEntrees = options.includeEntrees ?? true;
+  const includeSorties = options.includeSorties ?? true;
+  const filteredEntries = report.entries.filter((e) => {
+    if (e.type === 'entree') return includeEntrees;
+    if (e.type === 'sortie') return includeSorties;
+    return true;
+  });
+
+  const tableData = filteredEntries.map(e => [
     formatDate(e.date),
     e.description,
     e.category,
@@ -415,6 +431,22 @@ export const generateAccountingReport = async (report: AccountingReport): Promis
       2: { cellWidth: 35 },
       3: { cellWidth: 33, halign: 'right' },
       4: { cellWidth: 33, halign: 'right' },
+    },
+    didParseCell: (data) => {
+      if (data.section !== 'body') return;
+      const rowIndex = data.row.index;
+      const entry = filteredEntries[rowIndex];
+      if (!entry) return;
+
+      // Color-code amounts (Entrées = green, Sorties = red).
+      if (data.column.index === 3 && entry.type === 'entree') {
+        data.cell.styles.textColor = [16, 185, 129];
+        data.cell.styles.fontStyle = 'bold';
+      }
+      if (data.column.index === 4 && entry.type === 'sortie') {
+        data.cell.styles.textColor = [220, 38, 38];
+        data.cell.styles.fontStyle = 'bold';
+      }
     },
   });
 

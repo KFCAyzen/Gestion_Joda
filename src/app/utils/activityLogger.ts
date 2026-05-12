@@ -61,6 +61,9 @@ export async function logActivity(
   metadata?: Record<string, any>
 ): Promise<void> {
   try {
+    // Ne pas logger les actions des étudiants.
+    if (userRole === "student") return;
+
     const supabase = createClient();
     await supabase.from("activity_logs").insert({
       user_id: userId,

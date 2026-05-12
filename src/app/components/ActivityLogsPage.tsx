@@ -8,6 +8,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { SearchBar, FilterSelect, LoadingState, EmptyState } from "./shared";
 import Pagination from "./Pagination";
 
@@ -65,6 +66,8 @@ export default function ActivityLogsPage() {
   const [roleFilter, setRoleFilter] = useState<string>("tout");
   const [activityFilter, setActivityFilter] = useState<string>("tout");
   const [dateFilter, setDateFilter] = useState<string>("tout");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
 
   const loadLogs = useCallback(async () => {
     setLoading(true);
@@ -89,6 +92,17 @@ export default function ActivityLogsPage() {
         } else if (dateFilter === "month") {
           const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
           filters.startDate = monthAgo.toISOString();
+        } else if (dateFilter === "custom") {
+          if (customStartDate) {
+            const start = new Date(customStartDate);
+            start.setHours(0, 0, 0, 0);
+            filters.startDate = start.toISOString();
+          }
+          if (customEndDate) {
+            const end = new Date(customEndDate);
+            end.setHours(23, 59, 59, 999);
+            filters.endDate = end.toISOString();
+          }
         }
       }
 
@@ -97,7 +111,7 @@ export default function ActivityLogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [roleFilter, activityFilter, dateFilter]);
+  }, [roleFilter, activityFilter, dateFilter, customStartDate, customEndDate]);
 
   useEffect(() => {
     loadLogs();
@@ -117,6 +131,11 @@ export default function ActivityLogsPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const paginatedData = filteredLogs.slice((currentPage - 1) * 20, currentPage * 20);
+
+  // Reset pagination when filters/search change.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter, activityFilter, dateFilter, customStartDate, customEndDate]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
@@ -235,9 +254,31 @@ export default function ActivityLogsPage() {
                   { value: "today", label: t("periods.today") },
                   { value: "week", label: t("periods.week") },
                   { value: "month", label: t("periods.month") },
+                  { value: "custom", label: t("periods.custom") },
                 ]}
               />
             </div>
+
+            {dateFilter === "custom" && (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">{t("filters.startDate")}</Label>
+                  <Input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">{t("filters.endDate")}</Label>
+                  <Input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
 
             {paginatedData.length === 0 ? (
               <EmptyState
