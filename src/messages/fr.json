@@ -913,11 +913,56 @@
       "pdfTitle": "Rapport Comptable - {period}"
     }
   },
+  "smsPage": {
+    "header": {
+      "eyebrow": "Marketing",
+      "title": "SMS Marketing",
+      "description": "Envoyez des SMS directement aux étudiants (unitaire ou en masse).",
+      "recipients": "{count} destinataire(s) sélectionné(s)",
+      "credit": "{count} SMS restant(s)",
+      "refreshCredit": "Actualiser le solde"
+    },
+    "students": {
+      "title": "Destinataires",
+      "searchLabel": "Recherche",
+      "searchPlaceholder": "Rechercher par nom ou numéro...",
+      "selectAll": "Tout sélectionner",
+      "clear": "Vider",
+      "loading": "Chargement des étudiants...",
+      "empty": "Aucun étudiant trouvé",
+      "noPhone": "Pas de numéro",
+      "phoneWarning": "{without} sélectionné(s) sans numéro (ignorés à l'envoi)"
+    },
+    "composer": {
+      "title": "Composer le SMS",
+      "message": "Message",
+      "messagePlaceholder": "Écrivez votre message SMS...",
+      "sender": "Expéditeur",
+      "recipients": "Destinataires valides",
+      "withPhone": "avec numéro",
+      "smsParts": "SMS",
+      "multiSmsNote": "Message long : compté comme {parts} SMS par destinataire.",
+      "send": "Envoyer à {count} étudiant(s)",
+      "sending": "Envoi en cours...",
+      "hint": "Seuls les étudiants avec un numéro de téléphone recevront le SMS."
+    },
+    "messages": {
+      "loadError": "Erreur lors du chargement des étudiants",
+      "missingMessage": "Le message est requis",
+      "noRecipients": "Sélectionnez au moins un étudiant avec numéro",
+      "sendError": "Erreur lors de l'envoi du SMS",
+      "sent": "{count} SMS envoyé(s) avec succès ({skipped} ignoré(s) sans numéro)"
+    }
+  },
   "comPage": {
+    "tabs": {
+      "messages": "Messages",
+      "sms": "SMS Marketing"
+    },
     "header": {
       "eyebrow": "Communication",
       "title": "Communication",
-      "description": "Envoyez des messages aux étudiants (unitaire ou en masse).",
+      "description": "Envoyez des messages ou des SMS aux étudiants.",
       "recipients": "{count} destinataire(s) sélectionné(s)"
     },
     "students": {

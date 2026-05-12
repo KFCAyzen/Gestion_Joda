@@ -876,11 +876,56 @@
       "pdfTitle": "Accounting Report - {period}"
     }
   },
+  "smsPage": {
+    "header": {
+      "eyebrow": "Marketing",
+      "title": "SMS Marketing",
+      "description": "Send SMS directly to students (single or bulk).",
+      "recipients": "{count} recipient(s) selected",
+      "credit": "{count} SMS credit(s) remaining",
+      "refreshCredit": "Refresh balance"
+    },
+    "students": {
+      "title": "Recipients",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search by name or number...",
+      "selectAll": "Select all",
+      "clear": "Clear",
+      "loading": "Loading students...",
+      "empty": "No student found",
+      "noPhone": "No phone",
+      "phoneWarning": "{without} selected without a phone number (skipped on send)"
+    },
+    "composer": {
+      "title": "Compose SMS",
+      "message": "Message",
+      "messagePlaceholder": "Write your SMS message...",
+      "sender": "Sender",
+      "recipients": "Valid recipients",
+      "withPhone": "with phone number",
+      "smsParts": "SMS",
+      "multiSmsNote": "Long message: counted as {parts} SMS per recipient.",
+      "send": "Send to {count} student(s)",
+      "sending": "Sending...",
+      "hint": "Only students with a phone number will receive the SMS."
+    },
+    "messages": {
+      "loadError": "Error loading students",
+      "missingMessage": "Message is required",
+      "noRecipients": "Select at least one student with a phone number",
+      "sendError": "Error sending SMS",
+      "sent": "{count} SMS sent successfully ({skipped} skipped — no phone number)"
+    }
+  },
   "comPage": {
+    "tabs": {
+      "messages": "Messages",
+      "sms": "SMS Marketing"
+    },
     "header": {
       "eyebrow": "Communication",
       "title": "Communication",
-      "description": "Send messages to students (single or bulk).",
+      "description": "Send messages or SMS to students.",
       "recipients": "{count} recipient(s) selected"
     },
     "students": {
