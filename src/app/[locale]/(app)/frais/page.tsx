@@ -1,5 +1,5 @@
-import ApplicationFeeManagement from "../../../components/ApplicationFeeManagement";
+import PaymentsPage from "../../../components/PaymentsPage";
 
 export default function FraisPage() {
-    return <ApplicationFeeManagement />;
+    return <PaymentsPage />;
 }

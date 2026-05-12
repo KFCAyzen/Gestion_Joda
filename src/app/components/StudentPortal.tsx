@@ -16,6 +16,7 @@ import ChangePasswordModal from "./ChangePasswordModal";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { StudentShell } from "./student/StudentShell";
+import { StudentChatFull } from "./student/StudentChatFull";
 import type { StudentView } from "./student/types";
 import { SectionHeader } from "./student/SectionHeader";
 import { EmptyState } from "./student/EmptyState";
@@ -164,6 +165,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadMessages, setUnreadMessages] = useState(0);
     const [universityName, setUniversityName] = useState<string | null>(null);
+    const [agentName, setAgentName] = useState<string>("Votre agent");
+    const [lastMessagePreview, setLastMessagePreview] = useState<string>("");
     const [declareModal, setDeclareModal] = useState<{
         paymentId: string | null;
         type: string;
@@ -205,6 +208,26 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 niveau: studentData?.niveau ?? "",
                 filiere: studentData?.filiere ?? "",
             });
+
+            // Load last received message to find agent name
+            const { data: lastMsg } = await supabase
+                .from("messages")
+                .select("from_user_id, content, created_at, metadata")
+                .eq("to_user_id", user.id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .single();
+            if (lastMsg) {
+                const { data: agentUser } = await supabase
+                    .from("users")
+                    .select("name")
+                    .eq("id", lastMsg.from_user_id)
+                    .single();
+                if (agentUser?.name) setAgentName(agentUser.name);
+                setLastMessagePreview(
+                    (lastMsg.content as string)?.slice(0, 40) + "…" || ""
+                );
+            }
 
             const [paysRes, docs, dossiers, unreadRes] = await Promise.all([
                 fetch("/api/student-payments", { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []),
@@ -418,11 +441,22 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         )}
         <StudentShell
             userName={user.name}
+            universityName={universityName}
+            studentLevel={studentInfo?.niveau ?? ""}
             view={view}
             onChangeView={(v) => setView(v)}
             unreadCount={unreadCount}
             onLogout={onLogout}
             statusPill={statusPill}
+            conversations={[
+                {
+                    id: "agent",
+                    agentName,
+                    preview: lastMessagePreview || "Cliquez pour discuter",
+                    time: "",
+                    unread: unreadMessages,
+                },
+            ]}
         >
             {view === "dashboard" && (
                 <div className="space-y-6">
@@ -684,9 +718,29 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 )}
 
             {view === "messaging" && (
-                    <StudentMessaging
+                    <StudentChatFull
                         userId={user.id}
+                        agentName={agentName}
                         onBack={() => setView("dashboard")}
+                        dossier={dossier ? {
+                            status: dossier.status,
+                            university: universityName,
+                            program: studentInfo ? `${studentInfo.niveau} — ${studentInfo.filiere}` : null,
+                            docsOk: documents.filter((d) => d.status === "valide").length,
+                            docsTotal: documents.length,
+                            nextStep: dossierStatusLabel,
+                            nextStepAt: dossier.created_at
+                                ? `Dossier soumis il y a ${Math.max(0, Math.floor((Date.now() - new Date(dossier.created_at).getTime()) / 60000))} min`
+                                : null,
+                        } : null}
+                        nextPayment={nextDue ? {
+                            label: `${nextDue.type === "bourse" ? "Bourse" : nextDue.type === "mandarin" ? "Cours mandarin" : "Cours anglais"} T${nextDue.tranche ?? ""}`,
+                            montant: nextDue.montant,
+                            dateLimite: nextDue.date_limite ?? null,
+                            daysLeft: nextDue.date_limite
+                                ? Math.max(0, Math.ceil((new Date(nextDue.date_limite).getTime() - Date.now()) / 86400000))
+                                : null,
+                        } : null}
                         onUnreadChange={setUnreadMessages}
                     />
                 )}

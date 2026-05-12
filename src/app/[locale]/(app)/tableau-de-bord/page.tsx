@@ -1,5 +1,5 @@
-import ScholarshipDashboard from "../../../components/ScholarshipDashboard";
+import AdminOperationalDashboard from "../../../components/AdminOperationalDashboard";
 
 export default function DashboardPage() {
-    return <ScholarshipDashboard />;
+    return <AdminOperationalDashboard />;
 }

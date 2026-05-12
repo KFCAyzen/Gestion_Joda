@@ -1,5 +1,5 @@
-import AccountingPage from "../../../components/AccountingPage";
+import LivreComptable from "../../../components/LivreComptable";
 
 export default function ComptabilitePage() {
-    return <AccountingPage />;
+    return <LivreComptable />;
 }
