@@ -37,7 +37,25 @@ export function PaymentConfigProvider({ children }: { children: ReactNode }) {
                 .from("payment_config")
                 .select("*");
 
-            if (error || !data) return;
+            if (error) {
+                if (process.env.NODE_ENV === "development") {
+                    const msg = error.message ?? String(error);
+                    if (
+                        msg.includes("does not exist") ||
+                        error.code === "PGRST205" ||
+                        msg.includes("schema cache")
+                    ) {
+                        console.warn(
+                            "[PaymentConfig] Table payment_config absente ou introuvable. Exécute migrations/add_payment_config.sql dans le SQL Editor Supabase.",
+                            error,
+                        );
+                    } else {
+                        console.warn("[PaymentConfig]", msg, error);
+                    }
+                }
+                return;
+            }
+            if (!data) return;
 
             const merged = { ...DEFAULT_PAYMENT_CONFIGS };
             for (const row of data) {

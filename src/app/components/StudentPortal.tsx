@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CreditCard, Upload, X, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -20,6 +20,7 @@ import { SectionHeader } from "./student/SectionHeader";
 import { EmptyState } from "./student/EmptyState";
 import { Skeleton } from "./student/Skeleton";
 import { ActivityRings } from "./student/ActivityRings";
+import { DossierRoadmap } from "./student/DossierRoadmap";
 
 interface User {
     id: string;
@@ -97,6 +98,38 @@ const STATUS_COLORS: Record<string, string> = {
     termine: "border-white/12 bg-white/5 text-white/70",
 };
 
+/** Badges onglet Paiements — même hiérarchie que STATUS_COLORS, accent néon lime (capture Fitness Training). */
+const PAYMENTS_TAB_BADGE: Record<string, string> = {
+    paye: "border-[rgba(196,255,51,0.28)] bg-[rgba(196,255,51,0.07)] text-[var(--student-neon-lime)]",
+    attente: "border-white/12 bg-black/30 text-white/75",
+    retard: "border-[rgba(255,65,85,0.25)] bg-[rgba(255,65,85,0.08)] text-[var(--student-ring-move)]",
+    valide: "border-[rgba(196,255,51,0.22)] bg-[rgba(196,255,51,0.06)] text-[var(--student-neon-lime)]",
+    en_attente: "border-white/12 bg-black/30 text-white/75",
+    non_conforme: "border-[rgba(255,65,85,0.22)] bg-[rgba(255,65,85,0.07)] text-[var(--student-ring-move)]",
+    en_validation: "border-white/12 bg-black/30 text-[var(--student-ring-stand)]",
+    document_recu: "border-white/12 bg-black/30 text-[var(--student-ring-stand)]",
+    en_cours: "border-white/12 bg-black/30 text-[var(--student-ring-stand)]",
+    admission_validee: "border-[rgba(196,255,51,0.2)] bg-[rgba(196,255,51,0.06)] text-[var(--student-neon-lime)]",
+    admission_rejetee: "border-[rgba(255,65,85,0.22)] bg-[rgba(255,65,85,0.07)] text-[var(--student-ring-move)]",
+    visa_en_cours: "border-white/12 bg-black/30 text-[var(--student-ring-stand)]",
+    termine: "border-white/12 bg-black/30 text-white/70",
+};
+
+/** Index dans la roadmap horizontale (0–7), un cran par statut métier */
+const DOSSIER_ROADMAP_INDEX: Record<string, number> = {
+    document_manquant: 0,
+    en_attente: 1,
+    document_recu: 2,
+    en_cours: 3,
+    en_attente_universite: 4,
+    admission_validee: 5,
+    admission_rejetee: 5,
+    visa_en_cours: 6,
+    termine: 7,
+};
+
+const DOSSIER_ROADMAP_LAST_IDX = 7;
+
 const DOSSIER_LABELS: Record<string, string> = {
     document_recu: "Documents reçus",
     en_attente: "En attente",
@@ -172,7 +205,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             });
 
             const [paysRes, docs, dossiers, unreadRes] = await Promise.all([
-                fetch("/api/student-payments").then(r => r.ok ? r.json() : []).catch(() => []),
+                fetch("/api/student-payments", { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []),
                 supabase.from("documents").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
                 supabase.from("dossier_bourses").select("*").eq("student_id", sid).order("created_at", { ascending: false }).limit(1),
                 supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("read", false),
@@ -292,16 +325,33 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         return t(`paymentTypes.${type}`, { fallback: type });
     };
 
+    const dossierRoadmapSteps = useMemo(() => {
+        if (!dossier) return [] as { key: string; label: string }[];
+        return [
+            { key: "document_manquant", label: t("status.missing_documents") },
+            { key: "en_attente", label: t("status.pending") },
+            { key: "document_recu", label: t("status.document_received") },
+            { key: "en_cours", label: t("status.in_progress") },
+            { key: "en_attente_universite", label: t("status.waiting_university") },
+            { key: "admission", label: t("dossier.roadmapAdmission") },
+            { key: "visa_en_cours", label: t("status.visa_processing") },
+            { key: "termine", label: t("status.completed") },
+        ];
+    }, [dossier, t]);
+
+    const dossierStepIdx = dossier ? (DOSSIER_ROADMAP_INDEX[dossier.status] ?? 0) : 0;
+    const dossierIsRejected = dossier?.status === "admission_rejetee";
+
     if (loading) {
         return (
             <div className="student-shell min-h-screen">
                 <div className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
                     <div className="grid gap-4 sm:gap-6">
                         <Skeleton className="h-28 w-full rounded-[2.25rem]" />
-                        <div className="grid gap-4 md:grid-cols-3">
+                        <div className="grid gap-4 sm:grid-cols-2">
                             <Skeleton className="h-36 w-full rounded-[2rem]" />
                             <Skeleton className="h-36 w-full rounded-[2rem]" />
-                            <Skeleton className="h-36 w-full rounded-[2rem]" />
+                            <Skeleton className="h-36 w-full rounded-[2rem] sm:col-span-2" />
                         </div>
                         <Skeleton className="h-52 w-full rounded-[2rem]" />
                     </div>
@@ -341,19 +391,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
     const dossierStepPct = (() => {
         if (!dossier?.status) return 0;
-        const STATUS_STEP_MAP: Record<string, number> = {
-            document_manquant: 0,
-            en_attente: 0,
-            document_recu: 1,
-            en_cours: 2,
-            en_attente_universite: 2,
-            admission_validee: 3,
-            admission_rejetee: 3,
-            visa_en_cours: 4,
-            termine: 5,
-        };
-        const idx = STATUS_STEP_MAP[dossier.status] ?? 0;
-        return Math.round((idx / 5) * 100);
+        const idx = DOSSIER_ROADMAP_INDEX[dossier.status] ?? 0;
+        return Math.round((idx / DOSSIER_ROADMAP_LAST_IDX) * 100);
     })();
 
     const nextAction = overdue.length > 0
@@ -419,7 +458,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 </Button>
                             </div>
 
-                            <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="grid gap-3 sm:grid-cols-2">
                                 <button
                                     type="button"
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
@@ -452,7 +491,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
                                 <button
                                     type="button"
-                                    className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                                    className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5 sm:col-span-2"
                                     onClick={() => setView("dossier")}
                                 >
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/55">{t("dossier.title")}</p>
@@ -471,13 +510,15 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             )}
 
             {view === "payments" && (
-                    <div className="space-y-6">
+                    <div className="student-payments-scope space-y-6">
                         <SectionHeader
+                            className="student-pay-surface"
+                            accentEyebrow
                             eyebrow="Finance"
                             title={t("payments.title")}
                             subtitle={t("payments.description")}
                         />
-                        <Card className="student-surface rounded-[2rem] border-0 shadow-none">
+                        <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none">
                             <CardContent className="p-0 pt-6">
                                 <PaymentOverview
                                     choix={studentChoix}
@@ -493,16 +534,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </Card>
 
                         {payments.length > 0 && (
-                            <Card className="student-surface rounded-[2rem] border-0 shadow-none">
+                            <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base">{t("payments.paymentHistory")}</CardTitle>
+                                    <CardTitle className="text-base font-semibold tracking-tight text-white">{t("payments.paymentHistory")}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                         {payments.map((payment) => (
                                             <div
                                                 key={payment.id}
-                                                className="student-surface-soft flex w-full flex-col gap-3 rounded-3xl p-3"
+                                                className="student-pay-surface-soft flex w-full flex-col gap-3 rounded-3xl p-3"
                                             >
                                                 <button
                                                     className="flex w-full items-center justify-between gap-3 text-left"
@@ -519,7 +560,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                     </div>
                                                     <div className="shrink-0 text-right">
                                                         <p className="text-sm font-semibold text-white">{formatMontant(payment.montant)}</p>
-                                                        <Badge className={`rounded-full border ${STATUS_COLORS[payment.status]}`}>{getPaymentStatusLabel(payment.status)}</Badge>
+                                                        <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[payment.status] ?? STATUS_COLORS[payment.status]}`}>{getPaymentStatusLabel(payment.status)}</Badge>
                                                     </div>
                                                 </button>
                                                 {payment.status !== "paye" && payment.status !== "en_validation" && (
@@ -529,7 +570,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                             tranche: payment.tranche ?? 1,
                                                             montant: payment.montant,
                                                         })}
-                                                        className="student-focus-ring flex w-full items-center justify-center gap-2 rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,45,85,0.22),rgba(255,69,58,0.12))] py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] transition-colors hover:bg-[linear-gradient(135deg,rgba(255,45,85,0.28),rgba(255,69,58,0.14))]"
+                                                        className="student-focus-ring flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(196,255,51,0.35)] bg-[var(--student-neon-lime)] py-2.5 text-xs font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] transition-[transform,filter] hover:brightness-110 active:scale-[0.99]"
                                                     >
                                                         <CreditCard className="h-3.5 w-3.5" />
                                                         {t("payments.makePayment")}
@@ -550,9 +591,11 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 )}
 
             {view === "documents" && (
-                <div className="space-y-6">
+                <div className="student-payments-scope space-y-6">
                     <SectionHeader
-                        eyebrow="Dossier"
+                        className="student-pay-surface"
+                        accentEyebrow
+                        eyebrow={t("dossier.title")}
                         title={t("documents.title")}
                         subtitle="Ajoute des fichiers propres et lisibles: PDF ou image. Nous te notifierons dès validation."
                     />
@@ -569,102 +612,58 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         />
                         {dossier ? (
                             <>
-                                <Card className="student-surface rounded-[2rem] border-0 shadow-none">
-                                    <CardHeader>
-                                        <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                                            <span className="text-sm text-white/60">{t("dossier.currentStep")}</span>
-                                            <Badge className={`rounded-full border ${STATUS_COLORS[dossier.status]}`}>
-                                                {t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })}
-                                            </Badge>
-                                        </div>
-                                        {universityName && (
-                                            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                                                <span className="text-sm text-white/60">{t("dossier.university")}</span>
-                                                <span className="text-sm font-medium text-white">{universityName}</span>
-                                            </div>
-                                        )}
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm text-white/60">{t("dossier.applicationDate")}</span>
-                                            <span className="text-sm font-medium text-white">
-                                                {new Date(dossier.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+                                    <div className="space-y-6">
+                                        <Card className="student-surface rounded-[2rem] border-0 shadow-none">
+                                            <CardHeader>
+                                                <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                                    <span className="text-sm text-white/60">{t("dossier.currentStep")}</span>
+                                                    <Badge className={`rounded-full border ${STATUS_COLORS[dossier.status]}`}>
+                                                        {t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })}
+                                                    </Badge>
+                                                </div>
+                                                {universityName && (
+                                                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                                        <span className="text-sm text-white/60">{t("dossier.university")}</span>
+                                                        <span className="text-sm font-medium text-white">{universityName}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-white/60">{t("dossier.applicationDate")}</span>
+                                                    <span className="text-sm font-medium text-white">
+                                                        {new Date(dossier.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
+                                                    </span>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
 
-                                {dossier.notes_internes ? (
-                                    <Card className="student-surface rounded-[2rem] border-0 shadow-none">
-                                        <CardHeader>
-                                            <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm leading-relaxed text-white/75">{dossier.notes_internes}</p>
+                                        {dossier.notes_internes ? (
+                                            <Card className="student-surface rounded-[2rem] border-0 shadow-none">
+                                                <CardHeader>
+                                                    <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <p className="text-sm leading-relaxed text-white/75">{dossier.notes_internes}</p>
+                                                </CardContent>
+                                            </Card>
+                                        ) : null}
+                                    </div>
+
+                                    <Card className="student-surface flex h-full min-h-[32rem] w-full min-w-0 flex-col gap-0 rounded-[2rem] border-0 p-0 shadow-none">
+                                        <CardContent className="flex min-h-0 min-w-0 w-full flex-1 flex-col p-0">
+                                            <DossierRoadmap
+                                                className="min-h-0"
+                                                title={t("dossier.steps")}
+                                                steps={dossierRoadmapSteps}
+                                                currentIdx={dossierStepIdx}
+                                                isRejected={dossierIsRejected}
+                                            />
                                         </CardContent>
                                     </Card>
-                                ) : null}
-
-                                <Card className="student-surface rounded-[2rem] border-0 shadow-none">
-                                    <CardHeader>
-                                        <CardTitle className="text-base">{t("dossier.steps")}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {(() => {
-                                            const STATUS_STEP_MAP: Record<string, number> = {
-                                                document_manquant: 0,
-                                                en_attente: 0,
-                                                document_recu: 1,
-                                                en_cours: 2,
-                                                en_attente_universite: 2,
-                                                admission_validee: 3,
-                                                admission_rejetee: 3,
-                                                visa_en_cours: 4,
-                                                termine: 5,
-                                            };
-                                            const isRejected = dossier.status === "admission_rejetee";
-                                            const currentIdx = STATUS_STEP_MAP[dossier.status] ?? 0;
-                                            const steps = [
-                                                { key: "en_attente", label: t("status.pending") },
-                                                { key: "document_recu", label: t("status.document_received") },
-                                                { key: "en_cours", label: t("status.in_progress") },
-                                                { key: "admission_validee", label: isRejected ? t("status.admission_rejected") : t("status.admission_approved") },
-                                                { key: "visa_en_cours", label: t("status.visa_processing") },
-                                                { key: "termine", label: t("status.completed") },
-                                            ];
-                                            return (
-                                                <ol className="space-y-3">
-                                                    {steps.map((step, stepIdx) => {
-                                                        const done = stepIdx < currentIdx;
-                                                        const active = stepIdx === currentIdx;
-                                                        const isRejectStep = isRejected && stepIdx === 3;
-                                                        return (
-                                                            <li key={step.key} className="flex items-center gap-3">
-                                                                <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xs font-bold shadow-[0_14px_34px_rgba(0,0,0,0.35)] ${
-                                                                    done ? "text-[var(--student-ring-exercise)]" :
-                                                                    isRejectStep ? "text-[var(--student-ring-move)]" :
-                                                                    active ? "text-[var(--student-ring-stand)]" :
-                                                                    "text-white/55"
-                                                                }`}>
-                                                                    {done ? "✓" : isRejectStep ? "✗" : stepIdx + 1}
-                                                                </span>
-                                                                <span className={`text-sm ${
-                                                                    isRejectStep ? "font-semibold text-[var(--student-ring-move)]" :
-                                                                    active ? "font-semibold text-white" :
-                                                                    done ? "text-white/60" :
-                                                                    "text-white/45"
-                                                                }`}>
-                                                                    {step.label}
-                                                                </span>
-                                                            </li>
-                                                        );
-                                                    })}
-                                                </ol>
-                                            );
-                                        })()}
-                                    </CardContent>
-                                </Card>
+                                </div>
                             </>
                         ) : (
                             <EmptyState
@@ -686,7 +685,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         {/* Modal paiement étudiant */}
         {declareModal && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
-                <div className="w-full max-w-sm rounded-t-3xl border border-white/12 bg-[linear-gradient(180deg,rgba(18,18,24,0.78),rgba(6,6,10,0.92))] p-6 shadow-[0_26px_90px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:rounded-3xl">
+                <div className="student-pay-modal-panel w-full max-w-sm rounded-t-3xl p-6 sm:rounded-3xl">
                     <div className="mb-4 flex items-start justify-between">
                         <div>
                             <h3 className="text-lg font-semibold text-white">{t("payments.makePayment")}</h3>
@@ -710,20 +709,20 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setPaymentMode("complet")}
-                                className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                    className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "complet"
-                                        ? "border-white/12 bg-white/10 text-white"
-                                        : "border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
+                                        ? "border-[rgba(196,255,51,0.35)] bg-[rgba(196,255,51,0.12)] text-[var(--student-neon-lime)]"
+                                        : "border-white/10 bg-black/35 text-white/65 hover:bg-white/[0.07]"
                                 }`}
                             >
                                 {t("payments.fullPayment")}
                             </button>
                             <button
                                 onClick={() => setPaymentMode("avance")}
-                                className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                    className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "avance"
-                                        ? "border-white/12 bg-white/10 text-white"
-                                        : "border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
+                                        ? "border-[rgba(196,255,51,0.35)] bg-[rgba(196,255,51,0.12)] text-[var(--student-neon-lime)]"
+                                        : "border-white/10 bg-black/35 text-white/65 hover:bg-white/[0.07]"
                                 }`}
                             >
                                 {t("payments.deposit")}
@@ -758,7 +757,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             />
                             {proofDataUrl ? (
                                 <div className="flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-3 py-2">
-                                    <Upload className="h-4 w-4 text-[var(--student-ring-exercise)]" />
+                                    <Upload className="h-4 w-4 text-[var(--student-neon-lime)]" />
                                     <span className="flex-1 text-xs text-white/80">{t("payments.fileAttached")}</span>
                                     <button
                                         onClick={() => { setProofDataUrl(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
@@ -788,7 +787,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             {t("payments.cancel")}
                         </Button>
                         <Button
-                            className="flex-1 rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,45,85,0.35),rgba(255,69,58,0.18))] text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] hover:bg-[linear-gradient(135deg,rgba(255,45,85,0.42),rgba(255,69,58,0.20))]"
+                            className="flex-1 rounded-2xl border border-[rgba(196,255,51,0.4)] bg-[var(--student-neon-lime)] font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110 disabled:opacity-60"
                             onClick={handleDeclarePayment}
                             disabled={declaring}
                         >
@@ -802,7 +801,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         {/* Modal détails paiement étudiant */}
         {detailPayment && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
-                <div className="w-full max-w-sm rounded-t-3xl border border-white/12 bg-[linear-gradient(180deg,rgba(18,18,24,0.78),rgba(6,6,10,0.92))] p-6 shadow-[0_26px_90px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:rounded-3xl">
+                <div className="student-pay-modal-panel w-full max-w-sm rounded-t-3xl p-6 sm:rounded-3xl">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-white">{t("payments.detailsTitle")}</h3>
                         <button onClick={() => setDetailPayment(null)} className="student-focus-ring text-white/55 hover:text-white text-xl">&times;</button>
@@ -811,7 +810,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.type")}</span><span className="font-medium text-white capitalize">{getPaymentTypeLabel(detailPayment.type)}</span></div>
                         <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.amount")}</span><span className="font-semibold text-white">{formatMontant(detailPayment.montant)}</span></div>
                         <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.status")}</span>
-                            <Badge className={`rounded-full border ${STATUS_COLORS[detailPayment.status]}`}>{getPaymentStatusLabel(detailPayment.status)}</Badge>
+                            <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[detailPayment.status] ?? STATUS_COLORS[detailPayment.status]}`}>{getPaymentStatusLabel(detailPayment.status)}</Badge>
                         </div>
                         <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.dueDate")}</span><span className="font-medium text-white">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(locale) : "—"}</span></div>
                         <div className="flex justify-between"><span className="text-white/60">{t("payments.paymentDate")}</span><span className="font-medium text-white">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(locale) : "—"}</span></div>
@@ -820,7 +819,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         {detailPayment.status === "paye" && studentInfo && (
                             <button
                                 onClick={() => downloadReceipt(detailPayment as any, studentInfo)}
-                                className="student-focus-ring rounded-2xl border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-[var(--student-ring-exercise)] hover:bg-white/10"
+                                className="student-focus-ring rounded-2xl border border-[rgba(196,255,51,0.28)] bg-black/35 px-3 py-2 text-xs font-semibold text-[var(--student-neon-lime)] hover:bg-white/[0.06]"
                             >
                                 {t("payments.downloadReceipt")}
                             </button>

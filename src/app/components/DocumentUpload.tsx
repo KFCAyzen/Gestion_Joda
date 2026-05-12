@@ -1,12 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+    AlertTriangle,
+    BookOpenCheck,
+    Camera,
+    Check,
+    ChevronRight,
+    FileBarChart,
+    FilePenLine,
+    Handshake,
+    IdCard,
+    Loader2,
+    Medal,
+    Scale,
+} from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { compressImage, formatFileSize } from "../utils/imageCompression";
 import { FILE_LIMITS, validateFile } from "../utils/fileValidation";
 
@@ -21,7 +36,65 @@ const REQUIRED_DOCS = [
     { key: "certificat_hsk", label: "Certificat HSK", description: "Si disponible (optionnel)" },
 ] as const;
 
-type DocKey = typeof REQUIRED_DOCS[number]["key"];
+type DocKey = (typeof REQUIRED_DOCS)[number]["key"];
+
+/** Fitness « Résumé » : icône + anneau de couleur par type de document */
+const DOC_CARD_THEME: Record<
+    DocKey,
+    { Icon: LucideIcon; ring: string; iconClass: string; statClass: string; softGlow?: string }
+> = {
+    passeport: {
+        Icon: IdCard,
+        ring: "border-violet-400/40 bg-violet-500/[0.12]",
+        iconClass: "text-violet-200",
+        statClass: "text-violet-200",
+        softGlow: "shadow-[0_0_28px_rgba(167,139,250,0.18)]",
+    },
+    casier_judiciaire: {
+        Icon: Scale,
+        ring: "border-cyan-400/38 bg-cyan-500/10",
+        iconClass: "text-cyan-200",
+        statClass: "text-cyan-200",
+        softGlow: "shadow-[0_0_24px_rgba(34,211,238,0.15)]",
+    },
+    carte_photo: {
+        Icon: Camera,
+        ring: "border-[rgba(196,255,51,0.45)] bg-[rgba(196,255,51,0.1)]",
+        iconClass: "text-[var(--student-neon-lime)]",
+        statClass: "text-[var(--student-neon-lime)]",
+        softGlow: "shadow-[var(--student-pay-glow-soft)]",
+    },
+    releve_bac: {
+        Icon: FileBarChart,
+        ring: "border-sky-400/35 bg-sky-500/10",
+        iconClass: "text-sky-200",
+        statClass: "text-sky-200",
+    },
+    diplome_bac: {
+        Icon: Medal,
+        ring: "border-fuchsia-400/35 bg-fuchsia-500/10",
+        iconClass: "text-fuchsia-200",
+        statClass: "text-fuchsia-200",
+    },
+    lettre_motivation: {
+        Icon: FilePenLine,
+        ring: "border-orange-400/35 bg-orange-500/10",
+        iconClass: "text-orange-200",
+        statClass: "text-orange-200",
+    },
+    lettre_recommandation: {
+        Icon: Handshake,
+        ring: "border-indigo-400/35 bg-indigo-500/12",
+        iconClass: "text-indigo-200",
+        statClass: "text-indigo-200",
+    },
+    certificat_hsk: {
+        Icon: BookOpenCheck,
+        ring: "border-emerald-400/35 bg-emerald-500/10",
+        iconClass: "text-emerald-200",
+        statClass: "text-emerald-200",
+    },
+};
 
 interface DocStatus {
     id: string;
@@ -53,36 +126,43 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
         setDocs(data || []);
     }, [studentId]);
 
-    useEffect(() => { loadDocs(); }, [loadDocs]);
+    useEffect(() => {
+        loadDocs();
+    }, [loadDocs]);
 
-    // Abonnement temps réel : rafraîchit quand le staff valide/rejette un document
     useEffect(() => {
         if (!studentId) return;
         const channel = supabase
             .channel(`docs-rt-${studentId}`)
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'documents',
-                filter: `student_id=eq.${studentId}`,
-            }, () => { loadDocs(); })
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "documents",
+                    filter: `student_id=eq.${studentId}`,
+                },
+                () => {
+                    loadDocs();
+                },
+            )
             .subscribe();
-        return () => { supabase.removeChannel(channel); };
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [studentId, loadDocs]);
 
-    const getDoc = (key: string) => docs.find(d => d.type === key);
+    const getDoc = (key: string) => docs.find((d) => d.type === key);
 
     const handleUpload = async (key: DocKey, file: File) => {
         if (!studentId) return;
 
-        // Bloquer si le document a déjà été validé par le staff
         const existing = getDoc(key);
         if (existing?.status === "valide") {
             showNotification("Ce document a été validé et ne peut plus être remplacé.", "error");
             return;
         }
 
-        // Validation initiale du fichier
         const validation = validateFile(file);
         if (!validation.valid) {
             showNotification(validation.error || "Fichier invalide", "error");
@@ -91,19 +171,15 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
 
         setUploading(key);
         try {
-            // Compresser si c'est une image
             let fileToUpload = file;
-            if (file.type.startsWith('image/')) {
+            if (file.type.startsWith("image/")) {
                 try {
                     fileToUpload = await compressImage(file, FILE_LIMITS.TARGET_COMPRESSED_SIZE_MB);
-                    console.log(`Image compressée: ${formatFileSize(file.size)} → ${formatFileSize(fileToUpload.size)}`);
-                } catch (err) {
-                    console.error('Erreur compression:', err);
-                    // Continuer avec le fichier original si la compression échoue
+                } catch {
+                    /* fichier original */
                 }
             }
 
-            // Validation finale après compression
             const finalValidation = validateFile(fileToUpload);
             if (!finalValidation.valid) {
                 showNotification(finalValidation.error || "Fichier invalide", "error");
@@ -113,24 +189,24 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             const ext = fileToUpload.name.split(".").pop();
             const path = `documents/${studentId}/${key}_${Date.now()}.${ext}`;
 
-            // Upload dans Supabase Storage
             const { error: storageError } = await supabase.storage
                 .from("student-documents")
                 .upload(path, fileToUpload, { upsert: true });
 
             if (storageError) throw storageError;
 
-            const { data: urlData } = supabase.storage
-                .from("student-documents")
-                .getPublicUrl(path);
+            const { data: urlData } = supabase.storage.from("student-documents").getPublicUrl(path);
 
-            const existing = getDoc(key);
-            if (existing) {
-                await supabase.from("documents").update({
-                    url: urlData.publicUrl,
-                    status: "en_attente",
-                    uploaded_at: new Date().toISOString(),
-                }).eq("id", existing.id);
+            const ex = getDoc(key);
+            if (ex) {
+                await supabase
+                    .from("documents")
+                    .update({
+                        url: urlData.publicUrl,
+                        status: "en_attente",
+                        uploaded_at: new Date().toISOString(),
+                    })
+                    .eq("id", ex.id);
             } else {
                 await supabase.from("documents").insert({
                     student_id: studentId,
@@ -148,21 +224,25 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
 
             if (user) {
                 await logActivity(
-                    user.id, user.name, user.role,
-                    "document_upload", "documents", studentId,
-                    `Document uploadé — ${REQUIRED_DOCS.find(d => d.key === key)?.label || key}`,
-                    { student_id: studentId, doc_type: key }
+                    user.id,
+                    user.name,
+                    user.role,
+                    "document_upload",
+                    "documents",
+                    studentId,
+                    `Document uploadé — ${REQUIRED_DOCS.find((d) => d.key === key)?.label || key}`,
+                    { student_id: studentId, doc_type: key },
                 );
             }
 
-            // Vérifier si tous les docs obligatoires sont uploadés → passer le dossier à document_recu
             const updatedDocs = await supabase.from("documents").select("type").eq("student_id", studentId);
-            const uploadedTypes = new Set(updatedDocs.data?.map(d => d.type) || []);
-            const requiredKeys = REQUIRED_DOCS.filter(d => d.key !== "certificat_hsk").map(d => d.key);
-            const allUploaded = requiredKeys.every(k => uploadedTypes.has(k));
+            const uploadedTypes = new Set(updatedDocs.data?.map((d) => d.type) || []);
+            const requiredKeys = REQUIRED_DOCS.filter((d) => d.key !== "certificat_hsk").map((d) => d.key);
+            const allUploaded = requiredKeys.every((k) => uploadedTypes.has(k));
 
             if (allUploaded) {
-                await supabase.from("dossier_bourses")
+                await supabase
+                    .from("dossier_bourses")
                     .update({ status: "document_recu" })
                     .eq("student_id", studentId)
                     .eq("status", "document_manquant");
@@ -195,156 +275,239 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
         }
     };
 
-    const completion = REQUIRED_DOCS.filter(d => d.key !== "certificat_hsk").filter(d => getDoc(d.key)).length;
-    const total = REQUIRED_DOCS.filter(d => d.key !== "certificat_hsk").length;
+    const completion = REQUIRED_DOCS.filter((d) => d.key !== "certificat_hsk").filter((d) => getDoc(d.key)).length;
+    const total = REQUIRED_DOCS.filter((d) => d.key !== "certificat_hsk").length;
     const pct = Math.round((completion / total) * 100);
 
-    if (!studentId) return (
-        <div className="py-12 text-center text-slate-400">Profil étudiant introuvable.</div>
-    );
+    if (!studentId) {
+        return (
+            <div className="student-pay-surface-soft rounded-[1.75rem] py-14 text-center text-sm text-white/55">
+                Profil étudiant introuvable.
+            </div>
+        );
+    }
+
+    const statLabelFor = (uploaded: DocStatus | undefined) => {
+        if (!uploaded) return "À fournir";
+        if (uploaded.status === "valide") return "Validé";
+        if (uploaded.status === "non_conforme") return "Non conforme";
+        return "En examen";
+    };
 
     return (
-        <div className="space-y-6">
-            {/* Info sur la compression */}
-            <div className="student-surface-soft px-5 py-4 text-sm text-white/75">
-                <p className="font-medium text-white">Informations importantes</p>
-                <ul className="mt-2 ml-4 list-disc space-y-1 text-xs text-white/65">
-                    <li>Taille maximale par fichier : <strong className="text-white">{FILE_LIMITS.MAX_FILE_SIZE_MB} MB</strong></li>
-                    <li>Les images sont automatiquement compressées (cible : <strong className="text-white">{FILE_LIMITS.TARGET_COMPRESSED_SIZE_MB} MB</strong>)</li>
-                    <li>Formats acceptés : <strong className="text-white">{FILE_LIMITS.ALLOWED_EXTENSIONS.join(", ")}</strong></li>
+        <div className="space-y-5">
+            <div className="student-pay-surface-soft px-5 py-4 text-sm">
+                <p className="font-semibold tracking-tight text-white">Informations importantes</p>
+                <ul className="mt-2 ml-4 list-disc space-y-1 text-xs text-white/55">
+                    <li>
+                        Taille max. :{" "}
+                        <strong className="text-[var(--student-neon-lime)]">{FILE_LIMITS.MAX_FILE_SIZE_MB} MB</strong>
+                    </li>
+                    <li>
+                        Compression auto des images (cible ~{" "}
+                        <strong className="text-white/80">{FILE_LIMITS.TARGET_COMPRESSED_SIZE_MB} MB</strong>)
+                    </li>
+                    <li>
+                        Formats :{" "}
+                        <strong className="text-white/85">{FILE_LIMITS.ALLOWED_EXTENSIONS.join(", ")}</strong>
+                    </li>
                 </ul>
             </div>
 
-            {/* Barre de progression */}
-            <Card className="student-surface border-0 shadow-none">
+            <Card className="student-pay-surface-soft border-0 shadow-none ring-1 ring-white/10">
                 <CardContent className="pt-6">
                     <div className="mb-2 flex items-center justify-between">
-                        <p className="text-sm font-medium text-white/75">Complétion du dossier</p>
-                        <span className="text-sm font-semibold text-white">{pct}%</span>
+                        <p className="text-sm font-medium text-white/70">Complétion du dossier</p>
+                        <span className="text-sm font-semibold tabular-nums text-[var(--student-neon-lime)]">{pct}%</span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full bg-white/10">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/45 ring-1 ring-white/[0.06]">
                         <div
-                            className="h-2.5 rounded-full bg-[linear-gradient(90deg,var(--student-ring-move),var(--student-ring-exercise),var(--student-ring-stand))] transition-all duration-500"
-                            style={{ width: `${pct}%` }}
+                            className="h-full rounded-full bg-[var(--student-neon-lime)] transition-all duration-500"
+                            style={{ width: `${pct}%`, boxShadow: "var(--student-pay-glow-soft)" }}
                         />
                     </div>
-                    <p className="mt-2 text-xs text-white/60">{completion}/{total} documents obligatoires uploadés</p>
+                    <p className="mt-2 text-xs text-white/50">
+                        {completion}/{total} documents obligatoires fournis
+                    </p>
                     {pct === 100 && (
-                        <div className="mt-3 rounded-3xl border border-white/12 bg-white/5 px-4 py-3 text-sm text-[var(--student-ring-exercise)] shadow-[0_16px_54px_rgba(0,0,0,0.35)]">
-                            Tous les documents ont été soumis. Votre dossier est en cours de traitement.
+                        <div className="student-pay-pill mt-3 flex items-start gap-2 px-4 py-3 text-sm text-[var(--student-neon-lime)]">
+                            <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                            <span>Tous les documents ont été soumis. Ton dossier est en traitement.</span>
                         </div>
                     )}
                 </CardContent>
             </Card>
 
-            {/* Bouton d'envoi */}
             {docs.length > 0 && (
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_16px_54px_rgba(0,0,0,0.35)]">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p className="text-sm font-semibold text-white">
-                                {notifSent ? "Dossier envoyé à l'équipe" : "Envoyer mon dossier à l'équipe"}
-                            </p>
-                            <p className="mt-0.5 text-xs text-white/60">
-                                {notifSent
-                                    ? "L'équipe a été notifiée et va examiner vos documents."
-                                    : hasNewUpload
-                                      ? "Notifie les agents et administrateurs que vos documents sont prêts pour examen."
-                                      : "Uploadez ou remplacez un document pour pouvoir notifier l'équipe."}
-                            </p>
-                        </div>
-                        <button
-                            onClick={handleSendToStaff}
-                            disabled={sending || notifSent || !hasNewUpload}
-                            className={[
-                                "student-focus-ring shrink-0 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50",
-                                notifSent
-                                    ? "border border-white/10 bg-white/5 text-[var(--student-ring-exercise)]"
-                                    : "border border-white/12 bg-[linear-gradient(135deg,rgba(64,156,255,0.18),rgba(48,209,88,0.12))] text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] hover:bg-[linear-gradient(135deg,rgba(64,156,255,0.22),rgba(48,209,88,0.14))]",
-                            ].join(" ")}
-                        >
-                            {sending ? "Envoi..." : notifSent ? "Envoyé" : "Envoyer"}
-                        </button>
+                <div className="student-pay-pill flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <p className="text-sm font-semibold text-white">
+                            {notifSent ? "Dossier envoyé à l'équipe" : "Envoyer mon dossier à l'équipe"}
+                        </p>
+                        <p className="mt-0.5 text-xs text-white/55">
+                            {notifSent
+                                ? "L'équipe a été notifiée et va examiner tes documents."
+                                : hasNewUpload
+                                  ? "Notifie les agents que tes documents sont prêts pour examen."
+                                  : "Uploade ou remplace un document pour pouvoir notifier l'équipe."}
+                        </p>
                     </div>
+                    <button
+                        type="button"
+                        onClick={handleSendToStaff}
+                        disabled={sending || notifSent || !hasNewUpload}
+                        className={[
+                            "student-focus-ring shrink-0 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-45",
+                            notifSent
+                                ? "border border-white/12 bg-black/35 text-[var(--student-neon-lime)]"
+                                : "border border-[rgba(196,255,51,0.45)] bg-[var(--student-neon-lime)] text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110",
+                        ].join(" ")}
+                    >
+                        {sending ? "Envoi…" : notifSent ? "Envoyé" : "Envoyer"}
+                    </button>
                 </div>
             )}
 
-            {/* Liste des documents */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                 {REQUIRED_DOCS.map((doc) => {
                     const uploaded = getDoc(doc.key);
                     const isUploading = uploading === doc.key;
                     const isOptional = doc.key === "certificat_hsk";
+                    const theme = DOC_CARD_THEME[doc.key];
+                    const { Icon } = theme;
+                    const statMain = statLabelFor(uploaded);
 
                     return (
-                        <Card key={doc.key} className="student-surface-soft border border-white/10 shadow-none transition-transform duration-200 hover:-translate-y-0.5">
-                            <CardContent className="p-4">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-medium text-white">{doc.label}</p>
-                                            {isOptional && <span className="text-xs text-white/55">(optionnel)</span>}
+                        <div
+                            key={doc.key}
+                            className="student-pay-surface-soft flex min-h-0 flex-col rounded-[1.35rem] p-3.5 ring-1 ring-white/[0.07] transition-transform duration-200 hover:-translate-y-0.5 sm:p-4"
+                        >
+                            <div className="flex gap-2.5">
+                                <div
+                                    className={[
+                                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-inner",
+                                        theme.ring,
+                                        theme.softGlow ?? "",
+                                    ].join(" ")}
+                                    aria-hidden
+                                >
+                                    {uploaded?.status === "valide" ? (
+                                        <Check className="h-[1.15rem] w-[1.15rem] text-[var(--student-neon-lime)]" strokeWidth={2.5} />
+                                    ) : uploaded?.status === "non_conforme" ? (
+                                        <AlertTriangle className="h-[1.15rem] w-[1.15rem] text-[var(--student-ring-move)]" strokeWidth={2.25} />
+                                    ) : (
+                                        <Icon className={`h-[1.15rem] w-[1.15rem] ${theme.iconClass}`} strokeWidth={2} />
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="text-left text-[13px] font-semibold leading-snug tracking-tight text-white sm:text-sm">
+                                                {doc.label}
+                                            </h3>
+                                            {isOptional ? (
+                                                <p className="mt-0.5 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-white/40">
+                                                    Facultatif
+                                                </p>
+                                            ) : null}
                                         </div>
-                                        <p className="mt-0.5 text-xs text-white/60">{doc.description}</p>
-                                        {uploaded && (
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <Badge
-                                                    className={[
-                                                        "rounded-full border border-white/12 bg-white/5 text-xs font-semibold",
-                                                        uploaded.status === "valide"
-                                                            ? "text-[var(--student-ring-exercise)]"
-                                                            : uploaded.status === "non_conforme"
-                                                              ? "text-[var(--student-ring-move)]"
-                                                              : "text-white/75",
-                                                    ].join(" ")}
-                                                >
-                                                    {uploaded.status === "valide" ? "Validé" :
-                                                     uploaded.status === "non_conforme" ? "Non conforme" : "En attente"}
-                                                </Badge>
-                                                <a href={uploaded.url} target="_blank" rel="noopener noreferrer"
-                                                    className="text-xs text-[var(--student-ring-stand)] hover:underline">
-                                                    Voir le fichier
-                                                </a>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-shrink-0">
-                                        <input
-                                            ref={el => { inputRefs.current[doc.key] = el; }}
-                                            type="file"
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                            className="hidden"
-                                            onChange={e => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    // Afficher la taille du fichier
-                                                    console.log(`Fichier sélectionné: ${file.name} (${formatFileSize(file.size)})`);
-                                                    handleUpload(doc.key, file);
-                                                }
-                                                e.target.value = "";
-                                            }}
-                                        />
                                         <button
+                                            type="button"
+                                            aria-label={`Choisir un fichier pour ${doc.label}`}
+                                            disabled={uploaded?.status === "valide" || isUploading}
                                             onClick={() => {
                                                 if (uploaded?.status !== "valide") inputRefs.current[doc.key]?.click();
                                             }}
-                                            disabled={isUploading || uploaded?.status === "valide"}
-                                            title={uploaded?.status === "valide" ? "Document validé — remplacement impossible" : undefined}
-                                            className={[
-                                                "student-focus-ring rounded-2xl px-3 py-2 text-xs font-semibold transition-all disabled:opacity-50",
-                                                uploaded?.status === "valide"
-                                                    ? "cursor-not-allowed border border-white/10 bg-white/5 text-[var(--student-ring-exercise)] opacity-80"
-                                                    : uploaded
-                                                      ? "border border-white/12 bg-white/5 text-white/80 hover:bg-white/10"
-                                                      : "border border-white/12 bg-[linear-gradient(135deg,rgba(255,45,85,0.22),rgba(255,69,58,0.12))] text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] hover:bg-[linear-gradient(135deg,rgba(255,45,85,0.28),rgba(255,69,58,0.14))]",
-                                            ].join(" ")}
+                                            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/45 text-white/40 transition-colors hover:bg-white/[0.08] hover:text-white disabled:pointer-events-none disabled:opacity-35"
                                         >
-                                            {isUploading ? "..." : uploaded?.status === "valide" ? "Verrouillé" : uploaded ? "Remplacer" : "Uploader"}
+                                            {isUploading ? (
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                                            ) : (
+                                                <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                                            )}
                                         </button>
                                     </div>
+                                    <p className="mt-2 line-clamp-2 text-left text-[10px] leading-relaxed text-white/50 sm:text-[11px]">
+                                        {doc.description}
+                                    </p>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+
+                            <p
+                                className={[
+                                    "mt-3 text-left text-sm font-semibold tabular-nums tracking-tight",
+                                    uploaded?.status === "non_conforme" ? "text-[var(--student-ring-move)]" : theme.statClass,
+                                ].join(" ")}
+                            >
+                                {statMain}
+                            </p>
+
+                            {uploaded ? (
+                                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                    <Badge
+                                        className={[
+                                            "rounded-full border text-[10px] font-semibold",
+                                            uploaded.status === "valide"
+                                                ? "border-[rgba(196,255,51,0.28)] bg-black/35 text-[var(--student-neon-lime)]"
+                                                : uploaded.status === "non_conforme"
+                                                  ? "border-[rgba(255,65,85,0.25)] bg-black/35 text-[var(--student-ring-move)]"
+                                                  : "border-white/12 bg-black/35 text-white/70",
+                                        ].join(" ")}
+                                    >
+                                        {uploaded.status === "valide"
+                                            ? "Validé"
+                                            : uploaded.status === "non_conforme"
+                                              ? "Non conforme"
+                                              : "En attente"}
+                                    </Badge>
+                                    <a
+                                        href={uploaded.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] font-semibold text-cyan-300/90 underline-offset-2 hover:underline"
+                                    >
+                                        Voir
+                                    </a>
+                                </div>
+                            ) : (
+                                <div className="mt-2 min-h-[1.25rem]" aria-hidden />
+                            )}
+
+                            <input
+                                ref={(el) => {
+                                    inputRefs.current[doc.key] = el;
+                                }}
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) void handleUpload(doc.key, file);
+                                    e.target.value = "";
+                                }}
+                            />
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (uploaded?.status !== "valide") inputRefs.current[doc.key]?.click();
+                                }}
+                                disabled={isUploading || uploaded?.status === "valide"}
+                                title={
+                                    uploaded?.status === "valide" ? "Document validé — remplacement impossible" : undefined
+                                }
+                                className={[
+                                    "student-focus-ring mt-auto w-full rounded-2xl py-2.5 text-center text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50",
+                                    uploaded?.status === "valide"
+                                        ? "border border-white/10 bg-black/35 text-[var(--student-neon-lime)]"
+                                        : uploaded
+                                          ? "border border-white/12 bg-black/40 text-white/85 hover:bg-white/[0.07]"
+                                          : "border border-[rgba(196,255,51,0.45)] bg-[var(--student-neon-lime)] text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110",
+                                ].join(" ")}
+                            >
+                                {isUploading ? "…" : uploaded?.status === "valide" ? "Verrouillé" : uploaded ? "Remplacer" : "Uploader"}
+                            </button>
+                        </div>
                     );
                 })}
             </div>
