@@ -12,19 +12,19 @@ export function SectionHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="student-surface rounded-[2.25rem] p-5 sm:p-7">
+    <div className="student-surface p-5 sm:p-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
           {eyebrow ? (
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-white/55">
               {eyebrow}
             </p>
           ) : null}
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
+            <p className="mt-2 text-sm leading-6 text-white/70 sm:text-base">
               {subtitle}
             </p>
           ) : null}

@@ -41,10 +41,10 @@ export function BottomTabs({
               onClick={() => onChange(id)}
               className={[
                 "relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "student-focus-ring",
                 active
-                  ? "text-slate-950 dark:text-white"
-                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200",
+                  ? "text-white"
+                  : "text-white/55 hover:text-white/85",
               ].join(" ")}
               aria-current={active ? "page" : undefined}
             >
@@ -52,15 +52,21 @@ export function BottomTabs({
                 className={[
                   "flex h-10 w-10 items-center justify-center rounded-2xl border transition-all duration-200",
                   active
-                    ? "border-white/80 bg-[linear-gradient(135deg,rgba(255,247,237,0.95),rgba(254,242,242,0.9))] shadow-[0_14px_30px_rgba(244,63,94,0.12)] dark:border-white/10 dark:bg-[linear-gradient(135deg,rgba(127,29,29,0.9),rgba(15,23,42,0.6))]"
-                    : "border-white/70 bg-white/50 dark:border-white/10 dark:bg-white/5",
+                    ? "border-white/18 bg-white/8 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
+                    : "border-white/10 bg-white/5",
                 ].join(" ")}
               >
                 <Icon className={iconCls} />
               </span>
               <span className="truncate">{label}</span>
+              {active ? (
+                <span
+                  className="absolute inset-x-5 top-1 h-1 rounded-full bg-[linear-gradient(90deg,var(--student-ring-move),var(--student-ring-exercise),var(--student-ring-stand))] opacity-90 shadow-[0_10px_26px_rgba(64,156,255,0.16)]"
+                  aria-hidden="true"
+                />
+              ) : null}
               {id === "notifications" && (notificationsBadge ?? 0) > 0 && (
-                <span className="absolute right-4 top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 px-1 text-[10px] font-bold text-white shadow-[0_10px_24px_rgba(239,68,68,0.35)]">
+                <span className="absolute right-4 top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--student-ring-move),#ff453a)] px-1 text-[10px] font-bold text-white shadow-[0_10px_26px_rgba(255,45,85,0.45)]">
                   {notificationsBadge! > 99 ? "99+" : notificationsBadge}
                 </span>
               )}

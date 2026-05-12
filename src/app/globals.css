@@ -43,14 +43,28 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* Student portal: campus vibrant tokens (non-breaking) */
-  --student-accent: oklch(0.71 0.2 18); /* warm coral */
-  --student-accent-2: oklch(0.65 0.18 260); /* indigo */
-  --student-accent-3: oklch(0.78 0.16 85); /* amber */
-  --student-surface: rgba(255, 255, 255, 0.86);
-  --student-surface-2: rgba(255, 255, 255, 0.62);
-  --student-border: rgba(255, 255, 255, 0.78);
-  --student-shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
-  --student-shadow-2: 0 14px 40px rgba(15, 23, 42, 0.06);
+  /* Apple Fitness-inspired (dark, vibrant, premium) */
+  --student-ink: #0b0b10;
+  --student-bg: radial-gradient(circle at 20% 0%, rgba(255, 45, 85, 0.10), transparent 38%),
+    radial-gradient(circle at 80% 20%, rgba(48, 209, 88, 0.10), transparent 40%),
+    radial-gradient(circle at 55% 90%, rgba(64, 156, 255, 0.10), transparent 42%),
+    linear-gradient(180deg, #0b0b10 0%, #07070c 55%, #050509 100%);
+  --student-fg: rgba(255, 255, 255, 0.92);
+  --student-fg-muted: rgba(255, 255, 255, 0.62);
+  --student-border: rgba(255, 255, 255, 0.10);
+  --student-surface: rgba(255, 255, 255, 0.06);
+  --student-surface-2: rgba(255, 255, 255, 0.03);
+  --student-shadow: 0 26px 90px rgba(0, 0, 0, 0.55);
+  --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.35);
+  --student-radius: 1.75rem;
+
+  /* “rings” accents (Move / Exercise / Stand) */
+  --student-ring-move: #ff2d55;
+  --student-ring-exercise: #30d158;
+  --student-ring-stand: #409cff;
+  --student-glow-move: 0 0 0.75rem rgba(255, 45, 85, 0.32);
+  --student-glow-exercise: 0 0 0.75rem rgba(48, 209, 88, 0.28);
+  --student-glow-stand: 0 0 0.75rem rgba(64, 156, 255, 0.26);
 }
 
 * {
@@ -559,60 +573,83 @@ body {
   --sidebar-ring: oklch(0.556 0 0);
 
   /* Student portal: campus vibrant tokens (dark) */
-  --student-surface: rgba(15, 23, 42, 0.62);
-  --student-surface-2: rgba(2, 6, 23, 0.42);
-  --student-border: rgba(255, 255, 255, 0.10);
-  --student-shadow: 0 24px 70px rgba(0, 0, 0, 0.40);
-  --student-shadow-2: 0 14px 40px rgba(0, 0, 0, 0.25);
+  /* Student portal keeps Fitness aesthetic in dark mode too */
+  --student-ink: #050509;
+  --student-bg: radial-gradient(circle at 20% 0%, rgba(255, 45, 85, 0.10), transparent 38%),
+    radial-gradient(circle at 80% 20%, rgba(48, 209, 88, 0.10), transparent 40%),
+    radial-gradient(circle at 55% 90%, rgba(64, 156, 255, 0.10), transparent 42%),
+    linear-gradient(180deg, #050509 0%, #030305 55%, #020203 100%);
+  --student-fg: rgba(255, 255, 255, 0.92);
+  --student-fg-muted: rgba(255, 255, 255, 0.62);
+  --student-border: rgba(255, 255, 255, 0.12);
+  --student-surface: rgba(255, 255, 255, 0.06);
+  --student-surface-2: rgba(255, 255, 255, 0.03);
+  --student-shadow: 0 26px 90px rgba(0, 0, 0, 0.62);
+  --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.40);
 }
 
 @layer components {
   .student-shell {
-    background:
-      radial-gradient(circle at top left, color-mix(in oklab, var(--student-accent-3) 22%, transparent), transparent 38%),
-      radial-gradient(circle at 10% 75%, color-mix(in oklab, var(--student-accent) 14%, transparent), transparent 40%),
-      radial-gradient(circle at top right, color-mix(in oklab, var(--student-accent-2) 16%, transparent), transparent 42%),
-      linear-gradient(135deg, rgba(248, 250, 252, 1) 0%, rgba(238, 242, 255, 0.9) 45%, rgba(255, 247, 237, 0.9) 100%);
+    background: var(--student-bg);
+    color: var(--student-fg);
   }
 
   .dark .student-shell {
-    background:
-      radial-gradient(circle at top left, color-mix(in oklab, var(--student-accent-3) 10%, transparent), transparent 38%),
-      radial-gradient(circle at 10% 75%, color-mix(in oklab, var(--student-accent) 8%, transparent), transparent 40%),
-      radial-gradient(circle at top right, color-mix(in oklab, var(--student-accent-2) 10%, transparent), transparent 42%),
-      linear-gradient(135deg, rgba(2, 6, 23, 1) 0%, rgba(15, 23, 42, 0.96) 45%, rgba(2, 6, 23, 1) 100%);
+    background: var(--student-bg);
+    color: var(--student-fg);
   }
 
   .student-surface {
+    border-radius: var(--student-radius);
     background: linear-gradient(180deg, var(--student-surface), var(--student-surface-2));
     border: 1px solid var(--student-border);
-    box-shadow: var(--student-shadow);
-    backdrop-filter: blur(18px);
+    box-shadow: var(--student-shadow-2);
+    backdrop-filter: blur(22px);
   }
 
   .student-surface-soft {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.42));
-    border: 1px solid rgba(255, 255, 255, 0.70);
-    box-shadow: var(--student-shadow-2);
-    backdrop-filter: blur(14px);
+    border-radius: calc(var(--student-radius) - 0.25rem);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.30);
+    backdrop-filter: blur(18px);
   }
 
   .dark .student-surface-soft {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.42));
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .student-bottom-tabs {
     @apply backdrop-blur-xl;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.72));
-    border-top: 1px solid rgba(255, 255, 255, 0.78);
-    box-shadow: 0 -20px 60px rgba(15, 23, 42, 0.08);
+    background: linear-gradient(180deg, rgba(10, 10, 16, 0.72), rgba(5, 5, 9, 0.92));
+    border-top: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.55);
   }
 
   .dark .student-bottom-tabs {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.70));
+    background: linear-gradient(180deg, rgba(10, 10, 16, 0.72), rgba(5, 5, 9, 0.92));
     border-top: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.30);
+    box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.60);
+  }
+
+  .student-chip {
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(18px);
+    color: var(--student-fg);
+  }
+
+  .student-focus-ring {
+    outline: none;
+  }
+
+  .student-focus-ring:focus-visible {
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.10),
+      0 0 0 5px rgba(64, 156, 255, 0.35);
   }
 }
 

@@ -19,6 +19,7 @@ import type { StudentView } from "./student/types";
 import { SectionHeader } from "./student/SectionHeader";
 import { EmptyState } from "./student/EmptyState";
 import { Skeleton } from "./student/Skeleton";
+import { ActivityRings } from "./student/ActivityRings";
 
 interface User {
     id: string;
@@ -82,18 +83,18 @@ function mapDossierStatusToI18nKey(status: string) {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-    paye: "bg-green-100 text-green-700",
-    attente: "bg-yellow-100 text-yellow-700",
-    retard: "bg-red-100 text-red-700",
-    valide: "bg-green-100 text-green-700",
-    en_attente: "bg-yellow-100 text-yellow-700",
-    non_conforme: "bg-red-100 text-red-700",
-    document_recu: "bg-blue-100 text-blue-700",
-    en_cours: "bg-purple-100 text-purple-700",
-    admission_validee: "bg-green-100 text-green-700",
-    admission_rejetee: "bg-red-100 text-red-700",
-    visa_en_cours: "bg-teal-100 text-teal-700",
-    termine: "bg-gray-100 text-gray-700",
+    paye: "border-white/12 bg-white/5 text-[var(--student-ring-exercise)]",
+    attente: "border-white/12 bg-white/5 text-white/75",
+    retard: "border-white/12 bg-white/5 text-[var(--student-ring-move)]",
+    valide: "border-white/12 bg-white/5 text-[var(--student-ring-exercise)]",
+    en_attente: "border-white/12 bg-white/5 text-white/75",
+    non_conforme: "border-white/12 bg-white/5 text-[var(--student-ring-move)]",
+    document_recu: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
+    en_cours: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
+    admission_validee: "border-white/12 bg-white/5 text-[var(--student-ring-exercise)]",
+    admission_rejetee: "border-white/12 bg-white/5 text-[var(--student-ring-move)]",
+    visa_en_cours: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
+    termine: "border-white/12 bg-white/5 text-white/70",
 };
 
 const DOSSIER_LABELS: Record<string, string> = {
@@ -332,6 +333,28 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         .sort((a, b) => a.due.getTime() - b.due.getTime())[0]?.payment ?? null;
 
     const pendingDocs = documents.filter((d) => ["en_attente", "non_conforme"].includes(d.status));
+    const docsOk = documents.filter((d) => ["valide"].includes(d.status)).length;
+    const docsProgressPct = documents.length > 0 ? Math.min(200, Math.round((docsOk / documents.length) * 100)) : 0;
+
+    const paidCount = payments.filter((p) => p.status === "paye").length;
+    const paymentsProgressPct = payments.length > 0 ? Math.min(200, Math.round((paidCount / payments.length) * 100)) : 0;
+
+    const dossierStepPct = (() => {
+        if (!dossier?.status) return 0;
+        const STATUS_STEP_MAP: Record<string, number> = {
+            document_manquant: 0,
+            en_attente: 0,
+            document_recu: 1,
+            en_cours: 2,
+            en_attente_universite: 2,
+            admission_validee: 3,
+            admission_rejetee: 3,
+            visa_en_cours: 4,
+            termine: 5,
+        };
+        const idx = STATUS_STEP_MAP[dossier.status] ?? 0;
+        return Math.round((idx / 5) * 100);
+    })();
 
     const nextAction = overdue.length > 0
         ? { tone: "danger" as const, title: t("dashboard.followPayments"), detail: `${overdue.length} paiement(s) en retard`, cta: { label: t("portal.nav.payments"), view: "payments" as View } }
@@ -342,10 +365,10 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
 
     const toneStyles = nextAction.tone === "danger"
-        ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200", ring: "ring-rose-200/60 dark:ring-rose-500/20" }
+        ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-white/12 bg-white/5 text-[var(--student-ring-move)]", ring: "ring-white/10" }
         : nextAction.tone === "warn"
-          ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200", ring: "ring-amber-200/60 dark:ring-amber-500/20" }
-          : { icon: <CheckCircle2 className="h-5 w-5" />, bg: "bg-emerald-50 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200", ring: "ring-emerald-200/60 dark:ring-emerald-500/20" };
+          ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-white/12 bg-white/5 text-white/80", ring: "ring-white/10" }
+          : { icon: <CheckCircle2 className="h-5 w-5" />, bg: "border-white/12 bg-white/5 text-[var(--student-ring-exercise)]", ring: "ring-white/10" };
 
     return (
         <>
@@ -362,78 +385,87 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         >
             {view === "dashboard" && (
                 <div className="space-y-6">
-                    <SectionHeader
-                        eyebrow={t("dashboard.overview")}
-                        title={t("dashboard.mySpace")}
-                        subtitle={t("dashboard.followPayments")}
-                        right={
-                            <Button
-                                className="rounded-2xl bg-slate-950 text-white hover:bg-slate-800"
-                                onClick={() => setView(nextAction.cta.view)}
-                            >
-                                {nextAction.cta.label}
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        }
-                    />
+                    <div className="student-surface grid gap-5 p-5 sm:p-6 md:grid-cols-[220px,1fr] md:items-center">
+                        <div className="flex items-center justify-center md:justify-start">
+                            <ActivityRings
+                                movePct={paymentsProgressPct}
+                                exercisePct={docsProgressPct}
+                                standPct={dossierStepPct}
+                                labelTop="Aujourd’hui"
+                                labelBottom={`${Math.max(0, Math.round((paymentsProgressPct + docsProgressPct + dossierStepPct) / 3))}%`}
+                            />
+                        </div>
 
-                    <div className={`student-surface-soft rounded-[2rem] p-5 ring-1 ${toneStyles.ring}`}>
-                        <div className="flex items-start gap-4">
-                            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${toneStyles.bg}`}>
-                                {toneStyles.icon}
+                        <div className="min-w-0 space-y-4">
+                            <div className={`student-surface-soft p-4 ring-1 ${toneStyles.ring}`}>
+                                <div className="flex items-start gap-3">
+                                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${toneStyles.bg} shadow-[0_14px_34px_rgba(0,0,0,0.35)]`}>
+                                        {toneStyles.icon}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/55">Prochaine action</p>
+                                        <p className="mt-1 text-base font-semibold tracking-tight text-white">
+                                            {nextAction.title}
+                                        </p>
+                                        <p className="mt-1 text-sm text-white/70">{nextAction.detail}</p>
+                                    </div>
+                                </div>
+                                <Button
+                                    className="mt-4 w-full rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,45,85,0.35),rgba(64,156,255,0.18))] text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] hover:bg-[linear-gradient(135deg,rgba(255,45,85,0.42),rgba(64,156,255,0.20))] sm:w-auto sm:self-start"
+                                    onClick={() => setView(nextAction.cta.view)}
+                                >
+                                    {nextAction.cta.label}
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
                             </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-slate-950 dark:text-white">Prochaine action</p>
-                                <p className="mt-1 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
-                                    {nextAction.title}
-                                </p>
-                                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{nextAction.detail}</p>
+
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <button
+                                    type="button"
+                                    className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                                    onClick={() => setView("payments")}
+                                >
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/55">{t("payments.title")}</p>
+                                    <div className="mt-3 flex items-baseline justify-between gap-3">
+                                        <p className="text-2xl font-semibold tracking-tight text-white">{unpaid.length}</p>
+                                        <p className="text-xs font-semibold text-white/55">{paymentsProgressPct}%</p>
+                                    </div>
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                        <div className="h-1.5 rounded-full bg-[var(--student-ring-move)]" style={{ width: `${Math.min(100, paymentsProgressPct)}%` }} />
+                                    </div>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                                    onClick={() => setView("documents")}
+                                >
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/55">{t("documents.title")}</p>
+                                    <div className="mt-3 flex items-baseline justify-between gap-3">
+                                        <p className="text-2xl font-semibold tracking-tight text-white">{pendingDocs.length}</p>
+                                        <p className="text-xs font-semibold text-white/55">{docsProgressPct}%</p>
+                                    </div>
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                        <div className="h-1.5 rounded-full bg-[var(--student-ring-exercise)]" style={{ width: `${Math.min(100, docsProgressPct)}%` }} />
+                                    </div>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                                    onClick={() => setView("dossier")}
+                                >
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/55">{t("dossier.title")}</p>
+                                    <div className="mt-3 flex items-baseline justify-between gap-3">
+                                        <p className="truncate text-base font-semibold tracking-tight text-white">{dossierStatusLabel ? dossierStatusLabel : t("dossier.noFile")}</p>
+                                        <p className="text-xs font-semibold text-white/55">{dossierStepPct}%</p>
+                                    </div>
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                        <div className="h-1.5 rounded-full bg-[var(--student-ring-stand)]" style={{ width: `${Math.min(100, dossierStepPct)}%` }} />
+                                    </div>
+                                </button>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <button
-                            type="button"
-                            className="student-surface rounded-[2rem] p-6 text-left transition-transform duration-200 hover:-translate-y-0.5"
-                            onClick={() => setView("payments")}
-                        >
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t("payments.title")}</p>
-                            <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
-                                {unpaid.length}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                                {unpaid.length > 0 ? "paiement(s) à traiter" : "aucun paiement en attente"}
-                            </p>
-                        </button>
-
-                        <button
-                            type="button"
-                            className="student-surface rounded-[2rem] p-6 text-left transition-transform duration-200 hover:-translate-y-0.5"
-                            onClick={() => setView("documents")}
-                        >
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t("documents.title")}</p>
-                            <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
-                                {documents.length}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                                {pendingDocs.length > 0 ? `${pendingDocs.length} à vérifier` : "tout est en ordre"}
-                            </p>
-                        </button>
-
-                        <button
-                            type="button"
-                            className="student-surface rounded-[2rem] p-6 text-left transition-transform duration-200 hover:-translate-y-0.5"
-                            onClick={() => setView("dossier")}
-                        >
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t("dossier.title")}</p>
-                            <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
-                                {dossierStatusLabel ? dossierStatusLabel : t("dossier.noFile")}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                                {dossier ? "Suivre l’avancement étape par étape" : "Créer un dossier pour commencer"}
-                            </p>
-                        </button>
                     </div>
                 </div>
             )}
@@ -470,7 +502,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         {payments.map((payment) => (
                                             <div
                                                 key={payment.id}
-                                                className="student-surface-soft flex w-full flex-col gap-3 rounded-2xl p-3"
+                                                className="student-surface-soft flex w-full flex-col gap-3 rounded-3xl p-3"
                                             >
                                                 <button
                                                     className="flex w-full items-center justify-between gap-3 text-left"
@@ -479,15 +511,15 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                     <div className="min-w-0">
                                                         <p className="truncate text-sm font-medium">{getPaymentTypeLabel(payment.type)}</p>
                                                         {payment.tranche && (
-                                                            <p className="text-xs text-slate-500">{t("payments.installment", { installment: payment.tranche })}</p>
+                                                            <p className="text-xs text-white/60">{t("payments.installment", { installment: payment.tranche })}</p>
                                                         )}
-                                                        <p className="text-xs text-slate-400">
+                                                        <p className="text-xs text-white/50">
                                                             {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString(locale) : "-"}
                                                         </p>
                                                     </div>
                                                     <div className="shrink-0 text-right">
-                                                        <p className="text-sm font-bold text-red-600">{formatMontant(payment.montant)}</p>
-                                                        <Badge className={STATUS_COLORS[payment.status]}>{getPaymentStatusLabel(payment.status)}</Badge>
+                                                        <p className="text-sm font-semibold text-white">{formatMontant(payment.montant)}</p>
+                                                        <Badge className={`rounded-full border ${STATUS_COLORS[payment.status]}`}>{getPaymentStatusLabel(payment.status)}</Badge>
                                                     </div>
                                                 </button>
                                                 {payment.status !== "paye" && payment.status !== "en_validation" && (
@@ -497,14 +529,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                             tranche: payment.tranche ?? 1,
                                                             montant: payment.montant,
                                                         })}
-                                                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                                                        className="student-focus-ring flex w-full items-center justify-center gap-2 rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,45,85,0.22),rgba(255,69,58,0.12))] py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] transition-colors hover:bg-[linear-gradient(135deg,rgba(255,45,85,0.28),rgba(255,69,58,0.14))]"
                                                     >
                                                         <CreditCard className="h-3.5 w-3.5" />
                                                         {t("payments.makePayment")}
                                                     </button>
                                                 )}
                                                 {payment.status === "en_validation" && (
-                                                    <span className="rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-center text-xs font-semibold text-blue-700">
+                                                    <span className="rounded-2xl border border-white/12 bg-white/5 py-2 text-center text-xs font-semibold text-[var(--student-ring-stand)]">
                                                         {t("payments.waitingValidation")}
                                                     </span>
                                                 )}
@@ -542,21 +574,21 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="flex items-center justify-between border-b pb-3">
-                                            <span className="text-sm text-slate-500">{t("dossier.currentStep")}</span>
-                                            <Badge className={STATUS_COLORS[dossier.status]}>
+                                        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                            <span className="text-sm text-white/60">{t("dossier.currentStep")}</span>
+                                            <Badge className={`rounded-full border ${STATUS_COLORS[dossier.status]}`}>
                                                 {t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })}
                                             </Badge>
                                         </div>
                                         {universityName && (
-                                            <div className="flex items-center justify-between border-b pb-3">
-                                                <span className="text-sm text-slate-500">{t("dossier.university")}</span>
-                                                <span className="text-sm font-medium text-slate-900">{universityName}</span>
+                                            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                                <span className="text-sm text-white/60">{t("dossier.university")}</span>
+                                                <span className="text-sm font-medium text-white">{universityName}</span>
                                             </div>
                                         )}
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm text-slate-500">{t("dossier.applicationDate")}</span>
-                                            <span className="text-sm font-medium text-slate-900">
+                                            <span className="text-sm text-white/60">{t("dossier.applicationDate")}</span>
+                                            <span className="text-sm font-medium text-white">
                                                 {new Date(dossier.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
                                             </span>
                                         </div>
@@ -569,7 +601,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                             <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <p className="text-sm text-slate-700 leading-relaxed">{dossier.notes_internes}</p>
+                                            <p className="text-sm leading-relaxed text-white/75">{dossier.notes_internes}</p>
                                         </CardContent>
                                     </Card>
                                 ) : null}
@@ -609,19 +641,19 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                         const isRejectStep = isRejected && stepIdx === 3;
                                                         return (
                                                             <li key={step.key} className="flex items-center gap-3">
-                                                                <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                                                                    done ? "bg-green-100 text-green-600" :
-                                                                    isRejectStep ? "bg-red-100 text-red-600" :
-                                                                    active ? "bg-red-100 text-red-600" :
-                                                                    "bg-slate-100 text-slate-400"
+                                                                <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xs font-bold shadow-[0_14px_34px_rgba(0,0,0,0.35)] ${
+                                                                    done ? "text-[var(--student-ring-exercise)]" :
+                                                                    isRejectStep ? "text-[var(--student-ring-move)]" :
+                                                                    active ? "text-[var(--student-ring-stand)]" :
+                                                                    "text-white/55"
                                                                 }`}>
                                                                     {done ? "✓" : isRejectStep ? "✗" : stepIdx + 1}
                                                                 </span>
                                                                 <span className={`text-sm ${
-                                                                    isRejectStep ? "font-semibold text-red-600" :
-                                                                    active ? "font-semibold text-slate-900" :
-                                                                    done ? "text-slate-500" :
-                                                                    "text-slate-400"
+                                                                    isRejectStep ? "font-semibold text-[var(--student-ring-move)]" :
+                                                                    active ? "font-semibold text-white" :
+                                                                    done ? "text-white/60" :
+                                                                    "text-white/45"
                                                                 }`}>
                                                                     {step.label}
                                                                 </span>
@@ -653,45 +685,45 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
         {/* Modal paiement étudiant */}
         {declareModal && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
-                <div className="w-full max-w-sm rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-slate-950 sm:rounded-3xl">
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
+                <div className="w-full max-w-sm rounded-t-3xl border border-white/12 bg-[linear-gradient(180deg,rgba(18,18,24,0.78),rgba(6,6,10,0.92))] p-6 shadow-[0_26px_90px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:rounded-3xl">
                     <div className="mb-4 flex items-start justify-between">
                         <div>
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t("payments.makePayment")}</h3>
-                            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-300">
+                            <h3 className="text-lg font-semibold text-white">{t("payments.makePayment")}</h3>
+                            <p className="mt-0.5 text-sm text-white/60">
                                 {getPaymentTypeLabel(declareModal.type)} — {declareModal.label}
                             </p>
                         </div>
-                        <button onClick={() => setDeclareModal(null)} className="text-slate-400 hover:text-slate-600">
+                        <button onClick={() => setDeclareModal(null)} className="student-focus-ring text-white/55 hover:text-white">
                             <X className="h-5 w-5" />
                         </button>
                     </div>
 
                     <div className="mb-4 max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
                         {/* Montant attendu */}
-                        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/5">
-                            <span className="text-slate-500 dark:text-slate-300">{t("payments.expectedAmount")}</span>
-                            <span className="font-bold text-slate-800 dark:text-white">{formatMontant(declareModal.montantTranche)}</span>
+                        <div className="flex items-center justify-between rounded-2xl border border-white/12 bg-white/5 px-4 py-3">
+                            <span className="text-white/60">{t("payments.expectedAmount")}</span>
+                            <span className="font-semibold text-white">{formatMontant(declareModal.montantTranche)}</span>
                         </div>
 
                         {/* Mode de paiement */}
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setPaymentMode("complet")}
-                                className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "complet"
-                                        ? "border-red-500 bg-red-50 text-red-700"
-                                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                                        ? "border-white/12 bg-white/10 text-white"
+                                        : "border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
                                 }`}
                             >
                                 {t("payments.fullPayment")}
                             </button>
                             <button
                                 onClick={() => setPaymentMode("avance")}
-                                className={`rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "avance"
-                                        ? "border-red-500 bg-red-50 text-red-700"
-                                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                                        ? "border-white/12 bg-white/10 text-white"
+                                        : "border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
                                 }`}
                             >
                                 {t("payments.deposit")}
@@ -701,14 +733,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         {/* Montant acompte */}
                         {paymentMode === "avance" && (
                             <div className="space-y-1">
-                                <p className="text-xs font-medium text-slate-600">{t("payments.amountPaid")}</p>
+                                <p className="text-xs font-medium text-white/70">{t("payments.amountPaid")}</p>
                                 <input
                                     type="number"
                                     min={1}
                                     max={declareModal.montantTranche}
                                     value={montantAvance}
                                     onChange={e => setMontantAvance(e.target.value)}
-                                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-red-400 focus:outline-none dark:border-white/10 dark:bg-white/5"
+                                    className="student-focus-ring w-full rounded-2xl border border-white/12 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/35"
                                     placeholder={t("payments.amountPaid")}
                                 />
                             </div>
@@ -716,7 +748,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
                         {/* Preuve */}
                         <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-slate-600">{t("payments.proofUpload")}</p>
+                            <p className="text-xs font-medium text-white/70">{t("payments.proofUpload")}</p>
                             <input
                                 ref={proofInputRef}
                                 type="file"
@@ -725,12 +757,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 className="hidden"
                             />
                             {proofDataUrl ? (
-                                <div className="flex items-center gap-2 rounded-2xl border border-green-200 bg-green-50 px-3 py-2 dark:border-emerald-500/20 dark:bg-emerald-500/10">
-                                    <Upload className="h-4 w-4 text-green-700 dark:text-emerald-200" />
-                                    <span className="flex-1 text-xs text-green-700 dark:text-emerald-200">{t("payments.fileAttached")}</span>
+                                <div className="flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-3 py-2">
+                                    <Upload className="h-4 w-4 text-[var(--student-ring-exercise)]" />
+                                    <span className="flex-1 text-xs text-white/80">{t("payments.fileAttached")}</span>
                                     <button
                                         onClick={() => { setProofDataUrl(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
-                                        className="text-slate-400 hover:text-slate-600"
+                                        className="student-focus-ring text-white/55 hover:text-white"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
@@ -738,7 +770,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             ) : (
                                 <button
                                     onClick={() => proofInputRef.current?.click()}
-                                    className="flex w-full items-center gap-2 rounded-2xl border border-dashed border-slate-300 px-3 py-2.5 text-xs text-slate-500 transition-colors hover:border-red-300 hover:text-red-600 dark:border-white/15 dark:text-slate-300"
+                                    className="student-focus-ring flex w-full items-center gap-2 rounded-2xl border border-dashed border-white/20 px-3 py-2.5 text-xs text-white/65 transition-colors hover:border-white/28 hover:text-white"
                                 >
                                     <Upload className="h-4 w-4" />
                                     {t("payments.uploadReceipt")}
@@ -747,16 +779,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </div>
                     </div>
 
-                    <p className="mb-4 text-xs text-slate-400 dark:text-slate-400">
+                    <p className="mb-4 text-xs text-white/45">
                         {t("payments.confirmMessage")}
                     </p>
 
                     <div className="flex gap-3">
-                        <Button variant="outline" className="flex-1 rounded-2xl" onClick={() => setDeclareModal(null)} disabled={declaring}>
+                        <Button variant="outline" className="student-chip flex-1 rounded-2xl border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white" onClick={() => setDeclareModal(null)} disabled={declaring}>
                             {t("payments.cancel")}
                         </Button>
                         <Button
-                            className="flex-1 rounded-2xl bg-red-600 text-white hover:bg-red-700"
+                            className="flex-1 rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,45,85,0.35),rgba(255,69,58,0.18))] text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] hover:bg-[linear-gradient(135deg,rgba(255,45,85,0.42),rgba(255,69,58,0.20))]"
                             onClick={handleDeclarePayment}
                             disabled={declaring}
                         >
@@ -769,31 +801,31 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
         {/* Modal détails paiement étudiant */}
         {detailPayment && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
-                <div className="w-full max-w-sm rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-slate-950 sm:rounded-3xl">
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
+                <div className="w-full max-w-sm rounded-t-3xl border border-white/12 bg-[linear-gradient(180deg,rgba(18,18,24,0.78),rgba(6,6,10,0.92))] p-6 shadow-[0_26px_90px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:rounded-3xl">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t("payments.detailsTitle")}</h3>
-                        <button onClick={() => setDetailPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                        <h3 className="text-lg font-semibold text-white">{t("payments.detailsTitle")}</h3>
+                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring text-white/55 hover:text-white text-xl">&times;</button>
                     </div>
                     <div className="max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.type")}</span><span className="font-medium capitalize">{getPaymentTypeLabel(detailPayment.type)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.amount")}</span><span className="font-bold text-red-600">{formatMontant(detailPayment.montant)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.status")}</span>
-                            <Badge className={STATUS_COLORS[detailPayment.status]}>{getPaymentStatusLabel(detailPayment.status)}</Badge>
+                        <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.type")}</span><span className="font-medium text-white capitalize">{getPaymentTypeLabel(detailPayment.type)}</span></div>
+                        <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.amount")}</span><span className="font-semibold text-white">{formatMontant(detailPayment.montant)}</span></div>
+                        <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.status")}</span>
+                            <Badge className={`rounded-full border ${STATUS_COLORS[detailPayment.status]}`}>{getPaymentStatusLabel(detailPayment.status)}</Badge>
                         </div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.dueDate")}</span><span className="font-medium">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(locale) : "—"}</span></div>
-                        <div className="flex justify-between"><span className="text-slate-500">{t("payments.paymentDate")}</span><span className="font-medium">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(locale) : "—"}</span></div>
+                        <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.dueDate")}</span><span className="font-medium text-white">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(locale) : "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-white/60">{t("payments.paymentDate")}</span><span className="font-medium text-white">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(locale) : "—"}</span></div>
                     </div>
                     <div className="mt-5 flex gap-2">
                         {detailPayment.status === "paye" && studentInfo && (
                             <button
                                 onClick={() => downloadReceipt(detailPayment as any, studentInfo)}
-                                className="rounded-2xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                                className="student-focus-ring rounded-2xl border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-[var(--student-ring-exercise)] hover:bg-white/10"
                             >
                                 {t("payments.downloadReceipt")}
                             </button>
                         )}
-                        <button onClick={() => setDetailPayment(null)} className="rounded-2xl border px-3 py-2 text-xs font-semibold text-slate-600 dark:border-white/10 dark:text-slate-200">{t("common.close")}</button>
+                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring rounded-2xl border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10">{t("common.close")}</button>
                     </div>
                 </div>
             </div>

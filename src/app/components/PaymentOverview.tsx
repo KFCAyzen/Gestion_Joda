@@ -42,12 +42,12 @@ function computeTrancheState(
     if (!payment) {
         return {
             barPct: 0,
-            barColor: "bg-slate-200",
+            barColor: "bg-white/10",
             penalty: 0,
             daysLabel: null as string | null,
-            daysColor: "",
+            daysColor: "text-white/55",
             statusLabel: "Non planifiée",
-            statusBadge: "bg-slate-100 text-slate-500",
+            statusBadge: "border-white/10 bg-white/5 text-white/65",
         };
     }
 
@@ -58,12 +58,12 @@ function computeTrancheState(
             : "Payé";
         return {
             barPct: 100,
-            barColor: "bg-green-500",
+            barColor: "bg-[var(--student-ring-exercise)]",
             penalty: 0,
             daysLabel: paid,
-            daysColor: "text-green-600",
+            daysColor: "text-[var(--student-ring-exercise)]",
             statusLabel: "Payé",
-            statusBadge: "bg-green-100 text-green-700",
+            statusBadge: "border-white/10 bg-white/5 text-[var(--student-ring-exercise)]",
         };
     }
 
@@ -71,12 +71,12 @@ function computeTrancheState(
     if (payment.status === "en_validation") {
         return {
             barPct: 85,
-            barColor: "bg-blue-400",
+            barColor: "bg-[var(--student-ring-stand)]",
             penalty: 0,
             daysLabel: "En cours de validation",
-            daysColor: "text-blue-600",
+            daysColor: "text-[var(--student-ring-stand)]",
             statusLabel: "En validation",
-            statusBadge: "bg-blue-100 text-blue-700",
+            statusBadge: "border-white/10 bg-white/5 text-[var(--student-ring-stand)]",
         };
     }
 
@@ -84,12 +84,12 @@ function computeTrancheState(
     if (!payment.date_limite) {
         return {
             barPct: 5,
-            barColor: "bg-slate-300",
+            barColor: "bg-white/15",
             penalty: 0,
             daysLabel: "Pas d'échéance définie",
-            daysColor: "text-slate-400",
+            daysColor: "text-white/55",
             statusLabel: "En attente",
-            statusBadge: "bg-yellow-100 text-yellow-700",
+            statusBadge: "border-white/10 bg-white/5 text-white/70",
         };
     }
 
@@ -112,20 +112,20 @@ function computeTrancheState(
 
         if (daysToDeadline > 14) {
             barPct = 12;
-            barColor = "bg-blue-300";
-            daysColor = "text-blue-500";
+            barColor = "bg-[var(--student-ring-stand)]/65";
+            daysColor = "text-[var(--student-ring-stand)]";
         } else if (daysToDeadline > 7) {
             barPct = 35;
-            barColor = "bg-yellow-400";
-            daysColor = "text-yellow-600";
+            barColor = "bg-[var(--student-ring-move)]/55";
+            daysColor = "text-[var(--student-ring-move)]";
         } else if (daysToDeadline > 3) {
             barPct = 60;
-            barColor = "bg-orange-400";
-            daysColor = "text-orange-600";
+            barColor = "bg-[var(--student-ring-move)]/75";
+            daysColor = "text-[var(--student-ring-move)]";
         } else {
             barPct = 80;
-            barColor = "bg-orange-500";
-            daysColor = "text-orange-700";
+            barColor = "bg-[var(--student-ring-move)]";
+            daysColor = "text-[var(--student-ring-move)]";
         }
 
         return {
@@ -135,7 +135,7 @@ function computeTrancheState(
             daysLabel: `J-${daysToDeadline} — Échéance le ${deadline.toLocaleDateString("fr-FR")}`,
             daysColor,
             statusLabel: "En attente",
-            statusBadge: "bg-yellow-100 text-yellow-700",
+            statusBadge: "border-white/10 bg-white/5 text-white/70",
         };
     }
 
@@ -145,12 +145,12 @@ function computeTrancheState(
         const barPct = Math.round(80 + (graceUsed / graceDays) * 12);
         return {
             barPct,
-            barColor: "bg-amber-400",
+            barColor: "bg-[var(--student-ring-move)]",
             penalty: 0,
             daysLabel: `Période de grâce — ${daysToGraceEnd} j restants (sur ${graceDays} j)`,
-            daysColor: "text-amber-600",
+            daysColor: "text-[var(--student-ring-move)]",
             statusLabel: "En attente",
-            statusBadge: "bg-amber-100 text-amber-700",
+            statusBadge: "border-white/10 bg-white/5 text-white/70",
         };
     }
 
@@ -158,12 +158,12 @@ function computeTrancheState(
     const daysLate = Math.abs(daysToGraceEnd);
     return {
         barPct: 100,
-        barColor: "bg-red-500",
+        barColor: "bg-[var(--student-ring-move)]",
         penalty,
         daysLabel: `${daysLate} jour${daysLate > 1 ? "s" : ""} de retard`,
-        daysColor: "text-red-600",
+        daysColor: "text-[var(--student-ring-move)]",
         statusLabel: "En retard",
-        statusBadge: "bg-red-100 text-red-700",
+        statusBadge: "border-white/15 bg-white/5 text-[var(--student-ring-move)]",
     };
 }
 
@@ -245,7 +245,7 @@ export default function PaymentOverview({
 
     if (services.length === 0) {
         return (
-            <p className="py-4 text-center text-sm text-slate-500">
+            <p className="py-4 text-center text-sm text-white/65">
                 Aucun service configuré pour ce profil.
             </p>
         );
@@ -255,51 +255,53 @@ export default function PaymentOverview({
         <div className="space-y-6">
             {/* Résumé financier */}
             <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-xl border border-slate-200 p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-slate-400">Total dû</p>
-                    <p className="mt-1 text-base font-bold text-slate-900">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center shadow-[0_14px_44px_rgba(0,0,0,0.35)]">
+                    <p className="text-[10px] uppercase tracking-[0.32em] text-white/55">Total dû</p>
+                    <p className="mt-1 text-base font-semibold tracking-tight text-white">
                         {totalDu.toLocaleString("fr-FR")}
                     </p>
-                    <p className="text-[10px] text-slate-500">FCFA</p>
+                    <p className="text-[10px] text-white/55">FCFA</p>
                 </div>
-                <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-green-600">Payé</p>
-                    <p className="mt-1 text-base font-bold text-green-700">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center shadow-[0_14px_44px_rgba(0,0,0,0.35)]">
+                    <p className="text-[10px] uppercase tracking-[0.32em] text-white/55">Payé</p>
+                    <p className="mt-1 text-base font-semibold tracking-tight text-[var(--student-ring-exercise)] [text-shadow:var(--student-glow-exercise)]">
                         {totalPaye.toLocaleString("fr-FR")}
                     </p>
-                    <p className="text-[10px] text-green-600">FCFA</p>
+                    <p className="text-[10px] text-white/55">FCFA</p>
                 </div>
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-red-500">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center shadow-[0_14px_44px_rgba(0,0,0,0.35)]">
+                    <p className="text-[10px] uppercase tracking-[0.32em] text-white/55">
                         Reste{totalPenalties > 0 ? " + pén." : ""}
                     </p>
-                    <p className="mt-1 text-base font-bold text-red-600">
+                    <p className="mt-1 text-base font-semibold tracking-tight text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
                         {reste.toLocaleString("fr-FR")}
                     </p>
-                    <p className="text-[10px] text-red-500">FCFA</p>
+                    <p className="text-[10px] text-white/55">FCFA</p>
                 </div>
             </div>
 
             {totalPenalties > 0 && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-                    <span className="text-xs font-semibold text-red-600">Pénalités cumulées :</span>
-                    <span className="text-sm font-bold text-red-700">{fmt(totalPenalties)}</span>
+                <div className="flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-4 py-3 shadow-[0_16px_54px_rgba(0,0,0,0.35)]">
+                    <span className="text-xs font-semibold text-white/70">Pénalités cumulées :</span>
+                    <span className="text-sm font-semibold text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
+                        {fmt(totalPenalties)}
+                    </span>
                 </div>
             )}
 
             {/* Progression globale */}
             <div>
-                <div className="mb-1.5 flex justify-between text-xs text-slate-500">
+                <div className="mb-1.5 flex justify-between text-xs text-white/60">
                     <span>Progression globale</span>
-                    <span className="font-semibold text-slate-700">{pct}%</span>
+                    <span className="font-semibold text-white">{pct}%</span>
                 </div>
-                <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
+                <div className="h-3 w-full overflow-hidden rounded-full bg-white/10">
                     <div
-                        className="h-3 rounded-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-700"
+                        className="h-3 rounded-full bg-[linear-gradient(90deg,var(--student-ring-move),var(--student-ring-exercise),var(--student-ring-stand))] transition-all duration-700"
                         style={{ width: `${pct}%` }}
                     />
                 </div>
-                <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+                <div className="mt-1 flex justify-between text-[10px] text-white/55">
                     <span>{totalPaye.toLocaleString("fr-FR")} FCFA payés</span>
                     <span>{totalDu.toLocaleString("fr-FR")} FCFA au total</span>
                 </div>
@@ -327,14 +329,14 @@ export default function PaymentOverview({
                         {/* En-tête service */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-semibold text-slate-800">{service.label}</p>
-                                <p className="text-[10px] text-slate-400">
+                                <p className="text-sm font-semibold text-white">{service.label}</p>
+                                <p className="text-[10px] text-white/55">
                                     {paidCount} / {service.tranches.length} tranche{service.tranches.length > 1 ? "s" : ""} réglée{paidCount > 1 ? "s" : ""}
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs font-semibold text-slate-700">{sPct}%</p>
-                                <p className="text-[10px] text-slate-400">
+                                <p className="text-xs font-semibold text-white">{sPct}%</p>
+                                <p className="text-[10px] text-white/55">
                                     {sPaid.toLocaleString("fr-FR")}, {service.total.toLocaleString("fr-FR")} FCFA
                                 </p>
                             </div>
@@ -351,44 +353,43 @@ export default function PaymentOverview({
                                 return (
                                     <div
                                         key={tranche.tranche}
-                                        className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-sm"
+                                        className="rounded-3xl border border-white/10 bg-white/5 p-3 shadow-[0_16px_54px_rgba(0,0,0,0.35)]"
                                     >
                                         {/* Ligne principale */}
                                         <div className="mb-2 flex items-start justify-between gap-2">
                                             <div className="flex items-center gap-2.5 min-w-0">
                                                 {/* Cercle numéro */}
                                                 <span
-                                                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                                                        state.barPct === 100 && state.barColor === "bg-green-500"
-                                                            ? "bg-green-100 text-green-700"
-                                                            : state.barColor.includes("red")
-                                                              ? "bg-red-100 text-red-700"
-                                                              : state.barColor.includes("amber")
-                                                                ? "bg-amber-100 text-amber-700"
-                                                                : state.barColor.includes("orange")
-                                                                  ? "bg-orange-100 text-orange-700"
-                                                                  : "bg-slate-100 text-slate-600"
-                                                    }`}
+                                                    className={[
+                                                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-2xl border text-[11px] font-bold shadow-[0_14px_34px_rgba(0,0,0,0.35)]",
+                                                        payment?.status === "paye"
+                                                            ? "border-white/10 bg-white/5 text-[var(--student-ring-exercise)]"
+                                                            : state.statusLabel === "En retard"
+                                                              ? "border-white/15 bg-white/5 text-[var(--student-ring-move)]"
+                                                              : state.statusLabel === "En validation"
+                                                                ? "border-white/10 bg-white/5 text-[var(--student-ring-stand)]"
+                                                                : "border-white/10 bg-white/5 text-white/75",
+                                                    ].join(" ")}
                                                 >
                                                     {payment?.status === "paye" ? "✓" : tranche.tranche}
                                                 </span>
                                                 <div className="min-w-0">
-                                                    <p className="text-xs font-semibold leading-tight text-slate-800">
+                                                    <p className="text-xs font-semibold leading-tight text-white">
                                                         {tranche.label}
                                                     </p>
                                                     {payment?.date_limite && payment.status !== "paye" && (
-                                                        <p className="text-[10px] text-slate-400">
+                                                        <p className="text-[10px] text-white/55">
                                                             Échéance : {new Date(payment.date_limite).toLocaleDateString("fr-FR")}
                                                         </p>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="shrink-0 text-right">
-                                                <p className="text-xs font-bold text-slate-900">
+                                                <p className="text-xs font-semibold text-white">
                                                     {fmt(tranche.montant)}
                                                 </p>
                                                 <span
-                                                    className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${state.statusBadge}`}
+                                                    className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${state.statusBadge}`}
                                                 >
                                                     {state.statusLabel}
                                                 </span>
@@ -401,11 +402,11 @@ export default function PaymentOverview({
                                                 <span className={`text-[10px] font-medium ${state.daysColor}`}>
                                                     {state.daysLabel ?? ""}
                                                 </span>
-                                                <span className="text-[10px] text-slate-400">
+                                                <span className="text-[10px] text-white/55">
                                                     {state.barPct}%
                                                 </span>
                                             </div>
-                                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                                                 <div
                                                     className={`h-1.5 rounded-full transition-all duration-500 ${state.barColor}`}
                                                     style={{ width: `${state.barPct}%` }}
@@ -415,11 +416,11 @@ export default function PaymentOverview({
 
                                         {/* Pénalité */}
                                         {state.penalty > 0 && (
-                                            <div className="mt-2 flex items-center justify-between rounded-lg bg-red-50 px-2.5 py-1.5">
-                                                <span className="text-[10px] font-semibold text-red-500">
+                                            <div className="mt-2 flex items-center justify-between rounded-2xl border border-white/12 bg-white/5 px-3 py-2">
+                                                <span className="text-[10px] font-semibold text-white/70">
                                                     Pénalité de retard
                                                 </span>
-                                                <span className="text-xs font-bold text-red-700">
+                                                <span className="text-xs font-semibold text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
                                                     +{fmt(state.penalty)}
                                                 </span>
                                             </div>
@@ -429,7 +430,7 @@ export default function PaymentOverview({
                                         {payment?.status === "paye" && onDownloadReceipt && (
                                             <button
                                                 onClick={() => onDownloadReceipt(payment)}
-                                                className="mt-2 w-full rounded-lg border border-green-200 bg-green-50 py-1.5 text-xs font-semibold text-green-700 transition-colors hover:bg-green-100"
+                                                className="mt-2 w-full rounded-2xl border border-white/12 bg-white/5 py-2 text-xs font-semibold text-[var(--student-ring-exercise)] transition-colors hover:bg-white/10"
                                             >
                                                 Télécharger le reçu
                                             </button>
@@ -444,7 +445,7 @@ export default function PaymentOverview({
                                                     montant: tranche.montant,
                                                     label: tranche.label,
                                                 })}
-                                                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                                                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,45,85,0.22),rgba(255,69,58,0.12))] py-2 text-xs font-semibold text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] transition-colors hover:bg-[linear-gradient(135deg,rgba(255,45,85,0.28),rgba(255,69,58,0.14))]"
                                             >
                                                 <CreditCard className="h-3.5 w-3.5" />
                                                 Effectuer ce paiement
@@ -453,7 +454,7 @@ export default function PaymentOverview({
 
                                         {/* Indicateur en validation */}
                                         {payment?.status === "en_validation" && (
-                                            <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 py-1.5 text-center text-xs font-semibold text-blue-700">
+                                            <div className="mt-2 rounded-2xl border border-white/12 bg-white/5 py-2 text-center text-xs font-semibold text-[var(--student-ring-stand)]">
                                                 En attente de validation
                                             </div>
                                         )}

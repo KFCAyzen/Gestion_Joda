@@ -1,8 +1,16 @@
 "use client";
 
 import { Bell, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import type { StudentView } from "./types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const VIEW_LABELS: Record<StudentView, string> = {
   dashboard: "Mon espace",
@@ -12,13 +20,28 @@ const VIEW_LABELS: Record<StudentView, string> = {
   notifications: "Notifications",
 };
 
+const iconBtn =
+  "student-focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white";
+
+function getInitials(name: string): string {
+  const s = name.trim();
+  if (!s) return "?";
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    const a = parts[0][0] ?? "";
+    const b = parts[parts.length - 1][0] ?? "";
+    return (a + b).toUpperCase();
+  }
+  return s.slice(0, 2).toUpperCase();
+}
+
 export function StudentHeader({
   userName,
   view,
   onNotifications,
   unreadCount,
   onLogout,
-  eyebrow,
+  eyebrow: _eyebrow,
   statusPill,
 }: {
   userName: string;
@@ -29,55 +52,77 @@ export function StudentHeader({
   eyebrow?: string;
   statusPill?: string | null;
 }) {
+  void _eyebrow;
+  const tPortal = useTranslations("student.portal");
+  const initials = getInitials(userName);
+
   return (
-    <header className="glass-header sticky top-0 z-30 border-b border-white/70">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400">
-            {eyebrow ?? "Portail étudiant"}
-          </p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-2xl">
-              {VIEW_LABELS[view]}
-            </h1>
-            {statusPill ? (
-              <span className="inline-flex items-center rounded-full border border-white/70 bg-white/70 px-3 py-1 text-xs font-medium text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                {statusPill}
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
-            Bonjour, {userName}
-          </p>
+    <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-black/35 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2.5 sm:px-6 lg:px-8">
+        <div className="w-[5rem] shrink-0 sm:w-[5.5rem]" aria-hidden />
+
+        <div className="min-w-0 flex-1 text-center">
+          <h1 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-white sm:text-base">
+            {VIEW_LABELS[view]}
+          </h1>
+          {statusPill ? (
+            <p
+              className="mt-0.5 truncate text-[10px] font-medium leading-tight text-white/45"
+              title={statusPill}
+            >
+              {statusPill}
+            </p>
+          ) : null}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex w-[5rem] shrink-0 justify-end gap-1 sm:w-[5.5rem] sm:gap-1.5">
           <button
             type="button"
             onClick={onNotifications}
-            className="relative rounded-2xl border border-white/70 bg-white/60 p-2.5 text-slate-600 shadow-[0_14px_34px_rgba(15,23,42,0.06)] transition-colors hover:bg-white/80 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+            className={`${iconBtn} relative`}
             aria-label="Ouvrir les notifications"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-[18px] w-[18px]" />
             {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 px-1 text-[10px] font-bold text-white shadow-[0_10px_24px_rgba(239,68,68,0.35)]">
+              <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--student-ring-move)] px-0.5 text-[9px] font-bold text-white">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
           </button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden rounded-2xl border-white/70 bg-white/60 text-slate-700 shadow-[0_14px_34px_rgba(15,23,42,0.06)] hover:bg-white/80 hover:text-slate-950 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 sm:inline-flex"
-            onClick={onLogout}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Quitter
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={`${iconBtn} overflow-hidden border border-white/12 bg-[linear-gradient(145deg,rgba(255,255,255,0.14),rgba(255,255,255,0.04))] text-[11px] font-bold tracking-tight text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] outline-none data-popup-open:bg-white/15`}
+              aria-label="Profil"
+            >
+              {initials}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              sideOffset={8}
+              className="min-w-[13rem] border border-white/10 bg-[#1c1c1e]/96 p-1 text-white shadow-[0_24px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl ring-white/10"
+            >
+              <DropdownMenuLabel className="px-2 py-1.5 text-xs font-normal text-white/55">
+                <span className="block truncate text-sm font-semibold text-white">
+                  {userName}
+                </span>
+                <span className="mt-0.5 block text-[10px] uppercase tracking-wider text-white/40">
+                  {tPortal("title")}
+                </span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuItem
+                variant="destructive"
+                className="cursor-pointer gap-2 rounded-lg px-2 py-2 text-white focus:bg-white/10 focus:text-white data-[variant=destructive]:text-[var(--student-ring-move)] data-[variant=destructive]:focus:bg-[var(--student-ring-move)]/15 data-[variant=destructive]:focus:text-[var(--student-ring-move)]"
+                onClick={onLogout}
+              >
+                <LogOut className="size-4 opacity-80" />
+                {tPortal("logout")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
   );
 }
-
