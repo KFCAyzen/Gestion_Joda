@@ -74,11 +74,20 @@ async function handleSendSms(req: NextRequest, session: AuthSession) {
       body: JSON.stringify(smsPayload),
     });
 
-    const smsData = await smsRes.json().catch(() => ({}));
+    const rawText = await smsRes.text();
+    let smsData: Record<string, unknown> = {};
+    try { smsData = JSON.parse(rawText); } catch { /* réponse non-JSON */ }
 
+    console.error("[send-sms] HTTP", smsRes.status, rawText.slice(0, 500));
+
+    // responsecode 1xx/2xx = succès selon smsvas ; 0 ou HTTP non-2xx = échec
     if (!smsRes.ok || smsData.responsecode === 0) {
-      const errMsg = smsData.responsemessage || smsData.errordescription || "Erreur SMS";
-      return NextResponse.json({ error: errMsg }, { status: 502 });
+      const errMsg =
+        (smsData.responsemessage as string) ||
+        (smsData.errordescription as string) ||
+        rawText.slice(0, 200) ||
+        "Erreur SMS";
+      return NextResponse.json({ error: errMsg, raw: rawText.slice(0, 500) }, { status: 502 });
     }
 
     const deliveredCount = Array.isArray(smsData.sms)

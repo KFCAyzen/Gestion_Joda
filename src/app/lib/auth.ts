@@ -30,23 +30,24 @@ export async function getServerSession(req: NextRequest): Promise<AuthSession | 
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session?.user) return null;
+  // getUser() vérifie le token auprès du serveur Auth (contrairement à getSession())
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null;
 
   // Récupérer le rôle depuis la table users
   const { data: userData } = await supabase
     .from('users')
     .select('role')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
   if (!userData) return null;
 
   return {
     user: {
-      id: session.user.id,
-      email: session.user.email!,
+      id: user.id,
+      email: user.email!,
       role: userData.role,
     },
   };
