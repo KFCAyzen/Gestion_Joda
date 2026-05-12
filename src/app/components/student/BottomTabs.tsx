@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, WalletCards, Upload, FileText, Bell } from "lucide-react";
+import { LayoutDashboard, WalletCards, Upload, FileText, MessageSquare } from "lucide-react";
 import type { StudentView } from "./types";
 
 const iconCls = "h-5 w-5";
@@ -14,7 +14,7 @@ const ITEMS: Array<{
   { id: "payments", label: "Paiements", Icon: WalletCards },
   { id: "documents", label: "Documents", Icon: Upload },
   { id: "dossier", label: "Dossier", Icon: FileText },
-  { id: "notifications", label: "Notifs", Icon: Bell },
+  { id: "messaging", label: "Messages", Icon: MessageSquare },
 ];
 
 export function BottomTabs({
@@ -65,7 +65,7 @@ export function BottomTabs({
                   aria-hidden="true"
                 />
               ) : null}
-              {id === "notifications" && (notificationsBadge ?? 0) > 0 && (
+              {id === "messaging" && (notificationsBadge ?? 0) > 0 && (
                 <span className="absolute right-4 top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--student-ring-move),#ff453a)] px-1 text-[10px] font-bold text-white shadow-[0_10px_26px_rgba(255,45,85,0.45)]">
                   {notificationsBadge! > 99 ? "99+" : notificationsBadge}
                 </span>

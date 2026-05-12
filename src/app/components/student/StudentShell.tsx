@@ -17,7 +17,6 @@ export function StudentShell({
   view,
   onChangeView,
   unreadCount,
-  unreadMessages,
   onLogout,
   statusPill,
   children,
@@ -26,7 +25,6 @@ export function StudentShell({
   view: StudentView;
   onChangeView: (next: StudentView) => void;
   unreadCount: number;
-  unreadMessages: number;
   onLogout: () => void;
   statusPill?: string | null;
   children: ReactNode;
@@ -36,8 +34,8 @@ export function StudentShell({
       <StudentHeader
         userName={userName}
         view={view}
-        onMessaging={() => onChangeView("messaging")}
-        unreadMessages={unreadMessages}
+        onNotifications={() => onChangeView("notifications")}
+        unreadCount={unreadCount}
         onLogout={onLogout}
         statusPill={statusPill}
       />

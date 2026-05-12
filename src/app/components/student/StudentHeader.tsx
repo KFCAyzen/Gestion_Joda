@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, LogOut } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { StudentView } from "./types";
 import {
@@ -20,6 +20,7 @@ const VIEW_LABELS: Record<StudentView, string> = {
   messaging: "Messagerie",
 };
 
+
 const iconBtn =
   "student-focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white";
 
@@ -38,16 +39,16 @@ function getInitials(name: string): string {
 export function StudentHeader({
   userName,
   view,
-  onMessaging,
-  unreadMessages,
+  onNotifications,
+  unreadCount,
   onLogout,
   eyebrow: _eyebrow,
   statusPill,
 }: {
   userName: string;
   view: StudentView;
-  onMessaging: () => void;
-  unreadMessages: number;
+  onNotifications: () => void;
+  unreadCount: number;
   onLogout: () => void;
   eyebrow?: string;
   statusPill?: string | null;
@@ -78,14 +79,14 @@ export function StudentHeader({
         <div className="flex w-[5rem] shrink-0 justify-end gap-1 sm:w-[5.5rem] sm:gap-1.5">
           <button
             type="button"
-            onClick={onMessaging}
+            onClick={onNotifications}
             className={`${iconBtn} relative`}
-            aria-label="Ouvrir la messagerie"
+            aria-label="Ouvrir les notifications"
           >
-            <MessageSquare className="h-[18px] w-[18px]" />
-            {unreadMessages > 0 && (
+            <Bell className="h-[18px] w-[18px]" />
+            {unreadCount > 0 && (
               <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--student-ring-move)] px-0.5 text-[9px] font-bold text-white">
-                {unreadMessages > 99 ? "99+" : unreadMessages}
+                {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
           </button>

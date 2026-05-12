@@ -421,7 +421,6 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             view={view}
             onChangeView={(v) => setView(v)}
             unreadCount={unreadCount}
-            unreadMessages={unreadMessages}
             onLogout={onLogout}
             statusPill={statusPill}
         >
