@@ -17,8 +17,8 @@ export type RoadmapStep = { key: string; label: string };
 const REF_W = 320;
 /** Taller artboard so milestones breathe vertically before width scaling. */
 const REF_H = 780;
-/** Vertical offset to push the entire snake path downward. */
-const SNAKE_OFFSET_Y = 40;
+/** Vertical offset to push the entire snake path downward (negative = upward). */
+const SNAKE_OFFSET_Y = -20;
 
 /**
  * Eight anchor points = vertical start, then the large left loop and right exit
@@ -662,8 +662,8 @@ export function DossierRoadmap({
     const isRightEdge = p.x > viewW * 0.74;
     const alignRight = isRightEdge || (!isLeftEdge && (i === 0 || i === 3 || i === 6));
     const gap = isLeftEdge || isRightEdge ? 20 : 16;
-    const xNudge = [0, 0, 0, 0, 120, -220, 35, 0][i] ?? 0;
-    const yNudge = [0, 0, 0, 0, -8, 12, -10, 32][i] ?? 0;
+    const xNudge = [0, 0, 0, 0, 120, -226, 35, 0][i] ?? 0;
+    const yNudge = [0, 0, 0, 0, -8, 12, -10, 42][i] ?? 0;
 
     if (alignRight) {
       return {
