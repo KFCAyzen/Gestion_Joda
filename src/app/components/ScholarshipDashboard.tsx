@@ -235,7 +235,6 @@ function buildSnapshot(
     applications: ApplicationRow[],
     payments: PaymentRow[],
     notifications: NotificationRow[],
-    pipelineLabels: Record<string, string>,
 ): DashboardSnapshot {
     const now = new Date();
     const currentMonthStart = startOfMonth(now);
