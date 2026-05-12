@@ -17,6 +17,8 @@ export type RoadmapStep = { key: string; label: string };
 const REF_W = 320;
 /** Taller artboard so milestones breathe vertically before width scaling. */
 const REF_H = 780;
+/** Vertical offset to push the entire snake path downward. */
+const SNAKE_OFFSET_Y = 40;
 
 /**
  * Eight anchor points = vertical start, then the large left loop and right exit
@@ -471,7 +473,7 @@ function scaleReferencePoint(point: Point, scaleX: number, stretchY: number): Po
   const hi = Math.max(lo + 1, viewW - SNAKE_EDGE_MARGIN_X);
   const xLinear = point.x * scaleX;
   const xScaled = Math.max(lo, Math.min(hi, cx + (xLinear - cx) * SNAKE_SPREAD_X));
-  return { x: xScaled, y: point.y * scaleX * stretchY };
+  return { x: xScaled, y: (point.y + SNAKE_OFFSET_Y) * scaleX * stretchY };
 }
 
 function scaleAnchors(scaleX: number, stretchY: number): Point[] {
@@ -522,16 +524,16 @@ function referenceSnakePath(
   const c2 = p(166, 356);
   const c3 = p(108, 372);
   const c4 = p(48, 370);
-  const c5 = p(18, 392);
-  const c6 = p(28, 452);
-  const c7 = p(44, 496);
+  // Segment a[4]→a[5] : courbe légèrement vers la gauche (bypass du clamp SNAKE_EDGE_MARGIN_X)
+  const c5 = { x: 2 * scaleX, y: (456 + SNAKE_OFFSET_Y) * scaleX * stretchY };
+  const c6 = { x: 4 * scaleX, y: (484 + SNAKE_OFFSET_Y) * scaleX * stretchY };
+  const c7 = p(44, 516);
   const c8 = p(66, 528);
   const c9 = p(132, 530);
   const c10 = p(244, 530);
   const c11 = p(306, 528);
-  const c12 = p(314, 586);
-  const c13 = p(292, 638);
-  const c14 = p(262, 666);
+  const c12 = p(286, 648);
+  const c13 = p(260, 700);
 
   return {
     d: [
@@ -542,8 +544,7 @@ function referenceSnakePath(
       `C ${c5.x} ${c5.y} ${c6.x} ${c6.y} ${a[5]!.x} ${a[5]!.y}`,
       `C ${c7.x} ${c7.y} ${c8.x} ${c8.y} ${c9.x} ${c9.y}`,
       `C ${c10.x} ${c10.y} ${c11.x} ${c11.y} ${a[6]!.x} ${a[6]!.y}`,
-      `C ${c12.x} ${c12.y} ${c13.x} ${c13.y} ${c14.x} ${c14.y}`,
-      `L ${a[7]!.x} ${a[7]!.y}`,
+      `C ${c12.x} ${c12.y} ${c13.x} ${c13.y} ${a[7]!.x} ${a[7]!.y}`,
     ].join(" "),
     pieces: [],
     filletR: 0,
@@ -613,15 +614,27 @@ export function DossierRoadmap({
 
   const d = snake.d;
 
-  const arrowMarkers = useMemo(
-    () => arrowsForRoundedPath(snake.pieces, snake.filletR),
-    [snake],
-  );
+  const [arrowPts, setArrowPts] = useState<
+    { x: number; y: number; angle: number; s: number }[]
+  >([]);
 
   const measurePath = useCallback(() => {
     const el = trackRef.current;
     if (!el) return;
-    setPathLen(el.getTotalLength());
+    const total = el.getTotalLength();
+    setPathLen(total);
+
+    if (total < 1) return;
+    const spacing = Math.max(55, total / 11);
+    const arr: { x: number; y: number; angle: number; s: number }[] = [];
+    for (let s = spacing * 0.8; s < total - spacing * 0.3; s += spacing) {
+      const pt = el.getPointAtLength(s);
+      const p0 = el.getPointAtLength(Math.max(0, s - 3));
+      const p1 = el.getPointAtLength(Math.min(total, s + 3));
+      const angle = Math.atan2(p1.y - p0.y, p1.x - p0.x) * 180 / Math.PI;
+      arr.push({ x: pt.x, y: pt.y, angle, s });
+    }
+    setArrowPts(arr);
   }, []);
 
   useLayoutEffect(() => {
@@ -647,13 +660,14 @@ export function DossierRoadmap({
   } {
     const isLeftEdge = p.x < viewW * 0.28;
     const isRightEdge = p.x > viewW * 0.74;
-    const alignRight = isRightEdge || (!isLeftEdge && (i === 0 || i === 2 || i === 6));
+    const alignRight = isRightEdge || (!isLeftEdge && (i === 0 || i === 3 || i === 6));
     const gap = isLeftEdge || isRightEdge ? 20 : 16;
-    const yNudge = [0, 0, 0, 0, -8, 12, -10, 10][i] ?? 0;
+    const xNudge = [0, 0, 0, 0, 120, -220, 35, 0][i] ?? 0;
+    const yNudge = [0, 0, 0, 0, -8, 12, -10, 32][i] ?? 0;
 
     if (alignRight) {
       return {
-        x: Math.max(12, p.x - gap),
+        x: Math.max(12, p.x - gap + xNudge),
         y: p.y + yNudge,
         transform: "translate(-100%, -50%)",
         textAlign: "right",
@@ -663,12 +677,12 @@ export function DossierRoadmap({
     }
 
     return {
-      x: Math.min(viewW - 12, p.x + gap),
+      x: Math.min(viewW - 12, p.x + gap + xNudge),
       y: p.y + yNudge,
       transform: "translateY(-50%)",
-      textAlign: "left",
+      textAlign: i === 5 ? "right" : "left",
       widthClass: isLeftEdge ? "w-[min(18rem,76vw)]" : "w-[min(12rem,44vw)]",
-      paddingClass: "pl-1 sm:pl-2",
+      paddingClass: i === 5 ? "pr-1 sm:pr-2" : "pl-1 sm:pl-2",
     };
   }
 
@@ -684,7 +698,7 @@ export function DossierRoadmap({
       </h2>
       <div
         ref={trackAreaRef}
-        className="relative min-h-[min(30rem,58vh)] w-full min-w-0 max-w-none flex-1 sm:min-h-[32rem]"
+        className="relative min-h-[100vh] w-full min-w-0 max-w-none flex-1"
       >
         <svg
           className="absolute inset-0 block h-full min-w-full w-full max-w-none"
@@ -733,10 +747,10 @@ export function DossierRoadmap({
             d={d}
             fill="none"
             stroke={`url(#snakeGlowGrad-${uid})`}
-            strokeWidth={3}
+            strokeWidth={5}
             strokeLinecap="round"
             strokeLinejoin="round"
-            opacity={0.48}
+            opacity={0.42}
             className="pointer-events-none"
           />
 
@@ -744,8 +758,8 @@ export function DossierRoadmap({
           <path
             d={d}
             fill="none"
-            stroke="rgba(255,255,255,0.82)"
-            strokeWidth={1}
+            stroke="rgba(255,255,255,0.78)"
+            strokeWidth={1.6}
             strokeLinecap="round"
             strokeLinejoin="round"
             className="pointer-events-none"
@@ -757,7 +771,7 @@ export function DossierRoadmap({
             d={d}
             fill="none"
             stroke={`url(#snakeStrokeGrad-${uid})`}
-            strokeWidth={1.15}
+            strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeDasharray={pathLen > 0 ? `${pathLen} ${pathLen}` : undefined}
@@ -766,15 +780,21 @@ export function DossierRoadmap({
             className="pointer-events-none transition-[stroke-dashoffset] duration-700 ease-out"
           />
 
-          {arrowMarkers.map(({ key, x, y, angle, seg }) => {
-            const lit = progressFrac * arrowMarkers.length >= seg + 0.35;
+          {arrowPts.map((a, i) => {
+            const lit = pathLen > 0 && a.s <= pathLen * progressFrac;
             return (
               <g
-                key={key}
-                transform={`translate(${x},${y}) rotate(${angle})`}
-                opacity={lit ? 0.88 : 0.34}
+                key={`arr-${i}`}
+                transform={`translate(${a.x},${a.y}) rotate(${a.angle})`}
+                opacity={lit ? 0.9 : 0.28}
+                className="pointer-events-none"
               >
-                <polygon points="-3.5,-2 4.5,0 -3.5,2" fill="var(--student-neon-lime)" opacity={0.92} />
+                <polygon
+                  points="-7,-4 8,0 -7,4"
+                  fill={lit ? "var(--student-neon-lime)" : "rgba(255,255,255,0.85)"}
+                  stroke={lit ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.2)"}
+                  strokeWidth={0.6}
+                />
               </g>
             );
           })}
@@ -785,38 +805,15 @@ export function DossierRoadmap({
               isRejected && admissionStepIdx >= 0 && i === admissionStepIdx;
             const isCurrent = i === currentIdx && !isRejectStep;
 
-            const r = 7;
+            const r = 12;
             if (isRejectStep) {
               return (
                 <g key={`n-${i}`}>
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={r + 2}
-                    fill="none"
-                    stroke="var(--student-ring-move)"
-                    strokeWidth={1.5}
-                    opacity={0.95}
-                  />
-                  <circle cx={p.x} cy={p.y} r={r} fill="#1a1014" stroke="var(--student-ring-move)" strokeWidth={1.5} />
-                  <line
-                    x1={p.x - 4}
-                    y1={p.y - 4}
-                    x2={p.x + 4}
-                    y2={p.y + 4}
-                    stroke="var(--student-ring-move)"
-                    strokeWidth={1.5}
-                    strokeLinecap="round"
-                  />
-                  <line
-                    x1={p.x + 4}
-                    y1={p.y - 4}
-                    x2={p.x - 4}
-                    y2={p.y + 4}
-                    stroke="var(--student-ring-move)"
-                    strokeWidth={1.5}
-                    strokeLinecap="round"
-                  />
+                  <circle cx={p.x} cy={p.y} r={r + 5} fill="none" stroke="var(--student-ring-move)" strokeWidth={1.5} opacity={0.4} />
+                  <circle cx={p.x} cy={p.y} r={r + 2} fill="none" stroke="var(--student-ring-move)" strokeWidth={1.5} opacity={0.9} />
+                  <circle cx={p.x} cy={p.y} r={r} fill="#1a1014" stroke="var(--student-ring-move)" strokeWidth={2} />
+                  <line x1={p.x - 6} y1={p.y - 6} x2={p.x + 6} y2={p.y + 6} stroke="var(--student-ring-move)" strokeWidth={2} strokeLinecap="round" />
+                  <line x1={p.x + 6} y1={p.y - 6} x2={p.x - 6} y2={p.y + 6} stroke="var(--student-ring-move)" strokeWidth={2} strokeLinecap="round" />
                 </g>
               );
             }
@@ -824,24 +821,10 @@ export function DossierRoadmap({
             if (isCurrent) {
               return (
                 <g key={`n-${i}`}>
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={r + 2.5}
-                    fill="none"
-                    stroke="var(--student-neon-lime)"
-                    strokeWidth={1.5}
-                    opacity={0.78}
-                  />
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={r}
-                    fill="var(--student-neon-lime)"
-                    stroke="var(--student-neon-lime)"
-                    strokeWidth={1}
-                  />
-                  <circle cx={p.x} cy={p.y} r={3} fill="#ffffff" />
+                  <circle cx={p.x} cy={p.y} r={r + 7} fill="none" stroke="var(--student-neon-lime)" strokeWidth={1} opacity={0.3} />
+                  <circle cx={p.x} cy={p.y} r={r + 3.5} fill="none" stroke="var(--student-neon-lime)" strokeWidth={1.5} opacity={0.6} />
+                  <circle cx={p.x} cy={p.y} r={r} fill="var(--student-neon-lime)" stroke="none" />
+                  <circle cx={p.x} cy={p.y} r={4.5} fill="#ffffff" />
                 </g>
               );
             }
@@ -852,11 +835,12 @@ export function DossierRoadmap({
                   cx={p.x}
                   cy={p.y}
                   r={r}
-                  fill="#f6f6f6"
-                  stroke={done ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.14)"}
-                  strokeWidth={done ? 1 : 0.85}
-                  opacity={done ? 1 : 0.34}
+                  fill={done ? "#dde1e6" : "none"}
+                  stroke="rgba(255,255,255,0.6)"
+                  strokeWidth={done ? 0 : 2}
+                  opacity={done ? 1 : 0.55}
                 />
+                {done && <circle cx={p.x} cy={p.y} r={4} fill="rgba(255,255,255,0.5)" />}
               </g>
             );
           })}
@@ -877,37 +861,22 @@ export function DossierRoadmap({
             const eyebrow = (
               <p
                 className={cn(
-                  "text-[11px] font-bold uppercase leading-tight tracking-[0.12em]",
+                  "text-[13px] font-bold uppercase leading-tight tracking-[0.10em]",
                   isRejectStep && "text-[var(--student-ring-move)]",
                   !isRejectStep && isCurrent && "text-[var(--student-neon-lime)]",
                   !isRejectStep &&
                     done &&
                     !isCurrent &&
-                    "text-[var(--student-neon-lime)]/90",
+                    "text-[var(--student-neon-lime)]/85",
                   !isRejectStep &&
                     !done &&
                     !isCurrent &&
-                    "text-[var(--student-neon-lime)]/45",
+                    "text-[var(--student-neon-lime)]/38",
                 )}
               >
                 {t("roadmapPhase", { n: phaseLabel })}
               </p>
             );
-
-            const statusTiny =
-              isCurrent ? (
-                <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--student-ring-stand)]">
-                  {t("roadmapStepActive")}
-                </span>
-              ) : isRejectStep ? (
-                <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--student-ring-move)]">
-                  {t("roadmapStepBlocked")}
-                </span>
-              ) : done && !isRejectStep ? (
-                <span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.12em] text-white/45">
-                  {t("roadmapStepDone")}
-                </span>
-              ) : null;
 
             return (
               <li
@@ -929,13 +898,27 @@ export function DossierRoadmap({
                   {eyebrow}
                   <p
                     className={cn(
-                      "mt-1 text-[14px] font-medium leading-snug text-white/88",
-                      isRejectStep && "text-[var(--student-ring-move)]",
+                      "mt-0.5 text-[11px] font-normal leading-snug",
+                      isRejectStep && "text-[var(--student-ring-move)]/80",
+                      !isRejectStep && (isCurrent || done) && "text-white/70",
+                      !isRejectStep && !done && !isCurrent && "text-white/30",
                     )}
                   >
                     {step.label}
                   </p>
-                  {statusTiny}
+                  {isCurrent ? (
+                    <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--student-ring-stand)]">
+                      {t("roadmapStepActive")}
+                    </span>
+                  ) : isRejectStep ? (
+                    <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--student-ring-move)]">
+                      {t("roadmapStepBlocked")}
+                    </span>
+                  ) : done ? (
+                    <span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.12em] text-white/40">
+                      {t("roadmapStepDone")}
+                    </span>
+                  ) : null}
                 </div>
               </li>
             );

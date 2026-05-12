@@ -7,7 +7,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -102,14 +101,14 @@ export function StudentHeader({
               sideOffset={8}
               className="min-w-[13rem] border border-white/10 bg-[#1c1c1e]/96 p-1 text-white shadow-[0_24px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl ring-white/10"
             >
-              <DropdownMenuLabel className="px-2 py-1.5 text-xs font-normal text-white/55">
+              <div className="px-2 py-1.5 text-xs font-normal text-white/55">
                 <span className="block truncate text-sm font-semibold text-white">
                   {userName}
                 </span>
                 <span className="mt-0.5 block text-[10px] uppercase tracking-wider text-white/40">
                   {tPortal("title")}
                 </span>
-              </DropdownMenuLabel>
+              </div>
               <DropdownMenuSeparator className="bg-white/10" />
               <DropdownMenuItem
                 variant="destructive"
