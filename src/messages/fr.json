@@ -582,9 +582,12 @@
       "admission_rejected": "Admission rejetée",
       "waiting_university": "En attente université",
       "visa_processing": "Visa en cours",
-      "completed": "Terminé"
-    }
-  },
+       "completed": "Terminé"
+     },
+     "common": {
+       "close": "Fermer"
+     }
+   },
   "notifications": {
     "title": "Notifications",
     "unread": "Non lues",

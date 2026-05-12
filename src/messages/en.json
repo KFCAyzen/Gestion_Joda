@@ -545,9 +545,12 @@
       "admission_rejected": "Admission rejected",
       "waiting_university": "Waiting for university",
       "visa_processing": "Visa processing",
-      "completed": "Completed"
-    }
-  },
+       "completed": "Completed"
+     },
+     "common": {
+       "close": "Close"
+     }
+   },
   "notifications": {
     "title": "Notifications",
     "unread": "Unread",
