@@ -41,6 +41,16 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Student portal: campus vibrant tokens (non-breaking) */
+  --student-accent: oklch(0.71 0.2 18); /* warm coral */
+  --student-accent-2: oklch(0.65 0.18 260); /* indigo */
+  --student-accent-3: oklch(0.78 0.16 85); /* amber */
+  --student-surface: rgba(255, 255, 255, 0.86);
+  --student-surface-2: rgba(255, 255, 255, 0.62);
+  --student-border: rgba(255, 255, 255, 0.78);
+  --student-shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
+  --student-shadow-2: 0 14px 40px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -547,6 +557,63 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Student portal: campus vibrant tokens (dark) */
+  --student-surface: rgba(15, 23, 42, 0.62);
+  --student-surface-2: rgba(2, 6, 23, 0.42);
+  --student-border: rgba(255, 255, 255, 0.10);
+  --student-shadow: 0 24px 70px rgba(0, 0, 0, 0.40);
+  --student-shadow-2: 0 14px 40px rgba(0, 0, 0, 0.25);
+}
+
+@layer components {
+  .student-shell {
+    background:
+      radial-gradient(circle at top left, color-mix(in oklab, var(--student-accent-3) 22%, transparent), transparent 38%),
+      radial-gradient(circle at 10% 75%, color-mix(in oklab, var(--student-accent) 14%, transparent), transparent 40%),
+      radial-gradient(circle at top right, color-mix(in oklab, var(--student-accent-2) 16%, transparent), transparent 42%),
+      linear-gradient(135deg, rgba(248, 250, 252, 1) 0%, rgba(238, 242, 255, 0.9) 45%, rgba(255, 247, 237, 0.9) 100%);
+  }
+
+  .dark .student-shell {
+    background:
+      radial-gradient(circle at top left, color-mix(in oklab, var(--student-accent-3) 10%, transparent), transparent 38%),
+      radial-gradient(circle at 10% 75%, color-mix(in oklab, var(--student-accent) 8%, transparent), transparent 40%),
+      radial-gradient(circle at top right, color-mix(in oklab, var(--student-accent-2) 10%, transparent), transparent 42%),
+      linear-gradient(135deg, rgba(2, 6, 23, 1) 0%, rgba(15, 23, 42, 0.96) 45%, rgba(2, 6, 23, 1) 100%);
+  }
+
+  .student-surface {
+    background: linear-gradient(180deg, var(--student-surface), var(--student-surface-2));
+    border: 1px solid var(--student-border);
+    box-shadow: var(--student-shadow);
+    backdrop-filter: blur(18px);
+  }
+
+  .student-surface-soft {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.42));
+    border: 1px solid rgba(255, 255, 255, 0.70);
+    box-shadow: var(--student-shadow-2);
+    backdrop-filter: blur(14px);
+  }
+
+  .dark .student-surface-soft {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.42));
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .student-bottom-tabs {
+    @apply backdrop-blur-xl;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.72));
+    border-top: 1px solid rgba(255, 255, 255, 0.78);
+    box-shadow: 0 -20px 60px rgba(15, 23, 42, 0.08);
+  }
+
+  .dark .student-bottom-tabs {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.70));
+    border-top: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.30);
+  }
 }
 
 @layer base {

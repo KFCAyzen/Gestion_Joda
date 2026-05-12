@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { executeBatch } from "../utils/dbOperations";
+import { SectionHeader } from "./student/SectionHeader";
+import { EmptyState } from "./student/EmptyState";
 
 interface Notification {
     id: string;
@@ -89,25 +91,32 @@ export default function StudentNotifications({ user, onBack }: Props) {
 
     return (
         <div className="space-y-6">
-            <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
-                    {onBack && (
-                        <Button variant="ghost" size="sm" onClick={onBack}>
-                            {t("actions.back")}
+            <SectionHeader
+                eyebrow="Centre"
+                title={t("title")}
+                subtitle={unreadCount > 0 ? t("unreadCount", { count: unreadCount }) : t("allRead")}
+                right={
+                    <div className="flex flex-wrap gap-2">
+                        {onBack ? (
+                            <Button variant="outline" size="sm" className="rounded-2xl" onClick={onBack}>
+                                {t("actions.back")}
+                            </Button>
+                        ) : null}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-2xl"
+                            onClick={markAllAsRead}
+                            disabled={unreadCount === 0}
+                        >
+                            {t("actions.markAllRead")}
                         </Button>
-                    )}
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900">{t("title")}</h2>
-                        <p className="text-sm text-slate-500">{unreadCount > 0 ? t("unreadCount", { count: unreadCount }) : t("allRead")}</p>
+                        <Button variant="outline" size="sm" className="rounded-2xl" onClick={load}>
+                            {t("actions.refresh")}
+                        </Button>
                     </div>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={unreadCount === 0}>
-                        {t("actions.markAllRead")}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={load}>{t("actions.refresh")}</Button>
-                </div>
-            </div>
+                }
+            />
 
             <div className="flex flex-wrap gap-2">
                 {filterBtns.map((f) => (
@@ -130,7 +139,9 @@ export default function StudentNotifications({ user, onBack }: Props) {
                     {loading ? (
                         <div className="py-12 text-center">{t("loading")}</div>
                     ) : filtered.length === 0 ? (
-                        <div className="py-12 text-center text-gray-400">{t("empty")}</div>
+                        <div className="p-4">
+                            <EmptyState title={t("empty")} description="Quand l’équipe valide un paiement ou un document, tu reçois une notification ici." />
+                        </div>
                     ) : (
                         <div className="divide-y divide-slate-100">
                             {filtered.map((notif) => {

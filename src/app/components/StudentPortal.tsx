@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, CreditCard, Upload, X } from "lucide-react";
+import { CreditCard, Upload, X, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
@@ -14,6 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
+import { StudentShell } from "./student/StudentShell";
+import type { StudentView } from "./student/types";
+import { SectionHeader } from "./student/SectionHeader";
+import { EmptyState } from "./student/EmptyState";
+import { Skeleton } from "./student/Skeleton";
 
 interface User {
     id: string;
@@ -61,6 +66,21 @@ function formatMontant(n: number) {
     return `${n.toLocaleString("fr-FR")} FCFA`;
 }
 
+function mapDossierStatusToI18nKey(status: string) {
+    const map: Record<string, string> = {
+        document_recu: "document_received",
+        en_attente: "pending",
+        en_cours: "in_progress",
+        document_manquant: "missing_documents",
+        admission_validee: "admission_approved",
+        admission_rejetee: "admission_rejected",
+        en_attente_universite: "waiting_university",
+        visa_en_cours: "visa_processing",
+        termine: "completed",
+    };
+    return map[status] ?? status;
+}
+
 const STATUS_COLORS: Record<string, string> = {
     paye: "bg-green-100 text-green-700",
     attente: "bg-yellow-100 text-yellow-700",
@@ -88,7 +108,7 @@ const DOSSIER_LABELS: Record<string, string> = {
     termine: "Terminé",
 };
 
-type View = "dashboard" | "payments" | "documents" | "dossier" | "notifications";
+type View = StudentView;
 
 export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const t = useTranslations("student");
@@ -273,129 +293,160 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-red-600" />
+            <div className="student-shell min-h-screen">
+                <div className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
+                    <div className="grid gap-4 sm:gap-6">
+                        <Skeleton className="h-28 w-full rounded-[2.25rem]" />
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <Skeleton className="h-36 w-full rounded-[2rem]" />
+                            <Skeleton className="h-36 w-full rounded-[2rem]" />
+                            <Skeleton className="h-36 w-full rounded-[2rem]" />
+                        </div>
+                        <Skeleton className="h-52 w-full rounded-[2rem]" />
+                    </div>
+                </div>
             </div>
         );
     }
+
+    const dossierStatusLabel = dossier?.status
+        ? t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })
+        : null;
+
+    const fileStatusLabel = t("dashboard.fileStatus", { fallback: "Statut dossier" });
+
+    const statusPill = dossierStatusLabel
+        ? `${fileStatusLabel}: ${dossierStatusLabel}`
+        : null;
+
+    const now = new Date();
+    const unpaid = payments.filter((p) => p.status !== "paye");
+    const overdue = unpaid.filter((p) => {
+        if (!p.date_limite) return p.status === "retard";
+        const due = new Date(p.date_limite);
+        return due.getTime() < now.getTime();
+    });
+    const nextDue = unpaid
+        .filter((p) => p.date_limite)
+        .map((p) => ({ payment: p, due: new Date(p.date_limite as string) }))
+        .sort((a, b) => a.due.getTime() - b.due.getTime())[0]?.payment ?? null;
+
+    const pendingDocs = documents.filter((d) => ["en_attente", "non_conforme"].includes(d.status));
+
+    const nextAction = overdue.length > 0
+        ? { tone: "danger" as const, title: t("dashboard.followPayments"), detail: `${overdue.length} paiement(s) en retard`, cta: { label: t("portal.nav.payments"), view: "payments" as View } }
+        : nextDue
+          ? { tone: "warn" as const, title: "Prochaine échéance", detail: `${getPaymentTypeLabel(nextDue.type)} — ${nextDue.date_limite ? new Date(nextDue.date_limite).toLocaleDateString(locale) : ""}`, cta: { label: t("payments.makePayment"), view: "payments" as View } }
+          : pendingDocs.length > 0
+            ? { tone: "warn" as const, title: "Documents à compléter", detail: `${pendingDocs.length} document(s) à vérifier / renvoyer`, cta: { label: t("portal.nav.documents"), view: "documents" as View } }
+            : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
+
+    const toneStyles = nextAction.tone === "danger"
+        ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200", ring: "ring-rose-200/60 dark:ring-rose-500/20" }
+        : nextAction.tone === "warn"
+          ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200", ring: "ring-amber-200/60 dark:ring-amber-500/20" }
+          : { icon: <CheckCircle2 className="h-5 w-5" />, bg: "bg-emerald-50 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200", ring: "ring-emerald-200/60 dark:ring-emerald-500/20" };
 
     return (
         <>
         {showPasswordChange && (
             <ChangePasswordModal onPasswordChanged={() => setShowPasswordChange(false)} />
         )}
-        <div className="min-h-screen app-shell">
-            <header className="glass-header border-b border-white/70">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
-                    <div>
-                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                            {t("portal.title")}
-                        </p>
-                        <h1 className="text-2xl font-bold text-slate-900">Gestion Joda</h1>
-                        <p className="text-sm text-slate-500">{t("portal.welcome")}, {user.name}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setView("notifications")}
-                            className="relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
-                            aria-label={t("portal.nav.notifications")}
-                        >
-                            <Bell className="h-5 w-5" />
-                            {unreadCount > 0 && (
-                                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                                    {unreadCount > 9 ? "9+" : unreadCount}
-                                </span>
-                            )}
-                        </button>
-                        <span className="hidden text-sm text-slate-500 sm:inline-block">{user.name}</span>
-                        <Button variant="outline" size="sm" onClick={onLogout}>{t("portal.logout")}</Button>
-                    </div>
-                </div>
-            </header>
-
-            <nav className="border-b border-white/70 bg-white/70 backdrop-blur-xl">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-wrap gap-2 py-3">
-                        {(["dashboard", "payments", "documents", "dossier"] as View[]).map((v) => (
-                            <button
-                                key={v}
-                                onClick={() => setView(v)}
-                                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                                    view === v
-                                        ? "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-[0_12px_28px_rgba(239,68,68,0.28)]"
-                                        : "bg-white/70 text-slate-500 hover:text-slate-800"
-                                }`}
+        <StudentShell
+            userName={user.name}
+            view={view}
+            onChangeView={(v) => setView(v)}
+            unreadCount={unreadCount}
+            onLogout={onLogout}
+            statusPill={statusPill}
+        >
+            {view === "dashboard" && (
+                <div className="space-y-6">
+                    <SectionHeader
+                        eyebrow={t("dashboard.overview")}
+                        title={t("dashboard.mySpace")}
+                        subtitle={t("dashboard.followPayments")}
+                        right={
+                            <Button
+                                className="rounded-2xl bg-slate-950 text-white hover:bg-slate-800"
+                                onClick={() => setView(nextAction.cta.view)}
                             >
-                                {v === "dashboard"
-                                    ? t("portal.nav.dashboard")
-                                    : v === "payments"
-                                      ? t("portal.nav.payments")
-                                      : v === "documents"
-                                        ? t("portal.nav.documents")
-                                        : t("portal.nav.dossier")}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </nav>
+                                {nextAction.cta.label}
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        }
+                    />
 
-            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                {view === "dashboard" && (
-                    <div className="space-y-6">
-                        <div className="joda-surface">
-                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                                {t("dashboard.overview")}
-                            </p>
-                            <h2 className="text-2xl font-bold text-slate-900">{t("dashboard.mySpace")}</h2>
-                            <p className="mt-1 text-sm text-slate-500">
-                                {t("dashboard.followPayments")}
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                            <Card className="joda-surface border-0 shadow-none">
-                                <CardHeader>
-                                    <CardTitle className="text-sm">{t("payments.title")}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-2xl font-bold">{payments.length}</p>
-                                    <p className="text-xs text-slate-500">{t("dashboard.totalPayments")}</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="joda-surface border-0 shadow-none">
-                                <CardHeader>
-                                    <CardTitle className="text-sm">{t("documents.title")}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-2xl font-bold">{documents.length}</p>
-                                    <p className="text-xs text-slate-500">{t("dashboard.uploadedDocuments")}</p>
-                                </CardContent>
-                            </Card>
-                            <button
-                                className="joda-surface w-full rounded-xl text-left transition-shadow hover:shadow-md"
-                                onClick={() => setView("dossier")}
-                            >
-                                <div className="p-6">
-                                    <p className="mb-2 text-sm font-medium text-slate-700">{t("dossier.fileStatus")}</p>
-                                    <Badge className={STATUS_COLORS[dossier?.status || "en_attente"]}>
-                                        {t(`status.${dossier?.status || "pending"}`)}
-                                    </Badge>
-                                    <p className="mt-3 text-xs text-slate-400">{t("dashboard.seeDetails")}</p>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {view === "payments" && (
-                    <div className="space-y-6">
-                        <Card className="joda-surface border-0 shadow-none">
-                            <CardHeader>
-                                <CardTitle>{t("payments.title")}</CardTitle>
-                                <p className="text-sm text-slate-500">
-                                    {t("payments.description")}
+                    <div className={`student-surface-soft rounded-[2rem] p-5 ring-1 ${toneStyles.ring}`}>
+                        <div className="flex items-start gap-4">
+                            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${toneStyles.bg}`}>
+                                {toneStyles.icon}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-950 dark:text-white">Prochaine action</p>
+                                <p className="mt-1 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                                    {nextAction.title}
                                 </p>
-                            </CardHeader>
-                            <CardContent>
+                                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{nextAction.detail}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <button
+                            type="button"
+                            className="student-surface rounded-[2rem] p-6 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                            onClick={() => setView("payments")}
+                        >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t("payments.title")}</p>
+                            <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                                {unpaid.length}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                                {unpaid.length > 0 ? "paiement(s) à traiter" : "aucun paiement en attente"}
+                            </p>
+                        </button>
+
+                        <button
+                            type="button"
+                            className="student-surface rounded-[2rem] p-6 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                            onClick={() => setView("documents")}
+                        >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t("documents.title")}</p>
+                            <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                                {documents.length}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                                {pendingDocs.length > 0 ? `${pendingDocs.length} à vérifier` : "tout est en ordre"}
+                            </p>
+                        </button>
+
+                        <button
+                            type="button"
+                            className="student-surface rounded-[2rem] p-6 text-left transition-transform duration-200 hover:-translate-y-0.5"
+                            onClick={() => setView("dossier")}
+                        >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t("dossier.title")}</p>
+                            <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                                {dossierStatusLabel ? dossierStatusLabel : t("dossier.noFile")}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                                {dossier ? "Suivre l’avancement étape par étape" : "Créer un dossier pour commencer"}
+                            </p>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {view === "payments" && (
+                    <div className="space-y-6">
+                        <SectionHeader
+                            eyebrow="Finance"
+                            title={t("payments.title")}
+                            subtitle={t("payments.description")}
+                        />
+                        <Card className="student-surface rounded-[2rem] border-0 shadow-none">
+                            <CardContent className="p-0 pt-6">
                                 <PaymentOverview
                                     choix={studentChoix}
                                     langue={studentLangue}
@@ -410,7 +461,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </Card>
 
                         {payments.length > 0 && (
-                            <Card className="joda-surface border-0 shadow-none">
+                            <Card className="student-surface rounded-[2rem] border-0 shadow-none">
                                 <CardHeader>
                                     <CardTitle className="text-base">{t("payments.paymentHistory")}</CardTitle>
                                 </CardHeader>
@@ -419,7 +470,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         {payments.map((payment) => (
                                             <div
                                                 key={payment.id}
-                                                className="joda-surface-muted flex w-full flex-col gap-3 rounded-xl p-3"
+                                                className="student-surface-soft flex w-full flex-col gap-3 rounded-2xl p-3"
                                             >
                                                 <button
                                                     className="flex w-full items-center justify-between gap-3 text-left"
@@ -466,29 +517,36 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     </div>
                 )}
 
-                {view === "documents" && (
+            {view === "documents" && (
+                <div className="space-y-6">
+                    <SectionHeader
+                        eyebrow="Dossier"
+                        title={t("documents.title")}
+                        subtitle="Ajoute des fichiers propres et lisibles: PDF ou image. Nous te notifierons dès validation."
+                    />
                     <DocumentUpload studentId={studentId} onDocumentUploaded={load} />
-                )}
+                </div>
+            )}
 
-                {view === "dossier" && (
+            {view === "dossier" && (
                     <div className="space-y-6">
-                        <div className="joda-surface">
-                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">{t("dossier.title")}</p>
-                            <h2 className="text-2xl font-bold text-slate-900">{t("dossier.subtitle")}</h2>
-                            <p className="mt-1 text-sm text-slate-500">
-                                {t("dossier.description")}
-                            </p>
-                        </div>
+                        <SectionHeader
+                            eyebrow={t("dossier.title")}
+                            title={t("dossier.subtitle")}
+                            subtitle={t("dossier.description")}
+                        />
                         {dossier ? (
                             <>
-                                <Card className="joda-surface border-0 shadow-none">
+                                <Card className="student-surface rounded-[2rem] border-0 shadow-none">
                                     <CardHeader>
                                         <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="flex items-center justify-between border-b pb-3">
                                             <span className="text-sm text-slate-500">{t("dossier.currentStep")}</span>
-                                            <Badge className={STATUS_COLORS[dossier.status]}>{t(`status.${dossier.status}`)}</Badge>
+                                            <Badge className={STATUS_COLORS[dossier.status]}>
+                                                {t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })}
+                                            </Badge>
                                         </div>
                                         {universityName && (
                                             <div className="flex items-center justify-between border-b pb-3">
@@ -505,8 +563,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     </CardContent>
                                 </Card>
 
-                                {dossier.notes_internes && (
-                                    <Card className="joda-surface border-0 shadow-none">
+                                {dossier.notes_internes ? (
+                                    <Card className="student-surface rounded-[2rem] border-0 shadow-none">
                                         <CardHeader>
                                             <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
                                         </CardHeader>
@@ -514,9 +572,9 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                             <p className="text-sm text-slate-700 leading-relaxed">{dossier.notes_internes}</p>
                                         </CardContent>
                                     </Card>
-                                )}
+                                ) : null}
 
-                                <Card className="joda-surface border-0 shadow-none">
+                                <Card className="student-surface rounded-[2rem] border-0 shadow-none">
                                     <CardHeader>
                                         <CardTitle className="text-base">{t("dossier.steps")}</CardTitle>
                                     </CardHeader>
@@ -577,32 +635,30 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 </Card>
                             </>
                         ) : (
-                            <Card className="joda-surface border-0 shadow-none">
-                                <CardContent>
-                                    <p className="py-8 text-center text-slate-400">{t("dossier.noFile")}</p>
-                                </CardContent>
-                            </Card>
+                            <EmptyState
+                                title={t("dossier.noFile")}
+                                description="Dès qu’un agent crée ton dossier, tu verras ici les étapes, les retours et la prochaine action."
+                            />
                         )}
                     </div>
                 )}
 
-                {view === "notifications" && (
+            {view === "notifications" && (
                     <StudentNotifications
                         user={user}
                         onBack={() => { setView("dashboard"); void load(); }}
                     />
                 )}
-            </main>
-        </div>
+        </StudentShell>
 
         {/* Modal paiement étudiant */}
         {declareModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+                <div className="w-full max-w-sm rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-slate-950 sm:rounded-3xl">
                     <div className="mb-4 flex items-start justify-between">
                         <div>
-                            <h3 className="text-lg font-semibold text-slate-900">{t("payments.makePayment")}</h3>
-                            <p className="mt-0.5 text-sm text-slate-500">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t("payments.makePayment")}</h3>
+                            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-300">
                                 {getPaymentTypeLabel(declareModal.type)} — {declareModal.label}
                             </p>
                         </div>
@@ -611,11 +667,11 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </button>
                     </div>
 
-                    <div className="mb-4 space-y-3 text-sm">
+                    <div className="mb-4 max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
                         {/* Montant attendu */}
-                        <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                            <span className="text-slate-500">{t("payments.expectedAmount")}</span>
-                            <span className="font-bold text-slate-800">{formatMontant(declareModal.montantTranche)}</span>
+                        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+                            <span className="text-slate-500 dark:text-slate-300">{t("payments.expectedAmount")}</span>
+                            <span className="font-bold text-slate-800 dark:text-white">{formatMontant(declareModal.montantTranche)}</span>
                         </div>
 
                         {/* Mode de paiement */}
@@ -652,7 +708,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     max={declareModal.montantTranche}
                                     value={montantAvance}
                                     onChange={e => setMontantAvance(e.target.value)}
-                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-red-400 focus:outline-none"
+                                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-red-400 focus:outline-none dark:border-white/10 dark:bg-white/5"
                                     placeholder={t("payments.amountPaid")}
                                 />
                             </div>
@@ -669,9 +725,9 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 className="hidden"
                             />
                             {proofDataUrl ? (
-                                <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
-                                    <Upload className="h-4 w-4 text-green-600" />
-                                    <span className="flex-1 text-xs text-green-700">{t("payments.fileAttached")}</span>
+                                <div className="flex items-center gap-2 rounded-2xl border border-green-200 bg-green-50 px-3 py-2 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                                    <Upload className="h-4 w-4 text-green-700 dark:text-emerald-200" />
+                                    <span className="flex-1 text-xs text-green-700 dark:text-emerald-200">{t("payments.fileAttached")}</span>
                                     <button
                                         onClick={() => { setProofDataUrl(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
                                         className="text-slate-400 hover:text-slate-600"
@@ -682,7 +738,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             ) : (
                                 <button
                                     onClick={() => proofInputRef.current?.click()}
-                                    className="flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-xs text-slate-500 transition-colors hover:border-red-300 hover:text-red-600"
+                                    className="flex w-full items-center gap-2 rounded-2xl border border-dashed border-slate-300 px-3 py-2.5 text-xs text-slate-500 transition-colors hover:border-red-300 hover:text-red-600 dark:border-white/15 dark:text-slate-300"
                                 >
                                     <Upload className="h-4 w-4" />
                                     {t("payments.uploadReceipt")}
@@ -691,16 +747,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </div>
                     </div>
 
-                    <p className="mb-4 text-xs text-slate-400">
+                    <p className="mb-4 text-xs text-slate-400 dark:text-slate-400">
                         {t("payments.confirmMessage")}
                     </p>
 
                     <div className="flex gap-3">
-                        <Button variant="outline" className="flex-1" onClick={() => setDeclareModal(null)} disabled={declaring}>
+                        <Button variant="outline" className="flex-1 rounded-2xl" onClick={() => setDeclareModal(null)} disabled={declaring}>
                             {t("payments.cancel")}
                         </Button>
                         <Button
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                            className="flex-1 rounded-2xl bg-red-600 text-white hover:bg-red-700"
                             onClick={handleDeclarePayment}
                             disabled={declaring}
                         >
@@ -713,13 +769,13 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
         {/* Modal détails paiement étudiant */}
         {detailPayment && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4">
+                <div className="w-full max-w-sm rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-slate-950 sm:rounded-3xl">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">{t("payments.detailsTitle")}</h3>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t("payments.detailsTitle")}</h3>
                         <button onClick={() => setDetailPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
                     </div>
-                    <div className="space-y-3 text-sm">
+                    <div className="max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
                         <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.type")}</span><span className="font-medium capitalize">{getPaymentTypeLabel(detailPayment.type)}</span></div>
                         <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.amount")}</span><span className="font-bold text-red-600">{formatMontant(detailPayment.montant)}</span></div>
                         <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("payments.status")}</span>
@@ -732,12 +788,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         {detailPayment.status === "paye" && studentInfo && (
                             <button
                                 onClick={() => downloadReceipt(detailPayment as any, studentInfo)}
-                                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                                className="rounded-2xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
                             >
                                 {t("payments.downloadReceipt")}
                             </button>
                         )}
-                        <button onClick={() => setDetailPayment(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600">{t("common.close")}</button>
+                        <button onClick={() => setDetailPayment(null)} className="rounded-2xl border px-3 py-2 text-xs font-semibold text-slate-600 dark:border-white/10 dark:text-slate-200">{t("common.close")}</button>
                     </div>
                 </div>
             </div>

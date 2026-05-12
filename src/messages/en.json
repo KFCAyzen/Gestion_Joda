@@ -441,9 +441,10 @@
       "fileStatus": "File status",
       "seeDetails": "See details →"
     },
-    "payments": {
-      "title": "Payment Management",
-      "scholarship": "Scholarship Procedure",
+     "payments": {
+       "title": "Payment Management",
+       "description": "Manage your payments, upload receipts, and view payment history.",
+       "scholarship": "Scholarship Procedure",
       "mandarin": "Mandarin Course",
       "english": "English Course",
       "amount": "Amount",

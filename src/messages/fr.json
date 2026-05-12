@@ -441,9 +441,10 @@
       "fileStatus": "Statut dossier",
       "seeDetails": "Voir les détails →"
     },
-    "payments": {
-      "title": "Gestion des Paiements",
-      "scholarship": "Procédure Bourse",
+     "payments": {
+       "title": "Gestion des Paiements",
+       "description": "Gérez vos paiements, téléchargez les reçus et consultez l'historique.",
+       "scholarship": "Procédure Bourse",
       "mandarin": "Cours de Mandarin",
       "english": "Cours d'Anglais",
       "amount": "Montant",

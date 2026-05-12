@@ -206,7 +206,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
     return (
         <div className="space-y-6">
             {/* Info sur la compression */}
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <div className="student-surface-soft rounded-[2rem] px-5 py-4 text-sm text-slate-700 dark:text-slate-200">
                 <p className="font-medium">Informations importantes :</p>
                 <ul className="mt-2 ml-4 list-disc space-y-1 text-xs">
                     <li>Taille maximale par fichier : <strong>{FILE_LIMITS.MAX_FILE_SIZE_MB} MB</strong></li>
@@ -216,21 +216,21 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             </div>
 
             {/* Barre de progression */}
-            <Card className="joda-surface border-0 shadow-none">
+            <Card className="student-surface rounded-[2rem] border-0 shadow-none">
                 <CardContent className="pt-6">
                     <div className="mb-2 flex items-center justify-between">
-                        <p className="text-sm font-medium text-slate-700">Complétion du dossier</p>
-                        <span className="text-sm font-bold text-slate-900">{pct}%</span>
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Complétion du dossier</p>
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">{pct}%</span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full bg-slate-200">
+                    <div className="h-2.5 w-full rounded-full bg-slate-200/80 dark:bg-white/10">
                         <div
                             className="h-2.5 rounded-full bg-gradient-to-r from-red-500 to-orange-400 transition-all duration-500"
                             style={{ width: `${pct}%` }}
                         />
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">{completion}/{total} documents obligatoires uploadés</p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">{completion}/{total} documents obligatoires uploadés</p>
                     {pct === 100 && (
-                        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+                        <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
                             Tous les documents ont été soumis. Votre dossier est en cours de traitement.
                         </div>
                     )}
