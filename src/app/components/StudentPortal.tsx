@@ -5,6 +5,7 @@ import { CreditCard, Upload, X, ArrowRight, CheckCircle2, AlertTriangle } from "
 import { createClient } from "../lib/supabase/client";
 import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
+import { StudentMessaging } from "./student/StudentMessaging";
 import DocumentUpload from "./DocumentUpload";
 import PaymentOverview from "./PaymentOverview";
 import { downloadReceipt, type ReceiptStudent } from "../utils/downloadReceipt";
@@ -161,6 +162,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
     const [showPasswordChange, setShowPasswordChange] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadMessages, setUnreadMessages] = useState(0);
     const [universityName, setUniversityName] = useState<string | null>(null);
     const [declareModal, setDeclareModal] = useState<{
         paymentId: string | null;
@@ -419,6 +421,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             view={view}
             onChangeView={(v) => setView(v)}
             unreadCount={unreadCount}
+            unreadMessages={unreadMessages}
             onLogout={onLogout}
             statusPill={statusPill}
         >
@@ -678,6 +681,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     <StudentNotifications
                         user={user}
                         onBack={() => { setView("dashboard"); void load(); }}
+                    />
+                )}
+
+            {view === "messaging" && (
+                    <StudentMessaging
+                        userId={user.id}
+                        onBack={() => setView("dashboard")}
+                        onUnreadChange={setUnreadMessages}
                     />
                 )}
         </StudentShell>

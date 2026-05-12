@@ -1,2 +1,2 @@
-export type StudentView = "dashboard" | "payments" | "documents" | "dossier" | "notifications";
+export type StudentView = "dashboard" | "payments" | "documents" | "dossier" | "notifications" | "messaging";
 
