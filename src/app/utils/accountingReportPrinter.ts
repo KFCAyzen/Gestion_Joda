@@ -48,16 +48,16 @@ function buildJournalRows(ops: AccountingOperation[], locale: string, scope: Rep
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map((op, idx) => {
       runningBalance += op.type === "entree" ? op.amount : -op.amount;
-      const debit = op.type === "entree" ? formatCurrency(op.amount, locale) : "—";
-      const credit = op.type === "sortie" ? formatCurrency(op.amount, locale) : "—";
+      const credit = op.type === "entree" ? formatCurrency(op.amount, locale) : "—";
+      const debit = op.type === "sortie" ? formatCurrency(op.amount, locale) : "—";
       return `
         <tr class="${op.type === "entree" ? "row-entree" : "row-sortie"}">
           <td class="mono">${String(idx + 1).padStart(3, "0")}</td>
           <td>${escapeHtml(formatDate(op.date, locale))}</td>
           <td>${escapeHtml(op.description)}</td>
           <td class="mono">${escapeHtml(op.category)}</td>
-          <td class="mono right amount-entree">${escapeHtml(debit)}</td>
-          <td class="mono right amount-sortie">${escapeHtml(credit)}</td>
+          <td class="mono right amount-entree">${escapeHtml(credit)}</td>
+          <td class="mono right amount-sortie">${escapeHtml(debit)}</td>
           <td class="mono right">${escapeHtml(formatCurrency(runningBalance, locale))}</td>
         </tr>
       `.trim();
@@ -87,8 +87,8 @@ export async function printAccountingHtmlReport(params: {
     .replaceAll("{{PERIODE_DEBUT}}", escapeHtml(formatDate(params.period.start, locale)))
     .replaceAll("{{PERIODE_FIN}}", escapeHtml(formatDate(params.period.end, locale)))
     .replaceAll("{{STATUT}}", escapeHtml(scopeLabel))
-    .replaceAll("{{TOTAL_DEBITS}}", escapeHtml(formatCurrency(params.summary.totalEntrees, locale)))
-    .replaceAll("{{TOTAL_CREDITS}}", escapeHtml(formatCurrency(params.summary.totalSorties, locale)))
+    .replaceAll("{{TOTAL_DEBITS}}", escapeHtml(formatCurrency(params.summary.totalSorties, locale)))
+    .replaceAll("{{TOTAL_CREDITS}}", escapeHtml(formatCurrency(params.summary.totalEntrees, locale)))
     .replaceAll("{{SOLDE_FINAL}}", escapeHtml(formatCurrency(params.summary.balance, locale)))
     .replaceAll("{{JOURNAL_ROWS}}", journalRows);
 
