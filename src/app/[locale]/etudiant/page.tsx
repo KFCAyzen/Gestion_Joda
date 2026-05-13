@@ -21,8 +21,8 @@ function StudentPortalPage() {
 
     if (loading || !user) {
         return (
-            <div className="fixed inset-0 bg-white flex items-center justify-center">
-                <div className="text-slate-500 text-base">Chargement...</div>
+            <div className="student-shell fixed inset-0 flex items-center justify-center">
+                <div className="text-[var(--student-fg-muted)] text-base">Chargement...</div>
             </div>
         );
     }

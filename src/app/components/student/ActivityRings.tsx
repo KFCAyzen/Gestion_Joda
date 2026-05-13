@@ -108,13 +108,13 @@
        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
          <defs>
            <filter id="ringGlowMove" x="-50%" y="-50%" width="200%" height="200%">
-             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(255,45,85,0.55)" />
+             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(220,38,38,0.55)" />
            </filter>
            <filter id="ringGlowExercise" x="-50%" y="-50%" width="200%" height="200%">
-             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(48,209,88,0.45)" />
+             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(185,28,28,0.45)" />
            </filter>
            <filter id="ringGlowStand" x="-50%" y="-50%" width="200%" height="200%">
-             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(64,156,255,0.40)" />
+             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(127,29,29,0.40)" />
            </filter>
          </defs>
  
@@ -148,12 +148,12 @@
  
        <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
          {labelTop ? (
-           <div className="text-[11px] font-semibold uppercase tracking-[0.34em] text-white/55">
+           <div className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[var(--student-fg-muted)]">
              {labelTop}
            </div>
          ) : null}
          {labelBottom ? (
-           <div className="mt-1 text-sm font-semibold text-white">{labelBottom}</div>
+           <div className="mt-1 text-sm font-semibold text-[var(--student-fg)]">{labelBottom}</div>
          ) : null}
        </div>
      </div>

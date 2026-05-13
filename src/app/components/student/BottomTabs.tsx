@@ -43,8 +43,8 @@ export function BottomTabs({
                 "relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-all duration-200",
                 "student-focus-ring",
                 active
-                  ? "text-white"
-                  : "text-white/55 hover:text-white/85",
+                  ? "text-[var(--student-fg)]"
+                  : "text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]",
               ].join(" ")}
               aria-current={active ? "page" : undefined}
             >
@@ -52,8 +52,8 @@ export function BottomTabs({
                 className={[
                   "flex h-10 w-10 items-center justify-center rounded-2xl border transition-all duration-200",
                   active
-                    ? "border-white/18 bg-white/8 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
-                    : "border-white/10 bg-white/5",
+                    ? "border-[rgba(220,38,38,0.25)] bg-[rgba(220,38,38,0.08)] shadow-[0_8px_24px_rgba(220,38,38,0.15)] dark:border-white/18 dark:bg-white/8 dark:shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
+                    : "border-[rgba(220,38,38,0.10)] bg-[rgba(220,38,38,0.04)] dark:border-white/10 dark:bg-white/5",
                 ].join(" ")}
               >
                 <Icon className={iconCls} />
@@ -61,12 +61,12 @@ export function BottomTabs({
               <span className="truncate">{label}</span>
               {active ? (
                 <span
-                  className="absolute inset-x-5 top-1 h-1 rounded-full bg-[linear-gradient(90deg,var(--student-ring-move),var(--student-ring-exercise),var(--student-ring-stand))] opacity-90 shadow-[0_10px_26px_rgba(64,156,255,0.16)]"
+                  className="absolute inset-x-5 top-1 h-1 rounded-full bg-[var(--student-ring-move)] opacity-90 shadow-[0_6px_16px_rgba(220,38,38,0.30)]"
                   aria-hidden="true"
                 />
               ) : null}
               {id === "messaging" && (notificationsBadge ?? 0) > 0 && (
-                <span className="absolute right-4 top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--student-ring-move),#ff453a)] px-1 text-[10px] font-bold text-white shadow-[0_10px_26px_rgba(255,45,85,0.45)]">
+                <span className="absolute right-4 top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--student-ring-move)] px-1 text-[10px] font-bold text-white shadow-[0_6px_16px_rgba(220,38,38,0.40)]">
                   {notificationsBadge! > 99 ? "99+" : notificationsBadge}
                 </span>
               )}

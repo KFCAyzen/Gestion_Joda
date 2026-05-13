@@ -86,35 +86,35 @@ function mapDossierStatusToI18nKey(status: string) {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-    paye: "border-white/12 bg-white/5 text-[var(--student-ring-exercise)]",
-    attente: "border-white/12 bg-white/5 text-white/75",
-    retard: "border-white/12 bg-white/5 text-[var(--student-ring-move)]",
-    valide: "border-white/12 bg-white/5 text-[var(--student-ring-exercise)]",
-    en_attente: "border-white/12 bg-white/5 text-white/75",
-    non_conforme: "border-white/12 bg-white/5 text-[var(--student-ring-move)]",
+    paye: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]",
+    attente: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg-muted)]",
+    retard: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]",
+    valide: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]",
+    en_attente: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg-muted)]",
+    non_conforme: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]",
     document_recu: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
     en_cours: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
-    admission_validee: "border-white/12 bg-white/5 text-[var(--student-ring-exercise)]",
-    admission_rejetee: "border-white/12 bg-white/5 text-[var(--student-ring-move)]",
+    admission_validee: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]",
+    admission_rejetee: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]",
     visa_en_cours: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
-    termine: "border-white/12 bg-white/5 text-white/70",
+    termine: "border-[rgba(220,38,38,0.12)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)]",
 };
 
-/** Badges onglet Paiements — même hiérarchie que STATUS_COLORS, accent néon lime (capture Fitness Training). */
+/** Badges onglet Paiements */
 const PAYMENTS_TAB_BADGE: Record<string, string> = {
-    paye: "border-[rgba(196,255,51,0.28)] bg-[rgba(196,255,51,0.07)] text-[var(--student-neon-lime)]",
-    attente: "border-white/12 bg-black/30 text-white/75",
+    paye: "border-[rgba(220,38,38,0.28)] bg-[rgba(220,38,38,0.07)] text-[var(--student-ring-exercise)]",
+    attente: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg-muted)]",
     retard: "border-[rgba(255,65,85,0.25)] bg-[rgba(255,65,85,0.08)] text-[var(--student-ring-move)]",
-    valide: "border-[rgba(196,255,51,0.22)] bg-[rgba(196,255,51,0.06)] text-[var(--student-neon-lime)]",
-    en_attente: "border-white/12 bg-black/30 text-white/75",
+    valide: "border-[rgba(220,38,38,0.22)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-exercise)]",
+    en_attente: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg-muted)]",
     non_conforme: "border-[rgba(255,65,85,0.22)] bg-[rgba(255,65,85,0.07)] text-[var(--student-ring-move)]",
-    en_validation: "border-white/12 bg-black/30 text-[var(--student-ring-stand)]",
-    document_recu: "border-white/12 bg-black/30 text-[var(--student-ring-stand)]",
-    en_cours: "border-white/12 bg-black/30 text-[var(--student-ring-stand)]",
-    admission_validee: "border-[rgba(196,255,51,0.2)] bg-[rgba(196,255,51,0.06)] text-[var(--student-neon-lime)]",
+    en_validation: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-stand)]",
+    document_recu: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-stand)]",
+    en_cours: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-stand)]",
+    admission_validee: "border-[rgba(220,38,38,0.20)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-exercise)]",
     admission_rejetee: "border-[rgba(255,65,85,0.22)] bg-[rgba(255,65,85,0.07)] text-[var(--student-ring-move)]",
-    visa_en_cours: "border-white/12 bg-black/30 text-[var(--student-ring-stand)]",
-    termine: "border-white/12 bg-black/30 text-white/70",
+    visa_en_cours: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-stand)]",
+    termine: "border-[rgba(220,38,38,0.12)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)]",
 };
 
 /** Index dans la roadmap horizontale (0–7), un cran par statut métier */
@@ -429,10 +429,10 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
 
     const toneStyles = nextAction.tone === "danger"
-        ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-white/12 bg-white/5 text-[var(--student-ring-move)]", ring: "ring-white/10" }
+        ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]", ring: "ring-white/10" }
         : nextAction.tone === "warn"
-          ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-white/12 bg-white/5 text-white/80", ring: "ring-white/10" }
-          : { icon: <CheckCircle2 className="h-5 w-5" />, bg: "border-white/12 bg-white/5 text-[var(--student-ring-exercise)]", ring: "ring-white/10" };
+          ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)]", ring: "ring-white/10" }
+          : { icon: <CheckCircle2 className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]", ring: "ring-white/10" };
 
     return (
         <>
@@ -478,15 +478,15 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         {toneStyles.icon}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/55">Prochaine action</p>
-                                        <p className="mt-1 text-base font-semibold tracking-tight text-white">
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--student-fg-muted)]">Prochaine action</p>
+                                        <p className="mt-1 text-base font-semibold tracking-tight text-[var(--student-fg)]">
                                             {nextAction.title}
                                         </p>
-                                        <p className="mt-1 text-sm text-white/70">{nextAction.detail}</p>
+                                        <p className="mt-1 text-sm text-[var(--student-fg-muted)]">{nextAction.detail}</p>
                                     </div>
                                 </div>
                                 <Button
-                                    className="mt-4 w-full rounded-2xl border border-white/12 bg-[linear-gradient(135deg,rgba(255,45,85,0.35),rgba(64,156,255,0.18))] text-white shadow-[0_16px_44px_rgba(0,0,0,0.35)] hover:bg-[linear-gradient(135deg,rgba(255,45,85,0.42),rgba(64,156,255,0.20))] sm:w-auto sm:self-start"
+                                    className="mt-4 w-full rounded-2xl border border-[rgba(220,38,38,0.25)] bg-[rgba(220,38,38,0.08)] text-[var(--student-ring-move)] shadow-[0_8px_24px_rgba(220,38,38,0.15)] hover:bg-[rgba(220,38,38,0.14)] dark:border-white/12 dark:bg-[linear-gradient(135deg,rgba(220,38,38,0.35),rgba(185,28,28,0.25))] dark:text-white dark:shadow-[0_16px_44px_rgba(0,0,0,0.35)] dark:hover:bg-[linear-gradient(135deg,rgba(220,38,38,0.45),rgba(185,28,28,0.32))] sm:w-auto sm:self-start"
                                     onClick={() => setView(nextAction.cta.view)}
                                 >
                                     {nextAction.cta.label}
@@ -500,12 +500,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
                                     onClick={() => setView("payments")}
                                 >
-                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/55">{t("payments.title")}</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("payments.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">
-                                        <p className="text-2xl font-semibold tracking-tight text-white">{unpaid.length}</p>
-                                        <p className="text-xs font-semibold text-white/55">{paymentsProgressPct}%</p>
+                                        <p className="text-2xl font-semibold tracking-tight text-[var(--student-fg)]">{unpaid.length}</p>
+                                        <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{paymentsProgressPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.10)] dark:bg-white/10">
                                         <div className="h-1.5 rounded-full bg-[var(--student-ring-move)]" style={{ width: `${Math.min(100, paymentsProgressPct)}%` }} />
                                     </div>
                                 </button>
@@ -515,12 +515,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
                                     onClick={() => setView("documents")}
                                 >
-                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/55">{t("documents.title")}</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("documents.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">
-                                        <p className="text-2xl font-semibold tracking-tight text-white">{pendingDocs.length}</p>
-                                        <p className="text-xs font-semibold text-white/55">{docsProgressPct}%</p>
+                                        <p className="text-2xl font-semibold tracking-tight text-[var(--student-fg)]">{pendingDocs.length}</p>
+                                        <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{docsProgressPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.10)] dark:bg-white/10">
                                         <div className="h-1.5 rounded-full bg-[var(--student-ring-exercise)]" style={{ width: `${Math.min(100, docsProgressPct)}%` }} />
                                     </div>
                                 </button>
@@ -530,12 +530,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5 sm:col-span-2"
                                     onClick={() => setView("dossier")}
                                 >
-                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/55">{t("dossier.title")}</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("dossier.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">
-                                        <p className="truncate text-base font-semibold tracking-tight text-white">{dossierStatusLabel ? dossierStatusLabel : t("dossier.noFile")}</p>
-                                        <p className="text-xs font-semibold text-white/55">{dossierStepPct}%</p>
+                                        <p className="truncate text-base font-semibold tracking-tight text-[var(--student-fg)]">{dossierStatusLabel ? dossierStatusLabel : t("dossier.noFile")}</p>
+                                        <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{dossierStepPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.10)] dark:bg-white/10">
                                         <div className="h-1.5 rounded-full bg-[var(--student-ring-stand)]" style={{ width: `${Math.min(100, dossierStepPct)}%` }} />
                                     </div>
                                 </button>
@@ -572,7 +572,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         {payments.length > 0 && (
                             <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none">
                                 <CardHeader>
-                                    <CardTitle className="text-base font-semibold tracking-tight text-white">{t("payments.paymentHistory")}</CardTitle>
+                                    <CardTitle className="text-base font-semibold tracking-tight text-[var(--student-fg)]">{t("payments.paymentHistory")}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -586,16 +586,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                     onClick={() => setDetailPayment(payment)}
                                                 >
                                                     <div className="min-w-0">
-                                                        <p className="truncate text-sm font-medium">{getPaymentTypeLabel(payment.type)}</p>
+                                                        <p className="truncate text-sm font-medium text-[var(--student-fg)]">{getPaymentTypeLabel(payment.type)}</p>
                                                         {payment.tranche && (
-                                                            <p className="text-xs text-white/60">{t("payments.installment", { installment: payment.tranche })}</p>
+                                                            <p className="text-xs text-[var(--student-fg-muted)]">{t("payments.installment", { installment: payment.tranche })}</p>
                                                         )}
-                                                        <p className="text-xs text-white/50">
+                                                        <p className="text-xs text-[var(--student-fg-muted)]">
                                                             {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString(locale) : "-"}
                                                         </p>
                                                     </div>
                                                     <div className="shrink-0 text-right">
-                                                        <p className="text-sm font-semibold text-white">{formatMontant(payment.montant)}</p>
+                                                        <p className="text-sm font-semibold text-[var(--student-fg)]">{formatMontant(payment.montant)}</p>
                                                         <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[payment.status] ?? STATUS_COLORS[payment.status]}`}>{getPaymentStatusLabel(payment.status)}</Badge>
                                                     </div>
                                                 </button>
@@ -606,14 +606,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                             tranche: payment.tranche ?? 1,
                                                             montant: payment.montant,
                                                         })}
-                                                        className="student-focus-ring flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(196,255,51,0.35)] bg-[var(--student-neon-lime)] py-2.5 text-xs font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] transition-[transform,filter] hover:brightness-110 active:scale-[0.99]"
+                                                        className="student-focus-ring flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(220,38,38,0.35)] bg-[var(--student-neon-lime)] py-2.5 text-xs font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] transition-[transform,filter] hover:brightness-110 active:scale-[0.99]"
                                                     >
                                                         <CreditCard className="h-3.5 w-3.5" />
                                                         {t("payments.makePayment")}
                                                     </button>
                                                 )}
                                                 {payment.status === "en_validation" && (
-                                                    <span className="rounded-2xl border border-white/12 bg-white/5 py-2 text-center text-xs font-semibold text-[var(--student-ring-stand)]">
+                                                    <span className="rounded-2xl border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] py-2 text-center text-xs font-semibold text-[var(--student-ring-stand)]">
                                                         {t("payments.waitingValidation")}
                                                     </span>
                                                 )}
@@ -655,21 +655,21 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                 <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
                                             </CardHeader>
                                             <CardContent className="space-y-4">
-                                                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                                                    <span className="text-sm text-white/60">{t("dossier.currentStep")}</span>
+                                                <div className="flex items-center justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-3">
+                                                    <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.currentStep")}</span>
                                                     <Badge className={`rounded-full border ${STATUS_COLORS[dossier.status]}`}>
                                                         {t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })}
                                                     </Badge>
                                                 </div>
                                                 {universityName && (
-                                                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                                                        <span className="text-sm text-white/60">{t("dossier.university")}</span>
-                                                        <span className="text-sm font-medium text-white">{universityName}</span>
+                                                    <div className="flex items-center justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-3">
+                                                        <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.university")}</span>
+                                                        <span className="text-sm font-medium text-[var(--student-fg)]">{universityName}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-sm text-white/60">{t("dossier.applicationDate")}</span>
-                                                    <span className="text-sm font-medium text-white">
+                                                    <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.applicationDate")}</span>
+                                                    <span className="text-sm font-medium text-[var(--student-fg)]">
                                                         {new Date(dossier.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
                                                     </span>
                                                 </div>
@@ -682,7 +682,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                     <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
                                                 </CardHeader>
                                                 <CardContent>
-                                                    <p className="text-sm leading-relaxed text-white/75">{dossier.notes_internes}</p>
+                                                    <p className="text-sm leading-relaxed text-[var(--student-fg-muted)]">{dossier.notes_internes}</p>
                                                 </CardContent>
                                             </Card>
                                         ) : null}
@@ -752,21 +752,21 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 <div className="student-pay-modal-panel w-full max-w-sm rounded-t-3xl p-6 sm:rounded-3xl">
                     <div className="mb-4 flex items-start justify-between">
                         <div>
-                            <h3 className="text-lg font-semibold text-white">{t("payments.makePayment")}</h3>
-                            <p className="mt-0.5 text-sm text-white/60">
+                            <h3 className="text-lg font-semibold text-[var(--student-fg)]">{t("payments.makePayment")}</h3>
+                            <p className="mt-0.5 text-sm text-[var(--student-fg-muted)]">
                                 {getPaymentTypeLabel(declareModal.type)} — {declareModal.label}
                             </p>
                         </div>
-                        <button onClick={() => setDeclareModal(null)} className="student-focus-ring text-white/55 hover:text-white">
+                        <button onClick={() => setDeclareModal(null)} className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]">
                             <X className="h-5 w-5" />
                         </button>
                     </div>
 
                     <div className="mb-4 max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
                         {/* Montant attendu */}
-                        <div className="flex items-center justify-between rounded-2xl border border-white/12 bg-white/5 px-4 py-3">
-                            <span className="text-white/60">{t("payments.expectedAmount")}</span>
-                            <span className="font-semibold text-white">{formatMontant(declareModal.montantTranche)}</span>
+                        <div className="flex items-center justify-between rounded-2xl border border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] dark:border-white/12 dark:bg-white/5 px-4 py-3">
+                            <span className="text-[var(--student-fg-muted)]">{t("payments.expectedAmount")}</span>
+                            <span className="font-semibold text-[var(--student-fg)]">{formatMontant(declareModal.montantTranche)}</span>
                         </div>
 
                         {/* Mode de paiement */}
@@ -775,8 +775,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 onClick={() => setPaymentMode("complet")}
                                     className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "complet"
-                                        ? "border-[rgba(196,255,51,0.35)] bg-[rgba(196,255,51,0.12)] text-[var(--student-neon-lime)]"
-                                        : "border-white/10 bg-black/35 text-white/65 hover:bg-white/[0.07]"
+                                        ? "border-[rgba(220,38,38,0.35)] bg-[rgba(220,38,38,0.12)] text-[var(--student-neon-lime)]"
+                                        : "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)] hover:bg-[rgba(220,38,38,0.08)] dark:border-white/10 dark:bg-black/35 dark:text-white/65 dark:hover:bg-white/[0.07]"
                                 }`}
                             >
                                 {t("payments.fullPayment")}
@@ -785,8 +785,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 onClick={() => setPaymentMode("avance")}
                                     className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "avance"
-                                        ? "border-[rgba(196,255,51,0.35)] bg-[rgba(196,255,51,0.12)] text-[var(--student-neon-lime)]"
-                                        : "border-white/10 bg-black/35 text-white/65 hover:bg-white/[0.07]"
+                                        ? "border-[rgba(220,38,38,0.35)] bg-[rgba(220,38,38,0.12)] text-[var(--student-neon-lime)]"
+                                        : "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)] hover:bg-[rgba(220,38,38,0.08)] dark:border-white/10 dark:bg-black/35 dark:text-white/65 dark:hover:bg-white/[0.07]"
                                 }`}
                             >
                                 {t("payments.deposit")}
@@ -796,14 +796,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         {/* Montant acompte */}
                         {paymentMode === "avance" && (
                             <div className="space-y-1">
-                                <p className="text-xs font-medium text-white/70">{t("payments.amountPaid")}</p>
+                                <p className="text-xs font-medium text-[var(--student-fg-muted)]">{t("payments.amountPaid")}</p>
                                 <input
                                     type="number"
                                     min={1}
                                     max={declareModal.montantTranche}
                                     value={montantAvance}
                                     onChange={e => setMontantAvance(e.target.value)}
-                                    className="student-focus-ring w-full rounded-2xl border border-white/12 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/35"
+                                    className="student-focus-ring w-full rounded-2xl border border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.04)] dark:border-white/12 dark:bg-white/5 px-3 py-2 text-sm text-[var(--student-fg)] placeholder:text-[var(--student-fg-muted)]"
                                     placeholder={t("payments.amountPaid")}
                                 />
                             </div>
@@ -811,7 +811,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
                         {/* Preuve */}
                         <div className="space-y-1.5">
-                            <p className="text-xs font-medium text-white/70">{t("payments.proofUpload")}</p>
+                            <p className="text-xs font-medium text-[var(--student-fg-muted)]">{t("payments.proofUpload")}</p>
                             <input
                                 ref={proofInputRef}
                                 type="file"
@@ -820,9 +820,9 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 className="hidden"
                             />
                             {proofDataUrl ? (
-                                <div className="flex items-center gap-2 rounded-2xl border border-white/12 bg-white/5 px-3 py-2">
+                                <div className="flex items-center gap-2 rounded-2xl border border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] dark:border-white/12 dark:bg-white/5 px-3 py-2">
                                     <Upload className="h-4 w-4 text-[var(--student-neon-lime)]" />
-                                    <span className="flex-1 text-xs text-white/80">{t("payments.fileAttached")}</span>
+                                    <span className="flex-1 text-xs text-[var(--student-fg)]">{t("payments.fileAttached")}</span>
                                     <button
                                         onClick={() => { setProofDataUrl(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
                                         className="student-focus-ring text-white/55 hover:text-white"
@@ -833,7 +833,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             ) : (
                                 <button
                                     onClick={() => proofInputRef.current?.click()}
-                                    className="student-focus-ring flex w-full items-center gap-2 rounded-2xl border border-dashed border-white/20 px-3 py-2.5 text-xs text-white/65 transition-colors hover:border-white/28 hover:text-white"
+                                    className="student-focus-ring flex w-full items-center gap-2 rounded-2xl border border-dashed border-[rgba(220,38,38,0.22)] dark:border-white/20 px-3 py-2.5 text-xs text-[var(--student-fg-muted)] transition-colors hover:border-[rgba(220,38,38,0.38)] hover:text-[var(--student-ring-move)] dark:hover:border-white/28 dark:hover:text-white"
                                 >
                                     <Upload className="h-4 w-4" />
                                     {t("payments.uploadReceipt")}
@@ -842,16 +842,16 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </div>
                     </div>
 
-                    <p className="mb-4 text-xs text-white/45">
+                    <p className="mb-4 text-xs text-[var(--student-fg-muted)]">
                         {t("payments.confirmMessage")}
                     </p>
 
                     <div className="flex gap-3">
-                        <Button variant="outline" className="student-chip flex-1 rounded-2xl border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white" onClick={() => setDeclareModal(null)} disabled={declaring}>
+                        <Button variant="outline" className="student-chip flex-1 rounded-2xl border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)] dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white" onClick={() => setDeclareModal(null)} disabled={declaring}>
                             {t("payments.cancel")}
                         </Button>
                         <Button
-                            className="flex-1 rounded-2xl border border-[rgba(196,255,51,0.4)] bg-[var(--student-neon-lime)] font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110 disabled:opacity-60"
+                            className="flex-1 rounded-2xl border border-[rgba(220,38,38,0.40)] bg-[var(--student-neon-lime)] font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110 disabled:opacity-60"
                             onClick={handleDeclarePayment}
                             disabled={declaring}
                         >
@@ -867,28 +867,28 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
                 <div className="student-pay-modal-panel w-full max-w-sm rounded-t-3xl p-6 sm:rounded-3xl">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-white">{t("payments.detailsTitle")}</h3>
-                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring text-white/55 hover:text-white text-xl">&times;</button>
+                        <h3 className="text-lg font-semibold text-[var(--student-fg)]">{t("payments.detailsTitle")}</h3>
+                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)] text-xl">&times;</button>
                     </div>
                     <div className="max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
-                        <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.type")}</span><span className="font-medium text-white capitalize">{getPaymentTypeLabel(detailPayment.type)}</span></div>
-                        <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.amount")}</span><span className="font-semibold text-white">{formatMontant(detailPayment.montant)}</span></div>
-                        <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.status")}</span>
+                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2"><span className="text-[var(--student-fg-muted)]">{t("payments.type")}</span><span className="font-medium text-[var(--student-fg)] capitalize">{getPaymentTypeLabel(detailPayment.type)}</span></div>
+                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2"><span className="text-[var(--student-fg-muted)]">{t("payments.amount")}</span><span className="font-semibold text-[var(--student-fg)]">{formatMontant(detailPayment.montant)}</span></div>
+                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2"><span className="text-[var(--student-fg-muted)]">{t("payments.status")}</span>
                             <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[detailPayment.status] ?? STATUS_COLORS[detailPayment.status]}`}>{getPaymentStatusLabel(detailPayment.status)}</Badge>
                         </div>
-                        <div className="flex justify-between border-b border-white/10 pb-2"><span className="text-white/60">{t("payments.dueDate")}</span><span className="font-medium text-white">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(locale) : "—"}</span></div>
-                        <div className="flex justify-between"><span className="text-white/60">{t("payments.paymentDate")}</span><span className="font-medium text-white">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(locale) : "—"}</span></div>
+                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2"><span className="text-[var(--student-fg-muted)]">{t("payments.dueDate")}</span><span className="font-medium text-[var(--student-fg)]">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(locale) : "—"}</span></div>
+                        <div className="flex justify-between"><span className="text-[var(--student-fg-muted)]">{t("payments.paymentDate")}</span><span className="font-medium text-[var(--student-fg)]">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(locale) : "—"}</span></div>
                     </div>
                     <div className="mt-5 flex gap-2">
                         {detailPayment.status === "paye" && studentInfo && (
                             <button
                                 onClick={() => downloadReceipt(detailPayment as any, studentInfo)}
-                                className="student-focus-ring rounded-2xl border border-[rgba(196,255,51,0.28)] bg-black/35 px-3 py-2 text-xs font-semibold text-[var(--student-neon-lime)] hover:bg-white/[0.06]"
+                                className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.28)] bg-[rgba(220,38,38,0.06)] px-3 py-2 text-xs font-semibold text-[var(--student-neon-lime)] hover:bg-[rgba(220,38,38,0.12)]"
                             >
                                 {t("payments.downloadReceipt")}
                             </button>
                         )}
-                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring rounded-2xl border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/10">{t("common.close")}</button>
+                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] px-3 py-2 text-xs font-semibold text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)] dark:border-white/12 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10">{t("common.close")}</button>
                     </div>
                 </div>
             </div>
