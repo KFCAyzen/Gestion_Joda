@@ -130,17 +130,22 @@ export default function StudentManagement() {
   *{box-sizing:border-box;margin:0;padding:0;}
   @page{size:A4;margin:0;}
   body{font-family:'Inter',sans-serif;font-size:13px;color:#0f172a;background:#fff;width:210mm;min-height:297mm;padding:0;}
-  .header{background:#0f172a;padding:28px 40px 24px;display:flex;align-items:center;justify-content:space-between;}
-  .brand{display:flex;align-items:center;gap:12px;}
-  .logo{width:40px;height:40px;background:#1e40af;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .logo svg{width:22px;height:22px;fill:#fff;}
-  .co-name{font-size:16px;font-weight:700;color:#fff;line-height:1.2;}
-  .co-sub{font-size:10px;color:#94a3b8;margin-top:2px;}
-  .doc-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;text-align:right;}
-  .doc-title{font-size:15px;font-weight:600;color:#fff;text-align:right;margin-top:3px;}
-  .id-band{background:#1e40af;padding:12px 40px;display:flex;align-items:center;justify-content:space-between;}
-  .id-name{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.01em;}
-  .id-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:#bfdbfe;text-align:right;line-height:1.8;}
+  /* ── Header identique au rapport comptable ── */
+  .header{background:#0f172a;padding:32px 40px 28px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:24px;}
+  .header-brand{display:flex;align-items:center;gap:16px;}
+  .brand-mark{width:46px;height:46px;background:#1e40af;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .brand-mark svg{width:26px;height:26px;fill:#fff;}
+  .brand-name{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.02em;line-height:1.2;}
+  .brand-sub{font-size:11px;color:#94a3b8;letter-spacing:.04em;margin-top:2px;}
+  .header-doc{text-align:right;}
+  .doc-type{font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px;}
+  .doc-title{font-size:16px;font-weight:600;color:#fff;line-height:1.2;}
+  .doc-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:#64748b;margin-top:6px;line-height:1.8;}
+  /* ── Bande étudiant (identique à la bande période) ── */
+  .id-band{background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:14px 40px;display:flex;align-items:center;justify-content:space-between;}
+  .id-name{font-size:18px;font-weight:700;color:#0f172a;letter-spacing:-.01em;}
+  .id-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:#1e40af;text-align:right;line-height:1.8;}
+  /* ── Corps ── */
   .body{padding:32px 40px 40px;}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
   .cell{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;}
@@ -148,23 +153,29 @@ export default function StudentManagement() {
   .cell-value{font-size:13px;font-weight:600;color:#0f172a;}
   .cell-sub{font-size:11px;color:#64748b;margin-top:2px;}
   .section-title{font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;font-weight:500;margin-bottom:12px;}
-  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;border:1px solid #e2e8f0;color:#475569;margin-right:6px;margin-bottom:4px;}
   .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;}
   .footer-text{font-family:'JetBrains Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;}
-  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.header,.id-band{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 </style>
 </head>
 <body>
   <div class="header">
-    <div class="brand">
-      <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 3L2 9l10 6 10-6-10-6zM2 15l10 6 10-6M2 12l10 6 10-6"/></svg></div>
-      <div><div class="co-name">NIU JODA COMPANY</div><div class="co-sub">Gestion de Bourses &amp; Cours de Langue — Douala</div></div>
+    <div class="header-brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3L2 9l10 6 10-6-10-6zM2 15l10 6 10-6M2 12l10 6 10-6"/></svg></div>
+      <div>
+        <div class="brand-name">NIU JODA COMPANY</div>
+        <div class="brand-sub">Gestion de Bourses &amp; Cours de Langue — Douala, Cameroun</div>
+      </div>
     </div>
-    <div><div class="doc-label">Fiche Dossier</div><div class="doc-title">Profil Étudiant</div></div>
+    <div class="header-doc">
+      <div class="doc-type">Fiche Dossier</div>
+      <div class="doc-title">Profil Étudiant</div>
+      <div class="doc-meta">Émis le : ${new Date().toLocaleDateString(dateLocale)}<br>Ref : ${s.id.slice(-8).toUpperCase()}</div>
+    </div>
   </div>
   <div class="id-band">
     <div class="id-name">${s.prenom} ${s.nom}</div>
-    <div class="id-meta">Créé le ${createdAt}<br>ID : ${s.id.slice(-8).toUpperCase()}</div>
+    <div class="id-meta">Créé le ${createdAt}<br>${s.niveau || ""} · ${s.filiere || ""}</div>
   </div>
   <div class="body">
     <div class="grid">
