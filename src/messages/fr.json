@@ -1362,7 +1362,8 @@
       "paymentCreateError": "Erreur création paiement : {error}",
       "enrollSuccess": "Inscription au cours de {course} enregistrée",
       "validationError": "Erreur validation",
-      "paymentValidated": "Paiement validé"
+      "paymentValidated": "Paiement validé",
+      "internationalNotAllowed": "Les étudiants étrangers ne peuvent pas s'inscrire aux cours de langues"
     },
     "fallback": {
       "unknown": "Inconnu"

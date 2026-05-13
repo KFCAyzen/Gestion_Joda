@@ -9,6 +9,7 @@ import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
+import { isInternational } from "../types/payment-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,7 @@ interface Student {
     nom: string;
     prenom: string;
     email: string;
+    nationalite?: string | null;
 }
 
 function formatPrice(n: number): string {
@@ -88,7 +90,7 @@ export default function CoursLangues() {
                     .select("*")
                     .in("type", ["mandarin", "anglais"])
                     .order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom, email"),
+                supabase.from("students").select("id, nom, prenom, email, nationalite"),
             ]);
             setPayments(paymentsRes.data || []);
             setStudents(studentsRes.data || []);
@@ -121,6 +123,11 @@ export default function CoursLangues() {
     const handleEnroll = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.studentId) return;
+        const selectedStudent = students.find(s => s.id === formData.studentId);
+        if (isInternational(selectedStudent?.nationalite)) {
+            showNotification(t("messages.internationalNotAllowed"), "error");
+            return;
+        }
         setSubmitting(true);
         try {
             // Enregistrement de l'inscription dans cours_langues
@@ -289,7 +296,7 @@ export default function CoursLangues() {
                                             </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {students.map(s => (
+                                            {students.filter(s => !isInternational(s.nationalite)).map(s => (
                                                 <SelectItem key={s.id} value={s.id}>
                                                     {s.prenom} {s.nom}
                                                 </SelectItem>

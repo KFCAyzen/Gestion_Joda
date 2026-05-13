@@ -1362,7 +1362,8 @@
       "paymentCreateError": "Payment creation error: {error}",
       "enrollSuccess": "{course} course enrollment saved",
       "validationError": "Validation error",
-      "paymentValidated": "Payment validated"
+      "paymentValidated": "Payment validated",
+      "internationalNotAllowed": "International students cannot enroll in language courses"
     },
     "fallback": {
       "unknown": "Unknown"
