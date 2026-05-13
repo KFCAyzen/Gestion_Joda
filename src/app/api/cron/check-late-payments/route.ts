@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendPaymentReminder } from '@/app/lib/emailService';
+import { sendSmsToPhone } from '@/app/lib/smsService';
 import { DEFAULT_PAYMENT_CONFIGS, getBourseServiceType } from '@/app/types/payment-config';
 import type { ServiceType } from '@/app/types/payment-config';
 
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
       checked: 0,
       late: 0,
       emailsSent: 0,
+      smsSent: 0,
       errors: 0,
     };
 
@@ -54,7 +56,8 @@ export async function GET(req: NextRequest) {
         students (
           nom,
           prenom,
-          email
+          email,
+          telephone
         )
       `)
       .in('status', ['attente', 'retard']);
@@ -106,31 +109,46 @@ export async function GET(req: NextRequest) {
         const reminderDays = [1, 3, 7, 14, 30];
         if (reminderDays.includes(daysLate)) {
           const student = payment.students as any;
-          
-          if (student && student.email) {
-            const emailSent = await sendPaymentReminder({
-              studentName: `${student.prenom} ${student.nom}`,
-              studentEmail: student.email,
-              paymentType: payment.type as 'bourse' | 'mandarin' | 'anglais',
-              tranche: payment.tranche,
-              amount: payment.montant,
-              dueDate: payment.date_limite,
-              daysLate,
-              penalties: payment.penalites || 0,
-            });
 
-            if (emailSent) {
-              results.emailsSent++;
-              
-              await supabaseAdmin.from('email_logs').insert({
-                recipient: student.email,
-                type: 'payment_reminder',
-                payment_id: payment.id,
-                days_late: daysLate,
-                sent_at: new Date().toISOString(),
+          if (student) {
+            const studentName = `${student.prenom} ${student.nom}`;
+            const typeLabel = payment.type === 'bourse' ? 'Procédure Bourse'
+              : payment.type === 'mandarin' ? 'Cours Mandarin' : 'Cours Anglais';
+            const formattedAmount = new Intl.NumberFormat('fr-FR').format(payment.montant);
+
+            if (student.email) {
+              const emailSent = await sendPaymentReminder({
+                studentName,
+                studentEmail: student.email,
+                paymentType: payment.type as 'bourse' | 'mandarin' | 'anglais',
+                tranche: payment.tranche,
+                amount: payment.montant,
+                dueDate: payment.date_limite,
+                daysLate,
+                penalties: payment.penalites || 0,
               });
-            } else {
-              results.errors++;
+
+              if (emailSent) {
+                results.emailsSent++;
+                await supabaseAdmin.from('email_logs').insert({
+                  recipient: student.email,
+                  type: 'payment_reminder',
+                  payment_id: payment.id,
+                  days_late: daysLate,
+                  sent_at: new Date().toISOString(),
+                });
+              } else {
+                results.errors++;
+              }
+            }
+
+            if (student.telephone) {
+              const urgency = daysLate <= 3 ? 'modéré' : daysLate <= 7 ? 'important' : 'critique';
+              const smsSent = await sendSmsToPhone(
+                student.telephone,
+                `JODA - RAPPEL PAIEMENT (${urgency}): ${studentName}, votre paiement ${typeLabel} Tranche ${payment.tranche} (${formattedAmount} FCFA) a ${daysLate} jour(s) de retard. Regularisez sur gestion-joda.vercel.app`
+              );
+              if (smsSent) results.smsSent++;
             }
           }
         }

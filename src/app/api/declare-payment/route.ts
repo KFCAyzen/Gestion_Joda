@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { sendPaymentDeclarationEmail } from "@/app/lib/emailService";
+import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -138,6 +140,50 @@ export async function POST(req: NextRequest) {
                     metadata: { payment_id: paymentId, student_id: student.id, montant_declare },
                 }))
             );
+        }
+
+        // Récupérer email + téléphone de l'étudiant pour le notifier
+        const { data: studentInfo } = await supabaseAdmin
+            .from("students")
+            .select("nom, prenom, email, telephone")
+            .eq("id", student.id)
+            .maybeSingle();
+
+        if (studentInfo) {
+            const studentName = `${studentInfo.prenom ?? ""} ${studentInfo.nom ?? ""}`.trim();
+            const typeLabel = type === "bourse" ? "Procédure Bourse"
+                : type === "mandarin" ? "Cours Mandarin" : "Cours Anglais";
+            const formattedAmount = new Intl.NumberFormat("fr-FR").format(montant_declare);
+
+            // SMS à l'étudiant
+            if (studentInfo.telephone) {
+                sendSmsToPhone(
+                    studentInfo.telephone,
+                    `Bonjour ${studentName}, votre déclaration de paiement ${typeLabel} - Tranche ${tranche_num} (${formattedAmount} FCFA) a bien été reçue. En attente de validation par notre équipe.`
+                ).catch(console.error);
+            }
+
+            // Email aux admins/agents
+            if (staffUsers && staffUsers.length > 0) {
+                const { data: staffWithEmail } = await supabaseAdmin
+                    .from("users")
+                    .select("contact_email, email")
+                    .in("id", staffUsers.map((s: { id: string }) => s.id));
+
+                const staffEmails = (staffWithEmail ?? [])
+                    .map((u: { contact_email?: string; email?: string }) => u.contact_email || u.email)
+                    .filter(Boolean) as string[];
+
+                if (staffEmails.length > 0) {
+                    sendPaymentDeclarationEmail({
+                        studentName,
+                        paymentType: type,
+                        tranche: tranche_num,
+                        amount: montant_declare,
+                        staffEmails,
+                    }).catch(console.error);
+                }
+            }
         }
 
         return NextResponse.json({ success: true });

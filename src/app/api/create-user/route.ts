@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { requireRole } from "@/app/lib/auth";
+import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -223,6 +224,14 @@ async function handleCreateUser(req: NextRequest) {
     } catch (emailError: any) {
         console.error("Erreur envoi email:", emailError.message);
         // Non bloquant — l'utilisateur est créé, il pourra demander un reset
+    }
+
+    // SMS à l'étudiant si numéro disponible
+    if (telephone) {
+        sendSmsToPhone(
+            telephone,
+            `Bonjour ${name}, votre compte JODA a été créé. Identifiant: ${username}. Connectez-vous sur gestion-joda.vercel.app pour définir votre mot de passe.`
+        ).catch(console.error);
     }
 
     return NextResponse.json({ success: true, userId: data.user.id });

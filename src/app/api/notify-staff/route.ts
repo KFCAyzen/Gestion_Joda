@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAuth, AuthSession } from "@/app/lib/auth";
+import { sendDocumentSubmissionEmail } from "@/app/lib/emailService";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,6 +51,20 @@ async function handleNotifyStaff(req: NextRequest, session: AuthSession) {
 
         if (insertError) {
             return NextResponse.json({ error: insertError.message }, { status: 500 });
+        }
+
+        // Envoyer email aux staff
+        const { data: staffWithEmail } = await supabaseAdmin
+            .from("users")
+            .select("contact_email, email")
+            .in("id", staffUsers.map((s: { id: string }) => s.id));
+
+        const staffEmails = (staffWithEmail ?? [])
+            .map((u: { contact_email?: string; email?: string }) => u.contact_email || u.email)
+            .filter(Boolean) as string[];
+
+        if (staffEmails.length > 0) {
+            sendDocumentSubmissionEmail({ studentName, staffEmails }).catch(console.error);
         }
 
         return NextResponse.json({ success: true, sent: staffUsers.length });

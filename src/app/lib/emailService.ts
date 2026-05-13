@@ -200,6 +200,303 @@ export async function sendPaymentReminder(data: PaymentReminderData): Promise<bo
   }
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+const PAYMENT_TYPE_LABELS: Record<string, string> = {
+  bourse: 'Procédure Bourse',
+  mandarin: 'Cours de Mandarin',
+  anglais: "Cours d'Anglais",
+};
+
+function formatCFA(amount: number) {
+  return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
+}
+
+function emailFooter(year: number) {
+  return `
+    <tr>
+      <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+        <p style="margin:0;font-size:12px;color:#9ca3af;">© ${year} Joda Company — Tous droits réservés</p>
+      </td>
+    </tr>`;
+}
+
+function emailHeader() {
+  return `
+    <tr>
+      <td style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 40px;text-align:center;">
+        <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Joda Company</h1>
+        <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Gestion des bourses d'études en Chine</p>
+      </td>
+    </tr>`;
+}
+
+// ── Payment result (validated / rejected) → student ───────────────────────────
+
+interface PaymentResultEmailData {
+  studentName: string;
+  studentEmail: string;
+  paymentType: string;
+  tranche: number;
+  amount: number;
+  isValid: boolean;
+}
+
+export async function sendPaymentResultEmail(data: PaymentResultEmailData): Promise<boolean> {
+  const typeLabel = PAYMENT_TYPE_LABELS[data.paymentType] ?? data.paymentType;
+  const year = new Date().getFullYear();
+  const statusColor = data.isValid ? '#16a34a' : '#dc2626';
+  const statusLabel = data.isValid ? 'Paiement validé' : 'Paiement rejeté';
+  const statusBg = data.isValid ? '#f0fdf4' : '#fef2f2';
+  const statusBorder = data.isValid ? '#bbf7d0' : '#fecaca';
+
+  try {
+    await transporter.sendMail({
+      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
+      to: data.studentEmail,
+      subject: `${data.isValid ? '✅' : '❌'} ${statusLabel} — ${typeLabel} Tranche ${data.tranche}`,
+      html: `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader()}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${data.studentName}</strong>,</p>
+  <div style="background:${statusBg};border:1px solid ${statusBorder};border-radius:8px;padding:20px 24px;margin:24px 0;">
+    <p style="margin:0 0 12px;font-size:16px;font-weight:700;color:${statusColor};">${statusLabel}</p>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:5px 0;font-size:13px;color:#6b7280;width:140px;">Type</td>
+        <td style="padding:5px 0;font-size:13px;color:#111827;font-weight:600;">${typeLabel}</td>
+      </tr>
+      <tr>
+        <td style="padding:5px 0;font-size:13px;color:#6b7280;">Tranche</td>
+        <td style="padding:5px 0;font-size:13px;color:#111827;font-weight:600;">${data.tranche}</td>
+      </tr>
+      <tr>
+        <td style="padding:5px 0;font-size:13px;color:#6b7280;">Montant</td>
+        <td style="padding:5px 0;font-size:14px;color:#111827;font-weight:700;">${formatCFA(data.amount)}</td>
+      </tr>
+    </table>
+  </div>
+  ${data.isValid
+    ? `<p style="font-size:14px;color:#6b7280;line-height:1.6;">Votre paiement a été validé par l'équipe Joda Company. Vous pouvez consulter votre espace étudiant pour le suivi de votre dossier.</p>`
+    : `<p style="font-size:14px;color:#6b7280;line-height:1.6;">Votre paiement n'a pas pu être validé. Veuillez contacter votre conseiller Joda Company pour plus d'informations ou soumettre à nouveau votre justificatif.</p>`
+  }
+  <table cellpadding="0" cellspacing="0" style="margin-top:24px;">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://gestion-joda.vercel.app" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          Mon espace étudiant →
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Résultat paiement envoyé à ${data.studentEmail} (${data.isValid ? 'validé' : 'rejeté'})`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendPaymentResultEmail:', err);
+    return false;
+  }
+}
+
+// ── Payment declaration → staff ───────────────────────────────────────────────
+
+interface PaymentDeclarationEmailData {
+  studentName: string;
+  paymentType: string;
+  tranche: number;
+  amount: number;
+  staffEmails: string[];
+}
+
+export async function sendPaymentDeclarationEmail(data: PaymentDeclarationEmailData): Promise<boolean> {
+  if (data.staffEmails.length === 0) return false;
+  const typeLabel = PAYMENT_TYPE_LABELS[data.paymentType] ?? data.paymentType;
+  const year = new Date().getFullYear();
+
+  try {
+    await transporter.sendMail({
+      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
+      to: data.staffEmails,
+      subject: `💳 Nouvelle déclaration de paiement — ${data.studentName}`,
+      html: `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader()}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 20px;font-size:15px;color:#111827;">Un étudiant vient de déclarer un paiement en attente de validation :</p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
+    <tr><td style="padding:20px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;width:140px;">Étudiant</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.studentName}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Type</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${typeLabel}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Tranche</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.tranche}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Montant déclaré</td>
+          <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:700;">${formatCFA(data.amount)}</td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  <table cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://gestion-joda.vercel.app" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          Valider le paiement →
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Déclaration paiement notifiée à ${data.staffEmails.length} agent(s)`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendPaymentDeclarationEmail:', err);
+    return false;
+  }
+}
+
+// ── Document submission → staff ───────────────────────────────────────────────
+
+interface DocumentSubmissionEmailData {
+  studentName: string;
+  staffEmails: string[];
+}
+
+export async function sendDocumentSubmissionEmail(data: DocumentSubmissionEmailData): Promise<boolean> {
+  if (data.staffEmails.length === 0) return false;
+  const year = new Date().getFullYear();
+
+  try {
+    await transporter.sendMail({
+      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
+      to: data.staffEmails,
+      subject: `📂 Documents soumis — ${data.studentName}`,
+      html: `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader()}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 20px;font-size:15px;color:#111827;">
+    <strong>${data.studentName}</strong> vient de soumettre ses documents pour examen.
+  </p>
+  <p style="font-size:14px;color:#6b7280;line-height:1.6;">
+    Veuillez vous connecter à la plateforme pour vérifier et valider son dossier.
+  </p>
+  <table cellpadding="0" cellspacing="0" style="margin-top:24px;">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://gestion-joda.vercel.app" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          Voir le dossier →
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Soumission docs notifiée à ${data.staffEmails.length} agent(s)`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendDocumentSubmissionEmail:', err);
+    return false;
+  }
+}
+
+// ── New message → student ─────────────────────────────────────────────────────
+
+interface StudentMessageEmailData {
+  studentName: string;
+  studentEmail: string;
+  subject: string;
+  preview?: string;
+}
+
+export async function sendStudentMessageEmail(data: StudentMessageEmailData): Promise<boolean> {
+  const year = new Date().getFullYear();
+
+  try {
+    await transporter.sendMail({
+      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
+      to: data.studentEmail,
+      subject: `✉️ Nouveau message — ${data.subject}`,
+      html: `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader()}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${data.studentName}</strong>,</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+    Vous avez reçu un nouveau message de l'équipe Joda Company :
+  </p>
+  <div style="background:#f9fafb;border-left:4px solid #dc2626;padding:16px 20px;margin-bottom:24px;border-radius:4px;">
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827;">${data.subject}</p>
+    ${data.preview ? `<p style="margin:0;font-size:13px;color:#6b7280;">${data.preview}</p>` : ''}
+  </div>
+  <table cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://gestion-joda.vercel.app" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          Lire le message →
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Notification message envoyée à ${data.studentEmail}`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendStudentMessageEmail:', err);
+    return false;
+  }
+}
+
+// ── Welcome ────────────────────────────────────────────────────────────────────
+
 interface WelcomeEmailData {
   name: string;
   email: string;

@@ -226,6 +226,19 @@ export default function PaymentManagement() {
             }
             showNotification(isValid ? t("messages.approveSuccess") : t("messages.rejectSuccess"), isValid ? "success" : "error");
             loadData();
+
+            // Notifier l'étudiant par email + SMS (fire-and-forget)
+            fetch('/api/notify-payment-result', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    studentId: payment.student_id,
+                    isValid,
+                    paymentType: payment.type,
+                    tranche: payment.tranche,
+                    amount: payment.montant,
+                }),
+            }).catch(console.error);
         } catch (error) {
             console.error("Erreur validation:", error);
             showNotification(t("messages.validateError"), "error");
