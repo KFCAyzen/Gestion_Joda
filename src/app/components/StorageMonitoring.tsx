@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { formatFileSize } from "../utils/imageCompression";
 import { FILE_LIMITS } from "../utils/fileValidation";
+import ProtectedRoute from "./ProtectedRoute";
 
 interface StorageStats {
   totalFiles: number;
@@ -111,16 +112,19 @@ export default function StorageMonitoring() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-red-600" />
-          <p className="text-slate-600 dark:text-slate-400">{t("loading")}</p>
+      <ProtectedRoute requiredRole="super_admin">
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-red-600" />
+            <p className="text-slate-600 dark:text-slate-400">{t("loading")}</p>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 
   return (
+    <ProtectedRoute requiredRole="super_admin">
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -304,5 +308,6 @@ export default function StorageMonitoring() {
         </CardContent>
       </Card>
     </div>
+    </ProtectedRoute>
   );
 }

@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 import LoadingSpinner from "./LoadingSpinner";
+import ProtectedRoute from "./ProtectedRoute";
 import { createClient } from "../lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -292,6 +293,7 @@ export default function PerformanceHistory() {
     const isAdmin = user.role === "admin" || user.role === "super_admin";
 
     return (
+        <ProtectedRoute requiredRole="agent">
         <div className="space-y-6 p-4 sm:p-6 lg:p-8">
             <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -411,5 +413,6 @@ export default function PerformanceHistory() {
                 </CardContent>
             </Card>
         </div>
+        </ProtectedRoute>
     );
 }

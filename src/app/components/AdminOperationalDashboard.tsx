@@ -5,6 +5,7 @@ import { Search, AlertTriangle, FileText, CheckCircle, User, DollarSign, CreditC
 import { Bar, BarChart, Cell, ResponsiveContainer } from "recharts";
 import { createClient } from "../lib/supabase/client";
 import { getActivityLogs, ActivityType, ACTIVITY_LABELS } from "../utils/activityLogger";
+import ProtectedRoute from "./ProtectedRoute";
 
 interface ActivityLog {
     id: string;
@@ -372,6 +373,7 @@ export default function AdminOperationalDashboard() {
     })();
 
     return (
+        <ProtectedRoute requiredRole="user">
         <div className="-m-4 sm:-m-5 flex flex-col bg-white dark:bg-slate-900" style={{ height: "calc(100vh - 130px)" }}>
             {/* Top bar */}
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3">
@@ -612,5 +614,6 @@ export default function AdminOperationalDashboard() {
                 </div>
             </div>
         </div>
+        </ProtectedRoute>
     );
 }

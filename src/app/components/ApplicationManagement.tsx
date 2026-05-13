@@ -8,6 +8,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
 import ConfirmDialog from "./ConfirmDialog";
 import Pagination from "./Pagination";
+import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -371,6 +372,7 @@ export default function ApplicationManagement() {
     }
 
     return (
+        <ProtectedRoute requiredRole="agent">
         <div className="space-y-6 p-4 sm:p-6 lg:p-8">
             <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -673,5 +675,6 @@ export default function ApplicationManagement() {
             confirmLabel={t("actions.delete")}
         />
         </div>
+        </ProtectedRoute>
     );
 }

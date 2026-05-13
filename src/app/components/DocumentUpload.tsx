@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { LucideIcon } from "lucide-react";
 import {
     AlertTriangle,
@@ -113,6 +114,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
     const supabase = createClient();
     const { user } = useAuth();
     const { showNotification } = useNotificationContext();
+    const t = useTranslations("documentUpload");
     const [docs, setDocs] = useState<DocStatus[]>([]);
     const [uploading, setUploading] = useState<string | null>(null);
     const [sending, setSending] = useState(false);

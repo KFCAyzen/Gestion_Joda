@@ -19,6 +19,7 @@ import { logActivity } from "../utils/activityLogger";
 import { SearchBar, FilterSelect, LoadingState } from "./shared";
 import ConfirmDialog from "./ConfirmDialog";
 import DocumentManagement from "./DocumentManagement";
+import ProtectedRoute from "./ProtectedRoute";
 
 interface ScholarshipFile {
     id: string;
@@ -269,11 +270,12 @@ export default function ScholarshipFileManagement() {
         return matchesStatus && matchesSearch;
     });
 
-    if (isLoading) return <LoadingState message={t("loading")} />;
+    if (isLoading) return <ProtectedRoute requiredRole="agent"><LoadingState message={t("loading")} /></ProtectedRoute>;
 
     // ── Vue détail ──────────────────────────────────────────────────────────
     if (selectedFile) {
         return (
+            <ProtectedRoute requiredRole="agent">
             <div className="space-y-6">
                 {/* Header */}
                 <div className="joda-surface flex items-center gap-4">
@@ -401,11 +403,13 @@ export default function ScholarshipFileManagement() {
                     confirmLabel={t("actions.delete")}
                 />
             </div>
+            </ProtectedRoute>
         );
     }
 
     // ── Vue liste ───────────────────────────────────────────────────────────
     return (
+        <ProtectedRoute requiredRole="agent">
         <div className="space-y-8">
             <div className="joda-surface">
                 <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -527,5 +531,6 @@ export default function ScholarshipFileManagement() {
                 confirmLabel={t("actions.delete")}
             />
         </div>
+        </ProtectedRoute>
     );
 }

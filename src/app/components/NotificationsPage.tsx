@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { createClient } from "../lib/supabase/client";
 import LoadingSpinner from "./LoadingSpinner";
+import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,9 +179,10 @@ export default function NotificationsPage() {
         return { ...f, label: t(f.labelKey) };
     });
 
-    if (loading) return <LoadingSpinner />;
+    if (loading) return <ProtectedRoute requiredRole="user"><LoadingSpinner /></ProtectedRoute>;
 
     return (
+        <ProtectedRoute requiredRole="user">
         <div className="space-y-6">
             <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -262,5 +264,6 @@ export default function NotificationsPage() {
                 </CardContent>
             </Card>
         </div>
+        </ProtectedRoute>
     );
 }
