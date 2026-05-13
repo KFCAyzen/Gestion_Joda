@@ -44,7 +44,7 @@ import DocumentManagement from "./DocumentManagement";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import { DropdownMenu } from "./shared";
 import PhoneInput from "./shared/PhoneInput";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Printer, Trash2 } from "lucide-react";
 import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhoneNumber, splitPhoneNumber } from "../lib/phone";
 
 interface Student {
@@ -116,6 +116,97 @@ export default function StudentManagement() {
         if (choice === "procedure_cours") return t("detail.choices.procedure_cours");
         if (choice === "cours_seuls") return t("detail.choices.cours_seuls");
         return choice;
+    };
+
+    const printStudentCard = (s: Student) => {
+        const createdAt = new Date(s.created_at).toLocaleDateString(dateLocale);
+        const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Fiche Étudiant — ${s.prenom} ${s.nom}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  @page{size:A4;margin:0;}
+  body{font-family:'Inter',sans-serif;font-size:13px;color:#0f172a;background:#fff;width:210mm;min-height:297mm;padding:0;}
+  .header{background:#0f172a;padding:28px 40px 24px;display:flex;align-items:center;justify-content:space-between;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .logo{width:40px;height:40px;background:#1e40af;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .logo svg{width:22px;height:22px;fill:#fff;}
+  .co-name{font-size:16px;font-weight:700;color:#fff;line-height:1.2;}
+  .co-sub{font-size:10px;color:#94a3b8;margin-top:2px;}
+  .doc-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;text-align:right;}
+  .doc-title{font-size:15px;font-weight:600;color:#fff;text-align:right;margin-top:3px;}
+  .id-band{background:#1e40af;padding:12px 40px;display:flex;align-items:center;justify-content:space-between;}
+  .id-name{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+  .id-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:#bfdbfe;text-align:right;line-height:1.8;}
+  .body{padding:32px 40px 40px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+  .cell{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;}
+  .cell-label{font-size:9px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;font-weight:500;margin-bottom:5px;}
+  .cell-value{font-size:13px;font-weight:600;color:#0f172a;}
+  .cell-sub{font-size:11px;color:#64748b;margin-top:2px;}
+  .section-title{font-size:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;font-weight:500;margin-bottom:12px;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;border:1px solid #e2e8f0;color:#475569;margin-right:6px;margin-bottom:4px;}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;}
+  .footer-text{font-family:'JetBrains Mono',monospace;font-size:9px;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 3L2 9l10 6 10-6-10-6zM2 15l10 6 10-6M2 12l10 6 10-6"/></svg></div>
+      <div><div class="co-name">NIU JODA COMPANY</div><div class="co-sub">Gestion de Bourses &amp; Cours de Langue — Douala</div></div>
+    </div>
+    <div><div class="doc-label">Fiche Dossier</div><div class="doc-title">Profil Étudiant</div></div>
+  </div>
+  <div class="id-band">
+    <div class="id-name">${s.prenom} ${s.nom}</div>
+    <div class="id-meta">Créé le ${createdAt}<br>ID : ${s.id.slice(-8).toUpperCase()}</div>
+  </div>
+  <div class="body">
+    <div class="grid">
+      <div class="cell">
+        <div class="cell-label">Contact</div>
+        <div class="cell-value">${s.email || "—"}</div>
+        <div class="cell-sub">${(s.telephone || "").replace(/^undefined\s*/i, "") || "Pas de téléphone"}</div>
+      </div>
+      <div class="cell">
+        <div class="cell-label">Parcours</div>
+        <div class="cell-value">${s.niveau || "—"}</div>
+        <div class="cell-sub">${s.diplome_acquis || "Diplôme non renseigné"}</div>
+      </div>
+      <div class="cell">
+        <div class="cell-label">Filière</div>
+        <div class="cell-value">${s.filiere || "—"}</div>
+        <div class="cell-sub">${getGenderLabel(s.sexe)} · ${s.age ? s.age + " ans" : ""}</div>
+      </div>
+      <div class="cell">
+        <div class="cell-label">Service souscrit</div>
+        <div class="cell-value">${getChoiceLabel(s.choix || "")}</div>
+        <div class="cell-sub">Langue : ${s.langue || "Non renseignée"}</div>
+      </div>
+    </div>
+    <p class="section-title">Informations complémentaires</p>
+    <div class="cell" style="margin-bottom:16px;">
+      <div class="cell-label">Dossier créé le</div>
+      <div class="cell-value">${createdAt}</div>
+    </div>
+    <div class="footer">
+      <div class="footer-text">NIU JODA COMPANY — Douala, Cameroun</div>
+      <div class="footer-text">Confidentiel — Usage interne · ${new Date().toLocaleDateString(dateLocale)}</div>
+    </div>
+  </div>
+</body>
+</html>`;
+        const win = window.open("", "_blank", "width=800,height=900");
+        if (!win) return;
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(() => { win.print(); }, 400);
     };
 
     useEffect(() => {
@@ -770,6 +861,13 @@ export default function StudentManagement() {
 
                                 {/* Pied fixe */}
                                 <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 dark:border-slate-700 px-6 py-4">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => printStudentCard(selectedStudent)}
+                                    >
+                                        <Printer className="mr-2 h-4 w-4" />
+                                        {t("actions.printCard") || "Imprimer fiche"}
+                                    </Button>
                                     {canEdit && (
                                         <Button
                                             variant="outline"

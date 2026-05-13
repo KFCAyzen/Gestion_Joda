@@ -7,6 +7,7 @@ import {
     Download,
     Filter,
     Plus,
+    Printer,
     X,
     CheckCircle2,
     AlertTriangle,
@@ -15,6 +16,7 @@ import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
+import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
 import ConfirmDialog from "./ConfirmDialog";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -332,6 +334,24 @@ export default function LivreComptable() {
         }
     };
 
+    const printReport = async () => {
+        const ops = rows.map((r) => ({
+            date: r.time,
+            description: r.description,
+            category: catLabel(r.categorie),
+            amount: r.montant,
+            type: r.kind,
+        }));
+        await printAccountingHtmlReport({
+            title: `Rapport comptable — ${fmtFullDate(viewDate)}`,
+            period: { start: dayStart.toISOString(), end: dayEnd.toISOString() },
+            entries: ops,
+            summary: { totalEntrees, totalSorties, balance: solde },
+            scope: "all",
+            locale: "fr-FR",
+        });
+    };
+
     const exportCSV = () => {
         const headers = ["Heure", "Type", "Désignation", "Catégorie", "Montant", "Validé par"];
         const lines = filtered.map((r) => [
@@ -396,6 +416,13 @@ export default function LivreComptable() {
                                     <option key={c} value={c}>{catLabel(c)}</option>
                                 ))}
                             </select>
+                            <button
+                                onClick={printReport}
+                                className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                                <Printer className="h-3.5 w-3.5" />
+                                Imprimer rapport
+                            </button>
                             <button
                                 onClick={exportCSV}
                                 className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700"
