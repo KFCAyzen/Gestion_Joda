@@ -63,7 +63,7 @@ function computeTrancheState(
             daysLabel: paid,
             daysColor: "text-[var(--student-neon-lime)]",
             statusLabel: "Payé",
-            statusBadge: "border-[rgba(196,255,51,0.22)] bg-[rgba(196,255,51,0.08)] text-[var(--student-neon-lime)]",
+            statusBadge: "border-[rgba(220,38,38,0.22)] bg-[rgba(220,38,38,0.08)] text-[var(--student-neon-lime)]",
         };
     }
 
@@ -381,7 +381,7 @@ export default function PaymentOverview({
                                                         className={[
                                                             "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-[12px] font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
                                                             payment?.status === "paye"
-                                                                ? "border-[rgba(196,255,51,0.28)] bg-black/35 text-[var(--student-neon-lime)]"
+                                                                ? "border-[rgba(220,38,38,0.28)] bg-black/35 text-[var(--student-neon-lime)]"
                                                                 : state.statusLabel === "En retard"
                                                                   ? "border-[rgba(255,65,85,0.35)] bg-black/35 text-[var(--student-ring-move)]"
                                                                   : state.statusLabel === "En validation"
@@ -432,7 +432,7 @@ export default function PaymentOverview({
                                             <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
                                                 {payment?.status === "paye" ? (
                                                     <div
-                                                        className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border-2 border-[rgba(196,255,51,0.45)] bg-black/40 text-[var(--student-neon-lime)] shadow-[var(--student-pay-glow-soft)]"
+                                                        className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border-2 border-[rgba(220,38,38,0.45)] bg-black/40 text-[var(--student-neon-lime)] shadow-[var(--student-pay-glow-soft)]"
                                                         title="Payé"
                                                     >
                                                         <Check className="h-6 w-6 stroke-[2.5]" aria-hidden />

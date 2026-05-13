@@ -59,7 +59,7 @@ const DOC_CARD_THEME: Record<
     },
     carte_photo: {
         Icon: Camera,
-        ring: "border-[rgba(196,255,51,0.45)] bg-[rgba(196,255,51,0.1)]",
+        ring: "border-[rgba(220,38,38,0.45)] bg-[rgba(220,38,38,0.10)]",
         iconClass: "text-[var(--student-neon-lime)]",
         statClass: "text-[var(--student-neon-lime)]",
         softGlow: "shadow-[var(--student-pay-glow-soft)]",
@@ -360,7 +360,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                             "student-focus-ring shrink-0 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-45",
                             notifSent
                                 ? "border border-white/12 bg-black/35 text-[var(--student-neon-lime)]"
-                                : "border border-[rgba(196,255,51,0.45)] bg-[var(--student-neon-lime)] text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110",
+                                : "border border-[rgba(220,38,38,0.45)] bg-[var(--student-neon-lime)] text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110",
                         ].join(" ")}
                     >
                         {sending ? "Envoi…" : notifSent ? "Envoyé" : "Envoyer"}
@@ -448,7 +448,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                         className={[
                                             "rounded-full border text-[10px] font-semibold",
                                             uploaded.status === "valide"
-                                                ? "border-[rgba(196,255,51,0.28)] bg-black/35 text-[var(--student-neon-lime)]"
+                                                ? "border-[rgba(220,38,38,0.28)] bg-black/35 text-[var(--student-neon-lime)]"
                                                 : uploaded.status === "non_conforme"
                                                   ? "border-[rgba(255,65,85,0.25)] bg-black/35 text-[var(--student-ring-move)]"
                                                   : "border-white/12 bg-black/35 text-white/70",
@@ -502,7 +502,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                         ? "border border-white/10 bg-black/35 text-[var(--student-neon-lime)]"
                                         : uploaded
                                           ? "border border-white/12 bg-black/40 text-white/85 hover:bg-white/[0.07]"
-                                          : "border border-[rgba(196,255,51,0.45)] bg-[var(--student-neon-lime)] text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110",
+                                          : "border border-[rgba(220,38,38,0.45)] bg-[var(--student-neon-lime)] text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110",
                                 ].join(" ")}
                             >
                                 {isUploading ? "…" : uploaded?.status === "valide" ? "Verrouillé" : uploaded ? "Remplacer" : "Uploader"}
