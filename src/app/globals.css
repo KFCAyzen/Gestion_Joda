@@ -42,37 +42,36 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Student portal: campus vibrant tokens (non-breaking) */
-  /* Apple Fitness-inspired (dark, vibrant, premium) */
-  --student-ink: #0b0b10;
-  --student-bg: radial-gradient(circle at 20% 0%, rgba(255, 45, 85, 0.10), transparent 38%),
-    radial-gradient(circle at 80% 20%, rgba(48, 209, 88, 0.10), transparent 40%),
-    radial-gradient(circle at 55% 90%, rgba(64, 156, 255, 0.10), transparent 42%),
-    linear-gradient(180deg, #0b0b10 0%, #07070c 55%, #050509 100%);
-  --student-fg: rgba(255, 255, 255, 0.92);
-  --student-fg-muted: rgba(255, 255, 255, 0.62);
-  --student-border: rgba(255, 255, 255, 0.10);
-  --student-surface: rgba(255, 255, 255, 0.06);
-  --student-surface-2: rgba(255, 255, 255, 0.03);
-  --student-shadow: 0 26px 90px rgba(0, 0, 0, 0.55);
-  --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.35);
+  /* Student portal — Joda brand — LIGHT MODE */
+  --student-ink: #ffffff;
+  --student-bg: radial-gradient(circle at 20% 0%, rgba(220, 38, 38, 0.07), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(185, 28, 28, 0.04), transparent 42%),
+    radial-gradient(circle at 55% 90%, rgba(153, 27, 27, 0.05), transparent 44%),
+    linear-gradient(180deg, #fafafa 0%, #f5f5f5 55%, #f0f0f0 100%);
+  --student-fg: #1a1a1a;
+  --student-fg-muted: #4b4b4b;
+  --student-border: rgba(220, 38, 38, 0.14);
+  --student-surface: rgba(255, 255, 255, 0.90);
+  --student-surface-2: rgba(255, 255, 255, 0.70);
+  --student-shadow: 0 26px 90px rgba(0, 0, 0, 0.10);
+  --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.08);
   --student-radius: 1.75rem;
 
-  /* “rings” accents (Move / Exercise / Stand) */
-  --student-ring-move: #ff2d55;
-  --student-ring-exercise: #30d158;
-  --student-ring-stand: #409cff;
-  --student-glow-move: 0 0 0.75rem rgba(255, 45, 85, 0.32);
-  --student-glow-exercise: 0 0 0.75rem rgba(48, 209, 88, 0.28);
-  --student-glow-stand: 0 0 0.75rem rgba(64, 156, 255, 0.26);
+  /* Joda rings — light (rouge principal / rouge moyen / rouge fonce) */
+  --student-ring-move: #dc2626;
+  --student-ring-exercise: #b91c1c;
+  --student-ring-stand: #7f1d1d;
+  --student-glow-move: 0 0 0.75rem rgba(220, 38, 38, 0.30);
+  --student-glow-exercise: 0 0 0.75rem rgba(185, 28, 28, 0.22);
+  --student-glow-stand: 0 0 0.75rem rgba(127, 29, 29, 0.20);
 
-  /* Apple Fitness “Training” module — accents for student payments view */
-  --student-neon-lime: #c4ff33;
-  --student-neon-lime-mid: #9ae619;
-  --student-neon-mid: #9ae619;
-  --student-neon-ink: #0c0c06;
-  --student-pay-glow: 0 0 28px rgba(196, 255, 51, 0.38);
-  --student-pay-glow-soft: 0 0 14px rgba(196, 255, 51, 0.22);
+  /* Joda CTA accent — light */
+  --student-neon-lime: #dc2626;
+  --student-neon-lime-mid: #b91c1c;
+  --student-neon-mid: #b91c1c;
+  --student-neon-ink: #ffffff;
+  --student-pay-glow: 0 0 28px rgba(220, 38, 38, 0.30);
+  --student-pay-glow-soft: 0 0 14px rgba(220, 38, 38, 0.18);
 }
 
 * {
@@ -187,22 +186,15 @@ body {
   }
 
 .glass-sidebar {
-     @apply backdrop-blur-xl;
-     background:
-       radial-gradient(circle at top left, rgba(251, 191, 36, 0.18), transparent 28%),
-       radial-gradient(circle at bottom right, rgba(239, 68, 68, 0.18), transparent 30%),
-       linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
-     border-right: 1px solid rgba(255, 255, 255, 0.75) !important;
-     box-shadow: 0 28px 80px rgba(15, 23, 42, 0.14) !important;
+     background: #c41e1e;
+     border-right: 1px solid rgba(0, 0, 0, 0.15) !important;
+     box-shadow: none !important;
    }
 
    .dark .glass-sidebar {
-     background:
-       radial-gradient(circle at top left, rgba(251, 191, 36, 0.1), transparent 28%),
-       radial-gradient(circle at bottom right, rgba(239, 68, 68, 0.1), transparent 30%),
-       linear-gradient(180deg, rgba(30, 41, 59, 0.96) 0%, rgba(15, 23, 42, 0.92) 100%);
-     border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-     box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35) !important;
+     background: #991b1b;
+     border-right: 1px solid rgba(0, 0, 0, 0.25) !important;
+     box-shadow: none !important;
    }
 
 .glass-header {
@@ -234,152 +226,144 @@ body {
     overflow: hidden;
   }
 
-  .sidebar-orb {
-    position: absolute;
-    border-radius: 9999px;
-    filter: blur(16px);
-    pointer-events: none;
-    opacity: 0.7;
-  }
-
-  .sidebar-orb-top {
-    width: 10rem;
-    height: 10rem;
-    top: -3rem;
-    right: -2rem;
-    background: radial-gradient(circle, rgba(251, 191, 36, 0.5) 0%, rgba(251, 191, 36, 0) 70%);
-  }
-
-  .sidebar-orb-bottom {
-    width: 12rem;
-    height: 12rem;
-    bottom: 3rem;
-    left: -3rem;
-    background: radial-gradient(circle, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0) 72%);
-  }
+  .sidebar-orb { display: none; }
+  .sidebar-orb-top { display: none; }
+  .sidebar-orb-bottom { display: none; }
 
   .sidebar-brand-mark {
     @apply flex items-center justify-center flex-shrink-0;
     width: 3.5rem;
     height: 3.5rem;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 237, 213, 0.85));
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      0 16px 32px rgba(249, 115, 22, 0.18);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   .sidebar-eyebrow {
-    @apply text-[10px] uppercase tracking-[0.28em] font-semibold text-slate-400 mb-1;
+    @apply text-[10px] uppercase tracking-[0.28em] font-semibold mb-1;
+    color: rgba(255, 255, 255, 0.55);
   }
 
 .sidebar-section-card {
-     @apply rounded-[1.35rem] border;
-     background: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.42));
-     border-color: rgba(255, 255, 255, 0.72);
-     box-shadow:
-       inset 0 1px 0 rgba(255, 255, 255, 0.8),
-       0 12px 30px rgba(148, 163, 184, 0.12);
+     @apply rounded-lg;
+     background: transparent;
+     border: none;
+     box-shadow: none;
    }
 
    .dark .sidebar-section-card {
-     background: linear-gradient(180deg, rgba(30, 41, 59, 0.62), rgba(15, 23, 42, 0.42));
-     border-color: rgba(255, 255, 255, 0.08);
-     box-shadow:
-       inset 0 1px 0 rgba(255, 255, 255, 0.04),
-       0 12px 30px rgba(0, 0, 0, 0.25);
+     background: transparent;
+     border: none;
+     box-shadow: none;
    }
 
    .sidebar-item-idle {
-     @apply text-slate-600;
-     background: rgba(255, 255, 255, 0.24);
+     color: rgba(255, 255, 255, 0.70);
+     background: transparent;
    }
 
    .sidebar-item-idle:hover {
-     background: rgba(255, 255, 255, 0.72);
-     color: rgb(15 23 42);
-     transform: translateX(4px);
+     background: rgba(0, 0, 0, 0.15);
+     color: rgb(255 255 255);
    }
 
    .dark .sidebar-item-idle {
-     @apply text-slate-400;
-     background: rgba(255, 255, 255, 0.06);
+     color: rgba(255, 255, 255, 0.65);
+     background: transparent;
    }
 
    .dark .sidebar-item-idle:hover {
-     background: rgba(255, 255, 255, 0.12);
+     background: rgba(0, 0, 0, 0.20);
      color: rgb(255 255 255);
    }
 
    .sidebar-item-active {
-     color: rgb(127 29 29);
-     background: linear-gradient(135deg, rgba(254, 242, 242, 0.96), rgba(255, 237, 213, 0.92));
-     box-shadow:
-       inset 0 1px 0 rgba(255, 255, 255, 0.95),
-       0 16px 32px rgba(248, 113, 113, 0.18);
+     color: rgb(255 255 255);
+     font-weight: 600;
+     background: rgba(0, 0, 0, 0.15);
+     position: relative;
+   }
+
+   .sidebar-item-active::after {
+     content: '';
+     position: absolute;
+     right: 10px;
+     top: 50%;
+     transform: translateY(-50%);
+     width: 9px;
+     height: 9px;
+     border-radius: 9999px;
+     background: rgba(255, 255, 255, 0.9);
    }
 
    .dark .sidebar-item-active {
      color: rgb(255 255 255);
-     background: linear-gradient(135deg, rgba(127, 29, 29, 0.96), rgba(220, 38, 38, 0.92));
-     box-shadow:
-       inset 0 1px 0 rgba(255, 255, 255, 0.12),
-       0 16px 32px rgba(220, 38, 38, 0.25);
+     font-weight: 600;
+     background: rgba(0, 0, 0, 0.20);
+     position: relative;
+   }
+
+   .dark .sidebar-item-active::after {
+     content: '';
+     position: absolute;
+     right: 10px;
+     top: 50%;
+     transform: translateY(-50%);
+     width: 9px;
+     height: 9px;
+     border-radius: 9999px;
+     background: rgba(255, 255, 255, 0.9);
    }
 
    .sidebar-item-icon {
-     @apply mr-3 flex items-center justify-center rounded-xl;
-     width: 2.25rem;
-     height: 2.25rem;
-     background: rgba(255, 255, 255, 0.78);
-     border: 1px solid rgba(255, 255, 255, 0.8);
-     color: rgb(71 85 105);
-     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+     @apply mr-3 flex items-center justify-center rounded-lg;
+     width: 1.75rem;
+     height: 1.75rem;
+     background: transparent;
+     border: none;
+     color: inherit;
+     box-shadow: none;
    }
 
    .dark .sidebar-item-icon {
-     background: rgba(255, 255, 255, 0.08);
-     border: 1px solid rgba(255, 255, 255, 0.12);
-     color: rgb(203, 213, 225);
+     background: transparent;
+     border: none;
+     color: inherit;
    }
 
    .sidebar-user-card {
-     @apply rounded-[1.5rem] p-4;
-     background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.62));
-     border: 1px solid rgba(255, 255, 255, 0.82);
-     box-shadow:
-       inset 0 1px 0 rgba(255, 255, 255, 0.92),
-       0 18px 38px rgba(148, 163, 184, 0.12);
+     @apply rounded-lg p-3;
+     background: rgba(0, 0, 0, 0.15);
+     border: none;
+     box-shadow: none;
    }
 
    .dark .sidebar-user-card {
-     background: linear-gradient(180deg, rgba(30, 41, 59, 0.86), rgba(15, 23, 42, 0.62));
-     border: 1px solid rgba(255, 255, 255, 0.12);
-     box-shadow:
-       inset 0 1px 0 rgba(255, 255, 255, 0.05),
-       0 18px 38px rgba(0, 0, 0, 0.25);
+     background: rgba(0, 0, 0, 0.20);
+     border: none;
+     box-shadow: none;
    }
 
    .sidebar-user-action {
-     @apply w-full flex items-center rounded-xl px-3 py-2 text-xs font-medium transition-all duration-300;
-     background: rgba(255, 255, 255, 0.58);
-     border: 1px solid rgba(255, 255, 255, 0.72);
+     @apply w-full flex items-center rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-200;
+     background: transparent;
+     border: none;
+     color: rgba(255, 255, 255, 0.75);
    }
 
    .sidebar-user-action:hover {
-     background: rgba(255, 255, 255, 0.92);
-     transform: translateY(-1px);
-     box-shadow: 0 10px 20px rgba(148, 163, 184, 0.12);
+     background: rgba(0, 0, 0, 0.15);
+     color: rgb(255, 255, 255);
    }
 
    .dark .sidebar-user-action {
-     background: rgba(255, 255, 255, 0.06);
-     border: 1px solid rgba(255, 255, 255, 0.12);
+     background: transparent;
+     border: none;
+     color: rgba(255, 255, 255, 0.70);
    }
 
    .dark .sidebar-user-action:hover {
-     background: rgba(255, 255, 255, 0.12);
-     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+     background: rgba(0, 0, 0, 0.20);
+     color: rgb(255, 255, 255);
    }
 
 .app-shell {
@@ -580,147 +564,223 @@ body {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-  /* Student portal: campus vibrant tokens (dark) */
-  /* Student portal keeps Fitness aesthetic in dark mode too */
+  /* Student portal — Joda brand — DARK MODE */
   --student-ink: #050509;
-  --student-bg: radial-gradient(circle at 20% 0%, rgba(255, 45, 85, 0.10), transparent 38%),
-    radial-gradient(circle at 80% 20%, rgba(48, 209, 88, 0.10), transparent 40%),
-    radial-gradient(circle at 55% 90%, rgba(64, 156, 255, 0.10), transparent 42%),
-    linear-gradient(180deg, #050509 0%, #030305 55%, #020203 100%);
-  --student-fg: rgba(255, 255, 255, 0.92);
-  --student-fg-muted: rgba(255, 255, 255, 0.62);
-  --student-border: rgba(255, 255, 255, 0.12);
-  --student-surface: rgba(255, 255, 255, 0.06);
-  --student-surface-2: rgba(255, 255, 255, 0.03);
-  --student-shadow: 0 26px 90px rgba(0, 0, 0, 0.62);
-  --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.40);
+  --student-bg: radial-gradient(circle at 20% 0%, rgba(220, 38, 38, 0.16), transparent 38%),
+    radial-gradient(circle at 80% 20%, rgba(185, 28, 28, 0.09), transparent 40%),
+    radial-gradient(circle at 55% 90%, rgba(153, 27, 27, 0.12), transparent 42%),
+    linear-gradient(180deg, #0d0505 0%, #080303 55%, #050202 100%);
+  --student-fg: rgba(255, 255, 255, 0.93);
+  --student-fg-muted: rgba(255, 255, 255, 0.60);
+  --student-border: rgba(220, 38, 38, 0.22);
+  --student-surface: rgba(220, 38, 38, 0.07);
+  --student-surface-2: rgba(220, 38, 38, 0.03);
+  --student-shadow: 0 26px 90px rgba(0, 0, 0, 0.65);
+  --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.42);
+  /* Joda rings — dark */
+  --student-ring-move: #ef4444;
+  --student-ring-exercise: #fca5a5;
+  --student-ring-stand: #dc2626;
+  --student-glow-move: 0 0 0.75rem rgba(239, 68, 68, 0.50);
+  --student-glow-exercise: 0 0 0.75rem rgba(252, 165, 165, 0.38);
+  --student-glow-stand: 0 0 0.75rem rgba(220, 38, 38, 0.42);
+  /* Joda CTA accent — dark */
+  --student-neon-lime: #ef4444;
+  --student-neon-lime-mid: #dc2626;
+  --student-neon-mid: #dc2626;
+  --student-neon-ink: #ffffff;
+  --student-pay-glow: 0 0 28px rgba(239, 68, 68, 0.50);
+  --student-pay-glow-soft: 0 0 14px rgba(239, 68, 68, 0.32);
 }
 
 @layer components {
+  /* ── Shell ── */
   .student-shell {
     background: var(--student-bg);
     color: var(--student-fg);
+    min-height: 100dvh;
   }
 
-  .dark .student-shell {
-    background: var(--student-bg);
-    color: var(--student-fg);
-  }
-
+  /* ── Surfaces ── */
   .student-surface {
     border-radius: var(--student-radius);
-    background: linear-gradient(180deg, var(--student-surface), var(--student-surface-2));
+    background: var(--student-surface);
     border: 1px solid var(--student-border);
     box-shadow: var(--student-shadow-2);
     backdrop-filter: blur(22px);
   }
 
+  .dark .student-surface {
+    background: linear-gradient(180deg, rgba(220, 38, 38, 0.07), rgba(220, 38, 38, 0.03));
+  }
+
   .student-surface-soft {
     border-radius: calc(var(--student-radius) - 0.25rem);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.30);
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(220, 38, 38, 0.12);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.08);
     backdrop-filter: blur(18px);
   }
 
   .dark .student-surface-soft {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(220, 38, 38, 0.18);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
   }
 
+  /* ── Bottom tabs ── */
   .student-bottom-tabs {
     @apply backdrop-blur-xl;
-    background: linear-gradient(180deg, rgba(10, 10, 16, 0.72), rgba(5, 5, 9, 0.92));
-    border-top: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.55);
+    background: linear-gradient(180deg, rgba(250, 250, 250, 0.88), rgba(245, 245, 245, 0.96));
+    border-top: 1px solid rgba(220, 38, 38, 0.14);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
   }
 
   .dark .student-bottom-tabs {
-    background: linear-gradient(180deg, rgba(10, 10, 16, 0.72), rgba(5, 5, 9, 0.92));
-    border-top: 1px solid rgba(255, 255, 255, 0.10);
+    background: linear-gradient(180deg, rgba(10, 3, 3, 0.82), rgba(5, 1, 1, 0.95));
+    border-top: 1px solid rgba(220, 38, 38, 0.20);
     box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.60);
   }
 
+  /* ── Chip ── */
   .student-chip {
     border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.18);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
     backdrop-filter: blur(18px);
     color: var(--student-fg);
   }
 
-  .student-focus-ring {
-    outline: none;
+  .dark .student-chip {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
   }
+
+  /* ── Focus ring ── */
+  .student-focus-ring { outline: none; }
 
   .student-focus-ring:focus-visible {
     box-shadow:
-      0 0 0 2px rgba(255, 255, 255, 0.10),
-      0 0 0 5px rgba(64, 156, 255, 0.35);
+      0 0 0 2px rgba(220, 38, 38, 0.15),
+      0 0 0 4px rgba(220, 38, 38, 0.35);
   }
 
-  /**
-   * Student payments: Fitness Training screenshot alignment (black + neon lime + olive glass).
-   * Activate via wrapper .student-payments-scope on the payments tab only.
-   */
+  .dark .student-focus-ring:focus-visible {
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.10),
+      0 0 0 4px rgba(239, 68, 68, 0.40);
+  }
+
+  /* ── Payments scope ── */
   .student-payments-scope {
     --student-local-neon: var(--student-neon-lime);
   }
 
+  /* ── Pay surfaces — light ── */
   .student-pay-surface {
     border-radius: var(--student-radius);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(220, 38, 38, 0.16);
     background: linear-gradient(
       155deg,
-      rgba(52, 58, 32, 0.42) 0%,
-      rgba(18, 22, 10, 0.72) 48%,
-      rgba(8, 10, 5, 0.88) 100%
+      rgba(255, 245, 245, 0.95) 0%,
+      rgba(255, 250, 250, 0.90) 48%,
+      rgba(255, 255, 255, 0.88) 100%
+    );
+    box-shadow:
+      0 12px 40px rgba(220, 38, 38, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(22px);
+  }
+
+  .dark .student-pay-surface {
+    border: 1px solid rgba(220, 38, 38, 0.20);
+    background: linear-gradient(
+      155deg,
+      rgba(60, 10, 10, 0.45) 0%,
+      rgba(20, 5, 5, 0.75) 48%,
+      rgba(8, 2, 2, 0.90) 100%
     );
     box-shadow:
       0 24px 70px rgba(0, 0, 0, 0.55),
       inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(22px);
   }
 
   .student-pay-surface-soft {
     border-radius: calc(var(--student-radius) - 0.25rem);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.12);
     background: linear-gradient(
       180deg,
-      rgba(40, 46, 24, 0.5) 0%,
-      rgba(14, 16, 8, 0.72) 100%
+      rgba(255, 248, 248, 0.92) 0%,
+      rgba(255, 252, 252, 0.85) 100%
     );
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.42);
+    box-shadow: 0 6px 24px rgba(220, 38, 38, 0.07);
     backdrop-filter: blur(18px);
+  }
+
+  .dark .student-pay-surface-soft {
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    background: linear-gradient(
+      180deg,
+      rgba(50, 8, 8, 0.52) 0%,
+      rgba(16, 3, 3, 0.75) 100%
+    );
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
   }
 
   .student-pay-pill {
     border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(0, 0, 0, 0.35);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.14);
+    background: rgba(220, 38, 38, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.80);
     backdrop-filter: blur(12px);
   }
 
+  .dark .student-pay-pill {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* ── Modal panel ── */
   .student-pay-modal-panel {
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.18);
     background: linear-gradient(
       185deg,
-      rgba(44, 50, 26, 0.55) 0%,
-      rgba(12, 14, 8, 0.94) 55%,
-      rgba(4, 5, 2, 0.98) 100%
+      rgba(255, 245, 245, 0.98) 0%,
+      rgba(255, 252, 252, 0.97) 55%,
+      rgba(255, 255, 255, 0.98) 100%
     );
     box-shadow:
-      0 28px 90px rgba(0, 0, 0, 0.65),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      0 28px 90px rgba(0, 0, 0, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(22px);
+  }
+
+  .dark .student-pay-modal-panel {
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    background: linear-gradient(
+      185deg,
+      rgba(50, 8, 8, 0.58) 0%,
+      rgba(12, 3, 3, 0.95) 55%,
+      rgba(4, 1, 1, 0.99) 100%
+    );
+    box-shadow:
+      0 28px 90px rgba(0, 0, 0, 0.68),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   .student-payments-scope .student-focus-ring:focus-visible {
     box-shadow:
+      0 0 0 2px rgba(220, 38, 38, 0.15),
+      0 0 0 4px rgba(220, 38, 38, 0.38);
+  }
+
+  .dark .student-payments-scope .student-focus-ring:focus-visible {
+    box-shadow:
       0 0 0 2px rgba(255, 255, 255, 0.12),
-      0 0 0 5px rgba(196, 255, 51, 0.28);
+      0 0 0 4px rgba(239, 68, 68, 0.42);
   }
 }
 
@@ -737,24 +797,24 @@ body {
 }
 
 .sidebar-section-dot {
-  width: 0.65rem;
-  height: 0.65rem;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, rgba(148, 163, 184, 0.65), rgba(203, 213, 225, 0.95));
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: none;
 }
 
 .sidebar-section-dot-active {
-  background: linear-gradient(135deg, #f97316, #ef4444);
-  box-shadow: 0 0 0 4px rgba(254, 242, 242, 0.95), 0 0 18px rgba(239, 68, 68, 0.35);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: none;
 }
 
 .sidebar-item-button {
-  @apply w-full flex items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300;
+  @apply w-full flex items-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-200;
 }
 
 .sidebar-item-icon-active {
-  color: rgb(190 24 93);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(254, 242, 242, 0.92));
-  box-shadow: 0 10px 24px rgba(244, 63, 94, 0.16);
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
 }

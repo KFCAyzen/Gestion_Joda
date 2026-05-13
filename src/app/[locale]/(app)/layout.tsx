@@ -260,7 +260,7 @@ function AppShell({ children }: { children: ReactNode }) {
     }, [user, pathname]);
 
     const activeRouteId = useMemo<RouteId>(() => {
-        const entry = Object.entries(ROUTES).find(([, path]) => path === pathname);
+        const entry = Object.entries(ROUTES).find(([, path]) => pathname.endsWith(path));
         return (entry?.[0] as RouteId) ?? "home";
     }, [pathname]);
 
@@ -352,10 +352,10 @@ function AppShell({ children }: { children: ReactNode }) {
                     </div>
                     <div className="min-w-0">
                         <p className="sidebar-eyebrow">{t('workspace')}</p>
-                        <h1 className="text-lg font-semibold text-slate-900 tracking-tight truncate">{t('companyName')}</h1>
-                        <p className="text-xs text-slate-500 truncate">{t('companyDescription')}</p>
-                        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.8)]" />
+                        <h1 className="text-lg font-semibold text-white tracking-tight truncate">{t('companyName')}</h1>
+                        <p className="text-xs text-white/65 truncate">{t('companyDescription')}</p>
+                        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/15 px-2.5 py-1 text-[11px] font-medium text-white/80">
+                            <span className="h-2 w-2 rounded-full bg-white/70" />
                             {t('systemActive')}
                         </div>
                     </div>
@@ -375,21 +375,13 @@ function AppShell({ children }: { children: ReactNode }) {
                                                 [section.id]: !prev[section.id],
                                             }))
                                         }
-                                        className={`w-full flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-[1.25rem] transition-all duration-300 ${
+                                        className={`w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold uppercase tracking-widest transition-colors duration-200 ${
                                             hasActive
-                                                ? "text-slate-900 bg-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
-                                                : "text-slate-600 hover:bg-white/70 hover:text-slate-900"
+                                                ? "text-white rounded-r-lg border-l-[3px] border-white/80 bg-black/12"
+                                                : "text-white/50 rounded-lg hover:text-white/80"
                                         }`}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <span className={`sidebar-section-dot ${hasActive ? "sidebar-section-dot-active" : ""}`} />
-                                            <div className="text-left">
-                                                <span className="block">{section.label}</span>
-                                                <span className="text-[11px] font-medium text-slate-400">
-                                                    {section.items.length} {section.items.length > 1 ? t('modulesPlural') : t('modules')}
-                                                </span>
-                                            </div>
-                                        </div>
+                                        <span>{section.label}</span>
                                         <ChevronDown
                                             className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
                                         />
@@ -407,13 +399,7 @@ function AppShell({ children }: { children: ReactNode }) {
                                                             : "sidebar-item-idle"
                                                     }`}
                                                 >
-                                                    <span
-                                                        className={`sidebar-item-icon ${
-                                                            item.id === activeRouteId ? "sidebar-item-icon-active" : ""
-                                                        }`}
-                                                    >
-                                                        {item.icon}
-                                                    </span>
+                                                    <span className="sidebar-item-icon">{item.icon}</span>
                                                     <span className="truncate text-left">{item.label}</span>
                                                 </button>
                                             ))}
@@ -429,10 +415,10 @@ function AppShell({ children }: { children: ReactNode }) {
                     <div className="sidebar-user-card">
                         <div className="flex items-center mb-4">
                             <div className="sidebar-user-avatar">
-                                <span className="text-sm font-semibold text-slate-700">{user.name?.charAt(0)}</span>
+                                <span className="text-sm font-semibold text-white">{user.name?.charAt(0)}</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
+                                <p className="text-sm font-semibold text-white truncate">{user.name}</p>
                                 <p
                                     className={`mt-1 text-xs px-2 py-1 rounded-full inline-block ${
                                         user.role === "super_admin"
@@ -456,14 +442,14 @@ function AppShell({ children }: { children: ReactNode }) {
                                     setShowUserPasswordChange(true);
                                     setIsMobileMenuOpen(false);
                                 }}
-                                className="sidebar-user-action text-slate-600 hover:text-slate-900"
+                                className="sidebar-user-action"
                             >
                                 <KeyRound className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
                                 {t('changePassword')}
                             </button>
                             <button
                                 onClick={() => void handleLogout()}
-                                className="sidebar-user-action text-rose-600 hover:text-rose-700"
+                                className="sidebar-user-action !text-rose-200 hover:!text-white"
                             >
                                 <LogOut className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
                                 {t('logout')}
