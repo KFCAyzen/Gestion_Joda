@@ -22,6 +22,9 @@
 | **Universités** | ✅ CRUD complet | ✅ CRUD complet | ✅ Lecture uniquement | ❌ |
 | **Frais** | ✅ CRUD complet | ✅ CRUD complet | ✅ Lecture uniquement | ❌ |
 | **Comptabilité** | ✅ CRUD complet | ✅ CRUD complet | ❌ Aucun accès | ❌ |
+| **Cours de Langues** | ✅ CRUD complet | ✅ CRUD complet | ✅ Lecture + inscription | ❌ |
+| **Communication** | ✅ Email + SMS | ✅ Email + SMS | ✅ Email + SMS | ❌ |
+| **Config. Frais** | ✅ CRUD complet | ✅ CRUD complet | ❌ | ❌ |
 | **Utilisateurs** | ✅ CRUD complet | ✅ Créer/Lire<br>❌ Supprimer | ❌ Aucun accès | ❌ |
 | **Logs Activités** | ✅ Lecture | ✅ Lecture | ❌ Aucun accès | ❌ |
 | **Performances** | ✅ Lecture | ✅ Lecture | ✅ Lecture | ❌ |
@@ -64,6 +67,12 @@
 3. `supabase.auth.signInWithPassword(authEmail, password)`
 4. Récupération du profil → redirection vers `StudentPortal`
 
+**Mot de passe oublié (étudiant)**
+1. Saisie du username sur la page de login
+2. `POST /api/forgot-password` → génère un lien de réinitialisation Supabase
+3. Envoi email HTML avec le lien (expiration 1h)
+4. Redirection vers la page de reset
+
 **Changement de mot de passe obligatoire**
 1. Détection de `must_change_password = true` après login
 2. Affichage de `ChangePasswordModal` (bloque l'accès)
@@ -71,8 +80,7 @@
 4. Indicateur de force (Faible/Moyen/Bon/Fort)
 5. `supabase.auth.updateUser({ password })`
 6. Mise à jour `must_change_password = false` dans `users`
-7. Mise à jour `localStorage`
-8. Accès débloqué
+7. Accès débloqué
 
 **Déconnexion**
 1. `supabase.auth.signOut()`
@@ -115,11 +123,6 @@
 - Injecter des données de démonstration
 - Purger les données de démonstration
 
-### Flow de rafraîchissement
-1. Chargement initial au montage
-2. Écoute des événements `dashboardUpdate` et `dataChanged`
-3. Bouton "Actualiser" manuel
-
 ---
 
 ## 3. GESTION DES ÉTUDIANTS
@@ -149,12 +152,8 @@
 6. Création du compte Supabase Auth
 7. Insertion dans `users` (upsert)
 8. Insertion dans `students` avec `created_by = userId`
-9. Envoi email de bienvenue (Gmail SMTP)
+9. Envoi email de bienvenue + SMS si numéro renseigné
 10. Affichage modal avec username + mot de passe temporaire
-
-### Accès
-- Lecture : tous les rôles connectés
-- Création/Modification/Suppression : `admin`, `super_admin`, `agent`
 
 ---
 
@@ -194,10 +193,7 @@
 4. Insertion dans `dossier_bourses` avec `status = document_manquant`
 5. Création d'une notification pour l'étudiant
 6. Envoi d'un email via `/api/send-application` avec :
-   - Nom de l'université
-   - Programme souhaité
-   - Niveau d'études
-   - Type de bourse
+   - Nom de l'université, programme, niveau, type de bourse
    - Liste des 5 documents requis
 
 ---
@@ -230,12 +226,6 @@
 - `visa_en_cours` — Visa en cours
 - `termine` — Dossier terminé
 
-### Flow CRUD
-1. **Chargement** : `loadData()` récupère depuis `dossier_bourses` avec jointures
-2. **Mise à jour statut** : `updateStatus(id, newStatus)` met à jour le statut
-3. **Mise à jour notes** : `updateNotes(id, notes)` sauvegarde les notes internes
-4. **Suppression** : `deleteFile(id)` supprime avec confirmation
-
 ---
 
 ## 6. UNIVERSITÉS PARTENAIRES
@@ -245,14 +235,6 @@
 
 ### Table Supabase
 - `universities`
-
-### Fonctionnalités
-- Liste de toutes les universités (actives + inactives)
-- Ajout d'une université
-- Modification d'une université
-- Activation / Désactivation
-- Suppression
-- Seed des 8 universités prédéfinies si la liste est vide
 
 ### Universités prédéfinies
 | Université | Code | Ville |
@@ -265,10 +247,6 @@
 | Université de Wuhan | WHU | Wuhan |
 | Université Sun Yat-sen | SYS | Canton |
 | Université Tongji | TJU | Shanghai |
-
-### Accès
-- Lecture : tous
-- Création/Modification/Suppression : `admin`, `super_admin`
 
 ---
 
@@ -292,19 +270,13 @@
 - `retard` — En retard (pénalités applicables)
 
 ### Calcul des pénalités
-- Délai de grâce : 3 jours (procédure) / 30 jours (cours de langue)
-- Pénalité : 10 000 FCFA/jour (procédure) / 1 000 FCFA/jour (cours)
+- Délai de grâce configurable par service (`PaymentConfigContext`)
+- Pénalité configurable par service (montant fixe/jour)
 
 ### Flow de validation d'un paiement
-1. Agent/Admin consulte la liste des paiements en attente
-2. Filtre par étudiant ou statut
-3. Clic "Valider" → `status = paye`, `validated_by = userId`, `validated_at = now`
-4. Clic "Rejeter" → `status = retard`
-
-### Flow d'enregistrement d'un frais
-1. Sélection étudiant
-2. Saisie montant + motif + date
-3. Insertion dans `payments` avec `status = paye` (paiement immédiat)
+1. Admin consulte la liste des paiements en attente
+2. Clic "Valider" → `status = paye`, `validated_by = userId`, `validated_at = now`
+3. Envoi email + SMS de confirmation au student via `/api/notify-payment-result`
 
 ---
 
@@ -314,38 +286,128 @@
 - `AccountingPage.tsx`
 
 ### Tables Supabase
-- `entrees_comptables`
-- `sorties_comptables`
+- `entrees_comptables` — Entrées financières
+- `sorties_comptables` — Sorties financières avec validation
+- `budgets` — Budgets prévisionnels par catégorie
+- `custom_categories` — Catégories personnalisées (entrées & sorties)
 
-### Fonctionnalités
-- Rapport journalier (sélection de date)
-- Liste des entrées avec total
-- Liste des sorties avec total et validation
-- Solde global (entrées - sorties)
-- Solde du jour
+### Onglets
+| Onglet | Contenu |
+|---|---|
+| **Rapport** | KPI période + tableaux entrées/sorties + statistiques par catégorie |
+| **Entrées** | Liste complète des entrées avec recherche, détails, reçu, suppression |
+| **Sorties** | Liste complète des sorties avec validation admin, détails, suppression |
+| **Budgets** | Gestion des budgets prévisionnels par catégorie et période |
+| **Catégories** | Gestion des catégories personnalisées d'entrées et sorties |
+
+### Filtres de période
+`Aujourd'hui` / `Semaine` / `Mois` / `Année` / `Personnalisé` (plage de dates)
+
+### Portée du rapport
+`Entrées & Sorties` / `Entrées uniquement` / `Sorties uniquement`
 
 ### Types d'entrées
-- `paiement_procedure`
-- `paiement_cours`
-- `revenus_divers`
+- `paiement_procedure` — Frais de procédure bourse
+- `paiement_cours` — Cours de langue
+- `revenus_divers` — Autres revenus
+- + catégories personnalisées (table `custom_categories`, type `entree`)
 
 ### Catégories de sorties
-- Loyer, Salaires, Fonctionnement, Matériels, Fournitures, Transports, Communication, Partenaires, Divers
+`loyer`, `salaires`, `fonctionnement`, `materiels`, `fournitures`, `transports`, `communication`, `partenaires`, `divers` + catégories personnalisées
 
-### Flow d'ajout d'une entrée (admin uniquement)
-1. Saisie montant + type + date + description
-2. Insertion dans `entrees_comptables`
+### Exports
+- **Rapport HTML** → `utils/accountingReportPrinter.ts` (ouvre fenêtre d'impression)
+- **Export Excel/CSV** → fichier `.csv` avec toutes les opérations de la période
+- **Export PDF** → `lib/pdfGenerator.ts` (génération PDF client-side)
 
-### Flow de validation d'une sortie
-1. Agent crée une sortie
-2. Admin valide → `validated_by = userId`, `validated_at = now`
+### Reçu de paiement
+- **Fichier** : `utils/thermalReceipt.ts`
+- **Format** : Reçu bancaire A5 (Inter + JetBrains Mono, format professionnel)
+- **Contenu** : référence, date/heure, bénéficiaire, service, montant, pénalité, code d'autorisation
 
 ---
 
-## 9. NOTIFICATIONS
+## 9. COURS DE LANGUES
+
+### Composant
+- `CoursLangues.tsx`
+
+### Tables Supabase
+- `payments` (type `mandarin` ou `anglais`)
+- `cours_langues` (inscriptions aux cours)
+
+### Fonctionnalités
+- Inscription d'un étudiant à un cours (mandarin ou anglais)
+- Création automatique du premier paiement (tranche 1) selon la configuration des frais
+- Liste des paiements de cours avec statut
+- Validation d'un paiement de cours (admin)
+- Calcul et affichage des pénalités de retard
+- Suppression d'une inscription avec confirmation
+
+### Flow d'inscription
+1. Sélection de l'étudiant et du type de cours
+2. Vérification qu'il n'est pas déjà inscrit (même type actif)
+3. Insertion dans `cours_langues`
+4. Création du paiement initial dans `payments` (tranche 1, `status = attente`)
+
+---
+
+## 10. COMMUNICATION
+
+### Composant
+- `ComPage.tsx`
+
+### Onglets
+| Onglet | Fonctionnalité |
+|---|---|
+| **Messages** | Envoi d'emails individuels ou groupés aux étudiants |
+| **SMS** | Envoi de SMS via API smsvas (160 caractères, numéros camerounais) |
+
+### Fonctionnalités — Messages
+- Sélection multiple d'étudiants (avec case à cocher)
+- Saisie sujet + corps du message
+- Envoi via `POST /api/send-student-message`
+- Email HTML responsive + SMS simultané si numéro disponible
+- Compteur de caractères pour les SMS
+
+### Fonctionnalités — SMS
+- Liste de tous les étudiants avec numéro de téléphone
+- Envoi SMS à une sélection ou à tous
+- Affichage du solde SMS disponible (via `/api/sms-balance`)
+- Normalisation automatique des numéros camerounais (237XXXXXXXXX)
+
+---
+
+## 11. CONFIGURATION DES FRAIS
+
+### Composant
+- `FeeConfigManagement.tsx`
+
+### Contexte
+- `PaymentConfigContext.tsx` — Configuration chargée une fois au démarrage et injectée dans toute l'app
+
+### Onglets
+- **Bourse Bachelor** — Tranches et montants pour la procédure bourse licence
+- **Bourse Master** — Tranches et montants pour la procédure bourse master
+- **Mandarin** — Tranches et montants pour les cours de mandarin
+- **Anglais** — Tranches et montants pour les cours d'anglais
+
+### Fonctionnalités
+- Définition des tranches de paiement (label + montant)
+- Ajout/suppression de tranches
+- Affichage du total automatique
+- Sauvegarde de la configuration (locale/BDD)
+- Réinitialisation aux valeurs par défaut
+
+---
+
+## 12. NOTIFICATIONS
 
 ### Composant
 - `NotificationsPage.tsx`
+
+### Contexte
+- `NotificationContext.tsx` — Toasts et notifications in-app globaux
 
 ### Table Supabase
 - `notifications`
@@ -360,18 +422,13 @@
 
 ### Fonctionnalités
 - Liste filtrée (toutes / non lues / par type)
-- Marquer comme lu (clic sur la notification)
-- Marquer tout comme lu
-- Génération automatique des alertes de retard (admin)
+- Marquer comme lu, marquer tout comme lu
+- Génération automatique des alertes de retard
 - Rafraîchissement automatique toutes les 60 secondes
-
-### Accès
-- `admin`/`super_admin` : toutes les notifications
-- Autres rôles : uniquement leurs propres notifications
 
 ---
 
-## 10. PERFORMANCES
+## 13. PERFORMANCES
 
 ### Composant
 - `PerformanceHistory.tsx`
@@ -382,7 +439,7 @@
 
 ---
 
-## 11. LOGS D'ACTIVITÉS (Admin uniquement)
+## 14. LOGS D'ACTIVITÉS
 
 ### Composant
 - `ActivityLogsPage.tsx`
@@ -391,57 +448,23 @@
 - `activity_logs`
 
 ### Fonctionnalités
-- **Traçabilité complète** des actions sensibles effectuées par les agents
-- **Statistiques** : total activités, actions agents, actions admins, aujourd'hui
-- **Filtres avancés** :
-  - Recherche par utilisateur ou action
-  - Filtre par rôle (agent, admin, super_admin)
-  - Filtre par type d'activité (création, modification, suppression)
-  - Filtre par période (aujourd'hui, 7 jours, 30 jours)
+- **Traçabilité complète** des actions sensibles
+- **Statistiques** : total activités, agents, admins, aujourd'hui
+- **Filtres** : utilisateur, rôle, type d'activité, période
 - **Pagination** : 20 logs par page
-- **Détails JSON** expandables pour chaque log
-- **Badges colorés** par rôle et type d'activité
+- **Détails JSON** expandables
 
-### Types d'activités tracées (24 types)
-- Étudiants : création, modification, suppression
-- Candidatures : création, modification, suppression, changement statut
-- Dossiers : modification, suppression, changement statut
-- Universités : création, modification, suppression
-- Paiements : création, modification, validation
-- Comptabilité : entrées, sorties
-- Documents : validation, rejet
-- Utilisateurs : création, modification, suppression
-- Connexion/Déconnexion
-
-### Structure d'un log
-```typescript
-{
-  id: string;
-  user_id: string;
-  user_name: string;
-  user_role: string;
-  activity_type: ActivityType;
-  entity_type: string;
-  entity_id: string | null;
-  description: string;
-  metadata?: Record<string, any>;
-  ip_address?: string;
-  created_at: string;
-}
-```
+### Utilitaire
+- **Fichier** : `utils/activityLogger.ts`
+- **Fonction** : `logActivity(userId, userName, userRole, activityType, entityType, entityId, description, metadata?)`
 
 ### Accès
 - `admin`, `super_admin` : voient tous les logs
 - `agent` : voit uniquement ses propres logs (via RLS)
 
-### Utilitaire
-- **Fichier** : `utils/activityLogger.ts`
-- **Fonction** : `logActivity(userId, userName, userRole, activityType, entityType, entityId, description, metadata?)`
-- **Fonction** : `getActivityLogs(filters?)` → récupère les logs avec filtres
-
 ---
 
-## 12. GESTION DES UTILISATEURS
+## 15. GESTION DES UTILISATEURS
 
 ### Composant
 - `UserManagement.tsx`
@@ -449,87 +472,107 @@
 ### Table Supabase
 - `users`
 
-### Fonctionnalités
-- Liste de tous les utilisateurs avec rôle
-- Création d'un utilisateur (via `/api/create-user`)
-- Suppression d'un utilisateur (via `/api/delete-user`)
-- Vue des permissions par rôle
-
 ### Flow de création d'un utilisateur
 1. Saisie username, nom, email, mot de passe temporaire, rôle
 2. `POST /api/create-user` → création Auth + insertion `users`
-3. Envoi email de bienvenue
+3. Envoi email de bienvenue + SMS si numéro renseigné
 4. `must_change_password = true` → l'utilisateur devra changer son mot de passe
 
 ### Accès
 - Lecture : `admin`, `super_admin`
 - Création : `admin`, `super_admin`
-- Suppression : `super_admin` uniquement (ne peut pas se supprimer soi-même)
+- Suppression : `super_admin` uniquement
 
 ---
 
-## 13. PORTAIL ÉTUDIANT
+## 16. PORTAIL ÉTUDIANT
 
-### Composants
-- `StudentPortal.tsx` — Shell principal (header, nav, routing entre vues)
-- `DocumentUpload.tsx` — Upload de documents avec compression automatique + bouton envoi staff
-- `StudentNotifications.tsx` — Liste des notifications étudiant (accessible via la cloche)
-- `PaymentOverview.tsx` — Synthèse des paiements
-- `ChangePasswordModal.tsx` — Modale changement mdp obligatoire (première connexion)
+### Architecture composants
+- `StudentShell.tsx` — Shell principal (layout, navigation, routing)
+- `StudentHeader.tsx` — Header avec titre, cloche notifications, menu
+- `StudentSidebarNav.tsx` — Navigation latérale (desktop)
+- `BottomTabs.tsx` — Navigation bas de page (mobile)
+- `StudentDashboard.tsx` — Tableau de bord étudiant
+- `StudentApplicationsList.tsx` — Liste des candidatures de l'étudiant
+- `StudentPaymentsList.tsx` — Liste des paiements et solde dû
+- `StudentDocumentsList.tsx` — Liste et upload des documents
+- `StudentMessaging.tsx` / `StudentChatFull.tsx` — Messagerie staff → étudiant
+- `StudentNotifications.tsx` — Notifications (accessible via la cloche)
+- `DossierRoadmap.tsx` — Timeline visuelle d'avancement du dossier
+- `ActivityRings.tsx` — Visualisation de l'activité
+- `StudentStatsCard.tsx` — Cartes de statistiques
 
-### Navigation
-- **4 onglets** dans la nav : Tableau de bord, Paiements, Documents, Mon dossier
-- **Cloche `Bell`** dans le header avec badge rouge (compte non lus) → ouvre la vue notifications
-- Retour depuis notifications → `load()` rafraîchit le badge
+### Navigation (4 sections)
+- **Tableau de bord** — Vue synthétique (statut dossier, prochaine échéance, avancement)
+- **Mes Candidatures** — Liste des dossiers en cours
+- **Paiements** — Historique et paiements en attente
+- **Documents** — Upload et suivi des 8 documents requis
 
-### Fonctionnalités
-- Vue personnelle sur le dossier, paiements, documents
-- **Carte "Statut dossier"** du dashboard cliquable → navigue vers la vue dossier
-- **Vue dossier enrichie** :
-  - Statut du dossier (badge)
-  - Nom de l'université (requête `universities` sur `university_id`)
-  - Date de création
-  - Message de l'équipe (`notes_internes`)
-  - Timeline des 6 étapes avec cases cochées selon l'avancement
-- Upload de documents avec :
-  - **Compression automatique des images** (cible 3 MB, résolution 2048px, qualité 85%)
-  - **Limite** : 10 MB par fichier
-  - Formats acceptés : PDF, JPG, PNG
-  - Barre de progression de complétion
-  - Statut de validation par document
-- **Bouton "Envoyer à l'équipe"** (visible dès qu'un document est uploadé) :
-  - Appelle `POST /api/notify-staff`
-  - Notifie tous les admin/super_admin/agent/supervisor
-  - Se réinitialise après chaque nouvel upload
-  - Passe en état "Envoyé" (vert) après succès
+### Fonctionnalités clés
+- **DossierRoadmap** : timeline des 6 étapes avec cases cochées selon l'avancement
+- **Upload documents** : compression auto (cible 3 MB), formats PDF/JPG/PNG, 10 MB max
+- **Déclaration paiement** : l'étudiant peut déclarer un paiement effectué (`POST /api/declare-payment`)
+- **Messagerie** : lecture des messages envoyés par le staff
+- **Bouton "Envoyer à l'équipe"** : notifie tous les admin/agent via `/api/notify-staff`
 
 ### Documents requis
 1. Passeport (copie des pages d'identité)
 2. Casier judiciaire (bulletin n°3 de moins de 3 mois)
-3. Photo d'identité (photo récente fond blanc)
+3. Photo d'identité (fond blanc)
 4. Relevé de notes (derniers relevés officiels)
 5. Diplôme (diplôme le plus élevé obtenu)
-6. Lettre de motivation (rédigée en français ou anglais)
-7. Lettre de recommandation (d'un professeur ou employeur)
-8. Certificat HSK (si disponible - optionnel)
-
-### Accès
-- `student` uniquement (interface séparée du dashboard admin)
+6. Lettre de motivation (français ou anglais)
+7. Lettre de recommandation (professeur ou employeur)
+8. Certificat HSK (optionnel)
 
 ---
 
-## 14. DEMANDES DE SERVICES
+## 17. MONITORING DU STOCKAGE
 
 ### Composant
-- `ServiceRequestManagement.tsx`
-
-### Source de données
-- Table `notifications` (les demandes sont mappées depuis les notifications)
+- `StorageMonitoring.tsx`
 
 ### Fonctionnalités
-- Liste des demandes en attente de validation
-- Traitement d'une demande avec note
-- Approbation → marque la notification comme lue
+- Barre de progression (500 MB max plan gratuit)
+- Alertes : warning à 400 MB (80%), critique à 450 MB (90%)
+- Statistiques fichiers + base de données
+- Recommandations d'optimisation
+
+### Accès
+- `super_admin` uniquement
+
+---
+
+## 18. SYSTÈME NOTIFICATIONS EMAIL & SMS
+
+### Fichiers
+- `lib/emailService.ts` — Fonctions d'envoi email (nodemailer + Gmail SMTP)
+- `lib/smsService.ts` — Envoi SMS via API smsvas.com
+
+### Fonctions email exportées
+| Fonction | Déclencheur |
+|---|---|
+| `sendPaymentReminder` | Cron check-late-payments (retard détecté) |
+| `sendPaymentResultEmail` | Validation ou rejet d'un paiement (admin) |
+| `sendPaymentDeclarationEmail` | Déclaration de paiement par l'étudiant |
+| `sendDocumentSubmissionEmail` | Soumission de documents par l'étudiant |
+| `sendStudentMessageEmail` | Message envoyé via le module Communication |
+| `sendWelcomeEmail` | Création d'un compte étudiant ou utilisateur |
+
+### SMS (`sendSmsToPhone`)
+- Provider : smsvas.com (API REST)
+- Normalisation automatique numéros camerounais (237XXXXXXXXX)
+- Envoyé en parallèle de l'email sur tous les événements clés
+- Sender ID configurable (`SMS_SENDER_ID` env var)
+
+### Cron Job
+- **Route** : `/api/cron/check-late-payments` (GET, protégé par `x-api-key`)
+- **Fréquence** : configurable (quotidien recommandé)
+- Détecte les paiements en retard → mise à jour statut `retard` → envoi email + SMS de rappel
+
+### Templates email
+- Design HTML responsive (rouge/blanc, header Joda Company)
+- Bilingue FR/EN selon la langue de l'étudiant (`getLang(langue)`)
 
 ---
 
@@ -537,13 +580,23 @@
 
 | Route | Méthode | Description | Auth requise |
 |---|---|---|---|
-| `/api/create-user` | POST | Crée un compte Auth + entrée `users` + envoie email | Service Role Key |
-| `/api/delete-user` | DELETE | Supprime un compte Auth + entrée `users` | Service Role Key |
+| `/api/create-user` | POST | Crée compte Auth + `users` + email/SMS bienvenue | Service Role Key |
+| `/api/delete-user` | DELETE | Supprime compte Auth + `users` | Service Role Key |
 | `/api/reset-password` | POST | Réinitialise le mot de passe d'un utilisateur | Service Role Key |
-| `/api/send-welcome` | POST | Envoie l'email de bienvenue | Service Role Key |
-| `/api/send-application` | POST | Envoie l'email de demande de documents à l'étudiant | Service Role Key |
-| `/api/validate-file` | POST | Valide un fichier côté serveur (type, taille, nom) | Service Role Key |
-| `/api/notify-staff` | POST | Notifie tous les admin/agent/supervisor qu'un étudiant a soumis ses documents | `requireAuth` (tout user connecté) |
+| `/api/forgot-password` | POST | Génère lien de réinitialisation pour étudiant | Public |
+| `/api/clear-password-flag` | POST | Efface `must_change_password` après changement | `requireAuth` |
+| `/api/send-welcome` | POST | Envoie email de bienvenue | Service Role Key |
+| `/api/send-application` | POST | Envoie email de demande de documents | Service Role Key |
+| `/api/send-student-message` | POST | Envoi email + SMS de masse aux étudiants | `requireAuth` (agent+) |
+| `/api/send-sms` | POST | Envoi SMS direct à un ou plusieurs numéros | `requireAuth` (agent+) |
+| `/api/sms-balance` | GET | Solde de crédits SMS disponibles | `requireAuth` (agent+) |
+| `/api/validate-file` | POST | Valide un fichier côté serveur (type, taille) | `requireAuth` |
+| `/api/notify-staff` | POST | Notifie admin/agent d'une soumission de documents | `requireAuth` |
+| `/api/declare-payment` | POST | Étudiant déclare un paiement effectué | `requireAuth` |
+| `/api/notify-payment-result` | POST | Notifie l'étudiant du résultat de validation | `requireAuth` (agent+) |
+| `/api/student-payments` | GET | Récupère les paiements de l'étudiant connecté | `requireAuth` |
+| `/api/cron/check-late-payments` | GET | Détecte retards + notifie + met à jour statuts | `x-api-key` header |
+| `/api/auth/exchange` | POST | Échange tokens OAuth (callback Supabase) | Public |
 
 ---
 
@@ -556,14 +609,16 @@
 | `universities` | Universités partenaires chinoises |
 | `documents` | Documents soumis par les étudiants |
 | `dossier_bourses` | Dossiers de candidature à une bourse |
-| `dossier_history` | Historique des changements de statut des dossiers (fonctionnalité métier) |
-| `activity_logs` | Logs d'audit des actions sensibles (traçabilité admin) |
-| `payments` | Paiements et frais |
+| `dossier_history` | Historique des changements de statut des dossiers |
+| `activity_logs` | Logs d'audit des actions sensibles |
+| `payments` | Paiements et frais (bourse, mandarin, anglais) |
 | `cours_langues` | Inscriptions aux cours de langues |
-| `entrees_comptables` | Entrées financières |
-| `sorties_comptables` | Sorties financières |
-| `notifications` | Notifications et alertes |
-| `messages` | Messagerie interne |
+| `entrees_comptables` | Entrées financières comptabilité |
+| `sorties_comptables` | Sorties financières comptabilité |
+| `budgets` | Budgets prévisionnels par catégorie et période |
+| `custom_categories` | Catégories personnalisées (entrées & sorties) |
+| `notifications` | Notifications et alertes in-app |
+| `messages` | Messages staff → étudiant |
 
 ---
 
@@ -573,99 +628,38 @@
 |---|---|---|
 | Pilotage | Dashboard, Performances | Tous |
 | Opérations | Candidatures, Étudiants, Dossiers | Tous |
-| Ressources | Universités, Frais | Tous |
-| Finance | Comptabilité | `agent`, `admin`, `super_admin` |
+| Ressources | Universités, Frais, Cours de Langues | Tous (lecture) |
+| Finance | Comptabilité | `admin`, `super_admin` |
+| Communication | Messages & SMS | `agent`, `admin`, `super_admin` |
+| Configuration | Config. Frais | `admin`, `super_admin` |
 | Administration | Utilisateurs, Logs Activités | `admin`, `super_admin` |
-| Système | **Stockage** (monitoring) | `super_admin` uniquement |
+| Système | Stockage (monitoring) | `super_admin` uniquement |
 
 ---
 
-## 15. MONITORING DU STOCKAGE (Super Admin)
-
-### Composant
-- `StorageMonitoring.tsx`
-
-### Fonctionnalités
-- **Barre de progression** de l'utilisation du stockage (500 MB max plan gratuit)
-- **Alertes automatiques** :
-  - Warning à 400 MB (80%)
-  - Critique à 450 MB (90%)
-- **Statistiques détaillées** :
-  - Total de fichiers uploadés
-  - Taille moyenne par fichier
-  - Limite par fichier (2 MB)
-  - Espace restant disponible
-- **Statistiques de la base de données** :
-  - Nombre d'étudiants
-  - Nombre de candidatures
-  - Nombre de documents
-  - Nombre d'universités
-  - Nombre d'utilisateurs
-- **Recommandations d'optimisation** :
-  - Compression automatique activée
-  - Validation stricte en place
-  - Pagination activée
-  - Conseil de passage au plan Pro
-- Bouton "Actualiser" pour rafraîchir les données
-- Affichage de la dernière mise à jour
-
-### Accès
-- `super_admin` uniquement
-
-### Objectif
-- Surveiller l'utilisation du stockage Supabase
-- Anticiper le passage au plan Pro (25$/mois)
-- Éviter une base en lecture seule
-
----
-
-## 16. OPTIMISATIONS DE STOCKAGE
+## 19. OPTIMISATIONS DE STOCKAGE
 
 ### Compression d'Images
 - **Fichier** : `utils/imageCompression.ts`
-- **Fonction** : `compressImage(file, maxSizeMB, maxWidthOrHeight, quality)`
-- **Fonctionnalités** :
-  - Compression automatique des images JPEG/PNG
-  - Redimensionnement si > 2048px
-  - Qualité : 85%
-  - Cible : 3 MB (`TARGET_COMPRESSED_SIZE_MB`)
-  - Logs de compression (avant → après)
+- Compression auto JPEG/PNG, redimensionnement si > 2048px, qualité 85%
+- Cible : 3 MB (`TARGET_COMPRESSED_SIZE_MB`)
 
 ### Validation de Fichiers
 - **Fichier** : `utils/fileValidation.ts`
-- **Configuration** : `FILE_LIMITS`
-  - `MAX_FILE_SIZE_MB` : 10 MB (entrée brute)
-  - `TARGET_COMPRESSED_SIZE_MB` : 3 MB (cible après compression images)
-  - Types MIME autorisés : PDF, JPEG, PNG
-  - Extensions autorisées : .pdf, .jpg, .jpeg, .png
-- **Fonction** : `validateFile(file)` → `{ valid: boolean, error?: string }`
-- **Validation** :
-  - Côté client (avant upload)
-  - Côté serveur (API `/api/validate-file`)
-  - Nom de fichier sécurisé (regex)
+- `MAX_FILE_SIZE_MB` : 10 MB (entrée brute)
+- Types MIME : PDF, JPEG, PNG
+- Validation côté client + côté serveur (`/api/validate-file`)
 
 ### Pagination
 - **Hook** : `hooks/usePagination.ts`
-- **Composant** : `components/Pagination.tsx`
-- **Implémentation** :
-  - StudentManagement : 20 étudiants/page
-  - ApplicationManagement : 10 candidatures/page
-  - ScholarshipFileManagement : 10 dossiers/page (prévu)
-- **Fonctionnalités** :
-  - Navigation page suivante/précédente
-  - Affichage "X à Y sur Z résultats"
-  - Reset automatique lors des filtres
-  - Responsive (mobile + desktop)
+- StudentManagement : 20/page — ApplicationManagement : 10/page
 
-### Impact
-- **Avant optimisations** : ~50-100 étudiants sur plan gratuit
-- **Après optimisations** : ~200-300 étudiants sur plan gratuit
-- **Réduction taille moyenne** : 3-5 MB → 1-1.5 MB par fichier
+---
 
+## Comptes de test
 
-aEmail                       │ Mot de passe    │ Rôle         │
-├─────────────────────────────┼─────────────────┼──────────────┤
-│ superadmin@joda.com         │ Joda@Admin9     │ super_admin  │
-│ admin@joda.com              │ Joda@Admin9     │ admin        │
-│ agent@joda.com              │ Joda@Agent9     │ agent        │
-└─────────────────────────────┴─────────────────┴──────────────┘
+| Email | Mot de passe | Rôle |
+|---|---|---|
+| `superadmin@joda.com` | `Joda@Admin9` | `super_admin` |
+| `admin@joda.com` | `Joda@Admin9` | `admin` |
+| `agent@joda.com` | `Joda@Agent9` | `agent` |
