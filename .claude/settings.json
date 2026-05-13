@@ -8,7 +8,10 @@
       "Bash(awk '/<[A-Za-z]/ {count++} END {print \"open tags approx:\",count}' /home/franck/Documents/Projets/Gestion_Joda/src/app/components/AdminOperationalDashboard.tsx)",
       "Bash(npx swc *)",
       "Bash(git -C /home/franck/Documents/Projets/Gestion_Joda log --oneline -10)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(npm run *)",
+      "Read(//tmp/**)"
     ]
   }
 }

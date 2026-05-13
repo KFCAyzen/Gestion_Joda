@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../supabase';
+import { createClient } from '../supabase/client';
 import type { Application, CreateApplication, UpdateApplication } from '../schemas/application.schema';
 import { createApplicationSchema, updateApplicationSchema } from '../schemas/application.schema';
+
+const supabase = createClient();
 
 export const APPLICATIONS_KEY = ['applications'];
 

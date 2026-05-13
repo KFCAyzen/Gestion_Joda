@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../supabase';
+import { createClient } from '../supabase/client';
 import type { PaymentConfig, ServiceType } from '../schemas/payment-config.schema';
 import { paymentConfigSchema } from '../schemas/payment-config.schema';
+
+const supabase = createClient();
 
 export const PAYMENT_CONFIG_KEY = ['payment_config'];
 

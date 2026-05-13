@@ -9,7 +9,7 @@ const COMPANY = {
   website: 'joda-company.com',
   email:   'jodacompany2@gmail.com',
   address: 'Makepe entrée Marie lumière, Douala',
-  nui:     'NUI : M022517611037A',
+  nui:     '',
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -237,15 +237,13 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   doc.line(marginL, 21, pageW - marginR, 21);
   doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
-  // ── Tel / Web / NUI — une seule ligne pleine largeur sous le séparateur
+  // ── Tel / Web — une seule ligne pleine largeur sous le séparateur
   const colW = (pageW - marginL - marginR) / 3;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...DARK);
-  doc.text(`Tel.    : ${COMPANY.phone}`,   marginL,              29);
-  doc.text(`Web     : ${COMPANY.website}`, marginL + colW,       29);
-  doc.setFontSize(7);
-  doc.text(`${COMPANY.nui}`,              marginL + colW * 2,   29);
+  doc.text(`Tel.    : ${COMPANY.phone}`,   marginL,        29);
+  doc.text(`Web     : ${COMPANY.website}`, marginL + colW, 29);
 
   // ── Titre du document — sous le bandeau
   const titleY = headerH + 11;
@@ -280,7 +278,7 @@ const addFooter = (doc: jsPDF) => {
 
     // Left: company legal info
     doc.text(
-      `${COMPANY.name}  •  ${COMPANY.nui}  •  ${COMPANY.address}`,
+      `${COMPANY.name}  •  ${COMPANY.address}`,
       15, 286,
     );
 

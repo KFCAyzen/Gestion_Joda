@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../supabase';
+import { createClient } from '../supabase/client';
 import type { Student, CreateStudent, UpdateStudent } from '../schemas/student.schema';
 import { createStudentSchema, updateStudentSchema } from '../schemas/student.schema';
+
+const supabase = createClient();
 
 export const STUDENTS_KEY = ['students'];
 

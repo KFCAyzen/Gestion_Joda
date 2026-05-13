@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../supabase';
+import { createClient } from '../supabase/client';
 import type { Payment, CreatePayment, UpdatePayment } from '../schemas/payment.schema';
 import { createPaymentSchema, updatePaymentSchema } from '../schemas/payment.schema';
+
+const supabase = createClient();
 
 export const PAYMENTS_KEY = ['payments'];
 

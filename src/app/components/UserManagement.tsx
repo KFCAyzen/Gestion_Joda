@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { createClient } from "../lib/supabase/client";
+import { useUsers, USERS_KEY } from "../lib/hooks/use-users";
 import { getFriendlyErrorMessage } from "../lib/feedback";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,9 +56,11 @@ export default function UserManagement() {
     const { user: currentUser } = useAuth();
     const t = useTranslations("userManagement");
     const { showNotification } = useNotificationContext();
+    const queryClient = useQueryClient();
+    const { data: usersData, isLoading: loading } = useUsers();
+    const dbUsers = (usersData ?? []) as unknown as DbUser[];
+    const invalidateUsers = () => queryClient.invalidateQueries({ queryKey: USERS_KEY });
     const [activeTab, setActiveTab] = useState("users");
-    const [dbUsers, setDbUsers] = useState<DbUser[]>([]);
-    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         username: "",
         prenom: "",
@@ -80,33 +84,6 @@ export default function UserManagement() {
         setError(nextError);
         setSuccess(nextSuccess);
     };
-
-    const loadUsers = async () => {
-        setLoading(true);
-        try {
-            const supabase = createClient();
-            const { data, error: usersError } = await supabase.from("users").select("*").order("created_at", { ascending: false });
-
-            if (usersError) {
-                throw usersError;
-            }
-
-            setDbUsers(data || []);
-        } catch (err) {
-            console.error("Erreur:", err);
-            const message = getFriendlyErrorMessage(err, {
-                fallback: t("messages.loadError"),
-            });
-            setFeedback(message, "");
-            showNotification({ title: t("messages.loadTitle"), message, type: "error" });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        void loadUsers();
-    }, []);
 
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -172,7 +149,7 @@ export default function UserManagement() {
                 password: "Temp123!",
                 role: "",
             });
-            await loadUsers();
+            await invalidateUsers();
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
                 fallback: t("messages.createCatchError"),
@@ -249,7 +226,7 @@ export default function UserManagement() {
                         { deleted_user_id: userId }
                     );
                 }
-                await loadUsers();
+                await invalidateUsers();
             }
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
@@ -296,7 +273,7 @@ export default function UserManagement() {
                 message,
                 type: "success",
             });
-            await loadUsers();
+            await invalidateUsers();
         } catch (err) {
             const message = getFriendlyErrorMessage(err, {
                 fallback: t("messages.accountStatusError"),

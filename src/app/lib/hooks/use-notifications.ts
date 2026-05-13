@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../supabase';
+import { createClient } from '../supabase/client';
 import type { Notification, CreateNotification } from '../schemas/notification.schema';
 import { createNotificationSchema } from '../schemas/notification.schema';
+
+const supabase = createClient();
 
 export const NOTIFICATIONS_KEY = ['notifications'];
 

@@ -165,7 +165,7 @@ export default function StudentManagement() {
     <div class="header-brand">
       <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3L2 9l10 6 10-6-10-6zM2 15l10 6 10-6M2 12l10 6 10-6"/></svg></div>
       <div>
-        <div class="brand-name">NIU JODA COMPANY</div>
+        <div class="brand-name">JODA COMPANY</div>
         <div class="brand-sub">Gestion de Bourses &amp; Cours de Langue — Douala, Cameroun</div>
       </div>
     </div>
@@ -208,7 +208,7 @@ export default function StudentManagement() {
       <div class="cell-value">${createdAt}</div>
     </div>
     <div class="footer">
-      <div class="footer-text">NIU JODA COMPANY — Douala, Cameroun</div>
+      <div class="footer-text">JODA COMPANY — Douala, Cameroun</div>
       <div class="footer-text">Confidentiel — Usage interne · ${new Date().toLocaleDateString(dateLocale)}</div>
     </div>
   </div>
