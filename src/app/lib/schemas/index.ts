@@ -4,3 +4,6 @@ export * from './university.schema';
 export * from './application.schema';
 export * from './payment.schema';
 export * from './document.schema';
+export * from './payment-config.schema';
+export * from './notification.schema';
+export * from './accounting.schema';

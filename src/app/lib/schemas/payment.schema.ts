@@ -2,22 +2,27 @@ import { z } from 'zod';
 
 export const paymentSchema = z.object({
   id: z.string().uuid(),
-  studentId: z.string().uuid(),
+  student_id: z.string().uuid(),
   montant: z.number(),
-  motif: z.string(),
-  date: z.date(),
-  type: z.enum(['frais_dossier', 'premiere_tranche', 'deuxieme_tranche', 'troisieme_tranche', 'autre']),
-  tranche: z.number().default(1),
-  status: z.enum(['en_attente', 'valide', 'rejete', 'rembourse']),
-  reference: z.string().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  type: z.enum(['bourse', 'mandarin', 'anglais', 'inscription', 'autre']),
+  tranche: z.number().nullable().optional(),
+  status: z.enum(['attente', 'en_validation', 'paye', 'retard', 'annule']),
+  date_limite: z.string().nullable().optional(),
+  date_paiement: z.string().nullable().optional(),
+  penalites: z.number().default(0),
+  validated_by: z.string().uuid().nullable().optional(),
+  validated_at: z.string().nullable().optional(),
+  facture_url: z.string().nullable().optional(),
+  recu_url: z.string().nullable().optional(),
+  initiated_by_student: z.boolean().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string().nullable().optional(),
 });
 
 export const createPaymentSchema = paymentSchema.omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
+  created_at: true,
+  updated_at: true,
 });
 
 export const updatePaymentSchema = createPaymentSchema.partial();

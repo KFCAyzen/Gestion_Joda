@@ -4,19 +4,20 @@ export const userSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   username: z.string().min(3).max(50),
-  name: z.string().optional(),
-  role: z.enum(['super_admin', 'admin', 'supervisor', 'user', 'student']),
-  avatar: z.string().url().optional(),
-  phone: z.string().optional(),
-  mustChangePassword: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  name: z.string().nullable().optional(),
+  role: z.enum(['super_admin', 'admin', 'agent', 'supervisor', 'user', 'student']),
+  avatar: z.string().url().nullable().optional(),
+  telephone: z.string().nullable().optional(),
+  must_change_password: z.boolean().default(true),
+  is_active: z.boolean().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string().nullable().optional(),
 });
 
 export const createUserSchema = userSchema.omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
+  created_at: true,
+  updated_at: true,
 }).extend({
   password: z.string().min(6),
 });

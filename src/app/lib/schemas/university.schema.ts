@@ -3,23 +3,20 @@ import { z } from 'zod';
 export const universitySchema = z.object({
   id: z.string().uuid(),
   nom: z.string(),
-  code: z.string(),
-  location: z.string(),
-  category: z.enum(['Elite', 'Tier_1', 'Tier_2', 'Tier_3']),
-  applicationFee: z.number(),
-  status: z.enum(['Disponible', 'Fermée', 'En_attente']),
-  programmes: z.array(z.string()),
-  requirements: z.any().optional(),
-  active: z.boolean(),
-  createdBy: z.string().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  pays: z.string().nullable().optional(),
+  ville: z.string().nullable().optional(),
+  programme: z.string().nullable().optional(),
+  niveau_etude: z.string().nullable().optional(),
+  criteres_admission: z.string().nullable().optional(),
+  active: z.boolean().default(true),
+  created_at: z.string(),
+  updated_at: z.string().nullable().optional(),
 });
 
 export const createUniversitySchema = universitySchema.omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
+  created_at: true,
+  updated_at: true,
 });
 
 export const updateUniversitySchema = createUniversitySchema.partial();

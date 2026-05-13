@@ -5,25 +5,25 @@ export const studentSchema = z.object({
   nom: z.string().min(1),
   prenom: z.string().min(1),
   email: z.string().email(),
-  telephone: z.string().optional(),
-  age: z.number().min(15).max(100).optional(),
+  telephone: z.string().nullable().optional(),
+  age: z.number().min(0).max(120).nullable().optional(),
   sexe: z.enum(['M', 'F']),
   niveau: z.string(),
   filiere: z.string(),
   langue: z.string().default('Anglais'),
-  diplome_acquis: z.string().optional(),
+  diplome_acquis: z.string().nullable().optional(),
   choix: z.enum(['procedure_seule', 'procedure_cours', 'cours_seuls']).default('procedure_seule'),
-  nationalite: z.string().optional().nullable(),
-  userId: z.string().uuid().optional(),
-  createdBy: z.string().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  nationalite: z.string().nullable().optional(),
+  user_id: z.string().uuid().nullable().optional(),
+  created_by: z.string().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string().nullable().optional(),
 });
 
 export const createStudentSchema = studentSchema.omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
+  created_at: true,
+  updated_at: true,
 });
 
 export const updateStudentSchema = createStudentSchema.partial();

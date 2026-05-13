@@ -23,7 +23,7 @@ export const useStudentsStore = create<StudentsState>((set, get) => ({
       const { data, error } = await supabase
         .from('students')
         .select('*')
-        .order('createdAt', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       set({ students: data as Student[], isLoading: false });

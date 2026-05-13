@@ -105,8 +105,8 @@ export function useUniversitiesStats() {
     queryKey: [...UNIVERSITIES_KEY, 'stats'],
     queryFn: async () => {
       const total = await supabase.from('universities').select('*', { count: 'exact', head: true });
-      const available = await supabase.from('universities').select('*', { count: 'exact', head: true }).eq('status', 'Disponible').eq('active', true);
-      return { total: total.count || 0, available: available.count || 0 };
+      const active = await supabase.from('universities').select('*', { count: 'exact', head: true }).eq('active', true);
+      return { total: total.count || 0, active: active.count || 0 };
     },
   });
 }

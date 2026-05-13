@@ -1,13 +1,14 @@
 import { z } from 'zod';
 
+// "dossier_bourses" table — used as both application & dossier
 export const applicationSchema = z.object({
   id: z.string().uuid(),
-  studentId: z.string().uuid(),
-  universityId: z.string().uuid(),
-  desiredProgram: z.string().optional(),
-  studyLevel: z.string().default('Licence'),
-  languageLevel: z.string().default('HSK 3'),
-  scholarshipType: z.string().default('Complète'),
+  student_id: z.string().uuid(),
+  university_id: z.string().uuid().nullable().optional(),
+  desired_program: z.string().nullable().optional(),
+  study_level: z.string().nullable().optional(),
+  language_level: z.string().nullable().optional(),
+  scholarship_type: z.string().nullable().optional(),
   status: z.enum([
     'document_recu',
     'en_attente',
@@ -15,17 +16,20 @@ export const applicationSchema = z.object({
     'document_manquant',
     'admission_validee',
     'admission_rejetee',
-    'termine'
+    'en_attente_universite',
+    'visa_en_cours',
+    'termine',
   ]),
-  notes: z.string().optional(),
-  submittedAt: z.date(),
-  updatedAt: z.date(),
+  notes_internes: z.string().nullable().optional(),
+  assigned_to: z.string().uuid().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string().nullable().optional(),
 });
 
 export const createApplicationSchema = applicationSchema.omit({
   id: true,
-  submittedAt: true,
-  updatedAt: true,
+  created_at: true,
+  updated_at: true,
 });
 
 export const updateApplicationSchema = createApplicationSchema.partial();
