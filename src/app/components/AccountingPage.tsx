@@ -27,7 +27,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search, Eye, Edit } from "lucide-react";
-import { generateAccountingReport } from "../lib/pdfGenerator";
 import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
@@ -636,6 +635,7 @@ export default function AccountingPage() {
                 })),
             ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+            const { generateAccountingReport } = await import("../lib/pdfGenerator");
             await generateAccountingReport({
                 title: t("export.pdfTitle", { period: getPeriodLabel(periodFilter) }),
                 period: {
