@@ -306,8 +306,8 @@ function AppShell({ children }: { children: ReactNode }) {
 
     if (loading || !user) {
         return (
-            <div className="fixed inset-0 bg-white flex items-center justify-center">
-                <div className="text-slate-500 text-base">{t('loading')}</div>
+            <div className="gradient-bg app-shell fixed inset-0 flex items-center justify-center">
+                <div className="text-[var(--foreground)] text-base">{t('loading')}</div>
             </div>
         );
     }
@@ -422,10 +422,10 @@ function AppShell({ children }: { children: ReactNode }) {
                                 <p
                                     className={`mt-1 text-xs px-2 py-1 rounded-full inline-block ${
                                         user.role === "super_admin"
-                                            ? "bg-rose-100 text-rose-700"
+                                            ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
                                             : user.role === "admin"
-                                              ? "bg-sky-100 text-sky-700"
-                                              : "bg-emerald-100 text-emerald-700"
+                                              ? "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
+                                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                                     }`}
                                 >
                                     {user.role === "super_admin"
@@ -472,15 +472,15 @@ function AppShell({ children }: { children: ReactNode }) {
                         <div className="flex items-center">
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg mr-4"
+                                className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg mr-4"
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
                             <div>
-                                <h1 className="text-xl font-bold text-slate-900 tracking-tight sm:text-2xl">
+                                <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight sm:text-2xl">
                                     {activeItem?.label ?? "Dashboard"}
                                 </h1>
-                                <p className="text-xs text-slate-500 sm:text-sm">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
                                     {PAGE_DESCRIPTIONS[activeRouteId]}
                                 </p>
                             </div>
@@ -490,7 +490,7 @@ function AppShell({ children }: { children: ReactNode }) {
                             <LanguageSwitcher />
                             <button
                                 onClick={() => navigateTo("notifications")}
-                                className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                className="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                             >
                                 <Bell className="w-5 h-5" />
                                 {unreadCount > 0 && (
@@ -512,13 +512,13 @@ function AppShell({ children }: { children: ReactNode }) {
                         </button>
                         {activeSection && (
                             <>
-                                <span className="text-slate-300">/</span>
+                                <span className="text-slate-300 dark:text-slate-600">/</span>
                                 <span className="app-breadcrumb-chip">{activeSection.label}</span>
                             </>
                         )}
                         {activeItem && activeRouteId !== "home" && (
                             <>
-                                <span className="text-slate-300">/</span>
+                                <span className="text-slate-300 dark:text-slate-600">/</span>
                                 <span className="app-breadcrumb-current">{activeItem.label}</span>
                             </>
                         )}

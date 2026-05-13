@@ -9,18 +9,18 @@ interface StatusBadgeProps {
 }
 
 const defaultColorMap: Record<string, { bg: string; text: string }> = {
-    active: { bg: "bg-green-100", text: "text-green-800" },
-    inactive: { bg: "bg-gray-100", text: "text-gray-800" },
-    pending: { bg: "bg-yellow-100", text: "text-yellow-800" },
-    approved: { bg: "bg-green-100", text: "text-green-800" },
-    rejected: { bg: "bg-red-100", text: "text-red-800" },
-    paye: { bg: "bg-green-100", text: "text-green-800" },
-    attente: { bg: "bg-yellow-100", text: "text-yellow-800" },
-    retard: { bg: "bg-red-100", text: "text-red-800" },
-    en_attente: { bg: "bg-yellow-100", text: "text-yellow-800" },
-    en_cours: { bg: "bg-blue-100", text: "text-blue-800" },
-    acceptee: { bg: "bg-green-100", text: "text-green-800" },
-    refusee: { bg: "bg-red-100", text: "text-red-800" },
+    active: { bg: "bg-green-100 dark:bg-green-900/40", text: "text-green-800 dark:text-green-300" },
+    inactive: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-800 dark:text-gray-300" },
+    pending: { bg: "bg-yellow-100 dark:bg-yellow-900/40", text: "text-yellow-800 dark:text-yellow-300" },
+    approved: { bg: "bg-green-100 dark:bg-green-900/40", text: "text-green-800 dark:text-green-300" },
+    rejected: { bg: "bg-red-100 dark:bg-red-900/40", text: "text-red-800 dark:text-red-300" },
+    paye: { bg: "bg-green-100 dark:bg-green-900/40", text: "text-green-800 dark:text-green-300" },
+    attente: { bg: "bg-yellow-100 dark:bg-yellow-900/40", text: "text-yellow-800 dark:text-yellow-300" },
+    retard: { bg: "bg-red-100 dark:bg-red-900/40", text: "text-red-800 dark:text-red-300" },
+    en_attente: { bg: "bg-yellow-100 dark:bg-yellow-900/40", text: "text-yellow-800 dark:text-yellow-300" },
+    en_cours: { bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-800 dark:text-blue-300" },
+    acceptee: { bg: "bg-green-100 dark:bg-green-900/40", text: "text-green-800 dark:text-green-300" },
+    refusee: { bg: "bg-red-100 dark:bg-red-900/40", text: "text-red-800 dark:text-red-300" },
 };
 
 const defaultLabelMap: Record<string, string> = {

@@ -37,8 +37,8 @@ export default function ConfirmDialog({
                 exit={{ opacity: 0 }}
             >
                 <motion.div
-                    className="w-full max-w-md rounded-2xl border border-white/30 p-6 shadow-2xl"
                     style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+                    className="w-full max-w-md rounded-2xl border border-white/30 p-6 shadow-2xl dark:border-white/10 dark:[background:rgba(15,23,42,0.85)]"
                     initial={{ scale: 0.94, y: 20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
                     exit={{ scale: 0.94, opacity: 0 }}
@@ -48,8 +48,8 @@ export default function ConfirmDialog({
                             <AlertTriangle className="h-6 w-6 text-red-600" />
                         </div>
                     )}
-                    <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
-                    <p className="mt-2 text-sm text-slate-500">{description}</p>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{description}</p>
                     <div className="mt-6 flex justify-end gap-2">
                         <Button variant="outline" onClick={onClose}>
                             {cancelLabel}

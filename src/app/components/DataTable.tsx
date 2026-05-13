@@ -37,7 +37,7 @@ export default function DataTable<T>({ columns, data, keyExtractor, onRowClick }
                     <TableRow
                         key={keyExtractor(item)}
                         onClick={() => onRowClick?.(item)}
-                        className={onRowClick ? "cursor-pointer hover:bg-slate-50" : ""}
+                        className={onRowClick ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" : ""}
                     >
                         {columns.map((column) => (
                             <TableCell key={column.key}>

@@ -42,7 +42,7 @@ export default function Modal({
                 onClick={onClose}
             >
                 <motion.div
-                    className={`w-full ${sizeClasses[size]} rounded-2xl bg-white p-6 shadow-2xl`}
+                    className={`w-full ${sizeClasses[size]} rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl`}
                     initial={{ scale: 0.94, y: 20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
                     exit={{ scale: 0.94, opacity: 0 }}
@@ -50,8 +50,8 @@ export default function Modal({
                 >
                     <div className="mb-4 flex items-start justify-between">
                         <div>
-                            <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
-                            {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+                            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+                            {description && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>}
                         </div>
                         {showCloseButton && (
                             <Button variant="outline" size="sm" onClick={onClose}>

@@ -18,12 +18,12 @@ export default function NewStatsCards({ dashboardData }: NewStatsCardsProps) {
                             </svg>
                         </div>
                         <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-900">{dashboardData.totalStudents}</div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{dashboardData.totalStudents}</div>
                             <div className="text-xs text-blue-600 font-medium">+12%</div>
                         </div>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Étudiants</h3>
-                    <p className="text-xs text-gray-500">Total inscrits</p>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Étudiants</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total inscrits</p>
                 </div>
             </div>
 
@@ -38,12 +38,12 @@ export default function NewStatsCards({ dashboardData }: NewStatsCardsProps) {
                             </svg>
                         </div>
                         <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-900">8</div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">8</div>
                             <div className="text-xs text-red-600 font-medium">-3%</div>
                         </div>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Retards</h3>
-                    <p className="text-xs text-gray-500">Paiements en retard</p>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Retards</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Paiements en retard</p>
                 </div>
             </div>
 
@@ -58,12 +58,12 @@ export default function NewStatsCards({ dashboardData }: NewStatsCardsProps) {
                             </svg>
                         </div>
                         <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-900">5</div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">5</div>
                             <div className="text-xs text-orange-600 font-medium">-2</div>
                         </div>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Documents</h3>
-                    <p className="text-xs text-gray-500">Manquants</p>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Documents</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Manquants</p>
                 </div>
             </div>
 
@@ -78,12 +78,12 @@ export default function NewStatsCards({ dashboardData }: NewStatsCardsProps) {
                             </svg>
                         </div>
                         <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-900">{formatPrice(dashboardData.todayRevenue.toString())}</div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatPrice(dashboardData.todayRevenue.toString())}</div>
                             <div className="text-xs text-green-600 font-medium">+18%</div>
                         </div>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Paiements</h3>
-                    <p className="text-xs text-gray-500">Reçus aujourd'hui</p>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Paiements</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Reçus aujourd'hui</p>
                 </div>
             </div>
 
@@ -98,12 +98,12 @@ export default function NewStatsCards({ dashboardData }: NewStatsCardsProps) {
                             </svg>
                         </div>
                         <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-900">24</div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">24</div>
                             <div className="text-xs text-purple-600 font-medium">85%</div>
                         </div>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Cours HSK</h3>
-                    <p className="text-xs text-gray-500">Étudiants actifs</p>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Cours HSK</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Étudiants actifs</p>
                 </div>
             </div>
 
@@ -118,12 +118,12 @@ export default function NewStatsCards({ dashboardData }: NewStatsCardsProps) {
                             </svg>
                         </div>
                         <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-900">92%</div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">92%</div>
                             <div className="text-xs text-indigo-600 font-medium">+5%</div>
                         </div>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Comptabilité</h3>
-                    <p className="text-xs text-gray-500">Santé financière</p>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Comptabilité</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Santé financière</p>
                 </div>
             </div>
         </div>
