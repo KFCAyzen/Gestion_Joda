@@ -11,9 +11,9 @@ interface ErrorMessageProps {
 const typeConfig = {
     error: {
         icon: AlertCircle,
-        bg: "bg-red-50",
-        border: "border-red-200",
-        text: "text-red-700",
+        bg: "bg-red-50 dark:bg-red-900/20",
+        border: "border-red-200 dark:border-red-700",
+        text: "text-red-700 dark:text-red-300",
         iconColor: "text-red-500",
     },
     success: {
@@ -25,16 +25,16 @@ const typeConfig = {
     },
     info: {
         icon: Info,
-        bg: "bg-blue-50",
-        border: "border-blue-200",
-        text: "text-blue-700",
+        bg: "bg-blue-50 dark:bg-blue-900/20",
+        border: "border-blue-200 dark:border-blue-700",
+        text: "text-blue-700 dark:text-blue-300",
         iconColor: "text-blue-500",
     },
     warning: {
         icon: AlertTriangle,
-        bg: "bg-yellow-50",
-        border: "border-yellow-200",
-        text: "text-yellow-700",
+        bg: "bg-yellow-50 dark:bg-yellow-900/20",
+        border: "border-yellow-200 dark:border-yellow-700",
+        text: "text-yellow-700 dark:text-yellow-300",
         iconColor: "text-yellow-500",
     },
 };

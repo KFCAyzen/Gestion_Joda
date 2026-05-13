@@ -216,13 +216,13 @@ export default function ApplicationFeeManagement() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case "paye":
-                return "bg-green-100 text-green-800";
+                return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
             case "attente":
-                return "bg-yellow-100 text-yellow-800";
+                return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300";
             case "retard":
-                return "bg-red-100 text-red-800";
+                return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
             default:
-                return "bg-gray-100 text-gray-800";
+                return "bg-gray-100 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200";
         }
     };
 
@@ -360,7 +360,7 @@ export default function ApplicationFeeManagement() {
                 <CardContent>
                     {filteredFees.length === 0 ? (
                         <div className="py-12 text-center">
-                            <p className="text-slate-500">{t("list.empty")}</p>
+                            <p className="text-slate-500 dark:text-slate-400">{t("list.empty")}</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -371,10 +371,10 @@ export default function ApplicationFeeManagement() {
                                     <div key={fee.id} className="joda-surface-muted p-4">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <p className="font-semibold text-slate-800">
+                                                <p className="font-semibold text-slate-800 dark:text-slate-200">
                                                     {student ? `${student.prenom} ${student.nom}` : t("fallback.student")}
                                                 </p>
-                                                <p className="text-sm text-slate-600">
+                                                <p className="text-sm text-slate-600 dark:text-slate-400">
                                                     {fee.date ? new Date(fee.date).toLocaleDateString(dateLocale) : "-"}
                                                 </p>
                                             </div>
@@ -412,17 +412,17 @@ export default function ApplicationFeeManagement() {
             const student = students.find(s => s.id === detailFee.student_id);
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="text-lg font-semibold">{t("detail.title")}</h3>
-                            <button onClick={() => setDetailFee(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                            <button onClick={() => setDetailFee(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
                         </div>
                         <div className="space-y-3 text-sm">
-                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("detail.student")}</span><span className="font-medium">{student ? `${student.prenom} ${student.nom}` : "—"}</span></div>
-                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("detail.amount")}</span><span className="font-bold text-red-600">{detailFee.montant?.toLocaleString(dateLocale)} FCFA</span></div>
-                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("detail.date")}</span><span className="font-medium">{detailFee.date ? new Date(detailFee.date).toLocaleDateString(dateLocale) : "—"}</span></div>
-                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("detail.type")}</span><span className="font-medium">{detailFee.type}</span></div>
-                            <div className="flex justify-between"><span className="text-slate-500">{t("detail.status")}</span><span className={`font-medium ${detailFee.status === "paye" ? "text-emerald-600" : "text-amber-600"}`}>{getStatusLabel(detailFee.status)}</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("detail.student")}</span><span className="font-medium">{student ? `${student.prenom} ${student.nom}` : "—"}</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("detail.amount")}</span><span className="font-bold text-red-600">{detailFee.montant?.toLocaleString(dateLocale)} FCFA</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("detail.date")}</span><span className="font-medium">{detailFee.date ? new Date(detailFee.date).toLocaleDateString(dateLocale) : "—"}</span></div>
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("detail.type")}</span><span className="font-medium">{detailFee.type}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-500 dark:text-slate-400">{t("detail.status")}</span><span className={`font-medium ${detailFee.status === "paye" ? "text-emerald-600" : "text-amber-600 dark:text-amber-400"}`}>{getStatusLabel(detailFee.status)}</span></div>
                         </div>
                         <div className="mt-5 flex gap-2">
                             {detailFee.status === "paye" && (
@@ -430,7 +430,7 @@ export default function ApplicationFeeManagement() {
                                     {t("actions.printReceipt")}
                                 </button>
                             )}
-                            <button onClick={() => setDetailFee(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600">{t("actions.close")}</button>
+                            <button onClick={() => setDetailFee(null)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">{t("actions.close")}</button>
                         </div>
                     </div>
                 </div>
@@ -440,10 +440,10 @@ export default function ApplicationFeeManagement() {
         {/* Modal modification frais */}
         {editingFee && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-semibold">{t("edit.title")}</h3>
-                        <button onClick={() => setEditingFee(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                        <button onClick={() => setEditingFee(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
                     </div>
                     <div className="space-y-4">
                         <div>

@@ -111,7 +111,7 @@ export default function StorageMonitoring() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-red-600" />
-          <p className="text-slate-600">Chargement des statistiques...</p>
+          <p className="text-slate-600 dark:text-slate-400">Chargement des statistiques...</p>
         </div>
       </div>
     );
@@ -125,15 +125,15 @@ export default function StorageMonitoring() {
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
             Super Admin
           </p>
-          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">
             Monitoring du Stockage
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Surveillance de l'utilisation de la base de données Supabase
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             Dernière mise à jour : {lastRefresh.toLocaleTimeString("fr-FR")}
           </span>
           <Button onClick={loadStats} variant="outline" size="sm">
@@ -144,7 +144,7 @@ export default function StorageMonitoring() {
 
       {/* Alertes */}
       {isCritical && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="rounded-xl border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-800">
           <p className="font-semibold">⚠️ Alerte critique !</p>
           <p className="mt-1">
             Vous avez utilisé plus de 90% de votre stockage gratuit. Passez au plan Pro rapidement pour éviter une base en lecture seule.
@@ -174,10 +174,10 @@ export default function StorageMonitoring() {
             {/* Barre de progression */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   {formatFileSize(storageStats.totalSize)} / {SUPABASE_FREE_LIMIT_MB} MB
                 </span>
-                <span className={`text-sm font-bold ${isCritical ? 'text-red-600' : isWarning ? 'text-orange-600' : 'text-slate-900'}`}>
+                <span className={`text-sm font-bold ${isCritical ? 'text-red-600' : isWarning ? 'text-orange-600' : 'text-slate-900 dark:text-slate-100'}`}>
                   {usagePercentage.toFixed(1)}%
                 </span>
               </div>
@@ -193,34 +193,34 @@ export default function StorageMonitoring() {
 
             {/* Statistiques détaillées */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 p-4">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <p className="text-xs uppercase tracking-wider text-slate-400">Total fichiers</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">{storageStats.totalFiles}</p>
-                <p className="mt-1 text-xs text-slate-500">Documents uploadés</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{storageStats.totalFiles}</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Documents uploadés</p>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-4">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <p className="text-xs uppercase tracking-wider text-slate-400">Taille moyenne</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
+                <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {formatFileSize(storageStats.averageFileSize)}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">Par fichier</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Par fichier</p>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-4">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <p className="text-xs uppercase tracking-wider text-slate-400">Limite par fichier</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
+                <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {FILE_LIMITS.MAX_FILE_SIZE_MB} MB
                 </p>
-                <p className="mt-1 text-xs text-slate-500">Maximum autorisé</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Maximum autorisé</p>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-4">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <p className="text-xs uppercase tracking-wider text-slate-400">Espace restant</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
+                <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {formatFileSize((SUPABASE_FREE_LIMIT_MB * 1024 * 1024) - storageStats.totalSize)}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">Disponible</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Disponible</p>
               </div>
             </div>
           </div>
@@ -235,29 +235,29 @@ export default function StorageMonitoring() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-xl border border-slate-200 p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
               <p className="text-xs uppercase tracking-wider text-slate-400">Étudiants</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900">{dbStats.students}</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{dbStats.students}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
               <p className="text-xs uppercase tracking-wider text-slate-400">Candidatures</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900">{dbStats.applications}</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{dbStats.applications}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
               <p className="text-xs uppercase tracking-wider text-slate-400">Documents</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900">{dbStats.documents}</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{dbStats.documents}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
               <p className="text-xs uppercase tracking-wider text-slate-400">Universités</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900">{dbStats.universities}</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{dbStats.universities}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
               <p className="text-xs uppercase tracking-wider text-slate-400">Utilisateurs</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900">{dbStats.users}</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{dbStats.users}</p>
             </div>
           </div>
         </CardContent>
@@ -270,35 +270,35 @@ export default function StorageMonitoring() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3 rounded-lg bg-blue-50 p-3">
+            <div className="flex items-start gap-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
               <span className="text-blue-600">✓</span>
               <div>
-                <p className="font-medium text-blue-900">Compression automatique activée</p>
-                <p className="text-blue-700">Les images sont compressées à {FILE_LIMITS.MAX_FILE_SIZE_MB} MB maximum</p>
+                <p className="font-medium text-blue-900 dark:text-blue-200">Compression automatique activée</p>
+                <p className="text-blue-700 dark:text-blue-300">Les images sont compressées à {FILE_LIMITS.MAX_FILE_SIZE_MB} MB maximum</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 rounded-lg bg-blue-50 p-3">
+            <div className="flex items-start gap-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
               <span className="text-blue-600">✓</span>
               <div>
-                <p className="font-medium text-blue-900">Validation stricte en place</p>
-                <p className="text-blue-700">Seuls les fichiers PDF, JPG, PNG sont acceptés</p>
+                <p className="font-medium text-blue-900 dark:text-blue-200">Validation stricte en place</p>
+                <p className="text-blue-700 dark:text-blue-300">Seuls les fichiers PDF, JPG, PNG sont acceptés</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 rounded-lg bg-blue-50 p-3">
+            <div className="flex items-start gap-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
               <span className="text-blue-600">✓</span>
               <div>
-                <p className="font-medium text-blue-900">Pagination activée</p>
-                <p className="text-blue-700">20 étudiants et 10 candidatures par page</p>
+                <p className="font-medium text-blue-900 dark:text-blue-200">Pagination activée</p>
+                <p className="text-blue-700 dark:text-blue-300">20 étudiants et 10 candidatures par page</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 rounded-lg bg-slate-50 p-3">
-              <span className="text-slate-600">💡</span>
+            <div className="flex items-start gap-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3">
+              <span className="text-slate-600 dark:text-slate-400">💡</span>
               <div>
-                <p className="font-medium text-slate-900">Conseil</p>
-                <p className="text-slate-700">
+                <p className="font-medium text-slate-900 dark:text-slate-100">Conseil</p>
+                <p className="text-slate-700 dark:text-slate-300">
                   Passez au plan Pro (25$/mois) quand vous approchez 400-450 MB pour éviter les interruptions
                 </p>
               </div>

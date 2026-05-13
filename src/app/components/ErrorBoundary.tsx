@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-800/50 p-4">
           <div className="w-full max-w-md">
             <div className="joda-surface rounded-2xl p-8 text-center">
               <div className="mb-4 flex justify-center">
@@ -50,18 +50,18 @@ export class ErrorBoundary extends Component<Props, State> {
                 </div>
               </div>
               
-              <h1 className="mb-2 text-2xl font-bold text-slate-900">
+              <h1 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
                 Une erreur est survenue
               </h1>
               
-              <p className="mb-6 text-sm text-slate-600">
+              <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
                 Nous sommes désolés, une erreur inattendue s'est produite. 
                 Veuillez réessayer ou contacter le support si le problème persiste.
               </p>
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
-                <div className="mb-6 rounded-lg bg-slate-100 p-4 text-left">
-                  <p className="mb-2 text-xs font-semibold text-slate-700">
+                <div className="mb-6 rounded-lg bg-slate-100 dark:bg-slate-700/50 p-4 text-left">
+                  <p className="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Détails de l'erreur (dev only):
                   </p>
                   <pre className="overflow-auto text-xs text-red-600">

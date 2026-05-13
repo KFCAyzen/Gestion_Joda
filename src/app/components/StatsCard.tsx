@@ -17,7 +17,7 @@ export default function StatsCard({ label, value, description, icon: Icon, color
             <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                     <div className="flex-1">
-                        <p className="text-xs uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">{label}</p>
+                        <p className="text-xs uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500 dark:text-slate-400">{label}</p>
                         <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">{value}</p>
                         {description && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>}
                     </div>

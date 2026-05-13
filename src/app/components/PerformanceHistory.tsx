@@ -284,7 +284,7 @@ export default function PerformanceHistory() {
     if (!user) {
         return (
             <div className="p-8 text-center">
-                <p className="text-gray-600">{t("states.authRequired")}</p>
+                <p className="text-gray-600 dark:text-gray-400">{t("states.authRequired")}</p>
             </div>
         );
     }
@@ -298,8 +298,8 @@ export default function PerformanceHistory() {
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
                         {t("header.tag")}
                     </p>
-                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t("header.title")}</h1>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">{t("header.title")}</h1>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         {t("header.subtitle")}
                     </p>
                 </div>
@@ -318,19 +318,19 @@ export default function PerformanceHistory() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card className="joda-surface border-0 shadow-none">
                     <CardContent className="pt-4">
-                        <p className="mb-1 text-xs text-slate-500">{t("stats.courses")}</p>
-                        <p className="text-xl font-bold text-blue-700">{totalCourses}</p>
+                        <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">{t("stats.courses")}</p>
+                        <p className="text-xl font-bold text-blue-700 dark:text-blue-300">{totalCourses}</p>
                     </CardContent>
                 </Card>
                 <Card className="joda-surface border-0 shadow-none">
                     <CardContent className="pt-4">
-                        <p className="mb-1 text-xs text-slate-500">{t("stats.procedures")}</p>
-                        <p className="text-xl font-bold text-emerald-700">{totalProcedures}</p>
+                        <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">{t("stats.procedures")}</p>
+                        <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{totalProcedures}</p>
                     </CardContent>
                 </Card>
                 <Card className="joda-surface border-0 shadow-none">
                     <CardContent className="pt-4">
-                        <p className="mb-1 text-xs text-slate-500">{t("stats.revenue")}</p>
+                        <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">{t("stats.revenue")}</p>
                         <p className="text-xl font-bold text-rose-700">{formatPrice(totalAmount.toString())}</p>
                     </CardContent>
                 </Card>
@@ -376,7 +376,7 @@ export default function PerformanceHistory() {
                         </div>
                     ) : dailyStats.length === 0 ? (
                         <div className="py-8 text-center">
-                            <p className="text-slate-500">{t("states.empty")}</p>
+                            <p className="text-slate-500 dark:text-slate-400">{t("states.empty")}</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -384,7 +384,7 @@ export default function PerformanceHistory() {
                                 <Card key={`performance-${day.date}-${index}`} className="joda-surface-muted border-0 shadow-none">
                                     <CardContent className="p-4">
                                         <div className="mb-3 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-                                            <h3 className="font-semibold text-slate-800">
+                                            <h3 className="font-semibold text-slate-800 dark:text-slate-200">
                                                 {new Date(day.date).toLocaleDateString(dateLocale)}
                                             </h3>
                                             <Badge variant="destructive" className="text-sm">
@@ -392,7 +392,7 @@ export default function PerformanceHistory() {
                                             </Badge>
                                         </div>
                                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                            <div className="rounded-xl bg-blue-50 p-3">
+                                            <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3">
                                                 <p className="text-sm font-medium text-blue-800">{t("cards.languageCourses")}</p>
                                                 <p className="text-xs text-blue-600">{t("cards.paymentsCount", { count: day.courses.count })}</p>
                                                 <p className="font-bold text-blue-600">{formatPrice(day.courses.amount.toString())}</p>

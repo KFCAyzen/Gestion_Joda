@@ -27,20 +27,20 @@ interface ActivityLog {
 
 const ROLE_COLORS: Record<string, string> = {
   super_admin: "bg-purple-100 text-purple-700",
-  admin: "bg-blue-100 text-blue-700",
+  admin: "bg-blue-100 text-blue-700 dark:text-blue-300",
   agent: "bg-green-100 text-green-700",
-  student: "bg-gray-100 text-gray-700",
+  student: "bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300",
 };
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  create: "bg-emerald-100 text-emerald-700",
-  update: "bg-blue-100 text-blue-700",
-  delete: "bg-red-100 text-red-700",
+  create: "bg-emerald-100 text-emerald-700 dark:text-emerald-300",
+  update: "bg-blue-100 text-blue-700 dark:text-blue-300",
+  delete: "bg-red-100 text-red-700 dark:text-red-300",
   status_change: "bg-orange-100 text-orange-700",
   validate: "bg-green-100 text-green-700",
   reject: "bg-rose-100 text-rose-700",
   login: "bg-indigo-100 text-indigo-700",
-  logout: "bg-slate-100 text-slate-700",
+  logout: "bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300",
 };
 
 function getActivityColor(activityType: string): string {
@@ -52,7 +52,7 @@ function getActivityColor(activityType: string): string {
   if (activityType.includes("reject")) return ACTIVITY_COLORS.reject;
   if (activityType === "login") return ACTIVITY_COLORS.login;
   if (activityType === "logout") return ACTIVITY_COLORS.logout;
-  return "bg-gray-100 text-gray-700";
+  return "bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300";
 }
 
 export default function ActivityLogsPage() {
@@ -170,12 +170,12 @@ export default function ActivityLogsPage() {
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
               {t("header.eyebrow")}
             </p>
-            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t("header.title")}</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">{t("header.title")}</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {t("header.description")}
             </p>
           </div>
-          <div className="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm font-medium text-slate-600">
+          <div className="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">
             {t("header.adminOnly")}
           </div>
         </div>
@@ -183,25 +183,25 @@ export default function ActivityLogsPage() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <Card className="joda-surface border-0 shadow-none">
             <CardContent className="pt-4">
-              <p className="mb-1 text-xs text-slate-500">{t("stats.total")}</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
+              <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">{t("stats.total")}</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.total}</p>
             </CardContent>
           </Card>
           <Card className="joda-surface border-0 shadow-none">
             <CardContent className="pt-4">
-              <p className="mb-1 text-xs text-slate-500">{t("stats.agents")}</p>
+              <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">{t("stats.agents")}</p>
               <p className="text-2xl font-bold text-green-600">{stats.agents}</p>
             </CardContent>
           </Card>
           <Card className="joda-surface border-0 shadow-none">
             <CardContent className="pt-4">
-              <p className="mb-1 text-xs text-slate-500">{t("stats.admins")}</p>
+              <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">{t("stats.admins")}</p>
               <p className="text-2xl font-bold text-blue-600">{stats.admins}</p>
             </CardContent>
           </Card>
           <Card className="joda-surface border-0 shadow-none">
             <CardContent className="pt-4">
-              <p className="mb-1 text-xs text-slate-500">{t("stats.today")}</p>
+              <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">{t("stats.today")}</p>
               <p className="text-2xl font-bold text-orange-600">{stats.today}</p>
             </CardContent>
           </Card>
@@ -211,7 +211,7 @@ export default function ActivityLogsPage() {
           <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_200px_320px_200px]">
               <div className="space-y-2">
-                <Label className="text-xs font-medium text-slate-600 invisible">{t("filters.searchLabel")}</Label>
+                <Label className="text-xs font-medium text-slate-600 dark:text-slate-400 invisible">{t("filters.searchLabel")}</Label>
                 <SearchBar
                   value={searchTerm}
                   onChange={setSearchTerm}
@@ -262,7 +262,7 @@ export default function ActivityLogsPage() {
             {dateFilter === "custom" && (
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-slate-600">{t("filters.startDate")}</Label>
+                  <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t("filters.startDate")}</Label>
                   <Input
                     type="date"
                     value={customStartDate}
@@ -270,7 +270,7 @@ export default function ActivityLogsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium text-slate-600">{t("filters.endDate")}</Label>
+                  <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t("filters.endDate")}</Label>
                   <Input
                     type="date"
                     value={customEndDate}
@@ -304,11 +304,11 @@ export default function ActivityLogsPage() {
                   {paginatedData.map((log) => (
                     <div
                       key={log.id}
-                      className="flex items-start gap-4 rounded-lg border border-slate-100 bg-white p-4 transition-all hover:shadow-md"
+                      className="flex items-start gap-4 rounded-lg border border-slate-100 dark:border-slate-700 bg-white p-4 transition-all hover:shadow-md"
                     >
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
-                          <Badge className={ROLE_COLORS[log.user_role] || "bg-gray-100 text-gray-700"}>
+                          <Badge className={ROLE_COLORS[log.user_role] || "bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300"}>
                             {log.user_name}
                           </Badge>
                           <Badge className={getActivityColor(log.activity_type)}>
@@ -318,19 +318,19 @@ export default function ActivityLogsPage() {
                             {new Date(log.created_at).toLocaleString(dateLocale)}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-700">{log.description}</p>
+                        <p className="text-sm text-slate-700 dark:text-slate-300">{log.description}</p>
                         {log.entity_type && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {t("log.entity")}: <span className="font-medium">{log.entity_type}</span>
                             {log.entity_id && ` (ID: ${log.entity_id.substring(0, 8)}...)`}
                           </p>
                         )}
                         {log.metadata && Object.keys(log.metadata).length > 0 && (
-                          <details className="text-xs text-slate-500">
-                            <summary className="cursor-pointer hover:text-slate-700">
+                          <details className="text-xs text-slate-500 dark:text-slate-400">
+                            <summary className="cursor-pointer hover:text-slate-700 dark:text-slate-300">
                               {t("log.extraDetails")}
                             </summary>
-                            <pre className="mt-2 rounded bg-slate-50 p-2">
+                            <pre className="mt-2 rounded bg-slate-50 dark:bg-slate-800/50 p-2">
                               {JSON.stringify(log.metadata, null, 2)}
                             </pre>
                           </details>

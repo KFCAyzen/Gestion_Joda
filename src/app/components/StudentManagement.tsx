@@ -509,10 +509,10 @@ export default function StudentManagement() {
                             <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
                                 {t("tag")}
                             </p>
-                            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">
                                 {t("title")}
                             </h1>
-                            <p className="mt-1 text-sm text-slate-500">
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                                 {t("subtitle")}
                             </p>
                         </div>
@@ -523,41 +523,41 @@ export default function StudentManagement() {
                         <Card className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
                                 <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("stats.total")}</p>
-                                <p className="mt-2 text-3xl font-semibold text-slate-900">{stats.total}</p>
-                                <p className="mt-1 text-sm text-slate-500">{t("stats.totalSub")}</p>
+                                <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">{stats.total}</p>
+                                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("stats.totalSub")}</p>
                             </CardContent>
                         </Card>
                         <Card className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
                                 <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("stats.women")}</p>
-                                <p className="mt-2 text-3xl font-semibold text-slate-900">{stats.women}</p>
-                                <p className="mt-1 text-sm text-slate-500">{t("stats.womenSub")}</p>
+                                <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">{stats.women}</p>
+                                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("stats.womenSub")}</p>
                             </CardContent>
                         </Card>
                         <Card className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
                                 <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("stats.men")}</p>
-                                <p className="mt-2 text-3xl font-semibold text-slate-900">{stats.men}</p>
-                                <p className="mt-1 text-sm text-slate-500">{t("stats.menSub")}</p>
+                                <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">{stats.men}</p>
+                                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("stats.menSub")}</p>
                             </CardContent>
                         </Card>
                         <Card className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
                                 <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("stats.languages")}</p>
-                                <p className="mt-2 text-3xl font-semibold text-slate-900">{stats.withLanguages}</p>
-                                <p className="mt-1 text-sm text-slate-500">{t("stats.languagesSub")}</p>
+                                <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">{stats.withLanguages}</p>
+                                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("stats.languagesSub")}</p>
                             </CardContent>
                         </Card>
                     </div>
 
                     {operationMessage && (
-                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                        <div className="rounded-xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
                             {operationMessage}
                         </div>
                     )}
 
                     {submitError && activeTab === "list" && (
-                        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <div className="rounded-xl border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
                             {submitError}
                         </div>
                     )}
@@ -589,11 +589,11 @@ export default function StudentManagement() {
                                 </CardHeader>
                                 <CardContent>
                                     {loading ? (
-                                        <div className="py-8 text-center text-slate-500">{t("loading")}</div>
+                                        <div className="py-8 text-center text-slate-500 dark:text-slate-400">{t("loading")}</div>
                                     ) : filteredStudents.length === 0 ? (
-                                        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
-                                            <p className="text-lg font-medium text-slate-700">{t("list.empty")}</p>
-                                            <p className="mt-2 text-sm text-slate-500">
+                                        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-6 py-12 text-center">
+                                            <p className="text-lg font-medium text-slate-700 dark:text-slate-300">{t("list.empty")}</p>
+                                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                                                 {t("list.emptyHint")}
                                             </p>
                                         </div>
@@ -620,7 +620,7 @@ export default function StudentManagement() {
                                                             <div className="font-medium">
                                                                 {student.prenom} {student.nom}
                                                             </div>
-                                                            <div className="text-sm text-slate-500">
+                                                            <div className="text-sm text-slate-500 dark:text-slate-400">
                                                                 {getGenderLabel(student.sexe)}
                                                             </div>
                                                         </TableCell>
@@ -691,9 +691,9 @@ export default function StudentManagement() {
                                 exit={{ scale: 0.94, opacity: 0 }}
                             >
                                 {/* En-tête fixe */}
-                                <div className="flex items-start justify-between border-b border-slate-100 p-6 pb-4">
+                                <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-700 p-6 pb-4">
                                     <div>
-                                        <h3 className="text-xl font-semibold text-slate-900">{selectedStudent.prenom} {selectedStudent.nom}</h3>
+                                        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{selectedStudent.prenom} {selectedStudent.nom}</h3>
                                         <div className="mt-2 flex flex-wrap gap-2">
                                             <Badge variant="outline">{selectedStudent.niveau}</Badge>
                                             <Badge variant="secondary">{selectedStudent.filiere}</Badge>
@@ -707,30 +707,30 @@ export default function StudentManagement() {
                                 <div className="flex-1 overflow-y-auto p-6 space-y-5">
                                     {/* Infos de base */}
                                     <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="rounded-xl border border-slate-200 p-3">
+                                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
                                             <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.contact")}</p>
-                                            <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.email}</p>
-                                            <p className="text-sm text-slate-600">{(selectedStudent.telephone || "").replace(/^undefined\s*/i, "") || t("detail.phoneNone")}</p>
+                                            <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{selectedStudent.email}</p>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400">{(selectedStudent.telephone || "").replace(/^undefined\s*/i, "") || t("detail.phoneNone")}</p>
                                         </div>
-                                        <div className="rounded-xl border border-slate-200 p-3">
+                                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
                                             <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.path")}</p>
-                                            <p className="mt-2 text-sm font-medium text-slate-900">{selectedStudent.niveau}</p>
-                                            <p className="text-sm text-slate-600">{selectedStudent.diplome_acquis || t("detail.diplomaNone")}</p>
+                                            <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{selectedStudent.niveau}</p>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400">{selectedStudent.diplome_acquis || t("detail.diplomaNone")}</p>
                                         </div>
-                                        <div className="rounded-xl border border-slate-200 p-3">
+                                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
                                             <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.language")}</p>
-                                            <p className="mt-2 text-sm text-slate-900">{selectedStudent.langue || t("detail.languageNone")}</p>
+                                            <p className="mt-2 text-sm text-slate-900 dark:text-slate-100">{selectedStudent.langue || t("detail.languageNone")}</p>
                                         </div>
-                                        <div className="rounded-xl border border-slate-200 p-3">
+                                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
                                             <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.service")}</p>
-                                            <p className="mt-2 text-sm text-slate-900">
+                                            <p className="mt-2 text-sm text-slate-900 dark:text-slate-100">
                                                 {getChoiceLabel(selectedStudent.choix)}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="rounded-xl border border-slate-200 p-3">
+                                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
                                         <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.createdAt")}</p>
-                                        <p className="mt-2 text-sm text-slate-900">{new Date(selectedStudent.created_at).toLocaleString(dateLocale)}</p>
+                                        <p className="mt-2 text-sm text-slate-900 dark:text-slate-100">{new Date(selectedStudent.created_at).toLocaleString(dateLocale)}</p>
                                     </div>
 
                                     {/* Échéancier paiements */}
@@ -769,7 +769,7 @@ export default function StudentManagement() {
                                 </div>
 
                                 {/* Pied fixe */}
-                                <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-6 py-4">
+                                <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 dark:border-slate-700 px-6 py-4">
                                     {canEdit && (
                                         <Button
                                             variant="outline"
@@ -791,7 +791,7 @@ export default function StudentManagement() {
                     {activeTab === "form" && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
                         <Card className="w-full max-w-3xl border-0 shadow-2xl">
-                            <CardHeader className="border-b border-slate-100">
+                            <CardHeader className="border-b border-slate-100 dark:border-slate-700">
                                 <div className="flex items-start justify-between gap-4">
                                     <div>
                                         <CardTitle>{editingStudent ? t("form.titleEdit") : t("form.titleAdd")}</CardTitle>
@@ -805,7 +805,7 @@ export default function StudentManagement() {
                             <CardContent className="max-h-[80vh] overflow-y-auto p-6">
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     {submitError && (
-                                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                        <div className="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
                                             {submitError}
                                         </div>
                                     )}
@@ -951,13 +951,13 @@ export default function StudentManagement() {
                         exit={{ opacity: 0 }}
                     >
                         <motion.div
-                            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+                            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl"
                             initial={{ scale: 0.94, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             exit={{ scale: 0.94, opacity: 0 }}
                         >
-                            <h3 className="text-lg font-semibold text-slate-900">{t("delete.title")}</h3>
-                            <p className="mt-2 text-sm text-slate-500">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t("delete.title")}</h3>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                                 {t("delete.message", { name: `${studentToDelete.prenom} ${studentToDelete.nom}` })}
                             </p>
                             <div className="mt-6 flex justify-end gap-2">
@@ -982,7 +982,7 @@ export default function StudentManagement() {
                         exit={{ opacity: 0 }}
                     >
                         <motion.div
-                            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+                            className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl"
                             initial={{ scale: 0.8, y: 20, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             exit={{ scale: 0.8, opacity: 0 }}
@@ -994,23 +994,23 @@ export default function StudentManagement() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-900">{t("createdAccount.title")}</h3>
-                                <p className="mt-1 text-sm text-gray-500">{t("createdAccount.subtitle")}</p>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t("createdAccount.title")}</h3>
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t("createdAccount.subtitle")}</p>
                             </div>
-                            <div className="mb-5 space-y-3 rounded-xl bg-gray-50 p-4">
+                            <div className="mb-5 space-y-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 p-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-medium text-gray-500">{t("createdAccount.username")}</span>
-                                    <span className="font-mono text-sm font-bold text-gray-900">{createdAccount.username}</span>
+                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t("createdAccount.username")}</span>
+                                    <span className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">{createdAccount.username}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-medium text-gray-500">{t("createdAccount.tempPassword")}</span>
+                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t("createdAccount.tempPassword")}</span>
                                     <span className="font-mono text-sm font-bold text-red-600">{createdAccount.password}</span>
                                 </div>
                             </div>
-                            <p className="mb-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+                            <p className="mb-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 text-xs text-slate-500 dark:text-slate-400">
                                 {t("createdAccount.info")}
                             </p>
-                            <p className="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-600">
+                            <p className="mb-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-xs text-amber-600 dark:text-amber-400">
                                 {t("createdAccount.warning")}
                             </p>
                             <button

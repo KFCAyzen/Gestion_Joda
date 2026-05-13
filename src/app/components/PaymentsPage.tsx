@@ -327,14 +327,14 @@ export default function PaymentsPage() {
 
     return (
         <ProtectedRoute requiredRole="agent">
-            <div className="-m-4 sm:-m-5 flex flex-col bg-white" style={{ minHeight: "calc(100vh - 130px)" }}>
+            <div className="-m-4 sm:-m-5 flex flex-col bg-white dark:bg-slate-900" style={{ minHeight: "calc(100vh - 130px)" }}>
                 {/* Header */}
                 <div className="border-b border-gray-100 px-6 py-4">
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                         Finance &rsaquo; Paiements
                     </p>
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                        <h1 className="text-2xl font-bold text-gray-900">Paiements</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Paiements</h1>
                         <div className="flex items-center gap-2">
                             {aValiderList.length > 0 && (
                                 <span className="flex items-center gap-1.5 rounded-full border border-orange-300 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700">
@@ -342,7 +342,7 @@ export default function PaymentsPage() {
                                     {aValiderList.length} à valider
                                 </span>
                             )}
-                            <button className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
+                            <button className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50">
                                 <Filter className="h-3.5 w-3.5" />
                                 Filtrer
                             </button>
@@ -367,7 +367,7 @@ export default function PaymentsPage() {
                                 className={`-mb-px flex items-center gap-1.5 border-b-2 pb-2.5 text-sm font-medium transition-colors ${
                                     tab === t.id
                                         ? "border-red-600 text-red-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700"
+                                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
                                 }`}
                             >
                                 {t.label}
@@ -376,7 +376,7 @@ export default function PaymentsPage() {
                                         className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
                                             tab === t.id
                                                 ? "bg-red-100 text-red-600"
-                                                : "bg-gray-100 text-gray-500"
+                                                : "bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400"
                                         }`}
                                     >
                                         {t.count}
@@ -443,8 +443,8 @@ export default function PaymentsPage() {
                                                 key={payment.id}
                                                 className={`border-b border-gray-50 transition-colors ${
                                                     isOverdue
-                                                        ? "bg-red-50/60"
-                                                        : "hover:bg-gray-50/60"
+                                                        ? "bg-red-50 dark:bg-red-900/20/60"
+                                                        : "hover:bg-gray-50 dark:bg-gray-800/50/60"
                                                 }`}
                                             >
                                                 <td className="px-6 py-3.5">
@@ -454,23 +454,23 @@ export default function PaymentsPage() {
                                                         >
                                                             {ini}
                                                         </div>
-                                                        <span className="text-sm font-medium text-gray-800">
+                                                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
                                                             {name}
                                                         </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-3 py-3.5">
-                                                    <span className="text-sm text-gray-700">
+                                                    <span className="text-sm text-gray-700 dark:text-gray-300">
                                                         {typeLabel(payment.type, payment.tranche)}
                                                     </span>
                                                     {isOverdue && (
                                                         <AlertTriangle className="ml-1.5 inline h-3.5 w-3.5 text-red-500" />
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-3.5 text-sm font-medium text-gray-900">
+                                                <td className="px-3 py-3.5 text-sm font-medium text-gray-900 dark:text-gray-100">
                                                     {fmt(payment.montant)}
                                                 </td>
-                                                <td className="px-3 py-3.5 text-sm text-gray-500">
+                                                <td className="px-3 py-3.5 text-sm text-gray-500 dark:text-gray-400">
                                                     {fmtDate(payment.date_limite)}
                                                 </td>
                                                 <td className="px-3 py-3.5">
@@ -493,7 +493,7 @@ export default function PaymentsPage() {
                                                         {payment.status === "paye" ? (
                                                             <button
                                                                 onClick={() => handlePrint(payment)}
-                                                                className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                                                                className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50"
                                                             >
                                                                 <Printer className="h-3 w-3" />
                                                                 Reçu
@@ -501,7 +501,7 @@ export default function PaymentsPage() {
                                                         ) : isOverdue ? (
                                                             <button
                                                                 onClick={() => setPenaltyModal(payment)}
-                                                                className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                                                                className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:bg-red-900/20"
                                                             >
                                                                 Pénalité
                                                             </button>
@@ -549,13 +549,13 @@ export default function PaymentsPage() {
 
                             <div className="mt-4 space-y-2">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Entrées</span>
+                                    <span className="text-gray-600 dark:text-gray-400">Entrées</span>
                                     <span className="font-semibold text-green-600">
                                         +{fmtShort(totalEntrees)}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Sorties</span>
+                                    <span className="text-gray-600 dark:text-gray-400">Sorties</span>
                                     <span className="font-semibold text-red-500">
                                         −{fmtShort(totalSorties)}
                                     </span>
@@ -578,7 +578,7 @@ export default function PaymentsPage() {
 
                             <button
                                 onClick={() => window.location.href = "../comptabilite"}
-                                className="mt-4 w-full rounded-lg border border-gray-200 py-2 text-center text-xs text-gray-600 hover:bg-gray-50"
+                                className="mt-4 w-full rounded-lg border border-gray-200 dark:border-gray-700 py-2 text-center text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50"
                             >
                                 Voir le détail compta →
                             </button>
@@ -671,12 +671,12 @@ export default function PaymentsPage() {
             {/* Register payment modal */}
             {showRegisterModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                         <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-900">Enregistrer un paiement</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Enregistrer un paiement</h2>
                             <button
                                 onClick={() => setShowRegisterModal(false)}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                             >
                                 <X className="h-5 w-5" />
                             </button>
@@ -684,7 +684,7 @@ export default function PaymentsPage() {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="mb-1.5 block text-xs font-medium text-gray-700">
+                                <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
                                     Étudiant
                                 </label>
                                 <select
@@ -692,7 +692,7 @@ export default function PaymentsPage() {
                                     onChange={(e) =>
                                         setNewPayment((p) => ({ ...p, student_id: e.target.value }))
                                     }
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
                                 >
                                     <option value="">Choisir un étudiant…</option>
                                     {students.map((s) => (
@@ -705,7 +705,7 @@ export default function PaymentsPage() {
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-medium text-gray-700">
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
                                         Type
                                     </label>
                                     <select
@@ -713,7 +713,7 @@ export default function PaymentsPage() {
                                         onChange={(e) =>
                                             setNewPayment((p) => ({ ...p, type: e.target.value }))
                                         }
-                                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
                                     >
                                         <option value="bourse">Bourse</option>
                                         <option value="mandarin">Mandarin</option>
@@ -721,7 +721,7 @@ export default function PaymentsPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-medium text-gray-700">
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
                                         Tranche
                                     </label>
                                     <select
@@ -729,7 +729,7 @@ export default function PaymentsPage() {
                                         onChange={(e) =>
                                             setNewPayment((p) => ({ ...p, tranche: e.target.value }))
                                         }
-                                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
                                     >
                                         {[1, 2, 3, 4].map((n) => (
                                             <option key={n} value={String(n)}>
@@ -741,7 +741,7 @@ export default function PaymentsPage() {
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-xs font-medium text-gray-700">
+                                <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
                                     Montant (FCFA)
                                 </label>
                                 <input
@@ -751,12 +751,12 @@ export default function PaymentsPage() {
                                     onChange={(e) =>
                                         setNewPayment((p) => ({ ...p, montant: e.target.value }))
                                     }
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
                                 />
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-xs font-medium text-gray-700">
+                                <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
                                     Date limite
                                 </label>
                                 <input
@@ -765,7 +765,7 @@ export default function PaymentsPage() {
                                     onChange={(e) =>
                                         setNewPayment((p) => ({ ...p, date_limite: e.target.value }))
                                     }
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
                                 />
                             </div>
                         </div>
@@ -773,7 +773,7 @@ export default function PaymentsPage() {
                         <div className="mt-6 flex gap-3">
                             <button
                                 onClick={() => setShowRegisterModal(false)}
-                                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-800/50"
                             >
                                 Annuler
                             </button>
@@ -792,12 +792,12 @@ export default function PaymentsPage() {
             {/* Penalty detail modal */}
             {penaltyModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                         <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-900">Détail pénalité</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Détail pénalité</h2>
                             <button
                                 onClick={() => setPenaltyModal(null)}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                             >
                                 <X className="h-5 w-5" />
                             </button>
@@ -812,14 +812,14 @@ export default function PaymentsPage() {
                                     : 10_000;
                             return (
                                 <div className="space-y-3 text-sm">
-                                    <div className="rounded-xl bg-red-50 p-4">
-                                        <p className="font-semibold text-red-700">{name}</p>
+                                    <div className="rounded-xl bg-red-50 dark:bg-red-900/20 p-4">
+                                        <p className="font-semibold text-red-700 dark:text-red-300">{name}</p>
                                         <p className="mt-1 text-red-600">
                                             {typeLabel(penaltyModal.type, penaltyModal.tranche)} — échéance{" "}
                                             {fmtDate(penaltyModal.date_limite)}
                                         </p>
                                     </div>
-                                    <div className="space-y-2 text-gray-700">
+                                    <div className="space-y-2 text-gray-700 dark:text-gray-300">
                                         <div className="flex justify-between">
                                             <span>Jours de retard</span>
                                             <strong>{days} j</strong>

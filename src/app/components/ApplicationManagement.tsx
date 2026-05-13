@@ -324,13 +324,13 @@ export default function ApplicationManagement() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case "admission_validee":
-                return "bg-green-100 text-green-800";
+                return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
             case "en_cours":
-                return "bg-blue-100 text-blue-800";
+                return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
             case "admission_rejetee":
-                return "bg-red-100 text-red-800";
+                return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
             default:
-                return "bg-gray-100 text-gray-800";
+                return "bg-gray-100 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200";
         }
     };
 
@@ -364,7 +364,7 @@ export default function ApplicationManagement() {
             <div className="flex min-h-[400px] items-center justify-center">
                 <div className="text-center">
                     <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
-                    <p className="text-slate-600">{t("loading")}</p>
+                    <p className="text-slate-600 dark:text-slate-400">{t("loading")}</p>
                 </div>
             </div>
         );
@@ -377,10 +377,10 @@ export default function ApplicationManagement() {
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
                         {t("header.tag")}
                     </p>
-                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">
                         {t("header.title")}
                     </h1>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         {t("header.subtitle")}
                     </p>
                 </div>
@@ -562,7 +562,7 @@ export default function ApplicationManagement() {
                 <CardContent>
                     {filteredApplications.length === 0 ? (
                         <div className="py-12 text-center">
-                            <p className="text-slate-500">
+                            <p className="text-slate-500 dark:text-slate-400">
                                 {applications.length === 0 
                                     ? t("empty.noApplications")
                                     : t("empty.noResults")}
@@ -593,10 +593,10 @@ export default function ApplicationManagement() {
                                     <div key={application.id} className="joda-surface-muted p-4">
                                         <div className="mb-4 flex items-start justify-between">
                                             <div>
-                                                <h3 className="font-semibold text-slate-800">
+                                                <h3 className="font-semibold text-slate-800 dark:text-slate-200">
                                                     {student ? `${student.prenom} ${student.nom}` : t("fallback.student")}
                                                 </h3>
-                                                <p className="text-sm text-slate-600">
+                                                <p className="text-sm text-slate-600 dark:text-slate-400">
                                                     {university?.nom || t("fallback.university")}
                                                 </p>
                                             </div>
@@ -607,7 +607,7 @@ export default function ApplicationManagement() {
 
                                         <div className="mb-4 space-y-2 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-slate-600">{t("card.date")}:</span>
+                                                <span className="text-slate-600 dark:text-slate-400">{t("card.date")}:</span>
                                                 <span className="font-medium">
                                                     {application.created_at ? new Date(application.created_at).toLocaleDateString(dateLocale) : "-"}
                                                 </span>

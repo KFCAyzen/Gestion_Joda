@@ -80,7 +80,7 @@ export default function StudentSignup({ onBack, onSignupSuccess }: StudentSignup
                     Retour
                 </Button>
                 <h2 className="text-xl lg:text-2xl font-light mb-1 lg:mb-2">Créer un compte étudiant</h2>
-                <p className="text-gray-600 text-sm lg:text-base">Inscrivez-vous pour accéder au portail</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm lg:text-base">Inscrivez-vous pour accéder au portail</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,7 +145,7 @@ export default function StudentSignup({ onBack, onSignupSuccess }: StudentSignup
                 </div>
 
                 {error && (
-                    <div className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-xl border border-red-200">
+                    <div className="text-red-600 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-200 dark:border-red-700">
                         {error}
                     </div>
                 )}

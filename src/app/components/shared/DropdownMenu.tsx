@@ -86,7 +86,7 @@ export default function DropdownMenu({ actions }: DropdownMenuProps) {
         <div
             ref={menuRef}
             style={{ ...pos, position: "fixed", zIndex: 9999 }}
-            className="w-64 rounded-lg border border-slate-200 bg-white py-1 shadow-xl"
+            className="w-64 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 shadow-xl"
         >
             {actions.map((action, i) => (
                 <button
@@ -98,7 +98,7 @@ export default function DropdownMenu({ actions }: DropdownMenuProps) {
                             ? "cursor-not-allowed opacity-50"
                             : action.variant === "danger"
                               ? "text-rose-600 hover:bg-rose-50"
-                              : "text-slate-700 hover:bg-slate-50"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800/50"
                     }`}
                 >
                     {action.icon && <span className="flex-shrink-0">{action.icon}</span>}
@@ -113,11 +113,11 @@ export default function DropdownMenu({ actions }: DropdownMenuProps) {
             <button
                 ref={buttonRef}
                 onClick={(e) => { e.stopPropagation(); setIsOpen((v) => !v); }}
-                className="rounded-lg p-2 transition-colors hover:bg-slate-100"
+                className="rounded-lg p-2 transition-colors hover:bg-slate-100 dark:bg-slate-700/50"
                 aria-label="Actions"
                 aria-expanded={isOpen}
             >
-                <MoreVertical className="h-5 w-5 text-slate-600" />
+                <MoreVertical className="h-5 w-5 text-slate-600 dark:text-slate-400" />
             </button>
 
             {isOpen && typeof document !== "undefined" && createPortal(menu, document.body)}

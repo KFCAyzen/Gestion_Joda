@@ -222,8 +222,8 @@ export default function CoursLangues() {
 
     const getStatusVariant = (status: string) => {
         if (status === "paye") return "bg-green-100 text-green-700";
-        if (status === "retard") return "bg-red-100 text-red-700";
-        return "bg-yellow-100 text-yellow-700";
+        if (status === "retard") return "bg-red-100 text-red-700 dark:text-red-300";
+        return "bg-yellow-100 text-yellow-700 dark:text-yellow-300";
     };
 
     const getStatusLabel = (status: string) => {
@@ -240,8 +240,8 @@ export default function CoursLangues() {
                         <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
                             {t("header.tag")}
                         </p>
-                        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t("header.title")}</h1>
-                        <p className="mt-1 text-sm text-slate-500">
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">{t("header.title")}</h1>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                             {t("header.subtitle")}
                         </p>
                     </div>
@@ -261,7 +261,7 @@ export default function CoursLangues() {
                         <Card key={label} className="joda-surface border-0 shadow-none">
                             <CardContent className="pt-6">
                                 <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{label}</p>
-                                <p className={`mt-2 text-3xl font-semibold ${red ? "text-red-600" : "text-slate-900"}`}>{value}</p>
+                                <p className={`mt-2 text-3xl font-semibold ${red ? "text-red-600" : "text-slate-900 dark:text-slate-100"}`}>{value}</p>
                             </CardContent>
                         </Card>
                     ))}
@@ -318,7 +318,7 @@ export default function CoursLangues() {
                                     />
                                 </div>
                                 <div className="sm:col-span-3">
-                                    <p className="mb-3 text-sm text-slate-500">
+                                    <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
                                         {t("form.amount")} : <strong>{formatPrice(getConfig(formData.type as "mandarin" | "anglais").tranches.reduce((s, tr) => s + tr.montant, 0))}</strong>
                                     </p>
                                     <Button type="submit" disabled={submitting || !formData.studentId}>
@@ -363,7 +363,7 @@ export default function CoursLangues() {
                                                     {getStudentName(payment.student_id)}
                                                 </TableCell>
                                                 <TableCell>{getCourseLabel(payment.type)}</TableCell>
-                                                <TableCell className="text-slate-500">
+                                                <TableCell className="text-slate-500 dark:text-slate-400">
                                                     {payment.tranche
                                                         ? `T${payment.tranche} — ${getTrancheLabel(getConfig(payment.type as "mandarin" | "anglais").tranches.find(t => t.tranche === payment.tranche)?.label ?? "")}`
                                                         : "—"}

@@ -318,17 +318,17 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
                 <h3 className="text-lg font-semibold mb-4">Générer le reçu de paiement</h3>
                 
                 <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                         <strong>Étudiant :</strong> {sanitizeForHtml(`${student.nom} ${student.prenom}`)}
                     </p>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                         <strong>Type :</strong> {getPaymentTypeLabel(payment.type)}
                     </p>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         <strong>Montant :</strong> {formatPrice(payment.montant.toString())}
                     </p>
                 </div>

@@ -64,7 +64,7 @@ export default function PhoneInput({
             <div className="relative" ref={menuRef}>
                 <button
                     type="button"
-                    className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors hover:bg-slate-50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors hover:bg-slate-50 dark:bg-slate-800/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     onClick={() => {
                         setOpen((value) => !value);
                         setSearch("");
@@ -76,7 +76,7 @@ export default function PhoneInput({
                 </button>
 
                 {open && (
-                    <div className="absolute left-0 z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                    <div className="absolute left-0 z-50 mt-2 w-80 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl">
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -86,14 +86,14 @@ export default function PhoneInput({
                         />
                         <div className="max-h-64 overflow-y-auto">
                             {filteredCountries.length === 0 ? (
-                                <p className="px-3 py-4 text-center text-sm text-slate-500">Aucun indicatif trouvé</p>
+                                <p className="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">Aucun indicatif trouvé</p>
                             ) : (
                                 filteredCountries.map((entry) => (
                                     <button
                                         type="button"
                                         key={`${entry.code}-${entry.country}`}
-                                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50 ${
-                                            entry.code === countryCode ? "bg-red-50 text-red-700" : "text-slate-700"
+                                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50 dark:bg-slate-800/50 ${
+                                            entry.code === countryCode ? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300" : "text-slate-700 dark:text-slate-300"
                                         }`}
                                         onClick={() => {
                                             onCountryCodeChange(entry.code);

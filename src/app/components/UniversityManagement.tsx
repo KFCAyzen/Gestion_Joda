@@ -276,7 +276,7 @@ export default function UniversityManagement() {
                                             <TableRow key={u.id}>
                                                 <TableCell>
                                                     <div className="font-medium">{u.nom}</div>
-                                                    <div className="text-sm text-slate-500">{u.pays}</div>
+                                                    <div className="text-sm text-slate-500 dark:text-slate-400">{u.pays}</div>
                                                 </TableCell>
                                                 <TableCell>{u.ville}</TableCell>
                                                 <TableCell>

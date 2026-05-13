@@ -122,7 +122,7 @@ export default function PaymentDashboard() {
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Tableau de Bord - Paiements</h1>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Tableau de Bord - Paiements</h1>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -135,8 +135,8 @@ export default function PaymentDashboard() {
                                 </svg>
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">Revenus Totaux</p>
-                                <p className="text-2xl font-semibold text-gray-900">
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Revenus Totaux</p>
+                                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                                     {formatPrice(stats.totalRevenue.toString())}
                                 </p>
                             </div>
@@ -153,8 +153,8 @@ export default function PaymentDashboard() {
                                 </svg>
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">Pénalités</p>
-                                <p className="text-2xl font-semibold text-gray-900">
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pénalités</p>
+                                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                                     {formatPrice(stats.totalPenalties.toString())}
                                 </p>
                             </div>
@@ -171,8 +171,8 @@ export default function PaymentDashboard() {
                                 </svg>
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">Paiements Validés</p>
-                                <p className="text-2xl font-semibold text-gray-900">{stats.paidCount}</p>
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Paiements Validés</p>
+                                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.paidCount}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -187,8 +187,8 @@ export default function PaymentDashboard() {
                                 </svg>
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">En Attente</p>
-                                <p className="text-2xl font-semibold text-gray-900">{stats.pendingCount}</p>
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">En Attente</p>
+                                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.pendingCount}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -207,8 +207,8 @@ export default function PaymentDashboard() {
                                 return (
                                     <div key={type}>
                                         <div className="flex justify-between items-center mb-2">
-                                            <span className="text-sm font-medium text-gray-700">{type}</span>
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{type}</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">
                                                 {formatPrice(amount.toString())} ({percentage.toFixed(1)}%)
                                             </span>
                                         </div>
@@ -234,27 +234,27 @@ export default function PaymentDashboard() {
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center">
                                     <div className="w-4 h-4 bg-green-500 rounded mr-3"></div>
-                                    <span className="text-sm font-medium text-gray-700">Payés</span>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Payés</span>
                                 </div>
-                                <span className="text-sm text-gray-600">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
                                     {stats.paidCount} ({totalPayments > 0 ? ((stats.paidCount / totalPayments) * 100).toFixed(1) : 0}%)
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center">
                                     <div className="w-4 h-4 bg-yellow-500 rounded mr-3"></div>
-                                    <span className="text-sm font-medium text-gray-700">En attente</span>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">En attente</span>
                                 </div>
-                                <span className="text-sm text-gray-600">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
                                     {stats.pendingCount} ({totalPayments > 0 ? ((stats.pendingCount / totalPayments) * 100).toFixed(1) : 0}%)
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center">
                                     <div className="w-4 h-4 bg-red-500 rounded mr-3"></div>
-                                    <span className="text-sm font-medium text-gray-700">En retard</span>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">En retard</span>
                                 </div>
-                                <span className="text-sm text-gray-600">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
                                     {stats.overdueCount} ({totalPayments > 0 ? ((stats.overdueCount / totalPayments) * 100).toFixed(1) : 0}%)
                                 </span>
                             </div>
@@ -285,10 +285,10 @@ export default function PaymentDashboard() {
                                                     title={formatPrice(amount.toString())}
                                                 ></div>
                                             </div>
-                                            <div className="text-xs text-gray-600 text-center w-16 truncate">
+                                            <div className="text-xs text-gray-600 dark:text-gray-400 text-center w-16 truncate">
                                                 {month}
                                             </div>
-                                            <div className="text-xs font-medium text-gray-800 text-center">
+                                            <div className="text-xs font-medium text-gray-800 dark:text-gray-200 text-center">
                                                 {formatPrice(amount.toString())}
                                             </div>
                                         </div>

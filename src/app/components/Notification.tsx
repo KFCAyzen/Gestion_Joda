@@ -17,9 +17,9 @@ const CONFIG = {
     success: {
         title: "Action réussie",
         bg: "from-emerald-50 to-white",
-        border: "border-emerald-200",
+        border: "border-emerald-200 dark:border-emerald-700",
         text: "text-emerald-950",
-        muted: "text-emerald-700",
+        muted: "text-emerald-700 dark:text-emerald-300",
         bar: "bg-emerald-500",
         iconBg: "bg-emerald-100",
         Icon: CheckCircle2,
@@ -92,7 +92,7 @@ export default function Notification({ title, message, type, onClose }: Notifica
                     </div>
                     <motion.button
                         onClick={onClose}
-                        className="flex-shrink-0 text-slate-400 transition-colors hover:text-slate-600"
+                        className="flex-shrink-0 text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-400"
                         whileHover={{ scale: 1.12, rotate: 90 }}
                         whileTap={{ scale: 0.9 }}
                         transition={{ duration: 0.15 }}

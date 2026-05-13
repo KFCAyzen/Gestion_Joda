@@ -23,20 +23,20 @@ export default function Pagination({
   const endItem = Math.min(currentPage * pageSize, totalCount || 0);
 
   return (
-    <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
+    <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 sm:px-6">
       {/* Info */}
       <div className="flex flex-1 justify-between sm:hidden">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!hasPrevPage}
-          className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800/50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Précédent
         </button>
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={!hasNextPage}
-          className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800/50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Suivant
         </button>
@@ -44,7 +44,7 @@ export default function Pagination({
 
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-slate-700">
+          <p className="text-sm text-slate-700 dark:text-slate-300">
             Affichage de <span className="font-medium">{startItem}</span> à{' '}
             <span className="font-medium">{endItem}</span> sur{' '}
             <span className="font-medium">{totalCount}</span> résultats
@@ -56,7 +56,7 @@ export default function Pagination({
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={!hasPrevPage}
-              className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 dark:bg-slate-800/50 focus:z-20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Précédent</span>
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -84,7 +84,7 @@ export default function Pagination({
                   className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                     currentPage === pageNum
                       ? 'z-10 bg-red-600 text-white focus:z-20'
-                      : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20'
+                      : 'text-slate-900 dark:text-slate-100 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 dark:bg-slate-800/50 focus:z-20'
                   }`}
                 >
                   {pageNum}
@@ -96,7 +96,7 @@ export default function Pagination({
             <button
               onClick={() => onPageChange(currentPage + 1)}
               disabled={!hasNextPage}
-              className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 dark:bg-slate-800/50 focus:z-20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Suivant</span>
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

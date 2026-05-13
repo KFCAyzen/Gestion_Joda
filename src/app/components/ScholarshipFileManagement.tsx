@@ -219,13 +219,13 @@ export default function ScholarshipFileManagement() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case "admission_validee": return "bg-emerald-100 text-emerald-800";
-            case "en_cours": return "bg-blue-100 text-blue-800";
+            case "en_cours": return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
             case "admission_rejetee": return "bg-rose-100 text-rose-800";
             case "document_manquant": return "bg-amber-100 text-amber-800";
             case "document_recu": return "bg-teal-100 text-teal-800";
             case "visa_en_cours": return "bg-purple-100 text-purple-800";
-            case "termine": return "bg-slate-100 text-slate-700";
-            default: return "bg-slate-100 text-slate-700";
+            case "termine": return "bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300";
+            default: return "bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300";
         }
     };
 
@@ -279,7 +279,7 @@ export default function ScholarshipFileManagement() {
                 <div className="joda-surface flex items-center gap-4">
                     <button
                         onClick={closeFile}
-                        className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                        className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-50 dark:bg-slate-800/50"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         {t("actions.back")}
@@ -289,8 +289,8 @@ export default function ScholarshipFileManagement() {
                             {getInitials(selectedFile.studentName)}
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900">{selectedFile.studentName}</h2>
-                            <p className="text-sm text-slate-500">{selectedFile.program} — {selectedFile.university}</p>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{selectedFile.studentName}</h2>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{selectedFile.program} — {selectedFile.university}</p>
                         </div>
                     </div>
                     <span className={`ml-auto rounded-full px-4 py-1.5 text-xs font-bold ${getStatusColor(selectedFile.status)}`}>
@@ -305,16 +305,16 @@ export default function ScholarshipFileManagement() {
                         <div className="joda-surface space-y-3">
                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t("detail.info")}</p>
                             <div className="space-y-2 text-sm">
-                                <div className="flex items-center gap-2 text-slate-600">
+                                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                     <School2 className="h-4 w-4 flex-shrink-0 text-slate-400" />
                                     {selectedFile.university}
                                 </div>
-                                <div className="flex items-center gap-2 text-slate-600">
+                                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                     <CalendarDays className="h-4 w-4 flex-shrink-0 text-slate-400" />
                                     {t("detail.submittedOn", { date: new Date(selectedFile.created_at).toLocaleDateString(dateLocale) })}
                                 </div>
                                 {selectedFile.updated_at && (
-                                    <div className="flex items-center gap-2 text-slate-600">
+                                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                         <Clock3 className="h-4 w-4 flex-shrink-0 text-slate-400" />
                                         {t("detail.updatedOn", { date: new Date(selectedFile.updated_at).toLocaleDateString(dateLocale) })}
                                     </div>
@@ -330,7 +330,7 @@ export default function ScholarshipFileManagement() {
                                 disabled={updatingStatus}
                                 onValueChange={updateStatus}
                             >
-                                <SelectTrigger className="w-full bg-white">
+                                <SelectTrigger className="w-full bg-white dark:bg-slate-900">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -353,7 +353,7 @@ export default function ScholarshipFileManagement() {
                             <textarea
                                 value={notes}
                                 onChange={e => setNotes(e.target.value)}
-                                className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm transition-all focus:border-red-500 focus:ring-2 focus:ring-red-100 focus:outline-none"
+                                className="w-full resize-none rounded-xl border border-slate-300 bg-white dark:bg-slate-900 px-4 py-3 text-sm transition-all focus:border-red-500 focus:ring-2 focus:ring-red-100 focus:outline-none"
                                 rows={6}
                                 placeholder={t("detail.notesPlaceholder")}
                             />
@@ -417,22 +417,22 @@ export default function ScholarshipFileManagement() {
                         </div>
                         <div>
                             <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">{t("header.tag")}</p>
-                            <h1 className="text-3xl font-bold text-slate-900">{t("header.title")}</h1>
-                            <p className="text-lg text-slate-500">{t("header.subtitle")}</p>
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{t("header.title")}</h1>
+                            <p className="text-lg text-slate-500 dark:text-slate-400">{t("header.subtitle")}</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-3 gap-6">
                         <div className="text-center">
                             <div className="text-2xl font-bold text-red-600">{files.length}</div>
-                            <div className="text-sm text-slate-500">{t("stats.total")}</div>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">{t("stats.total")}</div>
                         </div>
                         <div className="text-center">
                             <div className="text-2xl font-bold text-emerald-600">{files.filter(f => f.status === "admission_validee").length}</div>
-                            <div className="text-sm text-slate-500">{t("stats.approved")}</div>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">{t("stats.approved")}</div>
                         </div>
                         <div className="text-center">
                             <div className="text-2xl font-bold text-blue-600">{files.filter(f => f.status === "en_cours").length}</div>
-                            <div className="text-sm text-slate-500">{t("stats.inProgress")}</div>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">{t("stats.inProgress")}</div>
                         </div>
                     </div>
                 </div>
@@ -463,7 +463,7 @@ export default function ScholarshipFileManagement() {
                     {filteredFiles.map(file => (
                         <div
                             key={file.id}
-                            className="relative cursor-pointer overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)]"
+                            className="relative cursor-pointer overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)]"
                             onClick={() => openFile(file)}
                         >
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.92),transparent_34%)]" />
@@ -478,7 +478,7 @@ export default function ScholarshipFileManagement() {
                                                 <h3 className="text-lg font-bold text-slate-950">{file.studentName}</h3>
                                                 {file.status === "admission_validee" && <Sparkles className="h-4 w-4 text-emerald-500" />}
                                             </div>
-                                            <p className="text-sm text-slate-500">{file.program}</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">{file.program}</p>
                                         </div>
                                     </div>
                                     <span className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm ${getStatusColor(file.status)}`}>
@@ -492,14 +492,14 @@ export default function ScholarshipFileManagement() {
                                             <School2 className="h-3.5 w-3.5" />
                                             {t("card.targetUniversity")}
                                         </div>
-                                        <p className="text-sm font-semibold text-slate-900">{file.university}</p>
+                                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{file.university}</p>
                                     </div>
                                     <div className="rounded-[1.4rem] border border-white/80 bg-white/75 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                                         <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                                             <CalendarDays className="h-3.5 w-3.5" />
                                             {t("card.deposit")}
                                         </div>
-                                        <p className="text-sm font-semibold text-slate-900">{new Date(file.created_at).toLocaleDateString(dateLocale)}</p>
+                                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{new Date(file.created_at).toLocaleDateString(dateLocale)}</p>
                                     </div>
                                 </div>
 
@@ -508,7 +508,7 @@ export default function ScholarshipFileManagement() {
                                         <Clock3 className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-500" />
                                         <div>
                                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">{t("card.followUpNote")}</p>
-                                            <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-700">{file.notes_internes}</p>
+                                            <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-700 dark:text-slate-300">{file.notes_internes}</p>
                                         </div>
                                     </div>
                                 )}

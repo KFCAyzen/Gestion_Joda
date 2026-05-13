@@ -53,7 +53,7 @@ export function FileValidationMessage({ show = true }: FileValidationMessageProp
   if (!show) return null;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-xs text-slate-600 dark:text-slate-400">
       <p className="font-medium mb-1">Limites de fichiers :</p>
       <ul className="space-y-0.5 ml-3 list-disc">
         <li>Taille max : {FILE_LIMITS.MAX_FILE_SIZE_MB} MB</li>

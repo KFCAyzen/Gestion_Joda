@@ -23,7 +23,7 @@ export default function PageHeader({ eyebrow, title, description, action, second
         <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 {eyebrow && (
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400 dark:text-slate-500 dark:text-slate-400">
                         {eyebrow}
                     </p>
                 )}

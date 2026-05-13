@@ -442,7 +442,7 @@ function InsightCard({
     icon: React.ReactNode;
 }) {
     return (
-        <Card className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+        <Card className="relative overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_36%),radial-gradient(circle_at_bottom_left,rgba(244,63,94,0.12),transparent_32%)]" />
             <CardContent className="relative p-6">
                 <div className="mb-6 flex items-start justify-between gap-4">
@@ -455,8 +455,8 @@ function InsightCard({
                     </div>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-slate-500">{subtitle}</p>
-                    <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
+                    <span className="rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
                         {trend}
                     </span>
                 </div>
@@ -566,7 +566,7 @@ export default function ScholarshipDashboard() {
             <div className="flex min-h-[460px] items-center justify-center">
                 <div className="text-center">
                     <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-red-600" />
-                    <p className="text-slate-600">Chargement du cockpit décisionnel...</p>
+                    <p className="text-slate-600 dark:text-slate-400">Chargement du cockpit décisionnel...</p>
                 </div>
             </div>
         );
@@ -578,31 +578,31 @@ export default function ScholarshipDashboard() {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.14),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(244,63,94,0.1),transparent_26%)]" />
                 <div className="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
                     <div className="max-w-3xl">
-                        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500">
+                        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500 dark:text-slate-400">
                             Executive Dashboard
                         </p>
                         <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                             Cockpit de pilotage des admissions, revenus et risques
                         </h1>
-                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400 sm:text-base">
                             Vue consolidée pour arbitrer plus vite: flux de candidatures, rendement universités,
                             capacité d'encaissement et alertes opérationnelles.
                         </p>
                         <div className="mt-6 flex flex-wrap gap-3">
-                            <div className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                            <div className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                                 {snapshot.activePipeline} dossiers en cours
                             </div>
-                            <div className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                            <div className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                                 {snapshot.collectionRate}% de collecte
                             </div>
-                            <div className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                            <div className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                                 {snapshot.activeUniversities} universités actives
                             </div>
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <Button variant="outline" onClick={loadDashboardData} className="border-white/80 bg-white/85 text-slate-700 hover:bg-white hover:text-slate-950">
+                        <Button variant="outline" onClick={loadDashboardData} className="border-white/80 bg-white/85 text-slate-700 dark:text-slate-300 hover:bg-white hover:text-slate-950">
                             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                             Actualiser
                         </Button>
@@ -623,7 +623,7 @@ export default function ScholarshipDashboard() {
                     {snapshot.highlights.map((highlight, index) => (
                         <div key={index} className="rounded-[1.5rem] border border-white/80 bg-white/78 p-4 backdrop-blur shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Insight {index + 1}</p>
-                            <p className="mt-2 text-sm leading-6 text-slate-700">{highlight}</p>
+                            <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">{highlight}</p>
                         </div>
                     ))}
                 </div>
@@ -661,18 +661,18 @@ export default function ScholarshipDashboard() {
             </section>
 
             <section className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
-                <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(248,250,252,0.94))] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(248,250,252,0.94))] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                     <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Performance mensuelle</p>
                             <CardTitle className="mt-2 text-xl text-slate-950">Volume, admissions et cash sur 6 mois</CardTitle>
                         </div>
-                        <div className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                        <div className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
                             Focus décision
                         </div>
                     </CardHeader>
                     <CardContent className="pt-4">
-                        <div className="rounded-[1.75rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] p-2 sm:p-4">
+                        <div className="rounded-[1.75rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] p-2 sm:p-4">
                         <ChartContainer config={performanceChartConfig} className="h-[220px] w-full sm:h-[280px]">
                             <ComposedChart data={snapshot.monthlyPerformance} margin={{ left: -10, right: 0 }}>
                                 <CartesianGrid vertical={false} strokeDasharray="4 4" />
@@ -704,10 +704,10 @@ export default function ScholarshipDashboard() {
                         </div>
                         <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-3">
                             {performanceHighlights.map((item) => (
-                                <div key={item.label} className="rounded-[1.5rem] border border-slate-200/80 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+                                <div key={item.label} className="rounded-[1.5rem] border border-slate-200 dark:border-slate-700/80 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
                                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
                                     <p className="mt-2 text-lg font-semibold text-slate-950">{item.value}</p>
-                                    <p className="mt-1 text-sm text-slate-500">{item.detail}</p>
+                                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.detail}</p>
                                 </div>
                             ))}
                         </div>
@@ -715,7 +715,7 @@ export default function ScholarshipDashboard() {
                 </Card>
 
                 <div className="grid gap-6">
-                    <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                    <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                         <CardHeader className="pb-0">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Qualité de conversion</p>
                             <CardTitle className="mt-2 text-xl text-slate-950">Taux d'admission final</CardTitle>
@@ -741,14 +741,14 @@ export default function ScholarshipDashboard() {
                                     <span className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-400">Conversion</span>
                                 </div>
                             </div>
-                            <div className="grid gap-3 text-sm text-slate-600">
-                                <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-4">
+                            <div className="grid gap-3 text-sm text-slate-600 dark:text-slate-400">
+                                <div className="rounded-[1.5rem] border border-slate-200 dark:border-slate-700/80 bg-white p-4">
                                     <div className="flex items-center justify-between">
                                         <span>Collecte globale</span>
                                         <strong className="text-slate-950">{snapshot.collectionRate}%</strong>
                                     </div>
                                 </div>
-                                <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-4">
+                                <div className="rounded-[1.5rem] border border-slate-200 dark:border-slate-700/80 bg-white p-4">
                                     <div className="flex items-center justify-between">
                                         <span>Étudiants suivis</span>
                                         <strong className="text-slate-950">{snapshot.totalStudents}</strong>
@@ -758,7 +758,7 @@ export default function ScholarshipDashboard() {
                         </CardContent>
                     </Card>
 
-                    <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#fff7ed,#ffffff)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                    <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#fff7ed,#ffffff)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                         <CardHeader className="pb-0">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Niveau d'alerte</p>
                             <CardTitle className="mt-2 text-xl text-slate-950">Pression opérationnelle</CardTitle>
@@ -794,7 +794,7 @@ export default function ScholarshipDashboard() {
             </section>
 
             <section className="grid gap-6 lg:grid-cols-[1fr_1fr_0.9fr]">
-                <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                     <CardHeader className="pb-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Pipeline</p>
                         <CardTitle className="mt-2 text-xl text-slate-950">Répartition des statuts</CardTitle>
@@ -819,7 +819,7 @@ export default function ScholarshipDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                     <CardHeader className="pb-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Réseau</p>
                         <CardTitle className="mt-2 text-xl text-slate-950">Universités les plus contributrices</CardTitle>
@@ -853,14 +853,14 @@ export default function ScholarshipDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                     <CardHeader className="pb-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Mix</p>
                         <CardTitle className="mt-2 text-xl text-slate-950">Programmes les plus demandés</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4">
                         {snapshot.programMix.length === 0 ? (
-                            <div className="flex h-[320px] items-center justify-center rounded-3xl border border-dashed border-slate-200 text-sm text-slate-500">
+                            <div className="flex h-[320px] items-center justify-center rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400">
                                 Pas encore assez de dossiers pour le mix programme.
                             </div>
                         ) : (
@@ -885,10 +885,10 @@ export default function ScholarshipDashboard() {
                                 </ChartContainer>
                                 <div className="mt-4 space-y-2">
                                     {snapshot.programMix.map((entry) => (
-                                        <div key={entry.name} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200/80 bg-white px-3 py-2 text-sm shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                                        <div key={entry.name} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 px-3 py-2 text-sm shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                                             <div className="flex items-center gap-2">
                                                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
-                                                <span className="text-slate-600">{entry.name}</span>
+                                                <span className="text-slate-600 dark:text-slate-400">{entry.name}</span>
                                             </div>
                                             <span className="font-semibold text-slate-950">{entry.value}</span>
                                         </div>
@@ -901,7 +901,7 @@ export default function ScholarshipDashboard() {
             </section>
 
             <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                     <CardHeader className="pb-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Cadence 7 jours</p>
                         <CardTitle className="mt-2 text-xl text-slate-950">Rythme de production et encaissement</CardTitle>
@@ -946,14 +946,14 @@ export default function ScholarshipDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#fff7ed,#ffffff)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#fff7ed,#ffffff)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                     <CardHeader className="pb-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Watchlist</p>
                         <CardTitle className="mt-2 text-xl text-slate-950">Répartition des risques</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4">
                         {snapshot.riskMix.length === 0 ? (
-                            <div className="flex h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/70 text-center text-sm text-emerald-800">
+                            <div className="flex h-[300px] flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20/70 text-center text-sm text-emerald-800">
                                 <ShieldAlert className="mb-3 h-8 w-8" />
                                 Aucun risque significatif détecté.
                             </div>
@@ -979,10 +979,10 @@ export default function ScholarshipDashboard() {
                                 </ChartContainer>
                                 <div className="space-y-2">
                                     {snapshot.riskMix.map((entry) => (
-                                        <div key={entry.label} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200/80 bg-white px-3 py-2 text-sm shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                                        <div key={entry.label} className="flex items-center justify-between rounded-[1.25rem] border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 px-3 py-2 text-sm shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                                             <div className="flex items-center gap-2">
                                                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
-                                                <span className="text-slate-600">{entry.label}</span>
+                                                <span className="text-slate-600 dark:text-slate-400">{entry.label}</span>
                                             </div>
                                             <span className="font-semibold text-slate-950">{entry.value}</span>
                                         </div>
@@ -996,14 +996,14 @@ export default function ScholarshipDashboard() {
 
             {confirmAction && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.24)]">
-                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                    <div className="w-full max-w-md rounded-[2rem] border border-white/70 dark:border-white/10 bg-white dark:bg-slate-900 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.24)]">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300">
                             {confirmAction === "generate" ? <TrendingUp className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
                         </div>
                         <h3 className="text-xl font-semibold text-slate-950">
                             {confirmAction === "generate" ? "Générer un jeu de démonstration ?" : "Supprimer les données de démonstration ?"}
                         </h3>
-                        <p className="mt-3 text-sm leading-6 text-slate-500">
+                        <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
                             {confirmAction === "generate"
                                 ? "Cette action ajoute des étudiants, universités, candidatures et paiements fictifs pour enrichir le cockpit."
                                 : "Cette action nettoie les données de démonstration pour revenir à une base plus propre."}
@@ -1041,19 +1041,19 @@ export default function ScholarshipDashboard() {
             )}
 
             <section className="grid gap-4 lg:grid-cols-3">
-                <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)] xl:col-span-2">
+                <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)] xl:col-span-2">
                     <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Next best actions</p>
                             <h3 className="mt-2 text-xl font-semibold text-slate-950">Ce que le dashboard recommande maintenant</h3>
                         </div>
-                        <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600">
+                        <div className="flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm text-slate-600 dark:text-slate-400">
                             Orchestration business
                             <ArrowRight className="h-4 w-4" />
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                <Card className="overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700/80 bg-[linear-gradient(180deg,#ffffff,#f8fafc)] shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                     <CardContent className="p-6">
                         <div className="flex items-start gap-3">
                             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
@@ -1061,7 +1061,7 @@ export default function ScholarshipDashboard() {
                             </div>
                             <div>
                                 <p className="text-sm font-semibold text-slate-950">Priorité stratégique</p>
-                                <p className="mt-1 text-sm leading-6 text-slate-500">
+                                <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
                                     Accentuer les relances sur les dossiers incomplets et pousser les universités à plus fort taux de conversion.
                                 </p>
                             </div>

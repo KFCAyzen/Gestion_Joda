@@ -20,7 +20,7 @@ export default function LoadingSpinner({ size = "md", text = "Chargement..." }: 
             animate="animate"
         >
             <div className="relative">
-                <motion.div className={`${SIZES[size]} rounded-full border-4 border-slate-200`} />
+                <motion.div className={`${SIZES[size]} rounded-full border-4 border-slate-200 dark:border-slate-700`} />
                 <motion.div
                     className={`${SIZES[size]} absolute inset-0 rounded-full border-4 border-transparent`}
                     style={{ borderTopColor: "#dc2626", borderRightColor: "rgba(220,38,38,0.35)" }}
@@ -28,14 +28,14 @@ export default function LoadingSpinner({ size = "md", text = "Chargement..." }: 
                     transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
                 />
                 <motion.div
-                    className="absolute inset-2 rounded-full bg-red-50"
+                    className="absolute inset-2 rounded-full bg-red-50 dark:bg-red-900/20"
                     animate={{ scale: [1, 0.85, 1], opacity: [0.55, 0.9, 0.55] }}
                     transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
                 />
             </div>
             {text && (
                 <motion.p
-                    className="mt-4 text-sm font-medium text-slate-600"
+                    className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-400"
                     animate={{ opacity: [0.45, 1, 0.45] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                 >

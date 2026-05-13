@@ -56,7 +56,7 @@ function TrancheEditor({
         <div className="space-y-3">
             {tranches.map((tranche, i) => (
                 <div key={i} className="grid grid-cols-12 items-center gap-2">
-                    <div className="col-span-1 flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                    <div className="col-span-1 flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700/50 text-xs font-semibold text-slate-600 dark:text-slate-400">
                         {tranche.tranche}
                     </div>
                     <div className="col-span-6">
@@ -84,7 +84,7 @@ function TrancheEditor({
                     <Plus className="h-3 w-3" /> Ajouter tranche
                 </Button>
                 {tranches.length > 1 && (
-                    <Button type="button" size="sm" variant="ghost" onClick={removeLast} className="h-7 gap-1 text-xs text-red-500 hover:text-red-700">
+                    <Button type="button" size="sm" variant="ghost" onClick={removeLast} className="h-7 gap-1 text-xs text-red-500 hover:text-red-700 dark:text-red-300">
                         <Trash2 className="h-3 w-3" /> Supprimer la dernière
                     </Button>
                 )}
@@ -178,8 +178,8 @@ function ServiceConfigCard({
                 {/* Tranches */}
                 <div>
                     <div className="mb-3 flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-700">Tranches de paiement</span>
-                        <div className="h-px flex-1 bg-slate-100" />
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tranches de paiement</span>
+                        <div className="h-px flex-1 bg-slate-100 dark:bg-slate-700/50" />
                     </div>
                     <div className="mb-2 grid grid-cols-12 gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
                         <div className="col-span-1">#</div>
@@ -195,12 +195,12 @@ function ServiceConfigCard({
                 {/* Pénalités */}
                 <div>
                     <div className="mb-3 flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-700">Pénalités de retard</span>
-                        <div className="h-px flex-1 bg-slate-100" />
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Pénalités de retard</span>
+                        <div className="h-px flex-1 bg-slate-100 dark:bg-slate-700/50" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <Label className="text-xs text-slate-600">Jours de grâce</Label>
+                            <Label className="text-xs text-slate-600 dark:text-slate-400">Jours de grâce</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="number"
@@ -213,7 +213,7 @@ function ServiceConfigCard({
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs text-slate-600">Pénalité / jour</Label>
+                            <Label className="text-xs text-slate-600 dark:text-slate-400">Pénalité / jour</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="number"
@@ -231,8 +231,8 @@ function ServiceConfigCard({
                 {/* Délai par défaut */}
                 <div>
                     <div className="mb-3 flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-700">Délai d'échéance par défaut</span>
-                        <div className="h-px flex-1 bg-slate-100" />
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Délai d'échéance par défaut</span>
+                        <div className="h-px flex-1 bg-slate-100 dark:bg-slate-700/50" />
                     </div>
                     <div className="flex items-center gap-2">
                         <Input
@@ -242,7 +242,7 @@ function ServiceConfigCard({
                             onChange={(e) => setDraft((d) => ({ ...d, deadline_offset_days: Number(e.target.value) }))}
                             className="h-8 w-24 text-sm"
                         />
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
                             jours après inscription (date limite par défaut)
                         </span>
                     </div>
@@ -266,14 +266,14 @@ function ServiceConfigCard({
                             variant="ghost"
                             size="sm"
                             onClick={reset}
-                            className="gap-1.5 text-slate-500"
+                            className="gap-1.5 text-slate-500 dark:text-slate-400"
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
                             Annuler
                         </Button>
                     )}
                     {hasChanges && (
-                        <span className="ml-auto text-xs text-amber-600">Modifications non enregistrées</span>
+                        <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Modifications non enregistrées</span>
                     )}
                 </div>
             </CardContent>
@@ -300,17 +300,17 @@ export default function FeeConfigManagement() {
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
                         Administration
                     </p>
-                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">
                         Configuration des frais
                     </h1>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         Personnalisez les tranches, les pénalités et les délais d'échéance pour chaque service.
                         Les modifications s'appliquent aux nouveaux dossiers uniquement.
                     </p>
                 </div>
 
                 {/* Tabs principaux */}
-                <div className="flex gap-1 rounded-xl bg-slate-100 p-1 w-fit">
+                <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-slate-700/50 p-1 w-fit">
                     {([
                         { id: "bourse" as TabId, label: "Procédure Bourse", icon: <GraduationCap className="h-4 w-4" /> },
                         { id: "langues" as TabId, label: "Cours de Langues", icon: <BookOpen className="h-4 w-4" /> },
@@ -320,8 +320,8 @@ export default function FeeConfigManagement() {
                             onClick={() => setActiveTab(id)}
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                                 activeTab === id
-                                    ? "bg-white text-slate-900 shadow-sm"
-                                    : "text-slate-600 hover:text-slate-900"
+                                    ? "bg-white text-slate-900 dark:text-slate-100 shadow-sm"
+                                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100"
                             }`}
                         >
                             {icon}
@@ -344,8 +344,8 @@ export default function FeeConfigManagement() {
                                     onClick={() => setBourseSubTab(id)}
                                     className={`rounded-lg border px-4 py-1.5 text-sm font-medium transition-all ${
                                         bourseSubTab === id
-                                            ? "border-red-200 bg-red-50 text-red-700"
-                                            : "border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                                            ? "border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+                                            : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 hover:text-slate-700 dark:text-slate-300"
                                     }`}
                                 >
                                     {label}
@@ -374,8 +374,8 @@ export default function FeeConfigManagement() {
                                     onClick={() => setLangueSubTab(id)}
                                     className={`rounded-lg border px-4 py-1.5 text-sm font-medium transition-all ${
                                         langueSubTab === id
-                                            ? "border-red-200 bg-red-50 text-red-700"
-                                            : "border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                                            ? "border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+                                            : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 hover:text-slate-700 dark:text-slate-300"
                                     }`}
                                 >
                                     {label}

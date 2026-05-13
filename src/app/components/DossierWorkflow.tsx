@@ -39,15 +39,15 @@ const DOSSIER_STATUSES: {
     description: string;
     nextStatuses: DossierStatus[];
 }[] = [
-    { status: 'document_recu', label: 'Document reçu', color: 'bg-blue-100 text-blue-800', description: 'Les documents ont été reçus', nextStatuses: ['en_attente', 'document_manquant'] },
-    { status: 'en_attente', label: 'En attente', color: 'bg-yellow-100 text-yellow-800', description: 'Dossier en attente', nextStatuses: ['en_cours', 'document_manquant'] },
-    { status: 'en_cours', label: 'En cours', color: 'bg-purple-100 text-purple-800', description: 'En cours de traitement', nextStatuses: ['admission_validee', 'admission_rejetee', 'document_manquant'] },
-    { status: 'document_manquant', label: 'Document manquant', color: 'bg-orange-100 text-orange-800', description: 'Documents manquants', nextStatuses: ['document_recu', 'en_attente'] },
-    { status: 'admission_validee', label: 'Admission validée', color: 'bg-green-100 text-green-800', description: 'Admission validée', nextStatuses: ['en_attente_universite', 'visa_en_cours'] },
-    { status: 'admission_rejetee', label: 'Admission rejetée', color: 'bg-red-100 text-red-800', description: 'Admission rejetée', nextStatuses: ['en_attente', 'en_cours'] },
-    { status: 'en_attente_universite', label: 'En attente université', color: 'bg-indigo-100 text-indigo-800', description: 'En attente université', nextStatuses: ['visa_en_cours', 'admission_rejetee'] },
-    { status: 'visa_en_cours', label: 'Visa en cours', color: 'bg-teal-100 text-teal-800', description: 'Visa en cours', nextStatuses: ['termine'] },
-    { status: 'termine', label: 'Terminé', color: 'bg-green-200 text-green-900', description: 'Terminé', nextStatuses: [] }
+    { status: 'document_recu', label: 'Document reçu', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300', description: 'Les documents ont été reçus', nextStatuses: ['en_attente', 'document_manquant'] },
+    { status: 'en_attente', label: 'En attente', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300', description: 'Dossier en attente', nextStatuses: ['en_cours', 'document_manquant'] },
+    { status: 'en_cours', label: 'En cours', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300', description: 'En cours de traitement', nextStatuses: ['admission_validee', 'admission_rejetee', 'document_manquant'] },
+    { status: 'document_manquant', label: 'Document manquant', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300', description: 'Documents manquants', nextStatuses: ['document_recu', 'en_attente'] },
+    { status: 'admission_validee', label: 'Admission validée', color: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300', description: 'Admission validée', nextStatuses: ['en_attente_universite', 'visa_en_cours'] },
+    { status: 'admission_rejetee', label: 'Admission rejetée', color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300', description: 'Admission rejetée', nextStatuses: ['en_attente', 'en_cours'] },
+    { status: 'en_attente_universite', label: 'En attente université', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300', description: 'En attente université', nextStatuses: ['visa_en_cours', 'admission_rejetee'] },
+    { status: 'visa_en_cours', label: 'Visa en cours', color: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300', description: 'Visa en cours', nextStatuses: ['termine'] },
+    { status: 'termine', label: 'Terminé', color: 'bg-green-200 text-green-900 dark:bg-green-900/50 dark:text-green-200', description: 'Terminé', nextStatuses: [] }
 ];
 
 export default function DossierWorkflow() {
@@ -120,7 +120,7 @@ export default function DossierWorkflow() {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-                    <p className="text-slate-600">Chargement des dossiers...</p>
+                    <p className="text-slate-600 dark:text-slate-400">Chargement des dossiers...</p>
                 </div>
             </div>
         );
@@ -132,7 +132,7 @@ export default function DossierWorkflow() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-red-600 mb-2">
                     Workflow des Dossiers de Bourses
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                     Gérez le suivi des dossiers d'étudiants à travers les différentes étapes
                 </p>
             </div>
@@ -149,8 +149,8 @@ export default function DossierWorkflow() {
                                 onClick={() => setSelectedStatus(statusConfig.status as DossierStatus)}
                                 className={`p-3 rounded-lg border-2 transition-all ${
                                     selectedStatus === statusConfig.status
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'border-gray-200 hover:border-gray-300'
+                                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:border-gray-600'
                                 }`}
                             >
                                 <div className="flex items-center gap-2 mb-2">
@@ -159,7 +159,7 @@ export default function DossierWorkflow() {
                                     </div>
                                     <span className="font-medium text-sm">{statusConfig.label}</span>
                                 </div>
-                                <div className="text-xs text-gray-600 text-left">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 text-left">
                                     {statusConfig.description}
                                 </div>
                             </button>
@@ -175,18 +175,18 @@ export default function DossierWorkflow() {
                 <CardContent>
                     {dossiers.length === 0 ? (
                         <div className="text-center py-12">
-                            <p className="text-gray-500">Aucun dossier avec ce statut</p>
+                            <p className="text-gray-500 dark:text-gray-400">Aucun dossier avec ce statut</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             {dossiers.map((dossier) => (
-                                <div key={dossier.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                                <div key={dossier.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-md transition-shadow">
                                     <div className="flex items-start justify-between mb-4">
                                         <div>
-                                            <h3 className="font-semibold text-gray-900 mb-1">
+                                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
                                                 Dossier #{dossier.id.slice(0, 8)}
                                             </h3>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
                                                 Étudiant ID: {dossier.student_id?.slice(0, 8)}
                                             </p>
                                         </div>
@@ -196,14 +196,14 @@ export default function DossierWorkflow() {
                                     </div>
 
                                     {dossier.notes_internes && user?.role !== 'student' && (
-                                        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                            <p className="text-sm font-medium text-yellow-800 mb-1">Notes internes :</p>
-                                            <p className="text-sm text-yellow-700">{dossier.notes_internes}</p>
+                                        <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                                            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">Notes internes :</p>
+                                            <p className="text-sm text-yellow-700 dark:text-yellow-300">{dossier.notes_internes}</p>
                                         </div>
                                     )}
 
                                     {user?.role !== 'student' && (
-                                        <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
+                                        <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                                             {getStatusConfig(dossier.status)?.nextStatuses.map((nextStatus) => (
                                                 <Button
                                                     key={nextStatus}
@@ -229,14 +229,14 @@ export default function DossierWorkflow() {
 
             {statusChangeModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-                        <div className="p-6 border-b border-gray-200">
-                            <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-md w-full">
+                        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                 Changer le statut du dossier
                             </h3>
                         </div>
                         <div className="p-6">
-                            <p className="text-gray-600 mb-4">
+                            <p className="text-gray-600 dark:text-gray-400 mb-4">
                                 Passer de <span className="font-semibold">{getStatusConfig(statusChangeModal.dossier.status)?.label}</span> à <span className="font-semibold">{getStatusConfig(statusChangeModal.newStatus)?.label}</span>
                             </p>
                             <div className="space-y-2">
@@ -251,7 +251,7 @@ export default function DossierWorkflow() {
                                 />
                             </div>
                         </div>
-                        <div className="p-6 border-t border-gray-200 flex gap-3">
+                        <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
                             <Button variant="outline" onClick={() => setStatusChangeModal(null)} className="flex-1">
                                 Annuler
                             </Button>

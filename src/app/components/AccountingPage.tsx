@@ -701,14 +701,14 @@ export default function AccountingPage() {
                         <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
                             {t("header.eyebrow")}
                         </p>
-                        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">
                             {t("header.title")}
                         </h1>
-                        <p className="mt-1 text-sm text-slate-500">
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                             {t("header.description")}
                         </p>
                     </div>
-                    <div className="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm font-medium text-slate-600">
+                    <div className="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">
                         {t("header.access")}
                     </div>
                 </div>
@@ -717,7 +717,7 @@ export default function AccountingPage() {
                     <Card className="joda-surface border-0 shadow-none">
                         <CardContent className="pt-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs text-slate-500">{t("summary.totalEntries")}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{t("summary.totalEntries")}</p>
                                 <TrendingUp className="h-4 w-4 text-emerald-500" />
                             </div>
                             <p className="text-2xl font-bold text-emerald-600">{formatAmount(totalEntrees)}</p>
@@ -727,7 +727,7 @@ export default function AccountingPage() {
                     <Card className="joda-surface border-0 shadow-none">
                         <CardContent className="pt-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs text-slate-500">{t("summary.totalExpenses")}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{t("summary.totalExpenses")}</p>
                                 <TrendingDown className="h-4 w-4 text-rose-500" />
                             </div>
                             <p className="text-2xl font-bold text-rose-600">{formatAmount(totalSorties)}</p>
@@ -737,7 +737,7 @@ export default function AccountingPage() {
                     <Card className="joda-surface border-0 shadow-none">
                         <CardContent className="pt-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs text-slate-500">{t("summary.globalBalance")}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{t("summary.globalBalance")}</p>
                                 <Calendar className="h-4 w-4 text-sky-500" />
                             </div>
                             <p className={`text-2xl font-bold ${soldeGlobal >= 0 ? "text-sky-700" : "text-orange-700"}`}>
@@ -749,7 +749,7 @@ export default function AccountingPage() {
                     <Card className="joda-surface border-0 shadow-none">
                         <CardContent className="pt-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs text-slate-500">{t("summary.currentPeriod")}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{t("summary.currentPeriod")}</p>
                                 <Badge variant="outline">{getPeriodLabel(periodFilter)}</Badge>
                             </div>
                             <p className={`text-2xl font-bold ${soldePeriod >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
@@ -771,7 +771,7 @@ export default function AccountingPage() {
                                         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                                             tab === t.key
                                                 ? "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-[0_12px_28px_rgba(239,68,68,0.28)]"
-                                                : "bg-white/70 text-slate-500 hover:text-slate-800"
+                                                : "bg-white/70 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200"
                                         }`}
                                     >
                                         {t.label}
@@ -846,11 +846,11 @@ export default function AccountingPage() {
                                 {tab === "rapport" && (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                            <Card className="border-2 border-emerald-100 bg-emerald-50/50">
+                                            <Card className="border-2 border-emerald-100 bg-emerald-50 dark:bg-emerald-900/20/50">
                                                 <CardContent className="pt-4 text-center">
                                                     <TrendingUp className="h-8 w-8 mx-auto mb-2 text-emerald-600" />
-                                                    <p className="text-xs text-emerald-700 font-medium">{t("report.periodEntries")}</p>
-                                                    <p className="text-2xl font-bold text-emerald-700 mt-1">{formatAmount(totalEntreesPeriod)}</p>
+                                                    <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">{t("report.periodEntries")}</p>
+                                                    <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">{formatAmount(totalEntreesPeriod)}</p>
                                                     <p className="text-xs text-emerald-600 mt-1">{t("summary.operations", { count: entreesPeriod.length })}</p>
                                                 </CardContent>
                                             </Card>
@@ -875,14 +875,14 @@ export default function AccountingPage() {
 
                                         {entreesPeriod.length > 0 && (
                                             <div>
-                                                <h4 className="mb-3 text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <h4 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                                     <TrendingUp className="h-4 w-4 text-emerald-600" />
                                                     {t("labels.entries")}
                                                 </h4>
-                                                <div className="rounded-lg border border-slate-200 overflow-hidden">
+                                                <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                                                     <Table>
                                                         <TableHeader>
-                                                            <TableRow className="bg-slate-50">
+                                                            <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                                                                 <TableHead>{t("table.date")}</TableHead>
                                                                 <TableHead>{t("table.description")}</TableHead>
                                                                 <TableHead>{t("table.type")}</TableHead>
@@ -892,7 +892,7 @@ export default function AccountingPage() {
                                                         <TableBody>
                                                             {entreesPeriod.map((e) => (
                                                                 <TableRow key={e.id}>
-                                                                    <TableCell className="text-xs text-slate-500">{toDate(e.date).toLocaleDateString(dateLocale)}</TableCell>
+                                                                    <TableCell className="text-xs text-slate-500 dark:text-slate-400">{toDate(e.date).toLocaleDateString(dateLocale)}</TableCell>
                                                                     <TableCell>{e.description}</TableCell>
                                                                     <TableCell><Badge variant="secondary">{getEntryTypeLabel(e.type)}</Badge></TableCell>
                                                                     <TableCell className="text-right font-medium text-emerald-600">{formatAmount(e.montant)}</TableCell>
@@ -906,14 +906,14 @@ export default function AccountingPage() {
 
                                         {sortiesPeriod.length > 0 && (
                                             <div>
-                                                <h4 className="mb-3 text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <h4 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                                     <TrendingDown className="h-4 w-4 text-rose-600" />
                                                     {t("labels.expenses")}
                                                 </h4>
-                                                <div className="rounded-lg border border-slate-200 overflow-hidden">
+                                                <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                                                     <Table>
                                                         <TableHeader>
-                                                            <TableRow className="bg-slate-50">
+                                                            <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                                                                 <TableHead>{t("table.date")}</TableHead>
                                                                 <TableHead>{t("table.description")}</TableHead>
                                                                 <TableHead>{t("table.category")}</TableHead>
@@ -924,12 +924,12 @@ export default function AccountingPage() {
                                                         <TableBody>
                                                             {sortiesPeriod.map((s) => (
                                                                 <TableRow key={s.id}>
-                                                                    <TableCell className="text-xs text-slate-500">{toDate(s.date).toLocaleDateString(dateLocale)}</TableCell>
+                                                                    <TableCell className="text-xs text-slate-500 dark:text-slate-400">{toDate(s.date).toLocaleDateString(dateLocale)}</TableCell>
                                                                     <TableCell>{s.description}</TableCell>
                                                                     <TableCell><Badge variant="outline">{getCategoryLabel(s.categorie)}</Badge></TableCell>
                                                                     <TableCell>
                                                                         {s.validated_by ? (
-                                                                            <Badge className="bg-emerald-100 text-emerald-700">{t("status.validated")}</Badge>
+                                                                            <Badge className="bg-emerald-100 text-emerald-700 dark:text-emerald-300">{t("status.validated")}</Badge>
                                                                         ) : (
                                                                             <Badge className="bg-amber-100 text-amber-700">{t("status.pending")}</Badge>
                                                                         )}
@@ -952,20 +952,20 @@ export default function AccountingPage() {
 
                                         {Object.keys(statsByCategorie).length > 0 && (
                                             <div>
-                                                <h4 className="mb-3 text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <h4 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                                     <Settings className="h-4 w-4 text-sky-600" />
                                                     {t("report.categoryStats")}
                                                 </h4>
                                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                                                     {Object.entries(statsByCategorie).map(([cat, stats]) => (
-                                                        <Card key={cat} className="border border-slate-200">
+                                                        <Card key={cat} className="border border-slate-200 dark:border-slate-700">
                                                             <CardContent className="pt-4">
                                                                 <div className="flex items-center justify-between mb-2">
                                                                     <Badge variant="outline">{getCategoryLabel(cat)}</Badge>
-                                                                    <span className="text-xs text-slate-500">{t("summary.shortOperations", { count: stats.count })}</span>
+                                                                    <span className="text-xs text-slate-500 dark:text-slate-400">{t("summary.shortOperations", { count: stats.count })}</span>
                                                                 </div>
-                                                                <p className="text-xl font-bold text-slate-700">{formatAmount(stats.montant)}</p>
-                                                                <div className="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                                                <p className="text-xl font-bold text-slate-700 dark:text-slate-300">{formatAmount(stats.montant)}</p>
+                                                                <div className="mt-2 h-1 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
                                                                     <div 
                                                                         className="h-full bg-rose-500" 
                                                                         style={{ width: `${totalSortiesPeriod > 0 ? (stats.montant / totalSortiesPeriod) * 100 : 0}%` }}
@@ -1072,7 +1072,7 @@ export default function AccountingPage() {
                                             <TableBody>
                                                 {filteredEntrees.map((e) => (
                                                     <TableRow key={e.id}>
-                                                        <TableCell className="text-xs text-slate-500">{toDate(e.date).toLocaleDateString(dateLocale)}</TableCell>
+                                                        <TableCell className="text-xs text-slate-500 dark:text-slate-400">{toDate(e.date).toLocaleDateString(dateLocale)}</TableCell>
                                                         <TableCell>{e.description}</TableCell>
                                                         <TableCell><Badge variant="secondary">{getEntryTypeLabel(e.type)}</Badge></TableCell>
                                                         <TableCell className="text-right font-semibold text-emerald-600">{formatAmount(e.montant)}</TableCell>
@@ -1208,12 +1208,12 @@ export default function AccountingPage() {
                                             <TableBody>
                                                 {filteredSorties.map((s) => (
                                                     <TableRow key={s.id}>
-                                                        <TableCell className="text-xs text-slate-500">{toDate(s.date).toLocaleDateString(dateLocale)}</TableCell>
+                                                        <TableCell className="text-xs text-slate-500 dark:text-slate-400">{toDate(s.date).toLocaleDateString(dateLocale)}</TableCell>
                                                         <TableCell>{s.description}</TableCell>
                                                         <TableCell><Badge variant="outline">{getCategoryLabel(s.categorie)}</Badge></TableCell>
                                                         <TableCell>
                                                             {s.validated_by ? (
-                                                                <Badge className="bg-emerald-100 text-emerald-700">{t("status.validated")}</Badge>
+                                                                <Badge className="bg-emerald-100 text-emerald-700 dark:text-emerald-300">{t("status.validated")}</Badge>
                                                             ) : isAdmin ? (
                                                                 <Button variant="outline" size="sm" onClick={() => handleValidateSortie(s.id)}>
                                                                     {t("actions.validate")}
@@ -1334,7 +1334,7 @@ export default function AccountingPage() {
                                                         <TableCell><Badge variant="outline">{getCategoryLabel(b.categorie)}</Badge></TableCell>
                                                         <TableCell className="font-semibold text-sky-600">{formatAmount(b.montant_prevu)}</TableCell>
                                                         <TableCell><Badge>{getPeriodLabel(b.periode)}</Badge></TableCell>
-                                                        <TableCell className="text-xs text-slate-500">{toDate(b.created_at).toLocaleDateString(dateLocale)}</TableCell>
+                                                        <TableCell className="text-xs text-slate-500 dark:text-slate-400">{toDate(b.created_at).toLocaleDateString(dateLocale)}</TableCell>
                                                         {isAdmin && (
                                                             <TableCell className="text-right">
                                                                 <Button variant="ghost" size="sm" onClick={() => handleDeleteBudget(b.id)}>
@@ -1399,12 +1399,12 @@ export default function AccountingPage() {
                                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                             <Card className="border-2 border-emerald-100">
                                                 <CardHeader>
-                                                    <CardTitle className="text-sm font-semibold text-emerald-700">{t("categories.entryCategories")}</CardTitle>
+                                                    <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{t("categories.entryCategories")}</CardTitle>
                                                 </CardHeader>
                                                 <CardContent>
                                                     <div className="space-y-2">
                                                         {customCategories.filter(c => c.type === "entree").map((c) => (
-                                                            <div key={c.id} className="flex items-center justify-between p-2 rounded bg-emerald-50">
+                                                            <div key={c.id} className="flex items-center justify-between p-2 rounded bg-emerald-50 dark:bg-emerald-900/20">
                                                                 <span className="text-sm font-medium">{c.nom}</span>
                                                                 {isAdmin && (
                                                                     <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(c.id)}>
@@ -1463,17 +1463,17 @@ export default function AccountingPage() {
         {/* Entry details modal. */}
         {detailEntree && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-emerald-700">{t("details.entryTitle")}</h3>
-                        <button onClick={() => setDetailEntree(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                        <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">{t("details.entryTitle")}</h3>
+                        <button onClick={() => setDetailEntree(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
                     </div>
                     <div className="space-y-3 text-sm">
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.date")}</span><span className="font-medium">{toDate(detailEntree.date).toLocaleDateString(dateLocale)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.description")}</span><span className="font-medium text-right max-w-[60%]">{detailEntree.description}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.type")}</span><span className="font-medium">{getEntryTypeLabel(detailEntree.type)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.amount")}</span><span className="font-bold text-emerald-600">{formatAmount(detailEntree.montant)}</span></div>
-                        <div className="flex justify-between"><span className="text-slate-500">{t("table.createdAt")}</span><span className="font-medium">{toDate(detailEntree.created_at).toLocaleDateString(dateLocale)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.date")}</span><span className="font-medium">{toDate(detailEntree.date).toLocaleDateString(dateLocale)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.description")}</span><span className="font-medium text-right max-w-[60%]">{detailEntree.description}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.type")}</span><span className="font-medium">{getEntryTypeLabel(detailEntree.type)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.amount")}</span><span className="font-bold text-emerald-600">{formatAmount(detailEntree.montant)}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500 dark:text-slate-400">{t("table.createdAt")}</span><span className="font-medium">{toDate(detailEntree.created_at).toLocaleDateString(dateLocale)}</span></div>
                     </div>
                     <div className="mt-5 flex gap-2">
                         <Button size="sm" onClick={() => handlePrintEntree(detailEntree)} className="bg-emerald-600 hover:bg-emerald-700">{t("actions.printReceipt")}</Button>
@@ -1486,18 +1486,18 @@ export default function AccountingPage() {
         {/* Expense details modal. */}
         {detailSortie && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-rose-700">{t("details.expenseTitle")}</h3>
-                        <button onClick={() => setDetailSortie(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                        <button onClick={() => setDetailSortie(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
                     </div>
                     <div className="space-y-3 text-sm">
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.date")}</span><span className="font-medium">{toDate(detailSortie.date).toLocaleDateString(dateLocale)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.description")}</span><span className="font-medium text-right max-w-[60%]">{detailSortie.description}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.category")}</span><span className="font-medium">{getCategoryLabel(detailSortie.categorie)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.amount")}</span><span className="font-bold text-rose-600">{formatAmount(detailSortie.montant)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500">{t("table.status")}</span><span className="font-medium">{detailSortie.validated_by ? t("status.validated") : t("status.pending")}</span></div>
-                        <div className="flex justify-between"><span className="text-slate-500">{t("table.createdAt")}</span><span className="font-medium">{toDate(detailSortie.created_at).toLocaleDateString(dateLocale)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.date")}</span><span className="font-medium">{toDate(detailSortie.date).toLocaleDateString(dateLocale)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.description")}</span><span className="font-medium text-right max-w-[60%]">{detailSortie.description}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.category")}</span><span className="font-medium">{getCategoryLabel(detailSortie.categorie)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.amount")}</span><span className="font-bold text-rose-600">{formatAmount(detailSortie.montant)}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.status")}</span><span className="font-medium">{detailSortie.validated_by ? t("status.validated") : t("status.pending")}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500 dark:text-slate-400">{t("table.createdAt")}</span><span className="font-medium">{toDate(detailSortie.created_at).toLocaleDateString(dateLocale)}</span></div>
                     </div>
                     <div className="mt-5">
                         <Button variant="outline" size="sm" onClick={() => setDetailSortie(null)}>{t("actions.close")}</Button>

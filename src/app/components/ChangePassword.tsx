@@ -62,7 +62,7 @@ function PasswordInput({
 
     return (
         <div className="space-y-1.5">
-            <label htmlFor={id} className="block text-sm font-medium text-slate-700">
+            <label htmlFor={id} className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                 {label}
             </label>
             <div className="relative">
@@ -72,12 +72,12 @@ function PasswordInput({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-11 text-sm text-slate-900 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 pr-11 text-sm text-slate-900 dark:text-slate-100 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
                 />
                 <button
                     type="button"
                     onClick={() => setShow(!show)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-400"
                 >
                     {show ? (
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,13 +255,13 @@ export default function ChangePassword({ onClose }: ChangePasswordProps) {
                         )}
                     </div>
 
-                    {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
+                    {error && <div className="rounded-xl border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600">{error}</div>}
 
                     <div className="flex gap-3 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white py-3 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:bg-slate-800/50"
                         >
                             {t("actions.cancel")}
                         </button>

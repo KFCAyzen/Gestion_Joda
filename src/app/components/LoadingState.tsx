@@ -18,7 +18,7 @@ export default function LoadingState({ message = "Chargement...", size = "md" }:
                 <div
                     className={`${sizeClasses[size]} mx-auto mb-4 animate-spin rounded-full border-b-2 border-blue-600`}
                 />
-                <p className="text-slate-600">{message}</p>
+                <p className="text-slate-600 dark:text-slate-400">{message}</p>
             </div>
         </div>
     );

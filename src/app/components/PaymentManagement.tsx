@@ -427,11 +427,11 @@ export default function PaymentManagement() {
                                         const totalAmount = payment.montant + penalty;
                                         
                                         return (
-                                            <TableRow key={payment.id} className={payment.initiated_by_student && payment.status === "en_validation" ? "bg-blue-50/50" : ""}>
+                                            <TableRow key={payment.id} className={payment.initiated_by_student && payment.status === "en_validation" ? "bg-blue-50 dark:bg-blue-900/20/50" : ""}>
                                                 <TableCell>
                                                     <div className="font-medium">{getStudentName(payment.student_id)}</div>
                                                     {payment.initiated_by_student && (
-                                                        <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                                        <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
                                                             {t("badges.declaredByStudent")}
                                                         </span>
                                                     )}
@@ -536,7 +536,7 @@ export default function PaymentManagement() {
                             </Table>
                         )}
                         {filteredPayments.length === 0 && !loading && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                                 {t("list.empty")}
                             </div>
                         )}
@@ -555,48 +555,48 @@ export default function PaymentManagement() {
         {/* Modal détails paiement */}
         {detailPayment && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-semibold">{t("detail.title")}</h3>
-                        <button onClick={() => setDetailPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                        <button onClick={() => setDetailPayment(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
                     </div>
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">{t("detail.student")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.student")}</span>
                             <span className="font-medium">{getStudentName(detailPayment.student_id)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">{t("detail.type")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.type")}</span>
                             <span className="font-medium">{getTypeLabel(detailPayment.type)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">{t("detail.installment")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.installment")}</span>
                             <span className="font-medium">{detailPayment.tranche ?? "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">{t("detail.amount")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.amount")}</span>
                             <span className="font-medium text-emerald-600">{formatPrice(detailPayment.montant)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">{t("detail.penalty")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.penalty")}</span>
                             <span className="font-medium text-red-600">{calculatePenalty(detailPayment) > 0 ? formatPrice(calculatePenalty(detailPayment)) : "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">{t("detail.dueDate")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.dueDate")}</span>
                             <span className="font-medium">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(dateLocale) : "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">{t("detail.paymentDate")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.paymentDate")}</span>
                             <span className="font-medium">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(dateLocale) : "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
-                            <span className="text-slate-500">{t("detail.status")}</span>
-                            <span className={`font-medium ${detailPayment.status === "paye" ? "text-emerald-600" : detailPayment.status === "retard" ? "text-red-600" : "text-amber-600"}`}>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.status")}</span>
+                            <span className={`font-medium ${detailPayment.status === "paye" ? "text-emerald-600" : detailPayment.status === "retard" ? "text-red-600" : "text-amber-600 dark:text-amber-400"}`}>
                                 {getStatusLabel(detailPayment.status)}
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-slate-500">{t("detail.createdAt")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("detail.createdAt")}</span>
                             <span className="font-medium">{new Date(detailPayment.created_at).toLocaleDateString(dateLocale)}</span>
                         </div>
                     </div>
@@ -615,10 +615,10 @@ export default function PaymentManagement() {
         {/* Modal modification paiement */}
         {editingPayment && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-semibold">{t("edit.title")}</h3>
-                        <button onClick={() => setEditingPayment(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+                        <button onClick={() => setEditingPayment(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
                     </div>
                     <div className="space-y-4">
                         <div>

@@ -25,7 +25,7 @@ interface FilterSelectProps {
 export default function FilterSelect({ label, value, onChange, options, placeholder = "Tous" }: FilterSelectProps) {
     return (
         <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-600">{label}</Label>
+            <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</Label>
             <Select value={value} onValueChange={(val) => onChange(val ?? "all")}>
                 <SelectTrigger className="w-full">
                     <SelectValue placeholder={placeholder} />

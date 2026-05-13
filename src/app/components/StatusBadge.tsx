@@ -40,7 +40,7 @@ const defaultLabelMap: Record<string, string> = {
 
 export default function StatusBadge({ status, variant, colorMap }: StatusBadgeProps) {
     const colors = colorMap || defaultColorMap;
-    const color = colors[status] || { bg: "bg-gray-100", text: "text-gray-800" };
+    const color = colors[status] || { bg: "bg-gray-100 dark:bg-gray-700/50", text: "text-gray-800 dark:text-gray-200" };
     const label = defaultLabelMap[status] || status;
 
     if (variant) {

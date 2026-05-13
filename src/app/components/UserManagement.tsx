@@ -414,14 +414,14 @@ export default function UserManagement() {
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
                         {t("header.eyebrow")}
                     </p>
-                    <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t("header.title")}</h1>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">{t("header.title")}</h1>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         {t("header.description")}
                     </p>
                 </div>
 
                 <Card className="joda-surface border-0 shadow-none">
-                    <CardHeader className="border-b border-slate-100">
+                    <CardHeader className="border-b border-slate-100 dark:border-slate-700">
                         <div className="flex flex-wrap gap-2">
                             {["users", "create"].map((tab) => (
                                 <button
@@ -433,7 +433,7 @@ export default function UserManagement() {
                                     className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                                         activeTab === tab
                                             ? "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-[0_12px_28px_rgba(239,68,68,0.28)]"
-                                            : "bg-white/70 text-slate-500 hover:text-slate-800"
+                                            : "bg-white/70 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200"
                                     }`}
                                 >
                                     {tab === "users" ? t("tabs.users", { count: dbUsers.length }) : t("tabs.create")}
@@ -443,12 +443,12 @@ export default function UserManagement() {
                     </CardHeader>
 
                     <CardContent className="pt-6">
-                        {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+                        {error && <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">{error}</div>}
                         {success && <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">{success}</div>}
 
                         {activeTab === "users" && !selectedUser &&
                             (loading ? (
-                                <div className="py-8 text-center text-slate-500">{t("loading")}</div>
+                                <div className="py-8 text-center text-slate-500 dark:text-slate-400">{t("loading")}</div>
                             ) : (
                                 <Table>
                                     <TableHeader>
@@ -465,7 +465,7 @@ export default function UserManagement() {
                                             <TableRow key={entry.id} className={entry.is_active === false ? "opacity-60" : ""}>
                                                 <TableCell>
                                                     <div className="font-medium">{entry.name}</div>
-                                                    <div className="text-sm text-slate-500">@{entry.username}</div>
+                                                    <div className="text-sm text-slate-500 dark:text-slate-400">@{entry.username}</div>
                                                 </TableCell>
                                                 <TableCell>{entry.email}</TableCell>
                                                 <TableCell>
@@ -477,8 +477,8 @@ export default function UserManagement() {
                                                     <Badge
                                                         className={
                                                             entry.is_active === false
-                                                                ? "bg-red-100 text-red-700 hover:bg-red-100"
-                                                                : "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                                                ? "bg-red-100 text-red-700 dark:text-red-300 hover:bg-red-100"
+                                                                : "bg-emerald-100 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
                                                         }
                                                     >
                                                         {entry.is_active === false ? t("status.disabled") : t("status.active")}
@@ -543,7 +543,7 @@ export default function UserManagement() {
                                 <div className="mb-6 flex items-center justify-between">
                                     <div>
                                         <h3 className="text-lg font-semibold">{selectedUser.name}</h3>
-                                        <p className="text-sm text-slate-500">
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">
                                             {t("permissions.roleLine", { role: getRoleLabel(selectedUser.role), username: selectedUser.username })}
                                         </p>
                                     </div>
@@ -553,7 +553,7 @@ export default function UserManagement() {
                                 </div>
 
                                 {loadingPermissions ? (
-                                    <div className="py-8 text-center text-slate-500">{t("loading")}</div>
+                                    <div className="py-8 text-center text-slate-500 dark:text-slate-400">{t("loading")}</div>
                                 ) : (
                                     <div className="space-y-6">
                                         {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => (
@@ -569,7 +569,7 @@ export default function UserManagement() {
                                                             const isDefault = DEFAULT_ROLE_PERMISSIONS[selectedUser.role]?.includes(perm as Permission);
 
                                                             return (
-                                                                <div key={perm} className="flex items-center justify-between rounded-lg border border-slate-200 p-3">
+                                                                <div key={perm} className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                                                                     <div className="flex items-center gap-3">
                                                                         <Checkbox
                                                                             checked={granted}
@@ -579,7 +579,7 @@ export default function UserManagement() {
                                                                         />
                                                                         <div>
                                                                             <div className="text-sm font-medium">{PERMISSION_LABELS[perm as Permission]}</div>
-                                                                            <div className="text-xs text-slate-500">{perm}</div>
+                                                                            <div className="text-xs text-slate-500 dark:text-slate-400">{perm}</div>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
@@ -698,7 +698,7 @@ export default function UserManagement() {
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                 required
                                             />
-                                            <p className="text-xs text-slate-500">
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">
                                                 {t("create.passwordHint")}
                                             </p>
                                         </div>
@@ -714,17 +714,17 @@ export default function UserManagement() {
 
                 {userToReset && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                        <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                             <div className="mb-4 flex items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                                    <KeyRound className="h-5 w-5 text-amber-600" />
+                                    <KeyRound className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                 </div>
                                 <h3 className="text-lg font-semibold">{t("reset.title")}</h3>
                             </div>
-                            <p className="mb-1 text-sm text-slate-700">
+                            <p className="mb-1 text-sm text-slate-700 dark:text-slate-300">
                                 {t.rich("reset.description", { name: userToReset.name, strong: (chunks) => <strong>{chunks}</strong> })}
                             </p>
-                            <p className="mb-6 text-xs text-slate-500">
+                            <p className="mb-6 text-xs text-slate-500 dark:text-slate-400">
                                 {t("reset.hint")}
                             </p>
                             <div className="flex justify-end gap-2">
@@ -745,7 +745,7 @@ export default function UserManagement() {
 
                 {userToDelete && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                        <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                             <h3 className="mb-4 text-lg font-semibold">{t("delete.title")}</h3>
                             <p className="mb-4">{t("delete.description")}</p>
                             <div className="flex justify-end gap-2">

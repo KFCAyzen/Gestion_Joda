@@ -226,7 +226,7 @@ export default function LoginPage() {
                                 <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
                             </svg>
                         ) : (
-                            <svg className="h-5 w-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="h-5 w-5 text-gray-700 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                             </svg>
                         )}
@@ -268,8 +268,8 @@ export default function LoginPage() {
                                         <button
                                             key={loc}
                                             onClick={() => switchLocale(loc)}
-                                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-red-50 ${
-                                                locale === loc ? "text-red-600 bg-red-50" : "text-gray-700"
+                                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-red-50 dark:bg-red-900/20 ${
+                                                locale === loc ? "text-red-600 bg-red-50 dark:bg-red-900/20" : "text-gray-700 dark:text-gray-300"
                                             }`}
                                         >
                                             <span className="flex h-4 w-4 items-center justify-center text-xs font-bold uppercase">
@@ -343,7 +343,7 @@ export default function LoginPage() {
 
                         {/* Panneau formulaire */}
                         <motion.div
-                            className="flex flex-1 flex-col justify-center overflow-y-auto px-6 py-8 text-gray-900 sm:p-8 lg:p-10"
+                            className="flex flex-1 flex-col justify-center overflow-y-auto px-6 py-8 text-gray-900 dark:text-gray-100 sm:p-8 lg:p-10"
                             style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)" }}
                             initial={{ x: 60, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
@@ -362,7 +362,7 @@ export default function LoginPage() {
                                     transition={{ delay: 0.2, duration: 0.5 }}
                                 >
                                     <h2 className="mb-1 text-2xl font-light lg:text-3xl">{t("title")}</h2>
-                                    <p className="text-sm text-gray-500">{t("subtitle")}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{t("subtitle")}</p>
                                 </motion.div>
 
                                 <motion.form
@@ -372,14 +372,14 @@ export default function LoginPage() {
                                     transition={{ duration: 0.5 }}
                                 >
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                                             {t("identifier")}
                                         </label>
                                         <motion.input
                                             type="text"
                                             value={identifier}
                                             onChange={(e) => setIdentifier(e.target.value)}
-                                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
                                             placeholder={t("identifierPlaceholder")}
                                             required
                                             autoComplete="username"
@@ -390,7 +390,7 @@ export default function LoginPage() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                                             {t("password")}
                                         </label>
                                         <motion.div className="relative" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.38 }}>
@@ -398,7 +398,7 @@ export default function LoginPage() {
                                                 type={showPassword ? "text" : "password"}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
-                                                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-12 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 pr-12 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
                                                 placeholder={t("passwordPlaceholder")}
                                                 required
                                                 autoComplete="current-password"
@@ -421,7 +421,7 @@ export default function LoginPage() {
                                                 initial="initial"
                                                 animate="animate"
                                                 exit="exit"
-                                                className="rounded-lg border border-red-200 bg-red-50 p-2 text-center text-xs font-medium text-red-500 sm:rounded-xl sm:p-3 sm:text-sm"
+                                                className="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-2 text-center text-xs font-medium text-red-500 sm:rounded-xl sm:p-3 sm:text-sm"
                                             >
                                                 {error}
                                             </motion.div>
@@ -479,7 +479,7 @@ export default function LoginPage() {
                         onClick={closeForgotPassword}
                     >
                         <motion.div
-                            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+                            className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl"
                             initial={{ scale: 0.92, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.92, opacity: 0 }}
@@ -493,8 +493,8 @@ export default function LoginPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
-                                        <h3 className="mb-2 text-lg font-semibold text-gray-900">{t("emailSent")}</h3>
-                                        <p className="mb-6 text-sm text-gray-500 leading-relaxed">
+                                        <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">{t("emailSent")}</h3>
+                                        <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                                             {t("emailSentMessage")}
                                         </p>
                                         <button
@@ -507,8 +507,8 @@ export default function LoginPage() {
                             ) : (
                                 <>
                                     <div className="mb-5">
-                                        <h3 className="text-lg font-semibold text-gray-900">{t("forgotTitle")}</h3>
-                                        <p className="mt-1 text-sm text-gray-500">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("forgotTitle")}</h3>
+                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                             {t("forgotDescription")}
                                         </p>
                                     </div>
@@ -519,7 +519,7 @@ export default function LoginPage() {
                                             onChange={(e) => setForgotInput(e.target.value)}
                                             placeholder={t("forgotInputPlaceholder")}
                                             required
-                                            className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                            className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
                                         />
                                         <button
                                             type="submit"
@@ -531,7 +531,7 @@ export default function LoginPage() {
                                         <button
                                             type="button"
                                             onClick={closeForgotPassword}
-                                            className="w-full rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50 transition-colors"
                                         >
                                             {t("cancel")}
                                         </button>
