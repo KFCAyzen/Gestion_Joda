@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendPaymentReminder } from '@/app/lib/emailService';
+import { sendPaymentReminder, getLang } from '@/app/lib/emailService';
 import { sendSmsToPhone } from '@/app/lib/smsService';
 import { DEFAULT_PAYMENT_CONFIGS, getBourseServiceType } from '@/app/types/payment-config';
 import type { ServiceType } from '@/app/types/payment-config';
@@ -57,7 +57,8 @@ export async function GET(req: NextRequest) {
           nom,
           prenom,
           email,
-          telephone
+          telephone,
+          langue
         )
       `)
       .in('status', ['attente', 'retard']);
@@ -111,9 +112,15 @@ export async function GET(req: NextRequest) {
           const student = payment.students as any;
 
           if (student) {
+            const lang = getLang(student.langue);
+            const isEn = lang === 'en';
             const studentName = `${student.prenom} ${student.nom}`;
-            const typeLabel = payment.type === 'bourse' ? 'Procédure Bourse'
-              : payment.type === 'mandarin' ? 'Cours Mandarin' : 'Cours Anglais';
+            const typeLabels: Record<string, Record<'fr' | 'en', string>> = {
+              bourse:   { fr: 'Procédure Bourse',  en: 'Scholarship Procedure' },
+              mandarin: { fr: 'Cours Mandarin',     en: 'Mandarin Course' },
+              anglais:  { fr: 'Cours Anglais',      en: 'English Course' },
+            };
+            const typeLabel = typeLabels[payment.type]?.[lang] ?? payment.type;
             const formattedAmount = new Intl.NumberFormat('fr-FR').format(payment.montant);
 
             if (student.email) {
@@ -126,6 +133,7 @@ export async function GET(req: NextRequest) {
                 dueDate: payment.date_limite,
                 daysLate,
                 penalties: payment.penalites || 0,
+                lang,
               });
 
               if (emailSent) {
@@ -143,11 +151,14 @@ export async function GET(req: NextRequest) {
             }
 
             if (student.telephone) {
-              const urgency = daysLate <= 3 ? 'modéré' : daysLate <= 7 ? 'important' : 'critique';
-              const smsSent = await sendSmsToPhone(
-                student.telephone,
-                `JODA - RAPPEL PAIEMENT (${urgency}): ${studentName}, votre paiement ${typeLabel} Tranche ${payment.tranche} (${formattedAmount} FCFA) a ${daysLate} jour(s) de retard. Regularisez sur gestion-joda.vercel.app`
-              );
+              const urgency = isEn
+                ? (daysLate <= 3 ? 'moderate' : daysLate <= 7 ? 'important' : 'critical')
+                : (daysLate <= 3 ? 'modéré'   : daysLate <= 7 ? 'important' : 'critique');
+              const instalment = isEn ? 'Instalment' : 'Tranche';
+              const smsText = isEn
+                ? `JODA - PAYMENT REMINDER (${urgency}): ${studentName}, your payment ${typeLabel} ${instalment} ${payment.tranche} (${formattedAmount} FCFA) is ${daysLate} day(s) late. Regularize at gestion-joda.vercel.app`
+                : `JODA - RAPPEL PAIEMENT (${urgency}): ${studentName}, votre paiement ${typeLabel} Tranche ${payment.tranche} (${formattedAmount} FCFA) a ${daysLate} jour(s) de retard. Regularisez sur gestion-joda.vercel.app`;
+              const smsSent = await sendSmsToPhone(student.telephone, smsText);
               if (smsSent) results.smsSent++;
             }
           }

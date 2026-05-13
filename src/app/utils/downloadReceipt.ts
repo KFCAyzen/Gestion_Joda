@@ -1,5 +1,4 @@
 import { sanitizeForHtml } from "./security";
-import { formatPrice } from "./formatPrice";
 
 export interface ReceiptPayment {
     id: string;
@@ -19,39 +18,73 @@ export interface ReceiptStudent {
     telephone: string;
     niveau: string;
     filiere: string;
+    langue?: string;
 }
 
-const TRANCHE_LABELS: Record<string, Record<number, string>> = {
+type Lang = 'fr' | 'en';
+
+function getLang(langue?: string): Lang {
+    return langue?.toLowerCase().includes('anglais') ? 'en' : 'fr';
+}
+
+// ── Bilingual tranche labels ───────────────────────────────────────────────────
+
+const TRANCHE_LABELS: Record<string, Record<Lang, Record<number, string>>> = {
     bourse: {
-        1: "Procédure Bourse — Ouverture de dossier",
-        2: "Procédure Bourse — Caution",
-        3: "Procédure Bourse — Visa",
+        fr: {
+            1: "Procédure Bourse — Ouverture de dossier",
+            2: "Procédure Bourse — Caution",
+            3: "Procédure Bourse — Visa",
+        },
+        en: {
+            1: "Scholarship Procedure — File Opening",
+            2: "Scholarship Procedure — Deposit",
+            3: "Scholarship Procedure — Visa",
+        },
     },
     mandarin: {
-        1: "Mandarin — Inscription",
-        2: "Mandarin — Livre",
-        3: "Mandarin — 1re tranche de cours",
-        4: "Mandarin — 2e tranche de cours",
+        fr: {
+            1: "Mandarin — Inscription",
+            2: "Mandarin — Livre",
+            3: "Mandarin — 1re tranche de cours",
+            4: "Mandarin — 2e tranche de cours",
+        },
+        en: {
+            1: "Mandarin — Registration",
+            2: "Mandarin — Book",
+            3: "Mandarin — 1st course instalment",
+            4: "Mandarin — 2nd course instalment",
+        },
     },
     anglais: {
-        1: "Anglais — Inscription",
-        2: "Anglais — Livre",
-        3: "Anglais — 1re tranche de cours",
-        4: "Anglais — 2e tranche de cours",
+        fr: {
+            1: "Anglais — Inscription",
+            2: "Anglais — Livre",
+            3: "Anglais — 1re tranche de cours",
+            4: "Anglais — 2e tranche de cours",
+        },
+        en: {
+            1: "English — Registration",
+            2: "English — Book",
+            3: "English — 1st course instalment",
+            4: "English — 2nd course instalment",
+        },
     },
 };
 
-function getTypeLabel(payment: ReceiptPayment): string {
-    if (payment.tranche && TRANCHE_LABELS[payment.type]?.[payment.tranche]) {
-        return TRANCHE_LABELS[payment.type][payment.tranche];
+function getTypeLabel(payment: ReceiptPayment, lang: Lang): string {
+    if (payment.tranche && TRANCHE_LABELS[payment.type]?.[lang]?.[payment.tranche]) {
+        return TRANCHE_LABELS[payment.type][lang][payment.tranche];
     }
-    const fallback: Record<string, string> = {
-        bourse: "Procédure Bourse",
-        mandarin: "Cours de Mandarin",
-        anglais: "Cours d'Anglais",
+    const fallback: Record<string, Record<Lang, string>> = {
+        bourse:   { fr: "Procédure Bourse",   en: "Scholarship Procedure" },
+        mandarin: { fr: "Cours de Mandarin",  en: "Mandarin Course" },
+        anglais:  { fr: "Cours d'Anglais",    en: "English Course" },
     };
-    return fallback[payment.type] ?? payment.type;
+    return fallback[payment.type]?.[lang] ?? payment.type;
 }
+
+// ── Number to words (FR only — montant écrit en lettres reste en français) ────
 
 function numberToWords(num: number): string {
     const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
@@ -93,13 +126,16 @@ async function fetchLogoBase64(): Promise<string | null> {
 }
 
 export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptStudent) {
+    const lang = getLang(student.langue);
+    const isEn = lang === 'en';
+
     const [dateStr, logoSrc] = await Promise.all([
         Promise.resolve(
             payment.date_paiement
-                ? new Date(payment.date_paiement).toLocaleDateString("fr-FR")
+                ? new Date(payment.date_paiement).toLocaleDateString(isEn ? "en-GB" : "fr-FR")
                 : payment.validated_at
-                  ? new Date(payment.validated_at).toLocaleDateString("fr-FR")
-                  : new Date().toLocaleDateString("fr-FR")
+                  ? new Date(payment.validated_at).toLocaleDateString(isEn ? "en-GB" : "fr-FR")
+                  : new Date().toLocaleDateString(isEn ? "en-GB" : "fr-FR")
         ),
         fetchLogoBase64(),
     ]);
@@ -108,11 +144,55 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
         ? `<img src="${logoSrc}" alt="Joda Company" style="height:48px;width:auto;display:block;">`
         : `<span style="font-size:22px;font-weight:bold;color:#dc2626;">JC</span>`;
 
+    const typeLabel = getTypeLabel(payment, lang);
+    const today = isEn
+        ? new Date().toLocaleDateString("en-GB")
+        : new Date().toLocaleDateString("fr-FR");
+    const now = isEn
+        ? new Date().toLocaleTimeString("en-GB")
+        : new Date().toLocaleTimeString("fr-FR");
+
+    const t = {
+        tagline:       isEn ? "China Scholarship Management" : "Gestion des bourses d'études en Chine",
+        receiptTitle:  isEn ? "PAYMENT RECEIPT" : "REÇU DE PAIEMENT",
+        receiptNo:     isEn ? "Receipt No:" : "Reçu N° :",
+        date:          isEn ? "Date:" : "Date :",
+        studentInfo:   isEn ? "STUDENT INFORMATION" : "INFORMATIONS ÉTUDIANT",
+        fullName:      isEn ? "Full name:" : "Nom complet :",
+        email:         isEn ? "Email:" : "Email :",
+        phone:         isEn ? "Phone:" : "Téléphone :",
+        level:         isEn ? "Study level:" : "Niveau d'étude :",
+        field:         isEn ? "Field of study:" : "Filière :",
+        paymentDetails:isEn ? "PAYMENT DETAILS" : "DÉTAILS DU PAIEMENT",
+        paymentType:   isEn ? "Payment type:" : "Type de paiement :",
+        paymentDate:   isEn ? "Payment date:" : "Date de paiement :",
+        paymentMethod: isEn ? "Payment method:" : "Mode de paiement :",
+        methodValue:   isEn ? "Bank transfer / Cash" : "Virement bancaire / Espèces",
+        statusLabel:   isEn ? "Status:" : "Statut :",
+        statusValue:   isEn ? "Paid and validated" : "Payé et validé",
+        amountPaid:    isEn ? "AMOUNT PAID" : "MONTANT PAYÉ",
+        amountWords:   isEn
+            ? `(${numberToWords(payment.montant)} CFA francs)`
+            : `(${numberToWords(payment.montant)} francs CFA)`,
+        theStudent:    isEn ? "The Student" : "L'Étudiant",
+        responsibleAgent: isEn ? "Responsible Agent" : "Agent Responsable",
+        footerThanks:  isEn ? "Thank you for your trust!" : "Merci de votre confiance !",
+        footerProof:   isEn
+            ? "This receipt serves as proof of payment. Please keep it carefully."
+            : "Ce reçu fait foi de paiement. Veuillez le conserver précieusement.",
+        footerClaim:   isEn
+            ? "For any complaint, contact us within 48 hours of receiving this receipt."
+            : "Pour toute réclamation, contactez-nous dans les 48h suivant la réception de ce reçu.",
+        footerGenerated: isEn
+            ? `Document generated on ${today} at ${now}`
+            : `Document généré le ${today} à ${now}`,
+    };
+
     const html = `
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head>
 <meta charset='utf-8'>
-<title>Reçu de Paiement - Joda Company</title>
+<title>${t.receiptTitle} - Joda Company</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
   .header { margin-bottom: 30px; border-bottom: 3px solid #dc2626; padding-bottom: 20px; }
@@ -142,9 +222,9 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
         <td style="vertical-align:middle;width:56px;padding-right:14px;">${logoTag}</td>
         <td style="vertical-align:middle;">
           <div class="company-name">JODA COMPANY</div>
-          <div class="company-tagline">Gestion des bourses d'études en Chine</div>
+          <div class="company-tagline">${t.tagline}</div>
           <div class="company-info">
-            Agence de Voyage — Bourses d'Études en Chine<br>
+            ${isEn ? "Travel Agency — Scholarships for studies in China" : "Agence de Voyage — Bourses d'Études en Chine"}<br>
             BP : 7352 Yaoundé, N° Cont : P116012206442N<br>
             Tel : (+237) 674 94 44 17 / 699 01 56 81 &nbsp;|&nbsp; Email : jodacompany@yahoo.com
           </div>
@@ -154,53 +234,53 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
   </div>
 
   <div class="receipt-number">
-    <strong>Reçu N° : ${payment.id.toUpperCase()}</strong><br>
-    Date : ${new Date().toLocaleDateString("fr-FR")}
+    <strong>${t.receiptNo} ${payment.id.toUpperCase()}</strong><br>
+    ${t.date} ${today}
   </div>
 
-  <h2 class="receipt-title">REÇU DE PAIEMENT</h2>
+  <h2 class="receipt-title">${t.receiptTitle}</h2>
 
   <div class="section">
-    <div class="section-title">INFORMATIONS ÉTUDIANT</div>
-    <div class="row"><span class="label">Nom complet :</span><span class="value">${sanitizeForHtml(student.nom)} ${sanitizeForHtml(student.prenom)}</span></div>
-    <div class="row"><span class="label">Email :</span><span class="value">${sanitizeForHtml(student.email)}</span></div>
-    <div class="row"><span class="label">Téléphone :</span><span class="value">${sanitizeForHtml(student.telephone)}</span></div>
-    <div class="row"><span class="label">Niveau d'étude :</span><span class="value">${sanitizeForHtml(student.niveau)}</span></div>
-    <div class="row"><span class="label">Filière :</span><span class="value">${sanitizeForHtml(student.filiere)}</span></div>
+    <div class="section-title">${t.studentInfo}</div>
+    <div class="row"><span class="label">${t.fullName}</span><span class="value">${sanitizeForHtml(student.nom)} ${sanitizeForHtml(student.prenom)}</span></div>
+    <div class="row"><span class="label">${t.email}</span><span class="value">${sanitizeForHtml(student.email)}</span></div>
+    <div class="row"><span class="label">${t.phone}</span><span class="value">${sanitizeForHtml(student.telephone)}</span></div>
+    <div class="row"><span class="label">${t.level}</span><span class="value">${sanitizeForHtml(student.niveau)}</span></div>
+    <div class="row"><span class="label">${t.field}</span><span class="value">${sanitizeForHtml(student.filiere)}</span></div>
   </div>
 
   <div class="section">
-    <div class="section-title">DÉTAILS DU PAIEMENT</div>
-    <div class="row"><span class="label">Type de paiement :</span><span class="value">${getTypeLabel(payment)}</span></div>
-    <div class="row"><span class="label">Date de paiement :</span><span class="value">${dateStr}</span></div>
-    <div class="row"><span class="label">Mode de paiement :</span><span class="value">Virement bancaire / Espèces</span></div>
-    <div class="row"><span class="label">Statut :</span><span class="value">Payé et validé</span></div>
+    <div class="section-title">${t.paymentDetails}</div>
+    <div class="row"><span class="label">${t.paymentType}</span><span class="value">${typeLabel}</span></div>
+    <div class="row"><span class="label">${t.paymentDate}</span><span class="value">${dateStr}</span></div>
+    <div class="row"><span class="label">${t.paymentMethod}</span><span class="value">${t.methodValue}</span></div>
+    <div class="row"><span class="label">${t.statusLabel}</span><span class="value">${t.statusValue}</span></div>
   </div>
 
   <div class="amount-section">
-    <div class="amount-title">MONTANT PAYÉ</div>
+    <div class="amount-title">${t.amountPaid}</div>
     <div class="amount-value">${Math.round(payment.montant).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')} FCFA</div>
-    <div style="font-size:14px;color:#666;margin-top:10px;">(${numberToWords(payment.montant)} francs CFA)</div>
+    <div style="font-size:14px;color:#666;margin-top:10px;">${t.amountWords}</div>
   </div>
 
   <div class="signatures">
     <div class="sig-box">
-      <div>L'Étudiant</div>
+      <div>${t.theStudent}</div>
       <div class="sig-line"></div>
       <div>${sanitizeForHtml(student.nom)} ${sanitizeForHtml(student.prenom)}</div>
     </div>
     <div class="sig-box">
       <div>Joda Company</div>
       <div class="sig-line"></div>
-      <div>Agent Responsable</div>
+      <div>${t.responsibleAgent}</div>
     </div>
   </div>
 
   <div class="footer">
-    <p><strong>Merci de votre confiance !</strong></p>
-    <p>Ce reçu fait foi de paiement. Veuillez le conserver précieusement.</p>
-    <p>Pour toute réclamation, contactez-nous dans les 48h suivant la réception de ce reçu.</p>
-    <p style="margin-top:20px;font-style:italic;">Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}</p>
+    <p><strong>${t.footerThanks}</strong></p>
+    <p>${t.footerProof}</p>
+    <p>${t.footerClaim}</p>
+    <p style="margin-top:20px;font-style:italic;">${t.footerGenerated}</p>
   </div>
 </body>
 </html>`;
@@ -209,7 +289,7 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Recu_${student.nom}_${student.prenom}_${getTypeLabel(payment)}_${new Date().toISOString().split("T")[0]}.doc`;
+    a.download = `${isEn ? "Receipt" : "Recu"}_${student.nom}_${student.prenom}_${typeLabel}_${new Date().toISOString().split("T")[0]}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

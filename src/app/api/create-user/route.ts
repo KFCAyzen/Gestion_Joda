@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { requireRole } from "@/app/lib/auth";
+import { getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const supabaseAdmin = createClient(
@@ -46,7 +47,7 @@ function getCreateUserErrorMessage(error: unknown) {
 
 async function handleCreateUser(req: NextRequest) {
     try {
-    const { name, email, username, password, role, authEmail, telephone } = await req.json();
+    const { name, email, username, password, role, authEmail, telephone, langue } = await req.json();
 
     if (!email || !name || !password || !username || !role) {
         return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
@@ -144,19 +145,29 @@ async function handleCreateUser(req: NextRequest) {
         // Non bloquant — l'utilisateur pourra demander un reset ultérieurement
     }
 
-    const roleLabels: Record<string, string> = {
-        student: "Étudiant", agent: "Agent", admin: "Administrateur",
-        supervisor: "Superviseur", super_admin: "Super Administrateur",
+    const lang = role === "student" ? getLang(langue) : "fr";
+    const isEn = lang === "en";
+
+    const roleLabels: Record<string, Record<"fr" | "en", string>> = {
+        student:     { fr: "Étudiant",             en: "Student" },
+        agent:       { fr: "Agent",                en: "Agent" },
+        admin:       { fr: "Administrateur",       en: "Administrator" },
+        supervisor:  { fr: "Superviseur",          en: "Supervisor" },
+        super_admin: { fr: "Super Administrateur", en: "Super Administrator" },
     };
+    const subtitle = isEn ? "China Scholarship Management" : "Gestion des bourses d'études en Chine";
+    const rights = isEn ? "All rights reserved" : "Tous droits réservés";
 
     try {
         await transporter.sendMail({
             from: `"Joda Company" <${process.env.GMAIL_USER}>`,
             to: email,
-            subject: "Bienvenue sur Joda Company — Activez votre compte",
+            subject: isEn
+                ? "Welcome to Joda Company — Activate your account"
+                : "Bienvenue sur Joda Company — Activez votre compte",
             html: `
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="${lang}">
 <head><meta charset="UTF-8" /></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
@@ -165,20 +176,22 @@ async function handleCreateUser(req: NextRequest) {
         <tr>
           <td style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 40px;text-align:center;">
             <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Joda Company</h1>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Gestion des bourses d'études en Chine</p>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">${subtitle}</p>
           </td>
         </tr>
         <tr>
           <td style="padding:36px 40px;">
-            <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${name}</strong>,</p>
+            <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? "Hello" : "Bonjour"} <strong>${name}</strong>,</p>
             <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.6;">
-              Votre compte a été créé sur la plateforme Joda Company. Cliquez sur le bouton ci-dessous pour définir votre mot de passe et accéder à votre espace. Ce lien est valable 24 heures.
+              ${isEn
+                ? "Your account has been created on the Joda Company platform. Click the button below to set your password and access your space. This link is valid for 24 hours."
+                : "Votre compte a été créé sur la plateforme Joda Company. Cliquez sur le bouton ci-dessous pour définir votre mot de passe et accéder à votre espace. Ce lien est valable 24 heures."}
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;">
               <tr><td style="padding:20px 24px;">
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="padding:6px 0;font-size:13px;color:#6b7280;width:140px;">Nom d'utilisateur</td>
+                    <td style="padding:6px 0;font-size:13px;color:#6b7280;width:140px;">${isEn ? "Username" : "Nom d'utilisateur"}</td>
                     <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${username}</td>
                   </tr>
                   <tr>
@@ -186,9 +199,9 @@ async function handleCreateUser(req: NextRequest) {
                     <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${email}</td>
                   </tr>
                   <tr>
-                    <td style="padding:6px 0;font-size:13px;color:#6b7280;">Rôle</td>
+                    <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? "Role" : "Rôle"}</td>
                     <td style="padding:6px 0;">
-                      <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">${roleLabels[role] || role}</span>
+                      <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">${roleLabels[role]?.[lang] || role}</span>
                     </td>
                   </tr>
                 </table>
@@ -199,20 +212,22 @@ async function handleCreateUser(req: NextRequest) {
                 <td style="background:#dc2626;border-radius:8px;">
                   <a href="${setPasswordLink}"
                      style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
-                    Définir mon mot de passe →
+                    ${isEn ? "Set my password →" : "Définir mon mot de passe →"}
                   </a>
                 </td>
               </tr>
             </table>
             <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-              Si ce bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+              ${isEn
+                ? "If this button doesn't work, copy this link into your browser:"
+                : "Si ce bouton ne fonctionne pas, copiez ce lien dans votre navigateur :"}<br>
               <span style="color:#6b7280;word-break:break-all;">${setPasswordLink}</span>
             </p>
           </td>
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} Joda Company — Tous droits réservés</p>
+            <p style="margin:0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} Joda Company — ${rights}</p>
           </td>
         </tr>
       </table>
@@ -226,12 +241,12 @@ async function handleCreateUser(req: NextRequest) {
         // Non bloquant — l'utilisateur est créé, il pourra demander un reset
     }
 
-    // SMS à l'étudiant si numéro disponible
+    // SMS si numéro disponible
     if (telephone) {
-        sendSmsToPhone(
-            telephone,
-            `Bonjour ${name}, votre compte JODA a été créé. Identifiant: ${username}. Connectez-vous sur gestion-joda.vercel.app pour définir votre mot de passe.`
-        ).catch(console.error);
+        const smsText = isEn
+            ? `Hello ${name}, your JODA account has been created. Username: ${username}. Log in at gestion-joda.vercel.app to set your password.`
+            : `Bonjour ${name}, votre compte JODA a été créé. Identifiant: ${username}. Connectez-vous sur gestion-joda.vercel.app pour définir votre mot de passe.`;
+        sendSmsToPhone(telephone, smsText).catch(console.error);
     }
 
     return NextResponse.json({ success: true, userId: data.user.id });

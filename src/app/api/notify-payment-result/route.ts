@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAuth, AuthSession } from "@/app/lib/auth";
-import { sendPaymentResultEmail } from "@/app/lib/emailService";
+import { sendPaymentResultEmail, getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const supabaseAdmin = createClient(
@@ -9,10 +9,10 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const PAYMENT_TYPE_LABELS: Record<string, string> = {
-  bourse: "Procédure Bourse",
-  mandarin: "Cours de Mandarin",
-  anglais: "Cours d'Anglais",
+const PAYMENT_TYPE_LABELS: Record<string, Record<"fr" | "en", string>> = {
+  bourse:   { fr: "Procédure Bourse",   en: "Scholarship Procedure" },
+  mandarin: { fr: "Cours de Mandarin",  en: "Mandarin Course" },
+  anglais:  { fr: "Cours d'Anglais",    en: "English Course" },
 };
 
 async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession) {
@@ -30,7 +30,7 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
 
     const { data: student } = await supabaseAdmin
       .from("students")
-      .select("nom, prenom, email, telephone")
+      .select("nom, prenom, email, telephone, langue")
       .eq("id", studentId)
       .maybeSingle();
 
@@ -38,9 +38,12 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
       return NextResponse.json({ error: "Étudiant introuvable" }, { status: 404 });
     }
 
+    const lang = getLang(student.langue);
+    const isEn = lang === "en";
     const studentName = `${student.prenom ?? ""} ${student.nom ?? ""}`.trim();
-    const typeLabel = PAYMENT_TYPE_LABELS[paymentType] ?? paymentType;
+    const typeLabelLocale = PAYMENT_TYPE_LABELS[paymentType]?.[lang] ?? paymentType;
     const formattedAmount = new Intl.NumberFormat("fr-FR").format(amount ?? 0);
+    const instalment = isEn ? "Instalment" : "Tranche";
 
     const results = await Promise.allSettled([
       student.email
@@ -51,6 +54,7 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
             tranche,
             amount: amount ?? 0,
             isValid,
+            lang,
           })
         : Promise.resolve(false),
 
@@ -58,8 +62,12 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
         ? sendSmsToPhone(
             student.telephone,
             isValid
-              ? `Bonjour ${studentName}, votre paiement ${typeLabel} - Tranche ${tranche} (${formattedAmount} FCFA) a été validé. Connectez-vous sur gestion-joda.vercel.app`
-              : `Bonjour ${studentName}, votre paiement ${typeLabel} - Tranche ${tranche} n'a pas pu être validé. Contactez votre conseiller JODA.`
+              ? isEn
+                ? `Hello ${studentName}, your payment ${typeLabelLocale} - ${instalment} ${tranche} (${formattedAmount} FCFA) has been validated. Log in at gestion-joda.vercel.app`
+                : `Bonjour ${studentName}, votre paiement ${typeLabelLocale} - Tranche ${tranche} (${formattedAmount} FCFA) a été validé. Connectez-vous sur gestion-joda.vercel.app`
+              : isEn
+                ? `Hello ${studentName}, your payment ${typeLabelLocale} - ${instalment} ${tranche} could not be validated. Please contact your JODA advisor.`
+                : `Bonjour ${studentName}, votre paiement ${typeLabelLocale} - Tranche ${tranche} n'a pas pu être validé. Contactez votre conseiller JODA.`
           )
         : Promise.resolve(false),
     ]);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAuth, AuthSession } from "@/app/lib/auth";
-import { sendStudentMessageEmail } from "@/app/lib/emailService";
+import { sendStudentMessageEmail, getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const supabaseAdmin = createClient(
@@ -27,7 +27,7 @@ async function handleSendStudentMessage(req: NextRequest, session: AuthSession) 
 
     const { data: students, error: studentsErr } = await supabaseAdmin
       .from("students")
-      .select("id, user_id, nom, prenom, email, telephone")
+      .select("id, user_id, nom, prenom, email, telephone, langue")
       .in("id", studentIds);
 
     if (studentsErr) {
@@ -79,7 +79,9 @@ async function handleSendStudentMessage(req: NextRequest, session: AuthSession) 
     // Email + SMS aux étudiants pour les notifier du nouveau message
     for (const s of recipients) {
       const studentName = `${s.prenom ?? ""} ${s.nom ?? ""}`.trim();
-      const studentAny = s as typeof s & { email?: string; telephone?: string };
+      const studentAny = s as typeof s & { email?: string; telephone?: string; langue?: string };
+      const lang = getLang(studentAny.langue);
+      const isEn = lang === "en";
 
       if (studentAny.email) {
         sendStudentMessageEmail({
@@ -87,14 +89,15 @@ async function handleSendStudentMessage(req: NextRequest, session: AuthSession) 
           studentEmail: studentAny.email,
           subject,
           preview: (content as string).slice(0, 120),
+          lang,
         }).catch(console.error);
       }
 
       if (studentAny.telephone) {
-        sendSmsToPhone(
-          studentAny.telephone,
-          `Bonjour ${studentName}, vous avez reçu un message de l'équipe JODA : "${subject}". Connectez-vous sur gestion-joda.vercel.app pour lire le message.`
-        ).catch(console.error);
+        const smsText = isEn
+          ? `Hello ${studentName}, you have received a message from the JODA team: "${subject}". Log in at gestion-joda.vercel.app to read it.`
+          : `Bonjour ${studentName}, vous avez reçu un message de l'équipe JODA : "${subject}". Connectez-vous sur gestion-joda.vercel.app pour lire le message.`;
+        sendSmsToPhone(studentAny.telephone, smsText).catch(console.error);
       }
     }
 

@@ -207,6 +207,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 telephone: studentData?.telephone ?? "",
                 niveau: studentData?.niveau ?? "",
                 filiere: studentData?.filiere ?? "",
+                langue: studentData?.langue ?? "",
             });
 
             // Load last received message to find agent name

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { sendPaymentDeclarationEmail } from "@/app/lib/emailService";
+import { sendPaymentDeclarationEmail, getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const supabaseAdmin = createClient(
@@ -145,22 +145,29 @@ export async function POST(req: NextRequest) {
         // Récupérer email + téléphone de l'étudiant pour le notifier
         const { data: studentInfo } = await supabaseAdmin
             .from("students")
-            .select("nom, prenom, email, telephone")
+            .select("nom, prenom, email, telephone, langue")
             .eq("id", student.id)
             .maybeSingle();
 
         if (studentInfo) {
+            const lang = getLang(studentInfo.langue);
+            const isEn = lang === "en";
             const studentName = `${studentInfo.prenom ?? ""} ${studentInfo.nom ?? ""}`.trim();
-            const typeLabel = type === "bourse" ? "Procédure Bourse"
-                : type === "mandarin" ? "Cours Mandarin" : "Cours Anglais";
+            const typeLabels: Record<string, Record<"fr" | "en", string>> = {
+                bourse:   { fr: "Procédure Bourse", en: "Scholarship Procedure" },
+                mandarin: { fr: "Cours Mandarin",   en: "Mandarin Course" },
+                anglais:  { fr: "Cours Anglais",    en: "English Course" },
+            };
+            const typeLabel = typeLabels[type]?.[lang] ?? type;
             const formattedAmount = new Intl.NumberFormat("fr-FR").format(montant_declare);
+            const instalment = isEn ? "Instalment" : "Tranche";
 
             // SMS à l'étudiant
             if (studentInfo.telephone) {
-                sendSmsToPhone(
-                    studentInfo.telephone,
-                    `Bonjour ${studentName}, votre déclaration de paiement ${typeLabel} - Tranche ${tranche_num} (${formattedAmount} FCFA) a bien été reçue. En attente de validation par notre équipe.`
-                ).catch(console.error);
+                const smsText = isEn
+                    ? `Hello ${studentName}, your payment declaration ${typeLabel} - ${instalment} ${tranche_num} (${formattedAmount} FCFA) has been received. Awaiting validation by our team.`
+                    : `Bonjour ${studentName}, votre déclaration de paiement ${typeLabel} - Tranche ${tranche_num} (${formattedAmount} FCFA) a bien été reçue. En attente de validation par notre équipe.`;
+                sendSmsToPhone(studentInfo.telephone, smsText).catch(console.error);
             }
 
             // Email aux admins/agents
