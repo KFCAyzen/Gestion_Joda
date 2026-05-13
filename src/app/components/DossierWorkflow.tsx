@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,7 @@ const DOSSIER_STATUSES: {
 export default function DossierWorkflow() {
     const { user } = useAuth();
     const supabase = createClient();
+    const t = useTranslations("dossierWorkflow");
     const [dossiers, setDossiers] = useState<DossierBourse[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState<DossierStatus>('en_attente');
@@ -120,7 +122,7 @@ export default function DossierWorkflow() {
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-                    <p className="text-slate-600 dark:text-slate-400">Chargement des dossiers...</p>
+                    <p className="text-slate-600 dark:text-slate-400">{t("loading")}</p>
                 </div>
             </div>
         );
@@ -130,16 +132,16 @@ export default function DossierWorkflow() {
         <div className="p-4 sm:p-6 lg:p-8">
             <div className="mb-6">
                 <h1 className="text-2xl sm:text-3xl font-bold text-red-600 mb-2">
-                    Workflow des Dossiers de Bourses
+                    {t("title")}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                    Gérez le suivi des dossiers d'étudiants à travers les différentes étapes
+                    {t("description")}
                 </p>
             </div>
 
             <Card className="mb-6">
                 <CardHeader>
-                    <CardTitle>Filtrer par statut</CardTitle>
+                    <CardTitle>{t("filterTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -170,12 +172,12 @@ export default function DossierWorkflow() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Dossiers - {getStatusConfig(selectedStatus)?.label} ({dossiers.length})</CardTitle>
+                    <CardTitle>{t("listTitle", { label: getStatusConfig(selectedStatus)?.label, count: dossiers.length })}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {dossiers.length === 0 ? (
                         <div className="text-center py-12">
-                            <p className="text-gray-500 dark:text-gray-400">Aucun dossier avec ce statut</p>
+                            <p className="text-gray-500 dark:text-gray-400">{t("empty")}</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -184,10 +186,10 @@ export default function DossierWorkflow() {
                                     <div className="flex items-start justify-between mb-4">
                                         <div>
                                             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                                                Dossier #{dossier.id.slice(0, 8)}
+                                                {t("fileId", { id: dossier.id.slice(0, 8) })}
                                             </h3>
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                Étudiant ID: {dossier.student_id?.slice(0, 8)}
+                                                {t("studentId", { id: dossier.student_id?.slice(0, 8) })}
                                             </p>
                                         </div>
                                         <Badge className={getStatusConfig(dossier.status)?.color}>
@@ -197,7 +199,7 @@ export default function DossierWorkflow() {
 
                                     {dossier.notes_internes && user?.role !== 'student' && (
                                         <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-                                            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">Notes internes :</p>
+                                            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">{t("internalNotes")}</p>
                                             <p className="text-sm text-yellow-700 dark:text-yellow-300">{dossier.notes_internes}</p>
                                         </div>
                                     )}
@@ -232,31 +234,31 @@ export default function DossierWorkflow() {
                     <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-md w-full">
                         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                Changer le statut du dossier
+                                {t("changeStatusTitle")}
                             </h3>
                         </div>
                         <div className="p-6">
                             <p className="text-gray-600 dark:text-gray-400 mb-4">
-                                Passer de <span className="font-semibold">{getStatusConfig(statusChangeModal.dossier.status)?.label}</span> à <span className="font-semibold">{getStatusConfig(statusChangeModal.newStatus)?.label}</span>
+                                {t("changeStatusDesc", { from: getStatusConfig(statusChangeModal.dossier.status)?.label, to: getStatusConfig(statusChangeModal.newStatus)?.label })}
                             </p>
                             <div className="space-y-2">
-                                <Label>Description de l'action *</Label>
+                                <Label>{t("actionLabel")}</Label>
                                 <Input
                                     value={statusChangeModal.description}
                                     onChange={(e) => setStatusChangeModal({
                                         ...statusChangeModal,
                                         description: e.target.value
                                     })}
-                                    placeholder="Décrivez la raison de ce changement..."
+                                    placeholder={t("actionPlaceholder")}
                                 />
                             </div>
                         </div>
                         <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
                             <Button variant="outline" onClick={() => setStatusChangeModal(null)} className="flex-1">
-                                Annuler
+                                {t("cancel")}
                             </Button>
                             <Button onClick={handleStatusChange} disabled={!statusChangeModal.description.trim()} className="flex-1">
-                                Confirmer
+                                {t("confirm")}
                             </Button>
                         </div>
                     </div>

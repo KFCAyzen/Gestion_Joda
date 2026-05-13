@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
@@ -21,10 +22,13 @@ export default function ConfirmDialog({
     onConfirm,
     title,
     description,
-    confirmLabel = "Confirmer",
-    cancelLabel = "Annuler",
+    confirmLabel,
+    cancelLabel,
     variant = "destructive",
 }: ConfirmDialogProps) {
+    const t = useTranslations("confirmDialog");
+    const resolvedConfirm = confirmLabel ?? t("confirm");
+    const resolvedCancel = cancelLabel ?? t("cancel");
     if (!isOpen) return null;
 
     return (
@@ -52,10 +56,10 @@ export default function ConfirmDialog({
                     <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{description}</p>
                     <div className="mt-6 flex justify-end gap-2">
                         <Button variant="outline" onClick={onClose}>
-                            {cancelLabel}
+                            {resolvedCancel}
                         </Button>
                         <Button variant={variant} onClick={onConfirm}>
-                            {confirmLabel}
+                            {resolvedConfirm}
                         </Button>
                     </div>
                 </motion.div>

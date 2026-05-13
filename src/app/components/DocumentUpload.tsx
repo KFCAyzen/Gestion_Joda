@@ -455,10 +455,10 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                         ].join(" ")}
                                     >
                                         {uploaded.status === "valide"
-                                            ? "Validé"
+                                            ? t("badgeLabels.validated")
                                             : uploaded.status === "non_conforme"
-                                              ? "Non conforme"
-                                              : "En attente"}
+                                              ? t("badgeLabels.nonCompliant")
+                                              : t("badgeLabels.pending")}
                                     </Badge>
                                     <a
                                         href={uploaded.url}
@@ -466,7 +466,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                         rel="noopener noreferrer"
                                         className="text-[10px] font-semibold text-cyan-300/90 underline-offset-2 hover:underline"
                                     >
-                                        Voir
+                                        {t("view")}
                                     </a>
                                 </div>
                             ) : (
@@ -494,7 +494,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                 }}
                                 disabled={isUploading || uploaded?.status === "valide"}
                                 title={
-                                    uploaded?.status === "valide" ? "Document validé — remplacement impossible" : undefined
+                                    uploaded?.status === "valide" ? t("lockedTitle") : undefined
                                 }
                                 className={[
                                     "student-focus-ring mt-auto w-full rounded-2xl py-2.5 text-center text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50",
@@ -505,7 +505,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                           : "border border-[rgba(220,38,38,0.45)] bg-[var(--student-neon-lime)] text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110",
                                 ].join(" ")}
                             >
-                                {isUploading ? "…" : uploaded?.status === "valide" ? "Verrouillé" : uploaded ? "Remplacer" : "Uploader"}
+                                {isUploading ? t("uploading") : uploaded?.status === "valide" ? t("locked") : uploaded ? t("replace") : t("upload")}
                             </button>
                         </div>
                     );

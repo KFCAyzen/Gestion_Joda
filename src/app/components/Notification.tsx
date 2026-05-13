@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toastVariants } from "../utils/animations";
 import type { NotificationType } from "../lib/feedback";
 
@@ -58,6 +59,7 @@ const CONFIG = {
 
 export default function Notification({ title, message, type, onClose }: NotificationProps) {
     const cfg = CONFIG[type];
+    const t = useTranslations("notificationTitles");
 
     useEffect(() => {
         const timeout = type === "error" ? 6000 : 4500;
@@ -87,7 +89,7 @@ export default function Notification({ title, message, type, onClose }: Notifica
                         <cfg.Icon className={`h-5 w-5 ${cfg.muted}`} />
                     </motion.div>
                     <div className="min-w-0 flex-1">
-                        <p className={`text-sm font-semibold ${cfg.text}`}>{title || cfg.title}</p>
+                        <p className={`text-sm font-semibold ${cfg.text}`}>{title || t(type as any)}</p>
                         <p className={`mt-1 text-sm leading-5 ${cfg.muted}`}>{message}</p>
                     </div>
                     <motion.button

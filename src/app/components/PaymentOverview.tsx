@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Check, CreditCard, Loader2 } from "lucide-react";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
@@ -54,8 +55,8 @@ function computeTrancheState(
     // Paid
     if (payment.status === "paye") {
         const paid = payment.date_paiement
-            ? `Payé le ${new Date(payment.date_paiement).toLocaleDateString("fr-FR")}`
-            : "Payé";
+            ? `__paid_on:${new Date(payment.date_paiement).toLocaleDateString("fr-FR")}`
+            : "__paid";
         return {
             barPct: 100,
             barColor: "bg-[var(--student-neon-lime)]",
@@ -73,7 +74,7 @@ function computeTrancheState(
             barPct: 85,
             barColor: "bg-[var(--student-ring-stand)]",
             penalty: 0,
-            daysLabel: "En cours de validation",
+            daysLabel: "__in_validation",
             daysColor: "text-[var(--student-ring-stand)]",
             statusLabel: "En validation",
             statusBadge: "border-white/10 bg-black/30 text-[var(--student-ring-stand)]",
@@ -86,7 +87,7 @@ function computeTrancheState(
             barPct: 5,
             barColor: "bg-white/15",
             penalty: 0,
-            daysLabel: "Pas d'échéance définie",
+            daysLabel: "__no_deadline",
             daysColor: "text-white/55",
             statusLabel: "En attente",
             statusBadge: "border-white/10 bg-black/30 text-white/70",
@@ -132,7 +133,7 @@ function computeTrancheState(
             barPct,
             barColor,
             penalty: 0,
-            daysLabel: `J-${daysToDeadline} — Échéance le ${deadline.toLocaleDateString("fr-FR")}`,
+            daysLabel: `__days_left:${daysToDeadline}:${deadline.toISOString()}:${deadline.toLocaleDateString("fr-FR")}`,
             daysColor,
             statusLabel: "En attente",
             statusBadge: "border-white/10 bg-black/30 text-white/75",
@@ -147,7 +148,7 @@ function computeTrancheState(
             barPct,
             barColor: "bg-[var(--student-ring-move)]",
             penalty: 0,
-            daysLabel: `Période de grâce — ${daysToGraceEnd} j restants (sur ${graceDays} j)`,
+            daysLabel: `__grace:${daysToGraceEnd}:${graceDays}`,
             daysColor: "text-[var(--student-ring-move)]",
             statusLabel: "En attente",
             statusBadge: "border-white/10 bg-black/30 text-white/75",
@@ -160,7 +161,7 @@ function computeTrancheState(
         barPct: 100,
         barColor: "bg-[var(--student-ring-move)]",
         penalty,
-        daysLabel: `${daysLate} jour${daysLate > 1 ? "s" : ""} de retard`,
+        daysLabel: `__late:${daysLate}`,
         daysColor: "text-[var(--student-ring-move)]",
         statusLabel: "En retard",
         statusBadge: "border-[rgba(255,65,85,0.25)] bg-[rgba(255,65,85,0.08)] text-[var(--student-ring-move)]",
@@ -178,6 +179,30 @@ function configToService(cfg: PaymentConfig, type: string): Service {
 
 function fmt(n: number) {
     return n.toLocaleString("fr-FR") + " FCFA";
+}
+
+
+function resolveDaysLabel(raw: string | null, t: (k: string, v?: any) => string, locale: string): string | null {
+    if (!raw) return null;
+    if (raw === "__in_validation") return t("statuses.validationLabel");
+    if (raw === "__no_deadline") return t("statuses.noDeadline");
+    if (raw === "__paid") return t("statuses.paid");
+    if (raw.startsWith("__paid_on:")) return t("statuses.paidOn", { date: raw.slice(10) });
+    if (raw.startsWith("__days_left:")) {
+        const parts = raw.split(":");
+        const days = parts[1];
+        const dateStr = parts[3];
+        return t("statuses.daysLeft", { days, date: dateStr });
+    }
+    if (raw.startsWith("__grace:")) {
+        const parts = raw.split(":");
+        return t("statuses.gracePeriod", { remaining: parts[1], total: parts[2] });
+    }
+    if (raw.startsWith("__late:")) {
+        const days = parseInt(raw.split(":")[1] || "0");
+        return t("statuses.daysLate", { days, plural: days > 1 ? "s" : "" });
+    }
+    return raw;
 }
 
 export interface TrancheDeclareInfo {
@@ -205,6 +230,8 @@ export default function PaymentOverview({
     onDeclarePayment?: (payment: Payment | null, info: TrancheDeclareInfo) => void;
 }) {
     const { getConfig, getBourseConfig } = usePaymentConfig();
+    const t = useTranslations("paymentOverview");
+    const locale = useLocale();
 
     const services = useMemo((): Service[] => {
         const list: Service[] = [];
@@ -248,7 +275,7 @@ export default function PaymentOverview({
     if (services.length === 0) {
         return (
             <p className="py-4 text-center text-sm text-white/60">
-                Aucun service configuré pour ce profil.
+                {t("noService")}
             </p>
         );
     }
@@ -258,14 +285,14 @@ export default function PaymentOverview({
             {/* Résumé financier — glass olive + chiffres néon */}
             <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/50 sm:text-[10px]">Total dû</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/50 sm:text-[10px]">{t("totalDue")}</p>
                     <p className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-white sm:text-lg">
                         {totalDu.toLocaleString("fr-FR")}
                     </p>
                     <p className="text-[9px] text-white/45 sm:text-[10px]">FCFA</p>
                 </div>
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-neon-lime)]/80 sm:text-[10px]">Payé</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-neon-lime)]/80 sm:text-[10px]">{t("paid")}</p>
                     <p
                         className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-[var(--student-neon-lime)] sm:text-lg"
                         style={{ textShadow: "var(--student-pay-glow-soft)" }}
@@ -276,7 +303,7 @@ export default function PaymentOverview({
                 </div>
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
                     <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/50 sm:text-[10px]">
-                        Reste{totalPenalties > 0 ? " + pén." : ""}
+                        {totalPenalties > 0 ? t("remainingWithPenalty") : t("remaining")}
                     </p>
                     <p
                         className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-[var(--student-ring-move)] sm:text-lg"
@@ -290,7 +317,7 @@ export default function PaymentOverview({
 
             {totalPenalties > 0 && (
                 <div className="student-pay-pill flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                    <span className="text-xs font-semibold text-white/65">Pénalités cumulées</span>
+                    <span className="text-xs font-semibold text-white/65">{t("cumulatedPenalties")}</span>
                     <span className="text-sm font-semibold tabular-nums text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
                         {fmt(totalPenalties)}
                     </span>
@@ -300,7 +327,7 @@ export default function PaymentOverview({
             {/* Progression globale — barre néon lime */}
             <div className="student-pay-surface-soft px-4 py-3.5 sm:px-5 sm:py-4">
                 <div className="mb-2 flex justify-between text-xs text-white/55">
-                    <span className="font-medium">Progression globale</span>
+                    <span className="font-medium">{t("globalProgress")}</span>
                     <span className="font-semibold tabular-nums text-[var(--student-neon-lime)]">{pct}%</span>
                 </div>
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/45 ring-1 ring-white/[0.06] sm:h-3">
@@ -313,8 +340,8 @@ export default function PaymentOverview({
                     />
                 </div>
                 <div className="mt-1.5 flex justify-between text-[10px] text-white/45">
-                    <span>{totalPaye.toLocaleString("fr-FR")} FCFA payés</span>
-                    <span>{totalDu.toLocaleString("fr-FR")} FCFA au total</span>
+                    <span>{t("paidAmount", { amount: totalPaye.toLocaleString(locale === "en" ? "en-US" : "fr-FR") })}</span>
+                    <span>{t("totalAmount", { amount: totalDu.toLocaleString(locale === "en" ? "en-US" : "fr-FR") })}</span>
                 </div>
             </div>
 
@@ -341,7 +368,7 @@ export default function PaymentOverview({
                             <div className="min-w-0">
                                 <p className="text-sm font-semibold tracking-tight text-white">{service.label}</p>
                                 <p className="mt-0.5 text-[10px] text-white/50">
-                                    {paidCount} / {service.tranches.length} tranche{service.tranches.length > 1 ? "s" : ""} réglée{paidCount > 1 ? "s" : ""}
+                                    {t("installmentsPaid", { paid: paidCount, total: service.tranches.length, plural: service.tranches.length > 1 ? "s" : "" })}
                                 </p>
                             </div>
                             <div className="shrink-0 text-right">
@@ -401,11 +428,11 @@ export default function PaymentOverview({
                                                             <span
                                                                 className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none ${state.statusBadge}`}
                                                             >
-                                                                {state.statusLabel}
+                                                                {state.statusLabel === "En retard" ? t("statuses.late") : state.statusLabel === "En validation" ? t("statuses.inValidation") : state.statusLabel === "Non planifiée" ? t("statuses.unplanned") : t("statuses.pending")}
                                                             </span>
                                                             {payment?.date_limite && payment.status !== "paye" ? (
                                                                 <span className="text-[10px] text-white/45">
-                                                                    Échéance {new Date(payment.date_limite).toLocaleDateString("fr-FR")}
+                                                                    {t("deadline", { date: new Date(payment.date_limite).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR") })}
                                                                 </span>
                                                             ) : null}
                                                         </div>
@@ -418,7 +445,7 @@ export default function PaymentOverview({
                                                 <div>
                                                     <div className="mb-1 flex items-center justify-between gap-2">
                                                         <span className={`min-w-0 flex-1 text-[10px] font-medium leading-snug ${state.daysColor}`}>
-                                                            {state.daysLabel ?? "\u00a0"}
+                                                            {resolveDaysLabel(state.daysLabel, t, locale) ?? "\u00a0"}
                                                         </span>
                                                         <span className="shrink-0 text-[10px] tabular-nums text-white/45">{state.barPct}%</span>
                                                     </div>
@@ -435,14 +462,14 @@ export default function PaymentOverview({
                                                 {payment?.status === "paye" ? (
                                                     <div
                                                         className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border-2 border-[rgba(220,38,38,0.45)] bg-black/40 text-[var(--student-neon-lime)] shadow-[var(--student-pay-glow-soft)]"
-                                                        title="Payé"
+                                                        title={t("statuses.paid")}
                                                     >
                                                         <Check className="h-6 w-6 stroke-[2.5]" aria-hidden />
                                                     </div>
                                                 ) : payment?.status === "en_validation" ? (
                                                     <div
                                                         className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border border-white/14 bg-black/40 text-[var(--student-ring-stand)]"
-                                                        title="En validation"
+                                                        title={t("statuses.inValidation")}
                                                     >
                                                         <Loader2 className="h-6 w-6 animate-spin opacity-90" aria-hidden />
                                                     </div>
@@ -461,7 +488,7 @@ export default function PaymentOverview({
 
                                         {state.penalty > 0 ? (
                                             <div className="student-pay-pill flex items-center justify-between gap-2 px-3 py-2">
-                                                <span className="text-[10px] font-semibold text-white/65">Pénalité de retard</span>
+                                                <span className="text-[10px] font-semibold text-white/65">{t("latePaymentPenalty")}</span>
                                                 <span className="text-xs font-semibold tabular-nums text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
                                                     +{fmt(state.penalty)}
                                                 </span>
@@ -475,13 +502,13 @@ export default function PaymentOverview({
                                                     onClick={() => onDownloadReceipt(payment)}
                                                     className="student-focus-ring student-pay-pill flex-1 px-3 py-2 text-center text-xs font-semibold text-[var(--student-neon-lime)] transition-colors hover:bg-white/[0.06] sm:flex-none"
                                                 >
-                                                    Télécharger le reçu
+                                                    {t("downloadReceipt")}
                                                 </button>
                                             ) : null}
                                             {payment?.status === "en_validation" ? (
                                                 <div className="student-pay-pill flex flex-1 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--student-ring-stand)] sm:flex-none">
                                                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                                                    En attente de validation
+                                                    {t("waitingValidation")}
                                                 </div>
                                             ) : null}
                                         </div>

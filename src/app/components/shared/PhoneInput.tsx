@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { PHONE_COUNTRY_CODES } from "../../lib/phone";
 
@@ -23,6 +24,7 @@ export default function PhoneInput({
     required,
     placeholder = "6 99 00 00 00",
 }: PhoneInputProps) {
+    const t = useTranslations("phoneInput");
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const menuRef = useRef<HTMLDivElement>(null);
@@ -80,13 +82,13 @@ export default function PhoneInput({
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Rechercher pays ou indicatif..."
+                            placeholder={t("searchPlaceholder")}
                             className="mb-2"
                             autoFocus
                         />
                         <div className="max-h-64 overflow-y-auto">
                             {filteredCountries.length === 0 ? (
-                                <p className="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">Aucun indicatif trouvé</p>
+                                <p className="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">{t("noResult")}</p>
                             ) : (
                                 filteredCountries.map((entry) => (
                                     <button

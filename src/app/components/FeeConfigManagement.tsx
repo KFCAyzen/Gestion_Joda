@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../context/AuthContext";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -36,6 +37,7 @@ function TrancheEditor({
     tranches: PaymentConfigTranche[];
     onChange: (t: PaymentConfigTranche[]) => void;
 }) {
+    const t = useTranslations("feeConfig.trancheEditor");
     const addTranche = () => {
         const next = tranches.length + 1;
         onChange([...tranches, { tranche: next, label: `Tranche ${next}`, montant: 0 }]);
@@ -64,7 +66,7 @@ function TrancheEditor({
                         <Input
                             value={tranche.label}
                             onChange={(e) => update(i, "label", e.target.value)}
-                            placeholder="Libellé"
+                            placeholder={t("labelPlaceholder")}
                             className="h-8 text-sm"
                         />
                     </div>
@@ -73,7 +75,7 @@ function TrancheEditor({
                             type="number"
                             value={tranche.montant}
                             onChange={(e) => update(i, "montant", e.target.value)}
-                            placeholder="Montant"
+                            placeholder={t("amountPlaceholder")}
                             className="h-8 text-sm"
                         />
                     </div>
@@ -82,11 +84,11 @@ function TrancheEditor({
             ))}
             <div className="flex gap-2 pt-1">
                 <Button type="button" size="sm" variant="outline" onClick={addTranche} className="h-7 gap-1 text-xs">
-                    <Plus className="h-3 w-3" /> Ajouter tranche
+                    <Plus className="h-3 w-3" /> {t("addTranche")}
                 </Button>
                 {tranches.length > 1 && (
                     <Button type="button" size="sm" variant="ghost" onClick={removeLast} className="h-7 gap-1 text-xs text-red-500 hover:text-red-700 dark:text-red-300">
-                        <Trash2 className="h-3 w-3" /> Supprimer la dernière
+                        <Trash2 className="h-3 w-3" /> {t("removeLast")}
                     </Button>
                 )}
             </div>
@@ -105,6 +107,7 @@ function ServiceConfigCard({
     const { getConfig } = usePaymentConfig();
     const { showNotification } = useNotificationContext();
     const supabase = createClient();
+    const t = useTranslations("feeConfig");
     const original = getConfig(serviceType);
 
     const [draft, setDraft] = useState<PaymentConfig>(() => ({
@@ -141,7 +144,7 @@ function ServiceConfigCard({
                 .upsert(payload, { onConflict: "service_type" });
 
             if (error) {
-                showNotification("Erreur lors de la sauvegarde : " + error.message, "error");
+                showNotification(t("messages.saveError", { error: error.message }), "error");
                 return;
             }
 
@@ -153,10 +156,10 @@ function ServiceConfigCard({
                 );
             }
 
-            showNotification(`Configuration "${draft.label}" sauvegardée`, "success");
+            showNotification(t("messages.saveSuccess", { label: draft.label }), "success");
             onSaved();
         } catch {
-            showNotification("Erreur inattendue lors de la sauvegarde", "error");
+            showNotification(t("messages.unexpectedError"), "error");
         } finally {
             setSaving(false);
         }
@@ -170,7 +173,7 @@ function ServiceConfigCard({
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base">{draft.label}</CardTitle>
                     <Badge variant="outline" className="text-xs font-normal">
-                        Total : {fmt(total)}
+                        {t("total", { amount: fmt(total) })}
                     </Badge>
                 </div>
             </CardHeader>
@@ -179,13 +182,13 @@ function ServiceConfigCard({
                 {/* Tranches */}
                 <div>
                     <div className="mb-3 flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tranches de paiement</span>
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("trancheEditor.title")}</span>
                         <div className="h-px flex-1 bg-slate-100 dark:bg-slate-700/50" />
                     </div>
                     <div className="mb-2 grid grid-cols-12 gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-                        <div className="col-span-1">#</div>
-                        <div className="col-span-6">Libellé</div>
-                        <div className="col-span-4">Montant</div>
+                        <div className="col-span-1">{t("trancheEditor.colNum")}</div>
+                        <div className="col-span-6">{t("trancheEditor.colLabel")}</div>
+                        <div className="col-span-4">{t("trancheEditor.colAmount")}</div>
                     </div>
                     <TrancheEditor
                         tranches={draft.tranches}
@@ -196,12 +199,12 @@ function ServiceConfigCard({
                 {/* Pénalités */}
                 <div>
                     <div className="mb-3 flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Pénalités de retard</span>
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("penalties.title")}</span>
                         <div className="h-px flex-1 bg-slate-100 dark:bg-slate-700/50" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <Label className="text-xs text-slate-600 dark:text-slate-400">Jours de grâce</Label>
+                            <Label className="text-xs text-slate-600 dark:text-slate-400">{t("penalties.graceDays")}</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="number"
@@ -210,11 +213,11 @@ function ServiceConfigCard({
                                     onChange={(e) => setDraft((d) => ({ ...d, grace_days: Number(e.target.value) }))}
                                     className="h-8 w-24 text-sm"
                                 />
-                                <span className="text-xs text-slate-400">jours</span>
+                                <span className="text-xs text-slate-400">{t("penalties.graceDaysUnit")}</span>
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs text-slate-600 dark:text-slate-400">Pénalité / jour</Label>
+                            <Label className="text-xs text-slate-600 dark:text-slate-400">{t("penalties.dailyPenalty")}</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="number"
@@ -223,7 +226,7 @@ function ServiceConfigCard({
                                     onChange={(e) => setDraft((d) => ({ ...d, daily_penalty: Number(e.target.value) }))}
                                     className="h-8 w-28 text-sm"
                                 />
-                                <span className="text-xs text-slate-400">FCFA/j</span>
+                                <span className="text-xs text-slate-400">{t("penalties.dailyPenaltyUnit")}</span>
                             </div>
                         </div>
                     </div>
@@ -232,7 +235,7 @@ function ServiceConfigCard({
                 {/* Délai par défaut */}
                 <div>
                     <div className="mb-3 flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Délai d'échéance par défaut</span>
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("deadline.title")}</span>
                         <div className="h-px flex-1 bg-slate-100 dark:bg-slate-700/50" />
                     </div>
                     <div className="flex items-center gap-2">
@@ -244,7 +247,7 @@ function ServiceConfigCard({
                             className="h-8 w-24 text-sm"
                         />
                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                            jours après inscription (date limite par défaut)
+                            {t("deadline.description")}
                         </span>
                     </div>
                 </div>
@@ -259,7 +262,7 @@ function ServiceConfigCard({
                         style={{ backgroundColor: "#dc2626" }}
                     >
                         <Save className="h-3.5 w-3.5" />
-                        {saving ? "Enregistrement…" : "Enregistrer"}
+                        {saving ? t("actions.saving") : t("actions.save")}
                     </Button>
                     {hasChanges && (
                         <Button
@@ -270,11 +273,11 @@ function ServiceConfigCard({
                             className="gap-1.5 text-slate-500 dark:text-slate-400"
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
-                            Annuler
+                            {t("actions.cancel")}
                         </Button>
                     )}
                     {hasChanges && (
-                        <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">Modifications non enregistrées</span>
+                        <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">{t("actions.unsaved")}</span>
                     )}
                 </div>
             </CardContent>

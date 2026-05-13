@@ -1768,5 +1768,204 @@
     "noUniversity": "No university data",
     "printTitle": "Scholarship Dashboard - Performance Report",
     "generatedAt": "Generated at"
+  },
+  "notificationTitles": {
+    "success": "Action successful",
+    "error": "Action failed",
+    "warning": "Attention required",
+    "info": "Information"
+  },
+  "confirmDialog": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "phoneInput": {
+    "searchPlaceholder": "Search country or code...",
+    "noResult": "No country code found"
+  },
+  "storageMonitoring": {
+    "eyebrow": "Super Admin",
+    "title": "Storage Monitoring",
+    "description": "Monitor Supabase database usage",
+    "lastRefresh": "Last updated: {time}",
+    "refresh": "Refresh",
+    "loading": "Loading statistics...",
+    "criticalAlert": "⚠️ Critical alert!",
+    "criticalMessage": "You have used more than 90% of your free storage. Upgrade to Pro quickly to avoid a read-only database.",
+    "warningAlert": "⚠️ Warning",
+    "warningMessage": "You are approaching the free plan limit ({threshold} MB). Consider upgrading to Pro before reaching {limit} MB.",
+    "storageTitle": "Storage Usage",
+    "storageDescription": "Supabase free plan: {limit} MB maximum",
+    "dbTitle": "Database Statistics",
+    "dbDescription": "Number of records per table",
+    "recommendationsTitle": "Optimization Recommendations",
+    "stats": {
+      "totalFiles": "Total files",
+      "uploadedDocs": "Uploaded documents",
+      "avgSize": "Average size",
+      "perFile": "Per file",
+      "fileLimit": "File limit",
+      "maxAllowed": "Maximum allowed",
+      "remaining": "Remaining space",
+      "available": "Available",
+      "students": "Students",
+      "applications": "Applications",
+      "documents": "Documents",
+      "universities": "Universities",
+      "users": "Users"
+    },
+    "recommendations": {
+      "compressionTitle": "Automatic compression enabled",
+      "compressionDesc": "Images are compressed to {limit} MB maximum",
+      "validationTitle": "Strict validation in place",
+      "validationDesc": "Only PDF, JPG, PNG files are accepted",
+      "paginationTitle": "Pagination enabled",
+      "paginationDesc": "20 students and 10 applications per page",
+      "tipTitle": "Tip",
+      "tipDesc": "Upgrade to Pro ($25/month) when you approach 400-450 MB to avoid interruptions"
+    }
+  },
+  "dossierWorkflow": {
+    "title": "Scholarship File Workflow",
+    "description": "Manage student file tracking through the different stages",
+    "filterTitle": "Filter by status",
+    "listTitle": "Files - {label} ({count})",
+    "empty": "No file with this status",
+    "loading": "Loading files...",
+    "fileId": "File #{id}",
+    "studentId": "Student ID: {id}",
+    "internalNotes": "Internal notes:",
+    "changeStatusTitle": "Change file status",
+    "changeStatusDesc": "Move from {from} to {to}",
+    "actionLabel": "Action description *",
+    "actionPlaceholder": "Describe the reason for this change...",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "feeConfig": {
+    "eyebrow": "Administration",
+    "title": "Fee Configuration",
+    "description": "Customize installments, penalties and deadlines for each service. Changes apply to new files only.",
+    "tabs": {
+      "bourse": "Scholarship Procedure",
+      "langues": "Language Courses"
+    },
+    "levels": {
+      "bachelor": "Bachelor",
+      "master": "Master"
+    },
+    "origins": {
+      "local": "Local",
+      "international": "International"
+    },
+    "languages": {
+      "mandarin": "Mandarin",
+      "anglais": "English"
+    },
+    "trancheEditor": {
+      "title": "Payment installments",
+      "colNum": "#",
+      "colLabel": "Label",
+      "colAmount": "Amount",
+      "labelPlaceholder": "Label",
+      "amountPlaceholder": "Amount",
+      "addTranche": "Add installment",
+      "removeLast": "Remove last"
+    },
+    "penalties": {
+      "title": "Late penalties",
+      "graceDays": "Grace days",
+      "graceDaysUnit": "days",
+      "dailyPenalty": "Penalty / day",
+      "dailyPenaltyUnit": "FCFA/day"
+    },
+    "deadline": {
+      "title": "Default deadline",
+      "description": "days after enrollment (default due date)"
+    },
+    "actions": {
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "unsaved": "Unsaved changes"
+    },
+    "total": "Total: {amount}",
+    "messages": {
+      "saveError": "Save error: {error}",
+      "saveSuccess": "Configuration \"{label}\" saved",
+      "unexpectedError": "Unexpected error while saving"
+    }
+  },
+  "documentUpload": {
+    "noProfile": "Student profile not found.",
+    "infoTitle": "Important information",
+    "maxSize": "Max size:",
+    "compression": "Auto image compression (target ~",
+    "formats": "Formats:",
+    "completion": "File completion",
+    "mandatoryDocs": "{done}/{total} mandatory documents provided",
+    "allSubmitted": "All documents have been submitted. Your file is being processed.",
+    "sendTitle": "Send my file to the team",
+    "sentTitle": "File sent to the team",
+    "sendDesc": "Notify agents that your documents are ready for review.",
+    "sentDesc": "The team has been notified and will review your documents.",
+    "uploadHint": "Upload or replace a document to notify the team.",
+    "sending": "Sending…",
+    "sent": "Sent",
+    "send": "Send",
+    "optional": "Optional",
+    "statLabels": {
+      "toProvide": "To provide",
+      "validated": "Validated",
+      "nonCompliant": "Non-compliant",
+      "inReview": "Under review"
+    },
+    "badgeLabels": {
+      "validated": "Validated",
+      "nonCompliant": "Non-compliant",
+      "pending": "Pending"
+    },
+    "view": "View",
+    "locked": "Locked",
+    "replace": "Replace",
+    "upload": "Upload",
+    "uploading": "…",
+    "lockedTitle": "Document validated — replacement not allowed",
+    "errors": {
+      "uploadError": "Error uploading file. Please try again.",
+      "validated": "This document has been validated and can no longer be replaced.",
+      "invalid": "Invalid file",
+      "sendError": "Unable to send the file. Please try again.",
+      "sendSuccess": "File sent to the team successfully."
+    }
+  },
+  "paymentOverview": {
+    "noService": "No service configured for this profile.",
+    "totalDue": "Total due",
+    "paid": "Paid",
+    "remaining": "Remaining",
+    "remainingWithPenalty": "Remaining + pen.",
+    "cumulatedPenalties": "Cumulated penalties",
+    "globalProgress": "Global progress",
+    "paidAmount": "{amount} FCFA paid",
+    "totalAmount": "{amount} FCFA total",
+    "installmentsPaid": "{paid} / {total} installment{plural} paid",
+    "deadline": "Due {date}",
+    "latePaymentPenalty": "Late penalty",
+    "downloadReceipt": "Download receipt",
+    "waitingValidation": "Waiting for validation",
+    "statuses": {
+      "unplanned": "Not scheduled",
+      "paid": "Paid",
+      "paidOn": "Paid on {date}",
+      "inValidation": "In validation",
+      "validationLabel": "Validation in progress",
+      "noDeadline": "No deadline set",
+      "pending": "Pending",
+      "late": "Late",
+      "daysLeft": "D-{days} — Due on {date}",
+      "gracePeriod": "Grace period — {remaining} days left (of {total})",
+      "daysLate": "{days} day{plural} late"
+    }
   }
 }

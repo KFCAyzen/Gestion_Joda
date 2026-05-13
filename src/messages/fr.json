@@ -1768,5 +1768,204 @@
     "noUniversity": "Aucune donnée universitaire",
     "printTitle": "Tableau de bord des bourses - Rapport de performance",
     "generatedAt": "Généré le"
+  },
+  "notificationTitles": {
+    "success": "Action réussie",
+    "error": "Action impossible",
+    "warning": "Attention requise",
+    "info": "Information"
+  },
+  "confirmDialog": {
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
+  },
+  "phoneInput": {
+    "searchPlaceholder": "Rechercher pays ou indicatif...",
+    "noResult": "Aucun indicatif trouvé"
+  },
+  "storageMonitoring": {
+    "eyebrow": "Super Admin",
+    "title": "Monitoring du Stockage",
+    "description": "Surveillance de l'utilisation de la base de données Supabase",
+    "lastRefresh": "Dernière mise à jour : {time}",
+    "refresh": "Actualiser",
+    "loading": "Chargement des statistiques...",
+    "criticalAlert": "⚠️ Alerte critique !",
+    "criticalMessage": "Vous avez utilisé plus de 90% de votre stockage gratuit. Passez au plan Pro rapidement pour éviter une base en lecture seule.",
+    "warningAlert": "⚠️ Attention",
+    "warningMessage": "Vous approchez de la limite du plan gratuit ({threshold} MB). Pensez à passer au Pro avant d'atteindre {limit} MB.",
+    "storageTitle": "Utilisation du Stockage",
+    "storageDescription": "Plan gratuit Supabase : {limit} MB maximum",
+    "dbTitle": "Statistiques de la Base de Données",
+    "dbDescription": "Nombre d'enregistrements par table",
+    "recommendationsTitle": "Recommandations d'Optimisation",
+    "stats": {
+      "totalFiles": "Total fichiers",
+      "uploadedDocs": "Documents uploadés",
+      "avgSize": "Taille moyenne",
+      "perFile": "Par fichier",
+      "fileLimit": "Limite par fichier",
+      "maxAllowed": "Maximum autorisé",
+      "remaining": "Espace restant",
+      "available": "Disponible",
+      "students": "Étudiants",
+      "applications": "Candidatures",
+      "documents": "Documents",
+      "universities": "Universités",
+      "users": "Utilisateurs"
+    },
+    "recommendations": {
+      "compressionTitle": "Compression automatique activée",
+      "compressionDesc": "Les images sont compressées à {limit} MB maximum",
+      "validationTitle": "Validation stricte en place",
+      "validationDesc": "Seuls les fichiers PDF, JPG, PNG sont acceptés",
+      "paginationTitle": "Pagination activée",
+      "paginationDesc": "20 étudiants et 10 candidatures par page",
+      "tipTitle": "Conseil",
+      "tipDesc": "Passez au plan Pro (25$/mois) quand vous approchez 400-450 MB pour éviter les interruptions"
+    }
+  },
+  "dossierWorkflow": {
+    "title": "Workflow des Dossiers de Bourses",
+    "description": "Gérez le suivi des dossiers d'étudiants à travers les différentes étapes",
+    "filterTitle": "Filtrer par statut",
+    "listTitle": "Dossiers - {label} ({count})",
+    "empty": "Aucun dossier avec ce statut",
+    "loading": "Chargement des dossiers...",
+    "fileId": "Dossier #{id}",
+    "studentId": "Étudiant ID: {id}",
+    "internalNotes": "Notes internes :",
+    "changeStatusTitle": "Changer le statut du dossier",
+    "changeStatusDesc": "Passer de {from} à {to}",
+    "actionLabel": "Description de l'action *",
+    "actionPlaceholder": "Décrivez la raison de ce changement...",
+    "cancel": "Annuler",
+    "confirm": "Confirmer"
+  },
+  "feeConfig": {
+    "eyebrow": "Administration",
+    "title": "Configuration des frais",
+    "description": "Personnalisez les tranches, les pénalités et les délais d'échéance pour chaque service. Les modifications s'appliquent aux nouveaux dossiers uniquement.",
+    "tabs": {
+      "bourse": "Procédure Bourse",
+      "langues": "Cours de Langues"
+    },
+    "levels": {
+      "bachelor": "Bachelor",
+      "master": "Master"
+    },
+    "origins": {
+      "local": "Local",
+      "international": "International"
+    },
+    "languages": {
+      "mandarin": "Mandarin",
+      "anglais": "Anglais"
+    },
+    "trancheEditor": {
+      "title": "Tranches de paiement",
+      "colNum": "#",
+      "colLabel": "Libellé",
+      "colAmount": "Montant",
+      "labelPlaceholder": "Libellé",
+      "amountPlaceholder": "Montant",
+      "addTranche": "Ajouter tranche",
+      "removeLast": "Supprimer la dernière"
+    },
+    "penalties": {
+      "title": "Pénalités de retard",
+      "graceDays": "Jours de grâce",
+      "graceDaysUnit": "jours",
+      "dailyPenalty": "Pénalité / jour",
+      "dailyPenaltyUnit": "FCFA/j"
+    },
+    "deadline": {
+      "title": "Délai d'échéance par défaut",
+      "description": "jours après inscription (date limite par défaut)"
+    },
+    "actions": {
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "unsaved": "Modifications non enregistrées"
+    },
+    "total": "Total : {amount}",
+    "messages": {
+      "saveError": "Erreur lors de la sauvegarde : {error}",
+      "saveSuccess": "Configuration \"{label}\" sauvegardée",
+      "unexpectedError": "Erreur inattendue lors de la sauvegarde"
+    }
+  },
+  "documentUpload": {
+    "noProfile": "Profil étudiant introuvable.",
+    "infoTitle": "Informations importantes",
+    "maxSize": "Taille max. :",
+    "compression": "Compression auto des images (cible ~",
+    "formats": "Formats :",
+    "completion": "Complétion du dossier",
+    "mandatoryDocs": "{done}/{total} documents obligatoires fournis",
+    "allSubmitted": "Tous les documents ont été soumis. Ton dossier est en traitement.",
+    "sendTitle": "Envoyer mon dossier à l'équipe",
+    "sentTitle": "Dossier envoyé à l'équipe",
+    "sendDesc": "Notifie les agents que tes documents sont prêts pour examen.",
+    "sentDesc": "L'équipe a été notifiée et va examiner tes documents.",
+    "uploadHint": "Uploade ou remplace un document pour pouvoir notifier l'équipe.",
+    "sending": "Envoi…",
+    "sent": "Envoyé",
+    "send": "Envoyer",
+    "optional": "Facultatif",
+    "statLabels": {
+      "toProvide": "À fournir",
+      "validated": "Validé",
+      "nonCompliant": "Non conforme",
+      "inReview": "En examen"
+    },
+    "badgeLabels": {
+      "validated": "Validé",
+      "nonCompliant": "Non conforme",
+      "pending": "En attente"
+    },
+    "view": "Voir",
+    "locked": "Verrouillé",
+    "replace": "Remplacer",
+    "upload": "Uploader",
+    "uploading": "…",
+    "lockedTitle": "Document validé — remplacement impossible",
+    "errors": {
+      "uploadError": "Erreur lors de l'upload du fichier. Veuillez réessayer.",
+      "validated": "Ce document a été validé et ne peut plus être remplacé.",
+      "invalid": "Fichier invalide",
+      "sendError": "Impossible d'envoyer le dossier. Réessayez.",
+      "sendSuccess": "Dossier envoyé à l'équipe avec succès."
+    }
+  },
+  "paymentOverview": {
+    "noService": "Aucun service configuré pour ce profil.",
+    "totalDue": "Total dû",
+    "paid": "Payé",
+    "remaining": "Reste",
+    "remainingWithPenalty": "Reste + pén.",
+    "cumulatedPenalties": "Pénalités cumulées",
+    "globalProgress": "Progression globale",
+    "paidAmount": "{amount} FCFA payés",
+    "totalAmount": "{amount} FCFA au total",
+    "installmentsPaid": "{paid} / {total} tranche{plural} réglée{plural}",
+    "deadline": "Échéance {date}",
+    "latePaymentPenalty": "Pénalité de retard",
+    "downloadReceipt": "Télécharger le reçu",
+    "waitingValidation": "En attente de validation",
+    "statuses": {
+      "unplanned": "Non planifiée",
+      "paid": "Payé",
+      "paidOn": "Payé le {date}",
+      "inValidation": "En validation",
+      "validationLabel": "En cours de validation",
+      "noDeadline": "Pas d'échéance définie",
+      "pending": "En attente",
+      "late": "En retard",
+      "daysLeft": "J-{days} — Échéance le {date}",
+      "gracePeriod": "Période de grâce — {remaining} j restants (sur {total} j)",
+      "daysLate": "{days} jour{plural} de retard"
+    }
   }
 }

@@ -75,7 +75,7 @@ export default function NotificationsPage() {
         try {
             const { data: payments, error: paymentsError } = await supabase
                 .from("payments")
-                .select("id, student_id, tranche, penalites, status, date_limite")
+                .select("id, student_id, tranche, penalites, status, date_limite, students(created_by)")
                 .eq("status", "retard");
 
             if (paymentsError) {
@@ -89,6 +89,7 @@ export default function NotificationsPage() {
 
             const today = new Date();
             const overduePayments = payments.filter(payment => {
+                if (!payment.date_limite) return false;
                 const dueDate = new Date(payment.date_limite);
                 return today > dueDate;
             });
@@ -101,8 +102,10 @@ export default function NotificationsPage() {
             await executeBatch(
                 overduePayments,
                 async (payment) => {
+                    const userId = (payment.students as any)?.created_by;
+                    if (!userId) return;
                     await supabase.from("notifications").insert({
-                        user_id: payment.student_id,
+                        user_id: userId,
                         type: "retard_paiement",
                         titre: t("types.retard_paiement"),
                         message: t("messages.latePayment", {
@@ -122,7 +125,7 @@ export default function NotificationsPage() {
             const msg = err instanceof Error ? err.message : t("status.unknownError");
             setAutoNotifStatus(t("status.error", { error: msg }));
         }
-    }, [user, load, t]);
+    }, [user, load, t, dateLocale, supabase]);
 
     useEffect(() => {
         load();

@@ -10,6 +10,8 @@ import { logActivity } from "../utils/activityLogger";
 import { printThermalReceipt } from "../utils/thermalReceipt";
 import ConfirmDialog from "./ConfirmDialog";
 import ProtectedRoute from "./ProtectedRoute";
+import { usePaymentConfig } from "../context/PaymentConfigContext";
+import { getBourseServiceType } from "../types/payment-config";
 
 interface Student {
     id: string;
@@ -17,6 +19,8 @@ interface Student {
     prenom: string;
     email: string;
     telephone: string;
+    niveau?: string;
+    nationalite?: string | null;
 }
 
 interface Payment {
@@ -103,6 +107,7 @@ export default function PaymentsPage() {
     const supabase = createClient();
     const { user } = useAuth();
     const { showNotification } = useNotificationContext();
+    const { getConfig, getBourseConfig } = usePaymentConfig();
 
     const [payments, setPayments] = useState<Payment[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
@@ -134,10 +139,24 @@ export default function PaymentsPage() {
         [students]
     );
 
-    const syncPenalties = async (list: Payment[]) => {
+    const resolvePenaltyConfig = useCallback(
+        (payment: Payment, studentMap: Map<string, Student>) => {
+            if (payment.type === "mandarin" || payment.type === "anglais") {
+                const cfg = getConfig(payment.type);
+                return { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty };
+            }
+            const student = studentMap.get(payment.student_id);
+            const cfg = getBourseConfig(student?.niveau, student?.nationalite);
+            return { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty };
+        },
+        [getConfig, getBourseConfig]
+    );
+
+    const syncPenalties = async (list: Payment[], studentList: Student[]) => {
+        const studentMap = new Map(studentList.map((s) => [s.id, s]));
         const updates = list
             .filter((p) => p.status !== "paye" && p.date_limite)
-            .map((p) => ({ p, penalty: calculatePenalty(p) }))
+            .map((p) => ({ p, penalty: calculatePenalty(p, resolvePenaltyConfig(p, studentMap)) }))
             .filter(({ p, penalty }) => penalty !== (p.penalites ?? 0) || (penalty > 0 && p.status === "attente"));
         if (updates.length === 0) return;
         await Promise.all(
@@ -156,7 +175,7 @@ export default function PaymentsPage() {
             const todayStr = new Date().toISOString().slice(0, 10);
             const [paymentsRes, studentsRes, entreesRes, sortiesRes] = await Promise.all([
                 supabase.from("payments").select("*").order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom, email, telephone"),
+                supabase.from("students").select("id, nom, prenom, email, telephone, niveau, nationalite"),
                 supabase
                     .from("entrees_comptables")
                     .select("*")
@@ -170,14 +189,15 @@ export default function PaymentsPage() {
             ]);
 
             const raw = paymentsRes.data || [];
-            await syncPenalties(raw);
+            const studentsData = studentsRes.data || [];
+            await syncPenalties(raw, studentsData);
             const { data: refreshed } = await supabase
                 .from("payments")
                 .select("*")
                 .order("created_at", { ascending: false });
 
             setPayments(refreshed || raw);
-            setStudents(studentsRes.data || []);
+            setStudents(studentsData);
             setEntrées(entreesRes.data || []);
             setSorties(sortiesRes.data || []);
         } catch (err) {
@@ -191,6 +211,8 @@ export default function PaymentsPage() {
 
     const isAdminLike = user?.role === "admin" || user?.role === "super_admin";
 
+    const studentMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
+
     const handleValidate = async (paymentId: string) => {
         if (!user || !isAdminLike) return;
         const { data: payment } = await supabase
@@ -200,9 +222,10 @@ export default function PaymentsPage() {
             .single();
         if (!payment) return;
 
+        const nowIso = new Date().toISOString();
         await supabase
             .from("payments")
-            .update({ status: "paye", validated_by: user.id, validated_at: new Date().toISOString() })
+            .update({ status: "paye", validated_by: user.id, validated_at: nowIso, date_paiement: nowIso })
             .eq("id", paymentId);
 
         const typeEntree =
@@ -283,7 +306,8 @@ export default function PaymentsPage() {
 
     const handlePrint = (payment: Payment) => {
         const student = getStudent(payment.student_id);
-        const penalty = calculatePenalty(payment);
+        const studentMap = new Map(students.map((s) => [s.id, s]));
+        const penalty = calculatePenalty(payment, resolvePenaltyConfig(payment, studentMap));
         printThermalReceipt({
             refId: payment.id,
             date: payment.date_paiement
@@ -433,7 +457,7 @@ export default function PaymentsPage() {
                                             : "?";
                                         const color = avatarColor(name);
                                         const isOverdue = payment.status === "retard";
-                                        const penalty = calculatePenalty(payment);
+                                        const penalty = calculatePenalty(payment, resolvePenaltyConfig(payment, new Map(students.map((s) => [s.id, s]))));
                                         const days = payment.date_limite
                                             ? daysLate(payment.date_limite)
                                             : 0;
