@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, FileText, Upload, WalletCards } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { StudentView } from "./types";
 
 interface Conversation {
@@ -38,6 +39,7 @@ export function StudentSidebarNav({
     conversations,
     systemNotifCount,
 }: Props) {
+    const t = useTranslations("student.portal.sidebar");
     return (
         <aside className="hidden w-56 shrink-0 flex-col border-r border-[rgba(220,38,38,0.12)] py-5 dark:border-white/8 md:flex lg:w-64">
             {/* Student identity */}
@@ -58,7 +60,7 @@ export function StudentSidebarNav({
             {/* Conversations */}
             <div className="mb-4 px-4">
                 <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)]">
-                    Conversations
+                    {t("conversations")}
                 </p>
                 <div className="space-y-1">
                     {conversations.map((conv) => (
@@ -108,10 +110,10 @@ export function StudentSidebarNav({
                                 <Bell className="h-3.5 w-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[12px] font-semibold text-[var(--student-fg)]">Notifications système</p>
+                                <p className="text-[12px] font-semibold text-[var(--student-fg)]">{t("systemNotifications")}</p>
                                 {systemNotifCount > 0 && (
                                     <p className="text-[10px] text-[var(--student-fg-muted)]">
-                                        {systemNotifCount} nouvelle{systemNotifCount > 1 ? "s" : ""}
+                                        {systemNotifCount > 1 ? t("newNotificationsPlural", { count: systemNotifCount }) : t("newNotifications", { count: systemNotifCount })}
                                     </p>
                                 )}
                             </div>
@@ -128,13 +130,13 @@ export function StudentSidebarNav({
             {/* Quick actions */}
             <div className="mt-auto px-4">
                 <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)]">
-                    Actions rapides
+                    {t("quickActions")}
                 </p>
                 <div className="space-y-0.5">
                     {[
-                        { label: "Téléverser un document", icon: <Upload className="h-3.5 w-3.5" />, view: "documents" as StudentView },
-                        { label: "Voir mes paiements", icon: <WalletCards className="h-3.5 w-3.5" />, view: "payments" as StudentView },
-                        { label: "Mon dossier", icon: <FileText className="h-3.5 w-3.5" />, view: "dossier" as StudentView },
+                        { labelKey: "uploadDocument", icon: <Upload className="h-3.5 w-3.5" />, view: "documents" as StudentView },
+                        { labelKey: "viewPayments", icon: <WalletCards className="h-3.5 w-3.5" />, view: "payments" as StudentView },
+                        { labelKey: "myDossier", icon: <FileText className="h-3.5 w-3.5" />, view: "dossier" as StudentView },
                     ].map((item) => (
                         <button
                             key={item.view}
@@ -142,7 +144,7 @@ export function StudentSidebarNav({
                             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] text-[var(--student-fg-muted)] transition-colors hover:bg-[rgba(220,38,38,0.06)] hover:text-[var(--student-ring-move)] dark:hover:bg-white/6 dark:hover:text-white"
                         >
                             {item.icon}
-                            {item.label}
+                            {t(item.labelKey as any)}
                         </button>
                     ))}
                 </div>

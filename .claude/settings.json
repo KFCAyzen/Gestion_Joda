@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I{} bash -c 'echo \"=== {} ===\" && head -20 {}')",
+      "Bash(grep -rn \"\\\\${.*student\\\\.id\\\\|>\\\\s*{.*student\\\\.id\" /home/franck/Documents/Projets/Gestion_Joda/src --include=\"*.tsx\" --include=\"*.ts\")"
+    ]
+  }
+}

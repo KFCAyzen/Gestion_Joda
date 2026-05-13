@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/app/lib/supabase/client";
 import { SectionHeader } from "./SectionHeader";
 import { EmptyState } from "./EmptyState";
@@ -27,6 +27,7 @@ interface Props {
 export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
   const locale = useLocale();
   const dateLocale = locale === "en" ? "en-US" : "fr-FR";
+  const t = useTranslations("student.portal.messaging");
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +82,7 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
           className="student-focus-ring flex items-center gap-1.5 text-sm text-white/55 hover:text-white"
         >
           <ChevronLeft className="h-4 w-4" />
-          Messagerie
+          {t("back")}
         </button>
         <div className="student-surface rounded-2xl p-5 sm:p-6">
           <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--student-ring-stand)]">
@@ -100,7 +101,7 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
 
   return (
     <div className="space-y-4">
-      <SectionHeader title="Messagerie" />
+      <SectionHeader title={t("title")} />
 
       {loading ? (
         <div className="space-y-3">
@@ -113,8 +114,8 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
         </div>
       ) : messages.length === 0 ? (
         <EmptyState
-          title="Aucun message"
-          description="Vous n'avez pas encore reçu de message."
+          title={t("empty")}
+          description={t("emptyDescription")}
         />
       ) : (
         <ul className="space-y-2">

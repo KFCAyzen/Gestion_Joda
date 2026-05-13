@@ -415,11 +415,54 @@
       "welcome": "Welcome",
       "logout": "Logout",
       "nav": {
-        "dashboard": "Dashboard",
+        "home": "Home",
         "payments": "Payments",
         "documents": "Documents",
-        "dossier": "My File",
-        "notifications": "Notifications"
+        "dossier": "File",
+        "messages": "Messages"
+      },
+      "sidebar": {
+        "conversations": "Conversations",
+        "systemNotifications": "System notifications",
+        "newNotifications": "{count} new",
+        "newNotificationsPlural": "{count} new",
+        "quickActions": "Quick actions",
+        "uploadDocument": "Upload a document",
+        "viewPayments": "View my payments",
+        "myDossier": "My file"
+      },
+      "chat": {
+        "yourAgent": "your agent",
+        "onlineStatus": "Online · usually replies · < 2h",
+        "loading": "Loading...",
+        "empty": "No messages yet",
+        "send": "Send",
+        "inputPlaceholder": "Write to {name}...",
+        "activeFile": "Active file",
+        "university": "University",
+        "documents": "Documents",
+        "nextStep": "Next step",
+        "nextPayment": "Upcoming deadline",
+        "dueOn": "Due on {date}",
+        "daysLeft": "{count} days",
+        "statusLabels": {
+          "document_recu": "Documents received",
+          "en_attente": "Pending",
+          "en_cours": "In progress",
+          "document_manquant": "Missing docs",
+          "admission_validee": "Admission validated",
+          "admission_rejetee": "Admission rejected",
+          "en_attente_universite": "Waiting for university",
+          "visa_en_cours": "Visa processing",
+          "termine": "Completed"
+        }
+      },
+      "messaging": {
+        "title": "Messaging",
+        "loading": "Loading...",
+        "empty": "No messages",
+        "emptyDescription": "You have not received any messages yet.",
+        "back": "Messaging"
       }
     },
     "dashboard": {
@@ -441,10 +484,10 @@
       "fileStatus": "File status",
       "seeDetails": "See details →"
     },
-     "payments": {
-       "title": "Payment Management",
-       "description": "Manage your payments, upload receipts, and view payment history.",
-       "scholarship": "Scholarship Procedure",
+    "payments": {
+      "title": "Payment Management",
+      "description": "Manage your payments, upload receipts, and view payment history.",
+      "scholarship": "Scholarship Procedure",
       "mandarin": "Mandarin Course",
       "english": "English Course",
       "amount": "Amount",
@@ -551,12 +594,49 @@
       "admission_rejected": "Admission rejected",
       "waiting_university": "Waiting for university",
       "visa_processing": "Visa processing",
-       "completed": "Completed"
-     },
-     "common": {
-       "close": "Close"
-     }
-   },
+      "completed": "Completed"
+    },
+    "common": {
+      "close": "Close"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "Unread",
+      "header": {
+        "alertsCenter": "Alerts Center",
+        "notificationsTitle": "Notifications",
+        "allRead": "All read",
+        "unreadCount": "{count} unread"
+      },
+      "filters": {
+        "all": "All ({count})",
+        "unread": "Unread ({count})",
+        "latePayments": "Late payments",
+        "documents": "Documents",
+        "payments": "Payments",
+        "files": "Files"
+      },
+      "actions": {
+        "checkLate": "Check late payments",
+        "markAllRead": "Mark all read",
+        "refresh": "Refresh"
+      },
+      "types": {
+        "document_manquant": "Missing document",
+        "paiement_valide": "Payment validated",
+        "retard_paiement": "Late payment",
+        "mise_a_jour_dossier": "File update"
+      },
+      "empty": "No notifications",
+      "status": {
+        "generating": "Generating...",
+        "noLatePayments": "No late payments found.",
+        "noLateToNotify": "No late payments to notify.",
+        "generated": "{count} notification(s) generated.",
+        "error": "Error: {error}"
+      }
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "unread": "Unread",

@@ -415,11 +415,54 @@
       "welcome": "Bienvenue",
       "logout": "Déconnexion",
       "nav": {
-        "dashboard": "Tableau de bord",
+        "home": "Accueil",
         "payments": "Paiements",
         "documents": "Documents",
-        "dossier": "Mon dossier",
-        "notifications": "Notifications"
+        "dossier": "Dossier",
+        "messages": "Messages"
+      },
+      "sidebar": {
+        "conversations": "Conversations",
+        "systemNotifications": "Notifications système",
+        "newNotifications": "{count} nouvelle",
+        "newNotificationsPlural": "{count} nouvelles",
+        "quickActions": "Actions rapides",
+        "uploadDocument": "Téléverser un document",
+        "viewPayments": "Voir mes paiements",
+        "myDossier": "Mon dossier"
+      },
+      "chat": {
+        "yourAgent": "ton agent",
+        "onlineStatus": "En ligne · répond habituellement · < 2h",
+        "loading": "Chargement...",
+        "empty": "Aucun message pour l'instant",
+        "send": "Envoyer",
+        "inputPlaceholder": "Écris à {name}...",
+        "activeFile": "Dossier en cours",
+        "university": "Université",
+        "documents": "Documents",
+        "nextStep": "Prochaine étape",
+        "nextPayment": "Échéance proche",
+        "dueOn": "Dû le {date}",
+        "daysLeft": "{count} jours",
+        "statusLabels": {
+          "document_recu": "Documents reçus",
+          "en_attente": "En attente",
+          "en_cours": "En cours",
+          "document_manquant": "Docs manquants",
+          "admission_validee": "Admission validée",
+          "admission_rejetee": "Admission rejetée",
+          "en_attente_universite": "En attente université",
+          "visa_en_cours": "Visa en cours",
+          "termine": "Terminé"
+        }
+      },
+      "messaging": {
+        "title": "Messagerie",
+        "loading": "Chargement...",
+        "empty": "Aucun message",
+        "emptyDescription": "Vous n'avez pas encore reçu de message.",
+        "back": "Messagerie"
       }
     },
     "dashboard": {
@@ -441,10 +484,10 @@
       "fileStatus": "Statut dossier",
       "seeDetails": "Voir les détails →"
     },
-     "payments": {
-       "title": "Gestion des Paiements",
-       "description": "Gérez vos paiements, téléchargez les reçus et consultez l'historique.",
-       "scholarship": "Procédure Bourse",
+    "payments": {
+      "title": "Gestion des Paiements",
+      "description": "Gérez vos paiements, téléchargez les reçus et consultez l'historique.",
+      "scholarship": "Procédure Bourse",
       "mandarin": "Cours de Mandarin",
       "english": "Cours d'Anglais",
       "amount": "Montant",
@@ -588,12 +631,12 @@
       "admission_rejected": "Admission rejetée",
       "waiting_university": "En attente université",
       "visa_processing": "Visa en cours",
-       "completed": "Terminé"
-     },
-     "common": {
-       "close": "Fermer"
-     }
-   },
+      "completed": "Terminé"
+    },
+    "common": {
+      "close": "Fermer"
+    }
+  },
   "notifications": {
     "title": "Notifications",
     "unread": "Non lues",

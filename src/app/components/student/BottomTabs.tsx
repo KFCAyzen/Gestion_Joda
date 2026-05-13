@@ -1,21 +1,26 @@
 "use client";
 
 import { LayoutDashboard, WalletCards, Upload, FileText, MessageSquare } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { StudentView } from "./types";
 
 const iconCls = "h-5 w-5";
 
-const ITEMS: Array<{
-  id: StudentView;
-  label: string;
-  Icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { id: "dashboard", label: "Accueil", Icon: LayoutDashboard },
-  { id: "payments", label: "Paiements", Icon: WalletCards },
-  { id: "documents", label: "Documents", Icon: Upload },
-  { id: "dossier", label: "Dossier", Icon: FileText },
-  { id: "messaging", label: "Messages", Icon: MessageSquare },
+const ITEM_IDS: Array<{ id: StudentView; Icon: React.ComponentType<{ className?: string }> }> = [
+  { id: "dashboard", Icon: LayoutDashboard },
+  { id: "payments", Icon: WalletCards },
+  { id: "documents", Icon: Upload },
+  { id: "dossier", Icon: FileText },
+  { id: "messaging", Icon: MessageSquare },
 ];
+
+const NAV_KEYS: Record<string, string> = {
+  dashboard: "home",
+  payments: "payments",
+  documents: "documents",
+  dossier: "dossier",
+  messaging: "messages",
+};
 
 export function BottomTabs({
   value,
@@ -26,13 +31,15 @@ export function BottomTabs({
   onChange: (next: StudentView) => void;
   notificationsBadge?: number;
 }) {
+  const t = useTranslations("student.portal.nav");
+
   return (
     <nav
       className="student-bottom-tabs fixed inset-x-0 bottom-0 z-40 md:hidden"
       aria-label="Navigation principale"
     >
       <div className="mx-auto flex max-w-7xl items-stretch justify-between px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
-        {ITEMS.map(({ id, label, Icon }) => {
+        {ITEM_IDS.map(({ id, Icon }) => {
           const active = id === value;
           return (
             <button
@@ -58,7 +65,7 @@ export function BottomTabs({
               >
                 <Icon className={iconCls} />
               </span>
-              <span className="truncate">{label}</span>
+              <span className="truncate">{t(NAV_KEYS[id] as any)}</span>
               {active ? (
                 <span
                   className="absolute inset-x-5 top-1 h-1 rounded-full bg-[var(--student-ring-move)] opacity-90 shadow-[0_6px_16px_rgba(220,38,38,0.30)]"
@@ -77,4 +84,3 @@ export function BottomTabs({
     </nav>
   );
 }
-

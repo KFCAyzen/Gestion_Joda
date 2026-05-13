@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronLeft, Mic, MoreVertical, Paperclip, Send } from "lucide-react";
+import { ChevronLeft, Mic, MoreVertical, Paperclip, Send } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/app/lib/supabase/client";
 import type { StudentView } from "./types";
 
@@ -84,6 +85,8 @@ function avatarInitials(name: string): string {
 
 export function StudentChatFull({ userId, agentName, onBack, dossier, nextPayment, onUnreadChange }: Props) {
     const supabase = createClient();
+    const t = useTranslations("student.portal.chat");
+    const locale = useLocale();
     const [messages, setMessages] = useState<Message[]>([]);
     const [agentUserId, setAgentUserId] = useState<string | null>(null);
     const [text, setText] = useState("");
@@ -164,15 +167,15 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
     const groups = groupByDay(messages);
 
     const dossierStatusLabel: Record<string, string> = {
-        document_recu: "Documents reçus",
-        en_attente: "En attente",
-        en_cours: "En cours",
-        document_manquant: "Docs manquants",
-        admission_validee: "Admission validée",
-        admission_rejetee: "Admission rejetée",
-        en_attente_universite: "En attente université",
-        visa_en_cours: "Visa en cours",
-        termine: "Terminé",
+        document_recu: t("statusLabels.document_recu"),
+        en_attente: t("statusLabels.en_attente"),
+        en_cours: t("statusLabels.en_cours"),
+        document_manquant: t("statusLabels.document_manquant"),
+        admission_validee: t("statusLabels.admission_validee"),
+        admission_rejetee: t("statusLabels.admission_rejetee"),
+        en_attente_universite: t("statusLabels.en_attente_universite"),
+        visa_en_cours: t("statusLabels.visa_en_cours"),
+        termine: t("statusLabels.termine"),
     };
 
     return (
@@ -195,8 +198,8 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                         <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#1a1a2e] bg-green-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white">{agentName} · <span className="font-normal text-white/60">ton agent</span></p>
-                        <p className="text-[11px] text-white/45">En ligne · répond habituellement · &lt; 2h</p>
+                        <p className="text-sm font-semibold text-white">{agentName} · <span className="font-normal text-white/60">{t("yourAgent")}</span></p>
+                        <p className="text-[11px] text-white/45">{t("onlineStatus")}</p>
                     </div>
                     {dossier && (
                         <span className="hidden rounded-full border border-white/12 bg-white/6 px-2.5 py-1 text-[11px] text-white/70 sm:inline">
@@ -212,11 +215,11 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                 <div className="flex-1 overflow-y-auto px-4 py-4">
                     {loading ? (
                         <div className="flex items-center justify-center py-12 text-sm text-white/40">
-                            Chargement...
+                            {t("loading")}
                         </div>
                     ) : messages.length === 0 ? (
                         <div className="flex items-center justify-center py-12 text-sm text-white/40">
-                            Aucun message pour l'instant
+                            {t("empty")}
                         </div>
                     ) : (
                         groups.map((group) => (
@@ -293,7 +296,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                             onKeyDown={handleKey}
-                            placeholder={`Écris à ${agentName.split(" ")[0]}...`}
+                            placeholder={t("inputPlaceholder", { name: agentName.split(" ")[0] })}
                             className="flex-1 bg-transparent text-sm text-white placeholder-white/30 outline-none"
                         />
                         <button className="shrink-0 text-white/40 hover:text-white/60">
@@ -305,7 +308,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                             className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
                         >
                             <Send className="h-4 w-4" />
-                            Envoyer
+                            {t("send")}
                         </button>
                     </div>
                 </div>
@@ -316,10 +319,10 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                 <aside className="hidden w-60 shrink-0 flex-col border-l border-white/8 overflow-y-auto xl:flex">
                     <div className="border-b border-white/8 px-4 py-4">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
-                            Dossier en cours
+                            {t("activeFile")}
                         </p>
                         <p className="mt-2 text-base font-semibold text-white">
-                            {dossier.university ?? "Université"}
+                            {dossier.university ?? t("university")}
                         </p>
                         {dossier.program && (
                             <p className="text-[12px] text-white/50">{dossier.program}</p>
@@ -329,7 +332,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                         {dossier.docsTotal > 0 && (
                             <div className="mt-3">
                                 <div className="flex items-center justify-between text-[11px]">
-                                    <span className="text-white/50">Documents</span>
+                                    <span className="text-white/50">{t("documents")}</span>
                                     <span className="font-semibold text-white/80">
                                         {dossier.docsOk}/{dossier.docsTotal}
                                     </span>
@@ -350,7 +353,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                     {dossier.nextStep && (
                         <div className="border-b border-white/8 px-4 py-4">
                             <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
-                                Prochaine étape
+                                {t("nextStep")}
                             </p>
                             <div className="mt-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3">
                                 <p className="text-sm font-semibold text-white">{dossier.nextStep}</p>
@@ -365,7 +368,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                     {nextPayment && (
                         <div className="px-4 py-4">
                             <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
-                                Échéance proche
+                                {t("nextPayment")}
                             </p>
                             <div className="mt-2">
                                 <p className="text-sm font-medium text-white">{nextPayment.label}</p>
@@ -374,8 +377,8 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                 </p>
                                 {nextPayment.dateLimite && (
                                     <p className="text-[11px] text-white/45">
-                                        Dû le {new Date(nextPayment.dateLimite).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                                        {nextPayment.daysLeft !== null && ` · ${nextPayment.daysLeft} jours`}
+                                        {t("dueOn", { date: new Date(nextPayment.dateLimite).toLocaleDateString(locale, { day: "numeric", month: "short" }) })}
+                                        {nextPayment.daysLeft !== null && ` · ${t("daysLeft", { count: nextPayment.daysLeft })}`}
                                     </p>
                                 )}
                             </div>
