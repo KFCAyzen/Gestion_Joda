@@ -282,7 +282,11 @@ export default function CoursLangues() {
                                         onValueChange={v => setFormData({ ...formData, studentId: v ?? "" })}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder={t("form.studentPlaceholder")} />
+                                            <SelectValue placeholder={t("form.studentPlaceholder")}>
+                                                {formData.studentId
+                                                    ? (() => { const s = students.find(s => s.id === formData.studentId); return s ? `${s.prenom} ${s.nom}` : t("form.studentPlaceholder"); })()
+                                                    : t("form.studentPlaceholder")}
+                                            </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             {students.map(s => (
