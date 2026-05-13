@@ -722,7 +722,12 @@
       "user_update": "Modification utilisateur",
       "user_delete": "Suppression utilisateur",
       "login": "Connexion",
-      "logout": "Déconnexion"
+      "logout": "Déconnexion",
+      "config_update": "Mise à jour config"
+    },
+    "days": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier"
     },
     "empty": {
       "title": "Aucun log d'activité trouvé",
@@ -730,10 +735,6 @@
     },
     "actions": {
       "resetFilters": "Réinitialiser les filtres"
-    },
-    "log": {
-      "entity": "Entité",
-      "extraDetails": "Détails supplémentaires"
     }
   },
   "accountingPage": {

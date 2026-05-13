@@ -685,7 +685,12 @@
       "user_update": "User updated",
       "user_delete": "User deleted",
       "login": "Login",
-      "logout": "Logout"
+      "logout": "Logout",
+      "config_update": "Config updated"
+    },
+    "days": {
+      "today": "Today",
+      "yesterday": "Yesterday"
     },
     "empty": {
       "title": "No activity log found",
@@ -693,10 +698,6 @@
     },
     "actions": {
       "resetFilters": "Reset filters"
-    },
-    "log": {
-      "entity": "Entity",
-      "extraDetails": "Additional details"
     }
   },
   "accountingPage": {
