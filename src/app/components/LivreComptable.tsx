@@ -290,6 +290,11 @@ export default function LivreComptable() {
 
     const handleAdd = async () => {
         if (!user || !newForm.montant || !newForm.description) return;
+        // Seuls admins et super_admins peuvent créer des écritures comptables manuelles
+        if (!isAdminLike) {
+            showNotification("Action réservée aux administrateurs", "error");
+            return;
+        }
         setSaving(true);
         try {
             if (newKind === "entree") {

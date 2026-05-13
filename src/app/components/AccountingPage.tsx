@@ -297,11 +297,18 @@ export default function AccountingPage() {
 
     const handleValidateSortie = async (id: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
+        const sortie = sorties.find((s) => s.id === id);
         try {
             await supabase.from("sorties_comptables").update({
                 validated_by: user.id,
                 validated_at: new Date().toISOString(),
             }).eq("id", id);
+            await logActivity(
+                user.id, user.name, user.role,
+                "accounting_expense", "sorties_comptables", id,
+                `Sortie comptable validée — ${sortie?.description ?? id}`,
+                { montant: sortie?.montant ?? null }
+            );
             await load();
             showNotification(t("messages.expenseValidated"), "success");
         } catch (err) {
@@ -408,6 +415,7 @@ export default function AccountingPage() {
 
     const handleAddBudget = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         if (!newBudget.montant_prevu) return;
         setSubmitting(true);
         try {
@@ -428,6 +436,7 @@ export default function AccountingPage() {
 
     const handleAddCategory = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         if (!newCategory.nom) return;
         setSubmitting(true);
         try {
@@ -446,6 +455,7 @@ export default function AccountingPage() {
     };
 
     const handleDeleteCategory = (id: string) => {
+        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         setConfirmDialog({
             open: true,
             title: t("confirm.deleteCategoryTitle"),
@@ -465,6 +475,7 @@ export default function AccountingPage() {
     };
 
     const handleDeleteBudget = (id: string) => {
+        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         setConfirmDialog({
             open: true,
             title: t("confirm.deleteBudgetTitle"),
@@ -484,14 +495,22 @@ export default function AccountingPage() {
     };
 
     const handleDeleteEntree = (id: string) => {
+        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         setConfirmDialog({
             open: true,
             title: t("confirm.deleteEntryTitle"),
             description: t("confirm.deleteEntryDescription"),
             onConfirm: async () => {
                 closeConfirm();
+                const entry = entrees.find((e) => e.id === id);
                 try {
                     await supabase.from("entrees_comptables").delete().eq("id", id);
+                    await logActivity(
+                        user.id, user.name, user.role,
+                        "accounting_entry", "entrees_comptables", id,
+                        `Entrée comptable supprimée — ${entry?.description ?? id}`,
+                        { montant: entry?.montant ?? null }
+                    );
                     await load();
                     showNotification(t("messages.entryDeleted"), "success");
                 } catch (err) {
@@ -503,14 +522,22 @@ export default function AccountingPage() {
     };
 
     const handleDeleteSortie = (id: string) => {
+        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         setConfirmDialog({
             open: true,
             title: t("confirm.deleteExpenseTitle"),
             description: t("confirm.deleteExpenseDescription"),
             onConfirm: async () => {
                 closeConfirm();
+                const sortie = sorties.find((s) => s.id === id);
                 try {
                     await supabase.from("sorties_comptables").delete().eq("id", id);
+                    await logActivity(
+                        user.id, user.name, user.role,
+                        "accounting_expense", "sorties_comptables", id,
+                        `Sortie comptable supprimée — ${sortie?.description ?? id}`,
+                        { montant: sortie?.montant ?? null }
+                    );
                     await load();
                     showNotification(t("messages.expenseDeleted"), "success");
                 } catch (err) {

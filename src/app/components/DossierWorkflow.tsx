@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from '../context/AuthContext';
+import { useNotificationContext } from '../context/NotificationContext';
+import { logActivity } from '../utils/activityLogger';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,12 +53,21 @@ const DOSSIER_STATUSES: {
     { status: 'termine', label: 'Terminé', color: 'bg-green-200 text-green-900 dark:bg-green-900/50 dark:text-green-200', description: 'Terminé', nextStatuses: [] }
 ];
 
+interface StudentLite {
+    id: string;
+    nom: string;
+    prenom: string;
+}
+
 export default function DossierWorkflow() {
     const { user } = useAuth();
     const supabase = createClient();
     const t = useTranslations("dossierWorkflow");
+    const { showNotification } = useNotificationContext();
     const [dossiers, setDossiers] = useState<DossierBourse[]>([]);
+    const [students, setStudents] = useState<StudentLite[]>([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState<DossierStatus>('en_attente');
     const [statusChangeModal, setStatusChangeModal] = useState<{
         dossier: DossierBourse;
@@ -66,12 +77,16 @@ export default function DossierWorkflow() {
 
     const loadDossiersByStatus = useCallback(async (status: DossierStatus) => {
         setLoading(true);
-        const { data } = await supabase
-            .from('dossier_bourses')
-            .select('*')
-            .eq('status', status)
-            .order('created_at', { ascending: false });
-        if (data) setDossiers(data);
+        const [dossiersRes, studentsRes] = await Promise.all([
+            supabase
+                .from('dossier_bourses')
+                .select('*')
+                .eq('status', status)
+                .order('created_at', { ascending: false }),
+            supabase.from('students').select('id, nom, prenom'),
+        ]);
+        if (dossiersRes.data) setDossiers(dossiersRes.data);
+        if (studentsRes.data) setStudents(studentsRes.data);
         setLoading(false);
     }, []);
 
@@ -79,24 +94,62 @@ export default function DossierWorkflow() {
         loadDossiersByStatus(selectedStatus);
     }, [selectedStatus, loadDossiersByStatus]);
 
+    const getStudentName = useCallback(
+        (studentId: string | null | undefined): string | null => {
+            if (!studentId) return null;
+            const s = students.find((s) => s.id === studentId);
+            return s ? `${s.prenom} ${s.nom}` : null;
+        },
+        [students]
+    );
+
     const handleStatusChange = async () => {
-        if (!statusChangeModal || !user) return;
+        if (!statusChangeModal || !user || submitting) return;
 
-        await supabase.from('dossier_bourses').update({
-            status: statusChangeModal.newStatus,
-            updated_at: new Date().toISOString()
-        }).eq('id', statusChangeModal.dossier.id);
+        const allowed = DOSSIER_STATUSES.find((s) => s.status === statusChangeModal.dossier.status)?.nextStatuses ?? [];
+        if (!allowed.includes(statusChangeModal.newStatus)) {
+            showNotification("Transition non autorisée", "error");
+            return;
+        }
 
-        await supabase.from('dossier_history').insert({
-            dossier_id: statusChangeModal.dossier.id,
-            action: 'status_change',
-            status: statusChangeModal.newStatus,
-            description: statusChangeModal.description,
-            performed_by: user.id
-        });
+        setSubmitting(true);
+        try {
+            const { error: updateErr } = await supabase.from('dossier_bourses').update({
+                status: statusChangeModal.newStatus,
+                updated_at: new Date().toISOString()
+            }).eq('id', statusChangeModal.dossier.id);
 
-        await loadDossiersByStatus(selectedStatus);
-        setStatusChangeModal(null);
+            if (updateErr) throw updateErr;
+
+            await supabase.from('dossier_history').insert({
+                dossier_id: statusChangeModal.dossier.id,
+                action: 'status_change',
+                status: statusChangeModal.newStatus,
+                description: statusChangeModal.description,
+                performed_by: user.id
+            });
+
+            const studentName = getStudentName(statusChangeModal.dossier.student_id) ?? statusChangeModal.dossier.student_id;
+            await logActivity(
+                user.id, user.name, user.role,
+                "dossier_status_change", "dossier_bourses", statusChangeModal.dossier.id,
+                `Dossier ${studentName} : ${statusChangeModal.dossier.status} → ${statusChangeModal.newStatus}`,
+                {
+                    dossier_id: statusChangeModal.dossier.id,
+                    previous_status: statusChangeModal.dossier.status,
+                    new_status: statusChangeModal.newStatus,
+                }
+            );
+
+            showNotification("Statut du dossier mis à jour", "success");
+            await loadDossiersByStatus(selectedStatus);
+            setStatusChangeModal(null);
+        } catch (err) {
+            console.error("Erreur changement statut dossier:", err);
+            showNotification("Erreur lors de la mise à jour du statut", "error");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const getStatusConfig = (status: string) => {
@@ -172,7 +225,7 @@ export default function DossierWorkflow() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>{t("listTitle", { label: getStatusConfig(selectedStatus)?.label, count: dossiers.length })}</CardTitle>
+                    <CardTitle>{t("listTitle", { label: getStatusConfig(selectedStatus)?.label ?? selectedStatus, count: dossiers.length })}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {dossiers.length === 0 ? (
@@ -186,10 +239,10 @@ export default function DossierWorkflow() {
                                     <div className="flex items-start justify-between mb-4">
                                         <div>
                                             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                                                {t("fileId", { id: dossier.id.slice(0, 8) })}
+                                                {getStudentName(dossier.student_id) ?? t("fileId", { id: dossier.id.slice(0, 8) })}
                                             </h3>
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                {t("studentId", { id: dossier.student_id?.slice(0, 8) })}
+                                                {t("fileId", { id: dossier.id.slice(0, 8) })}
                                             </p>
                                         </div>
                                         <Badge className={getStatusConfig(dossier.status)?.color}>
@@ -239,7 +292,7 @@ export default function DossierWorkflow() {
                         </div>
                         <div className="p-6">
                             <p className="text-gray-600 dark:text-gray-400 mb-4">
-                                {t("changeStatusDesc", { from: getStatusConfig(statusChangeModal.dossier.status)?.label, to: getStatusConfig(statusChangeModal.newStatus)?.label })}
+                                {t("changeStatusDesc", { from: getStatusConfig(statusChangeModal.dossier.status)?.label ?? statusChangeModal.dossier.status, to: getStatusConfig(statusChangeModal.newStatus)?.label ?? statusChangeModal.newStatus })}
                             </p>
                             <div className="space-y-2">
                                 <Label>{t("actionLabel")}</Label>
@@ -254,11 +307,11 @@ export default function DossierWorkflow() {
                             </div>
                         </div>
                         <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-                            <Button variant="outline" onClick={() => setStatusChangeModal(null)} className="flex-1">
+                            <Button variant="outline" onClick={() => setStatusChangeModal(null)} disabled={submitting} className="flex-1">
                                 {t("cancel")}
                             </Button>
-                            <Button onClick={handleStatusChange} disabled={!statusChangeModal.description.trim()} className="flex-1">
-                                {t("confirm")}
+                            <Button onClick={handleStatusChange} disabled={submitting || !statusChangeModal.description.trim()} className="flex-1">
+                                {submitting ? "..." : t("confirm")}
                             </Button>
                         </div>
                     </div>
