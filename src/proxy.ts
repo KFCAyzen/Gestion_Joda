@@ -7,7 +7,7 @@ export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Static files bypass all middleware
-  const isStaticFile = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|pdf|sw\.js)$/.test(pathname) || pathname.startsWith('/_next');
+  const isStaticFile = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|pdf|html|sw\.js)$/.test(pathname) || pathname.startsWith('/_next') || pathname.startsWith('/templates/');
   
   if (isStaticFile) {
     return NextResponse.next();
@@ -133,6 +133,6 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|pdf|sw\\.js)).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/.*|templates/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|pdf|html|sw\\.js)).*)',
   ],
 };

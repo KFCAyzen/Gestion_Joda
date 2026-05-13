@@ -8,7 +8,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { logActivity } from "../utils/activityLogger";
-import { printThermalReceipt } from "../utils/thermalReceipt";
+import { downloadReceipt } from "../utils/downloadReceipt";
 import ProtectedRoute from "./ProtectedRoute";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -304,18 +304,11 @@ export default function PaymentManagement() {
 
     const handlePrintReceipt = (payment: Payment) => {
         const student = students.find(s => s.id === payment.student_id);
-        const penalty = calculatePenalty(payment, resolvePenaltyConfig(payment, studentMap));
-        printThermalReceipt({
-            refId: payment.id,
-            date: payment.date_paiement
-                ? new Date(payment.date_paiement).toLocaleDateString(dateLocale)
-                : new Date().toLocaleDateString(dateLocale),
-            studentName: student ? `${student.nom} ${student.prenom}` : undefined,
-            service: getTypeLabel(payment.type),
-            tranche: payment.tranche ? `${payment.tranche}` : undefined,
-            montant: payment.montant,
-            penalite: penalty > 0 ? penalty : undefined,
-        });
+        if (!student) return;
+        void downloadReceipt(
+            { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: payment.validated_by, validated_at: payment.validated_at },
+            { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "" }
+        );
     };
 
     const confirmApprove = (paymentId: string) => {

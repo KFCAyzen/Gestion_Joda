@@ -22,7 +22,6 @@ import { SearchBar, FilterSelect, PageHeader, LoadingState, ErrorMessage, Status
 import { Eye, Edit, Printer, Download } from "lucide-react";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import { logActivity } from "../utils/activityLogger";
-import { printThermalReceipt } from "../utils/thermalReceipt";
 
 interface ApplicationFee {
     id: string;
@@ -204,13 +203,11 @@ export default function ApplicationFeeManagement() {
     };
 
     const handlePrintFeeThermal = (fee: ApplicationFee, student: Student | undefined) => {
-        printThermalReceipt({
-            refId: fee.id,
-            date: fee.date ? new Date(fee.date).toLocaleDateString(dateLocale) : new Date().toLocaleDateString(dateLocale),
-            studentName: student ? `${student.prenom} ${student.nom}` : undefined,
-            service: t("receipt.service"),
-            montant: fee.montant,
-        });
+        if (!student) return;
+        void downloadReceipt(
+            { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
+            { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere }
+        );
     };
 
     const getStatusColor = (status: string) => {
@@ -390,7 +387,6 @@ export default function ApplicationFeeManagement() {
                                                 { label: t("actions.details"), icon: <Eye className="h-4 w-4" />, onClick: () => setDetailFee(fee) },
                                                 ...((user?.role === "admin" || user?.role === "super_admin") ? [{ label: t("actions.edit"), icon: <Edit className="h-4 w-4" />, onClick: () => openEditFee(fee) }] : []),
                                                 ...(fee.status === "paye" && student ? [
-                                                    { label: t("actions.thermalReceipt"), icon: <Printer className="h-4 w-4" />, onClick: () => handlePrintFeeThermal(fee, student) },
                                                     { label: t("actions.downloadReceipt"), icon: <Download className="h-4 w-4" />, onClick: () => downloadReceipt(
                                                         { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
                                                         { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere }

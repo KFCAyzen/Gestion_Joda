@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../supabase';
+import { createClient } from '../supabase/client';
 import type {
   EntreeComptable,
   SortieComptable,
@@ -12,6 +12,8 @@ import {
   createEntreeComptableSchema,
   createSortieComptableSchema,
 } from '../schemas/accounting.schema';
+
+const supabase = createClient();
 
 export const ENTREES_KEY = ['entrees_comptables'];
 export const SORTIES_KEY = ['sorties_comptables'];

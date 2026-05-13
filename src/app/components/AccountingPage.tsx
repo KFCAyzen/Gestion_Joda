@@ -27,7 +27,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search, Eye, Edit } from "lucide-react";
-import { printThermalReceipt } from "../utils/thermalReceipt";
 import { generateAccountingReport } from "../lib/pdfGenerator";
 import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -600,16 +599,6 @@ export default function AccountingPage() {
         setSavingEdit(false);
     };
 
-    const handlePrintEntree = (e: EntreeComptable) => {
-        printThermalReceipt({
-            refId: e.id,
-            date: e.date ? new Date(e.date).toLocaleDateString(dateLocale) : new Date().toLocaleDateString(dateLocale),
-            service: getEntryTypeLabel(e.type),
-            description: e.description,
-            montant: e.montant,
-        });
-    };
-
     const exportToExcel = () => {
         setExporting(true);
         const data = [
@@ -1112,11 +1101,6 @@ export default function AccountingPage() {
                                                                             icon: <Eye className="h-4 w-4" />,
                                                                             onClick: () => setDetailEntree(e),
                                                                         },
-                                                                        {
-                                                                            label: t("actions.printReceipt"),
-                                                                            icon: <FileText className="h-4 w-4" />,
-                                                                            onClick: () => handlePrintEntree(e),
-                                                                        },
                                                                         ...(isAdmin
                                                                             ? [
                                                                                   {
@@ -1503,7 +1487,6 @@ export default function AccountingPage() {
                         <div className="flex justify-between"><span className="text-slate-500 dark:text-slate-400">{t("table.createdAt")}</span><span className="font-medium">{toDate(detailEntree.created_at).toLocaleDateString(dateLocale)}</span></div>
                     </div>
                     <div className="mt-5 flex gap-2">
-                        <Button size="sm" onClick={() => handlePrintEntree(detailEntree)} className="bg-emerald-600 hover:bg-emerald-700">{t("actions.printReceipt")}</Button>
                         <Button variant="outline" size="sm" onClick={() => setDetailEntree(null)}>{t("actions.close")}</Button>
                     </div>
                 </div>
