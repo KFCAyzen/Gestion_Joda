@@ -16,7 +16,7 @@ import {
     generateTemporaryPassword,
 } from "../lib/student-auth";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
-import { getBourseServiceType } from "../types/payment-config";
+import { getBourseServiceType, isInternational } from "../types/payment-config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +60,7 @@ interface Student {
     langue: string;
     diplome_acquis: string;
     choix: string;
+    nationalite?: string | null;
     created_by: string;
     created_at: string;
 }
@@ -77,6 +78,7 @@ const emptyFormData = {
     langue: "",
     diplome_acquis: "",
     choix: "procedure_seule",
+    nationalite: "",
 };
 
 export default function StudentManagement() {
@@ -344,12 +346,13 @@ export default function StudentManagement() {
             langue: student.langue,
             diplome_acquis: student.diplome_acquis,
             choix: student.choix,
+            nationalite: student.nationalite ?? "",
         });
         setActiveTab("form");
     };
 
     // Crée les tranches manquantes selon le service souscrit — sans toucher aux paiements existants
-    const syncPaymentsForStudent = async (studentId: string, choix: string, langue: string, niveau: string) => {
+    const syncPaymentsForStudent = async (studentId: string, choix: string, langue: string, niveau: string, nationalite?: string | null) => {
         const { data: existing } = await supabase
             .from("payments")
             .select("type")
@@ -363,21 +366,24 @@ export default function StudentManagement() {
         }[] = [];
 
         if ((choix === "procedure_seule" || choix === "procedure_cours") && !existingTypes.has("bourse")) {
-            const bourseCfg = getBourseConfig(niveau);
+            const bourseCfg = getBourseConfig(niveau, nationalite);
             bourseCfg.tranches.forEach(tr =>
                 toInsert.push({ student_id: studentId, type: "bourse", tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0 })
             );
         }
 
-        const langueKey = langue?.toLowerCase().includes("mandarin") ? "mandarin"
-            : langue?.toLowerCase().includes("anglais") ? "anglais"
-            : null;
+        // Les étrangers ne s'inscrivent pas aux cours de langues
+        if (!isInternational(nationalite)) {
+            const langueKey = langue?.toLowerCase().includes("mandarin") ? "mandarin"
+                : langue?.toLowerCase().includes("anglais") ? "anglais"
+                : null;
 
-        if ((choix === "cours_seuls" || choix === "procedure_cours") && langueKey && !existingTypes.has(langueKey)) {
-            const coursCfg = getConfig(langueKey as "mandarin" | "anglais");
-            coursCfg.tranches.forEach(tr =>
-                toInsert.push({ student_id: studentId, type: langueKey, tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0 })
-            );
+            if ((choix === "cours_seuls" || choix === "procedure_cours") && langueKey && !existingTypes.has(langueKey)) {
+                const coursCfg = getConfig(langueKey as "mandarin" | "anglais");
+                coursCfg.tranches.forEach(tr =>
+                    toInsert.push({ student_id: studentId, type: langueKey, tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0 })
+                );
+            }
         }
 
         if (toInsert.length > 0) {
@@ -394,6 +400,7 @@ export default function StudentManagement() {
             ...rawFormData,
             telephone: normalizePhoneNumber(phoneCountryCode, formData.telephone),
             age: parseInt(formData.age, 10) || 0,
+            nationalite: rawFormData.nationalite?.trim() || null,
         };
 
         if (studentData.age <= 0) {
@@ -451,7 +458,7 @@ export default function StudentManagement() {
                 }
 
                 // Synchroniser les paiements manquants selon le nouveau choix/langue
-                await syncPaymentsForStudent(editingStudent.id, formData.choix, formData.langue, formData.niveau);
+                await syncPaymentsForStudent(editingStudent.id, formData.choix, formData.langue, formData.niveau, formData.nationalite);
 
                 await loadStudents();
                 setActiveTab("list");
@@ -521,7 +528,7 @@ export default function StudentManagement() {
             }
 
             // Auto-créer les tranches de paiement selon les services souscrits
-            await syncPaymentsForStudent(data.id, formData.choix, formData.langue, formData.niveau);
+            await syncPaymentsForStudent(data.id, formData.choix, formData.langue, formData.niveau, formData.nationalite);
 
             setCreatedAccount({ username, password: temporaryPassword });
             setSelectedStudent(data);
@@ -829,6 +836,17 @@ export default function StudentManagement() {
                                                 {getChoiceLabel(selectedStudent.choix)}
                                             </p>
                                         </div>
+                                        {selectedStudent.nationalite && (
+                                            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                                                <p className="text-xs uppercase tracking-wider text-slate-400">Nationalité</p>
+                                                <p className="mt-2 text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                                    {selectedStudent.nationalite}
+                                                    {isInternational(selectedStudent.nationalite) && (
+                                                        <span className="inline-flex rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">International</span>
+                                                    )}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
                                         <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.createdAt")}</p>
@@ -844,6 +862,7 @@ export default function StudentManagement() {
                                             choix={selectedStudent.choix}
                                             langue={selectedStudent.langue || ""}
                                             niveau={selectedStudent.niveau || ""}
+                                            nationalite={selectedStudent.nationalite}
                                             payments={selectedStudentPayments}
                                             onDownloadReceipt={(p) =>
                                                 downloadReceipt(p, {
@@ -984,6 +1003,25 @@ export default function StudentManagement() {
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
+                                            <Label htmlFor="nationalite">Nationalité</Label>
+                                            <Input
+                                                id="nationalite"
+                                                value={formData.nationalite}
+                                                onChange={(e) => {
+                                                    const nat = e.target.value;
+                                                    const intl = isInternational(nat);
+                                                    setFormData({
+                                                        ...formData,
+                                                        nationalite: nat,
+                                                        // forcer procedure_seule pour les étrangers
+                                                        choix: intl ? "procedure_seule" : formData.choix,
+                                                        langue: intl ? "" : formData.langue,
+                                                    });
+                                                }}
+                                                placeholder="Ex : Camerounais, Sénégalais…"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
                                             <Label htmlFor="niveau">{t("form.level")}</Label>
                                             <Input
                                                 id="niveau"
@@ -1010,29 +1048,37 @@ export default function StudentManagement() {
                                                 onChange={(e) => setFormData({ ...formData, diplome_acquis: e.target.value })}
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="langue">{t("form.language")}</Label>
-                                            <Input
-                                                id="langue"
-                                                value={formData.langue}
-                                                onChange={(e) => setFormData({ ...formData, langue: e.target.value })}
-                                            />
-                                        </div>
+                                        {!isInternational(formData.nationalite) && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="langue">{t("form.language")}</Label>
+                                                <Input
+                                                    id="langue"
+                                                    value={formData.langue}
+                                                    onChange={(e) => setFormData({ ...formData, langue: e.target.value })}
+                                                />
+                                            </div>
+                                        )}
                                         <div className="space-y-2 sm:col-span-2">
                                             <Label htmlFor="choix">{t("form.choice")}</Label>
-                                            <Select
-                                                value={formData.choix || "procedure_seule"}
-                                                onValueChange={(value) => setFormData({ ...formData, choix: value || "procedure_seule" })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={t("form.choiceSelect")} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="procedure_seule">{t("form.procedure_seule")}</SelectItem>
-                                                    <SelectItem value="procedure_cours">{t("form.procedure_cours")}</SelectItem>
-                                                    <SelectItem value="cours_seuls">{t("form.cours_seuls")}</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            {isInternational(formData.nationalite) ? (
+                                                <div className="flex h-9 items-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm text-slate-500 dark:text-slate-400">
+                                                    {t("form.procedure_seule")} — étudiant étranger
+                                                </div>
+                                            ) : (
+                                                <Select
+                                                    value={formData.choix || "procedure_seule"}
+                                                    onValueChange={(value) => setFormData({ ...formData, choix: value || "procedure_seule" })}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder={t("form.choiceSelect")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="procedure_seule">{t("form.procedure_seule")}</SelectItem>
+                                                        <SelectItem value="procedure_cours">{t("form.procedure_cours")}</SelectItem>
+                                                        <SelectItem value="cours_seuls">{t("form.cours_seuls")}</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex justify-end gap-2 pt-4">

@@ -13,7 +13,7 @@ interface PaymentConfigContextValue {
     configs: Record<ServiceType, PaymentConfig>;
     isLoading: boolean;
     getConfig: (serviceType: ServiceType) => PaymentConfig;
-    getBourseConfig: (niveau?: string) => PaymentConfig;
+    getBourseConfig: (niveau?: string, nationalite?: string | null) => PaymentConfig;
     refresh: () => Promise<void>;
 }
 
@@ -21,7 +21,7 @@ const PaymentConfigContext = createContext<PaymentConfigContextValue>({
     configs: DEFAULT_PAYMENT_CONFIGS,
     isLoading: false,
     getConfig: (t) => DEFAULT_PAYMENT_CONFIGS[t],
-    getBourseConfig: (n) => DEFAULT_PAYMENT_CONFIGS[getBourseServiceType(n)],
+    getBourseConfig: (n, nat) => DEFAULT_PAYMENT_CONFIGS[getBourseServiceType(n, nat)],
     refresh: async () => {},
 });
 
@@ -84,7 +84,7 @@ export function PaymentConfigProvider({ children }: { children: ReactNode }) {
     );
 
     const getBourseConfig = useCallback(
-        (niveau?: string): PaymentConfig => getConfig(getBourseServiceType(niveau)),
+        (niveau?: string, nationalite?: string | null): PaymentConfig => getConfig(getBourseServiceType(niveau, nationalite)),
         [getConfig]
     );
 

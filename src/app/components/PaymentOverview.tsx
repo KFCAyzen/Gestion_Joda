@@ -191,6 +191,7 @@ export default function PaymentOverview({
     choix,
     langue,
     niveau,
+    nationalite,
     payments,
     onDownloadReceipt,
     onDeclarePayment,
@@ -198,6 +199,7 @@ export default function PaymentOverview({
     choix: string;
     langue: string;
     niveau?: string;
+    nationalite?: string | null;
     payments: Payment[];
     onDownloadReceipt?: (payment: Payment) => void;
     onDeclarePayment?: (payment: Payment | null, info: TrancheDeclareInfo) => void;
@@ -209,7 +211,7 @@ export default function PaymentOverview({
         const lc = langue.toLowerCase();
 
         if (choix === "procedure_seule" || choix === "procedure_cours") {
-            const cfg = getBourseConfig(niveau);
+            const cfg = getBourseConfig(niveau, nationalite);
             list.push(configToService(cfg, "bourse"));
         }
 
@@ -224,7 +226,7 @@ export default function PaymentOverview({
             list.push(configToService(getConfig("anglais"), "anglais"));
 
         return list;
-    }, [choix, langue, niveau, payments, getConfig, getBourseConfig]);
+    }, [choix, langue, niveau, nationalite, payments, getConfig, getBourseConfig]);
 
     const totalDu = services.reduce((sum, s) => sum + s.total, 0);
 
@@ -233,10 +235,10 @@ export default function PaymentOverview({
             const isLangue = p.type === "mandarin" || p.type === "anglais";
             const cfg = isLangue
                 ? getConfig(p.type as "mandarin" | "anglais")
-                : getBourseConfig(niveau);
+                : getBourseConfig(niveau, nationalite);
             return sum + calculatePenalty(p, { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty });
         }, 0);
-    }, [payments, getConfig, getBourseConfig, niveau]);
+    }, [payments, getConfig, getBourseConfig, niveau, nationalite]);
     const totalPaye = payments
         .filter((p) => p.status === "paye")
         .reduce((sum, p) => sum + p.montant, 0);
@@ -321,7 +323,7 @@ export default function PaymentOverview({
                 const isLangue = service.type === "mandarin" || service.type === "anglais";
                 const serviceCfg = isLangue
                     ? getConfig(service.type as "mandarin" | "anglais")
-                    : getBourseConfig(niveau);
+                    : getBourseConfig(niveau, nationalite);
                 const penaltyConfig = { grace_days: serviceCfg.grace_days, daily_penalty: serviceCfg.daily_penalty };
 
                 const sPayments = payments.filter((p) => p.type === service.type);

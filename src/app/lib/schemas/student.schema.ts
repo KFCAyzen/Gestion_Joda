@@ -13,6 +13,7 @@ export const studentSchema = z.object({
   langue: z.string().default('Anglais'),
   diplome_acquis: z.string().optional(),
   choix: z.enum(['procedure_seule', 'procedure_cours', 'cours_seuls']).default('procedure_seule'),
+  nationalite: z.string().optional().nullable(),
   userId: z.string().uuid().optional(),
   createdBy: z.string().optional(),
   createdAt: z.date(),

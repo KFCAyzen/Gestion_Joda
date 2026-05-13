@@ -6,7 +6,7 @@ export interface PaymentConfigTranche {
 
 export interface PaymentConfig {
     id?: string;
-    service_type: 'bourse_bachelor' | 'bourse_master' | 'mandarin' | 'anglais';
+    service_type: 'bourse_bachelor' | 'bourse_master' | 'bourse_bachelor_intl' | 'bourse_master_intl' | 'mandarin' | 'anglais';
     label: string;
     tranches: PaymentConfigTranche[];
     grace_days: number;
@@ -44,6 +44,30 @@ export const DEFAULT_PAYMENT_CONFIGS: Record<ServiceType, PaymentConfig> = {
         daily_penalty: 10000,
         deadline_offset_days: 30,
     },
+    bourse_bachelor_intl: {
+        service_type: 'bourse_bachelor_intl',
+        label: 'Procédure Bourse — Bachelor (International)',
+        tranches: [
+            { tranche: 1, label: 'Ouverture de dossier', montant: 150000 },
+            { tranche: 2, label: 'Caution', montant: 500000 },
+            { tranche: 3, label: 'Visa', montant: 1000000 },
+        ],
+        grace_days: 3,
+        daily_penalty: 10000,
+        deadline_offset_days: 30,
+    },
+    bourse_master_intl: {
+        service_type: 'bourse_master_intl',
+        label: 'Procédure Bourse — Master (International)',
+        tranches: [
+            { tranche: 1, label: 'Ouverture de dossier', montant: 150000 },
+            { tranche: 2, label: 'Caution', montant: 500000 },
+            { tranche: 3, label: 'Visa', montant: 1300000 },
+        ],
+        grace_days: 3,
+        daily_penalty: 10000,
+        deadline_offset_days: 30,
+    },
     mandarin: {
         service_type: 'mandarin',
         label: 'Cours de Mandarin',
@@ -72,8 +96,18 @@ export const DEFAULT_PAYMENT_CONFIGS: Record<ServiceType, PaymentConfig> = {
     },
 };
 
-export function getBourseServiceType(niveau?: string): ServiceType {
-    return niveau?.toLowerCase().includes('master') ? 'bourse_master' : 'bourse_bachelor';
+export function isInternational(nationalite?: string | null): boolean {
+    if (!nationalite) return false;
+    return nationalite.trim().toLowerCase() !== 'camerounais' &&
+           nationalite.trim().toLowerCase() !== 'camerounaise';
+}
+
+export function getBourseServiceType(niveau?: string, nationalite?: string | null): ServiceType {
+    const isMaster = niveau?.toLowerCase().includes('master');
+    if (isInternational(nationalite)) {
+        return isMaster ? 'bourse_master_intl' : 'bourse_bachelor_intl';
+    }
+    return isMaster ? 'bourse_master' : 'bourse_bachelor';
 }
 
 export function getTotalMontant(config: PaymentConfig): number {

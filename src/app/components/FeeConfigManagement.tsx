@@ -21,7 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Save, RotateCcw, GraduationCap, BookOpen } from "lucide-react";
 
 type TabId = "bourse" | "langues";
-type BourseSubTab = "bourse_bachelor" | "bourse_master";
+type BourseNiveauTab = "bachelor" | "master";
+type BourseOriginTab = "local" | "international";
 type LangueSubTab = "mandarin" | "anglais";
 
 function fmt(n: number) {
@@ -281,10 +282,16 @@ function ServiceConfigCard({
     );
 }
 
+function getBourseServiceTypeFromTabs(niveau: BourseNiveauTab, origin: BourseOriginTab): ServiceType {
+    if (niveau === "master") return origin === "international" ? "bourse_master_intl" : "bourse_master";
+    return origin === "international" ? "bourse_bachelor_intl" : "bourse_bachelor";
+}
+
 export default function FeeConfigManagement() {
     const { refresh } = usePaymentConfig();
     const [activeTab, setActiveTab] = useState<TabId>("bourse");
-    const [bourseSubTab, setBourseSubTab] = useState<BourseSubTab>("bourse_bachelor");
+    const [bourseNiveauTab, setBourseNiveauTab] = useState<BourseNiveauTab>("bachelor");
+    const [bourseOriginTab, setBourseOriginTab] = useState<BourseOriginTab>("local");
     const [langueSubTab, setLangueSubTab] = useState<LangueSubTab>("mandarin");
 
     const handleSaved = async () => {
@@ -336,14 +343,14 @@ export default function FeeConfigManagement() {
                         {/* Sous-onglets Bachelor / Master */}
                         <div className="flex gap-2">
                             {([
-                                { id: "bourse_bachelor" as BourseSubTab, label: "Bachelor" },
-                                { id: "bourse_master" as BourseSubTab, label: "Master" },
+                                { id: "bachelor" as BourseNiveauTab, label: "Bachelor" },
+                                { id: "master" as BourseNiveauTab, label: "Master" },
                             ] as const).map(({ id, label }) => (
                                 <button
                                     key={id}
-                                    onClick={() => setBourseSubTab(id)}
+                                    onClick={() => setBourseNiveauTab(id)}
                                     className={`rounded-lg border px-4 py-1.5 text-sm font-medium transition-all ${
-                                        bourseSubTab === id
+                                        bourseNiveauTab === id
                                             ? "border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
                                             : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 hover:text-slate-700 dark:text-slate-300"
                                     }`}
@@ -352,9 +359,28 @@ export default function FeeConfigManagement() {
                                 </button>
                             ))}
                         </div>
+                        {/* Sous-onglets Local / International */}
+                        <div className="flex gap-2">
+                            {([
+                                { id: "local" as BourseOriginTab, label: "Local" },
+                                { id: "international" as BourseOriginTab, label: "International" },
+                            ] as const).map(({ id, label }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => setBourseOriginTab(id)}
+                                    className={`rounded-lg border px-3 py-1 text-xs font-medium transition-all ${
+                                        bourseOriginTab === id
+                                            ? "border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                                            : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 hover:text-slate-700 dark:text-slate-300"
+                                    }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
                         <ServiceConfigCard
-                            key={bourseSubTab}
-                            serviceType={bourseSubTab}
+                            key={`${bourseNiveauTab}-${bourseOriginTab}`}
+                            serviceType={getBourseServiceTypeFromTabs(bourseNiveauTab, bourseOriginTab)}
                             onSaved={handleSaved}
                         />
                     </div>

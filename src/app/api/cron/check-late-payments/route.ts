@@ -58,7 +58,9 @@ export async function GET(req: NextRequest) {
           prenom,
           email,
           telephone,
-          langue
+          langue,
+          niveau,
+          nationalite
         )
       `)
       .in('status', ['attente', 'retard']);
@@ -79,8 +81,9 @@ export async function GET(req: NextRequest) {
 
     for (const payment of payments) {
       // Déterminer la config applicable
+      const student = payment.students as any;
       const serviceType: ServiceType = payment.type === 'bourse'
-        ? getBourseServiceType((payment as any).niveau)
+        ? getBourseServiceType(student?.niveau, student?.nationalite)
         : (payment.type as ServiceType);
       const cfg = feeConfigs[serviceType] ?? DEFAULT_PAYMENT_CONFIGS[serviceType];
       const graceDays = cfg?.grace_days ?? 3;
@@ -109,8 +112,6 @@ export async function GET(req: NextRequest) {
 
         const reminderDays = [1, 3, 7, 14, 30];
         if (reminderDays.includes(daysLate)) {
-          const student = payment.students as any;
-
           if (student) {
             const lang = getLang(student.langue);
             const isEn = lang === 'en';
