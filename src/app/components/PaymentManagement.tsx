@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +10,7 @@ import { calculatePenalty } from "../utils/penaltyCalculator";
 import { logActivity } from "../utils/activityLogger";
 import { printThermalReceipt } from "../utils/thermalReceipt";
 import ProtectedRoute from "./ProtectedRoute";
+import { usePaymentConfig } from "../context/PaymentConfigContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

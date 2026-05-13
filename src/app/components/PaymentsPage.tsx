@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Filter, Plus, CheckCircle2, X, Printer } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
@@ -306,7 +306,6 @@ export default function PaymentsPage() {
 
     const handlePrint = (payment: Payment) => {
         const student = getStudent(payment.student_id);
-        const studentMap = new Map(students.map((s) => [s.id, s]));
         const penalty = calculatePenalty(payment, resolvePenaltyConfig(payment, studentMap));
         printThermalReceipt({
             refId: payment.id,
@@ -457,7 +456,7 @@ export default function PaymentsPage() {
                                             : "?";
                                         const color = avatarColor(name);
                                         const isOverdue = payment.status === "retard";
-                                        const penalty = calculatePenalty(payment, resolvePenaltyConfig(payment, new Map(students.map((s) => [s.id, s]))));
+                                        const penalty = calculatePenalty(payment, resolvePenaltyConfig(payment, studentMap));
                                         const days = payment.date_limite
                                             ? daysLate(payment.date_limite)
                                             : 0;
