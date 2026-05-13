@@ -159,6 +159,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [studentId, setStudentId] = useState<string | null>(null);
     const [studentChoix, setStudentChoix] = useState<string>("");
     const [studentLangue, setStudentLangue] = useState<string>("");
+    const [studentNationalite, setStudentNationalite] = useState<string | null>(null);
     const [studentInfo, setStudentInfo] = useState<ReceiptStudent | null>(null);
     const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
     const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -191,7 +192,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             // Récupérer l'ID étudiant depuis la table students via created_by
             const { data: studentData } = await supabase
                 .from("students")
-                .select("id, choix, langue, nom, prenom, email, telephone, niveau, filiere")
+                .select("id, choix, langue, nom, prenom, email, telephone, niveau, filiere, nationalite")
                 .eq("created_by", user.id)
                 .single();
 
@@ -200,6 +201,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             setStudentId(sid);
             setStudentChoix(studentData?.choix ?? "");
             setStudentLangue(studentData?.langue ?? "");
+            setStudentNationalite(studentData?.nationalite ?? null);
             setStudentInfo({
                 nom: studentData?.nom ?? "",
                 prenom: studentData?.prenom ?? "",
@@ -561,6 +563,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     choix={studentChoix}
                                     langue={studentLangue}
                                     niveau={studentInfo?.niveau ?? ""}
+                                    nationalite={studentNationalite}
                                     payments={payments}
                                     onDownloadReceipt={studentInfo
                                         ? (p) => downloadReceipt(p, studentInfo)

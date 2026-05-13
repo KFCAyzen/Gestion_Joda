@@ -498,13 +498,14 @@ export function usePayments(studentId?: string) {
       
       const { data: latePayments } = await supabase
         .from('payments')
-        .select('*')
+        .select('*, students(niveau, nationalite)')
         .neq('status', 'paye');
-      
+
       if (latePayments) {
         for (const p of latePayments) {
+          const student = (p as any).students;
           const serviceType = p.type === 'bourse'
-            ? getBourseServiceType(p.niveau)
+            ? getBourseServiceType(student?.niveau, student?.nationalite)
             : p.type as 'mandarin' | 'anglais';
           const cfg = getConfig(serviceType as any);
           const penalties = calculatePenalty(p, cfg ? { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty } : undefined);
