@@ -92,11 +92,11 @@ const STATUS_COLORS: Record<string, string> = {
     valide: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]",
     en_attente: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg-muted)]",
     non_conforme: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]",
-    document_recu: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
-    en_cours: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
+    document_recu: "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-ring-stand)]",
+    en_cours: "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-ring-stand)]",
     admission_validee: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]",
     admission_rejetee: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]",
-    visa_en_cours: "border-white/12 bg-white/5 text-[var(--student-ring-stand)]",
+    visa_en_cours: "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-ring-stand)]",
     termine: "border-[rgba(220,38,38,0.12)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)]",
 };
 
@@ -432,10 +432,10 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
 
     const toneStyles = nextAction.tone === "danger"
-        ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]", ring: "ring-white/10" }
+        ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]", ring: "ring-[var(--student-border)]" }
         : nextAction.tone === "warn"
-          ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)]", ring: "ring-white/10" }
-          : { icon: <CheckCircle2 className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]", ring: "ring-white/10" };
+          ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)]", ring: "ring-[var(--student-border)]" }
+          : { icon: <CheckCircle2 className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]", ring: "ring-[var(--student-border)]" };
 
     return (
         <>
@@ -489,8 +489,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     </div>
                                 </div>
                                 <Button
-                                    className="mt-4 w-full rounded-2xl border border-[rgba(220,38,38,0.25)] bg-[rgba(220,38,38,0.08)] text-[var(--student-ring-move)] shadow-[0_8px_24px_rgba(220,38,38,0.15)] hover:bg-[rgba(220,38,38,0.14)] dark:border-white/12 dark:bg-[linear-gradient(135deg,rgba(220,38,38,0.35),rgba(185,28,28,0.25))] dark:text-white dark:shadow-[0_16px_44px_rgba(0,0,0,0.35)] dark:hover:bg-[linear-gradient(135deg,rgba(220,38,38,0.45),rgba(185,28,28,0.32))] sm:w-auto sm:self-start"
-                                    onClick={() => setView(nextAction.cta.view)}
+                                    className="mt-4 w-full rounded-2xl border border-[rgba(220,38,38,0.25)] bg-[rgba(220,38,38,0.08)] text-[var(--student-ring-move)] shadow-[0_8px_24px_rgba(220,38,38,0.15)] hover:bg-[rgba(220,38,38,0.14)] dark:bg-[linear-gradient(135deg,rgba(220,38,38,0.35),rgba(185,28,28,0.25))] dark:text-white dark:shadow-[0_16px_44px_rgba(0,0,0,0.35)] dark:hover:bg-[linear-gradient(135deg,rgba(220,38,38,0.45),rgba(185,28,28,0.32))] sm:w-auto sm:self-start"
                                 >
                                     {nextAction.cta.label}
                                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -508,7 +507,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         <p className="text-2xl font-semibold tracking-tight text-[var(--student-fg)]">{unpaid.length}</p>
                                         <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{paymentsProgressPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.10)] dark:bg-white/10">
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.08)] dark:bg-white/10">
                                         <div className="h-1.5 rounded-full bg-[var(--student-ring-move)]" style={{ width: `${Math.min(100, paymentsProgressPct)}%` }} />
                                     </div>
                                 </button>
@@ -523,7 +522,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         <p className="text-2xl font-semibold tracking-tight text-[var(--student-fg)]">{pendingDocs.length}</p>
                                         <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{docsProgressPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.10)] dark:bg-white/10">
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.08)] dark:bg-white/10">
                                         <div className="h-1.5 rounded-full bg-[var(--student-ring-exercise)]" style={{ width: `${Math.min(100, docsProgressPct)}%` }} />
                                     </div>
                                 </button>
@@ -538,7 +537,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         <p className="truncate text-base font-semibold tracking-tight text-[var(--student-fg)]">{dossierStatusLabel ? dossierStatusLabel : t("dossier.noFile")}</p>
                                         <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{dossierStepPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.10)] dark:bg-white/10">
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.08)] dark:bg-white/10">
                                         <div className="h-1.5 rounded-full bg-[var(--student-ring-stand)]" style={{ width: `${Math.min(100, dossierStepPct)}%` }} />
                                     </div>
                                 </button>
@@ -768,7 +767,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
                     <div className="mb-4 max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
                         {/* Montant attendu */}
-                        <div className="flex items-center justify-between rounded-2xl border border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] dark:border-white/12 dark:bg-white/5 px-4 py-3">
+                        <div className="flex items-center justify-between rounded-2xl border border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] px-4 py-3">
                             <span className="text-[var(--student-fg-muted)]">{t("payments.expectedAmount")}</span>
                             <span className="font-semibold text-[var(--student-fg)]">{formatMontant(declareModal.montantTranche)}</span>
                         </div>
@@ -780,7 +779,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "complet"
                                         ? "border-[rgba(220,38,38,0.35)] bg-[rgba(220,38,38,0.12)] text-[var(--student-neon-lime)]"
-                                        : "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)] hover:bg-[rgba(220,38,38,0.08)] dark:border-white/10 dark:bg-black/35 dark:text-white/65 dark:hover:bg-white/[0.07]"
+                                        : "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)] hover:bg-[rgba(220,38,38,0.08)]"
                                 }`}
                             >
                                 {t("payments.fullPayment")}
@@ -790,7 +789,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "avance"
                                         ? "border-[rgba(220,38,38,0.35)] bg-[rgba(220,38,38,0.12)] text-[var(--student-neon-lime)]"
-                                        : "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)] hover:bg-[rgba(220,38,38,0.08)] dark:border-white/10 dark:bg-black/35 dark:text-white/65 dark:hover:bg-white/[0.07]"
+                                        : "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)] hover:bg-[rgba(220,38,38,0.08)]"
                                 }`}
                             >
                                 {t("payments.deposit")}
@@ -807,7 +806,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     max={declareModal.montantTranche}
                                     value={montantAvance}
                                     onChange={e => setMontantAvance(e.target.value)}
-                                    className="student-focus-ring w-full rounded-2xl border border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.04)] dark:border-white/12 dark:bg-white/5 px-3 py-2 text-sm text-[var(--student-fg)] placeholder:text-[var(--student-fg-muted)]"
+                                    className="student-focus-ring w-full rounded-2xl border border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.04)] px-3 py-2 text-sm text-[var(--student-fg)] placeholder:text-[var(--student-fg-muted)]"
                                     placeholder={t("payments.amountPaid")}
                                 />
                             </div>
@@ -824,12 +823,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 className="hidden"
                             />
                             {proofDataUrl ? (
-                                <div className="flex items-center gap-2 rounded-2xl border border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] dark:border-white/12 dark:bg-white/5 px-3 py-2">
+                                <div className="flex items-center gap-2 rounded-2xl border border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] px-3 py-2">
                                     <Upload className="h-4 w-4 text-[var(--student-neon-lime)]" />
                                     <span className="flex-1 text-xs text-[var(--student-fg)]">{t("payments.fileAttached")}</span>
                                     <button
                                         onClick={() => { setProofDataUrl(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
-                                        className="student-focus-ring text-white/55 hover:text-white"
+                                        className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
@@ -837,7 +836,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             ) : (
                                 <button
                                     onClick={() => proofInputRef.current?.click()}
-                                    className="student-focus-ring flex w-full items-center gap-2 rounded-2xl border border-dashed border-[rgba(220,38,38,0.22)] dark:border-white/20 px-3 py-2.5 text-xs text-[var(--student-fg-muted)] transition-colors hover:border-[rgba(220,38,38,0.38)] hover:text-[var(--student-ring-move)] dark:hover:border-white/28 dark:hover:text-white"
+                                    className="student-focus-ring flex w-full items-center gap-2 rounded-2xl border border-dashed border-[rgba(220,38,38,0.22)] px-3 py-2.5 text-xs text-[var(--student-fg-muted)] transition-colors hover:border-[rgba(220,38,38,0.38)] hover:text-[var(--student-ring-move)]"
                                 >
                                     <Upload className="h-4 w-4" />
                                     {t("payments.uploadReceipt")}
@@ -851,7 +850,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     </p>
 
                     <div className="flex gap-3">
-                        <Button variant="outline" className="student-chip flex-1 rounded-2xl border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)] dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white" onClick={() => setDeclareModal(null)} disabled={declaring}>
+                        <Button variant="outline" className="student-chip flex-1 rounded-2xl border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]" onClick={() => setDeclareModal(null)} disabled={declaring}>
                             {t("payments.cancel")}
                         </Button>
                         <Button
@@ -892,7 +891,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 {t("payments.downloadReceipt")}
                             </button>
                         )}
-                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] px-3 py-2 text-xs font-semibold text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)] dark:border-white/12 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10">{t("common.close")}</button>
+                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] px-3 py-2 text-xs font-semibold text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]">{t("common.close")}</button>
                     </div>
                 </div>
             </div>
