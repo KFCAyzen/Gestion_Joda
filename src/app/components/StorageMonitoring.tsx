@@ -143,7 +143,7 @@ export default function StorageMonitoring() {
           <span className="text-xs text-slate-500 dark:text-slate-400">
             {t("lastRefresh", { time: lastRefresh.toLocaleTimeString(locale === "en" ? "en-US" : "fr-FR") })}
           </span>
-          <Button onClick={loadStats} variant="outline" size="sm">
+          <Button onClick={loadStats} variant="outline" size="sm" className="border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
             {t("refresh")}
           </Button>
         </div>
@@ -180,11 +180,11 @@ export default function StorageMonitoring() {
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   {formatFileSize(storageStats.totalSize)} / {SUPABASE_FREE_LIMIT_MB} MB
                 </span>
-                <span className={`text-sm font-bold ${isCritical ? 'text-red-600' : isWarning ? 'text-orange-600' : 'text-slate-900 dark:text-slate-100'}`}>
+                <span className={`text-sm font-bold ${isCritical ? 'text-red-500 dark:text-red-400' : isWarning ? 'text-orange-500 dark:text-orange-400' : 'text-slate-900 dark:text-slate-100'}`}>
                   {usagePercentage.toFixed(1)}%
                 </span>
               </div>
-              <div className="h-4 w-full rounded-full bg-slate-200">
+              <div className="h-4 w-full rounded-full bg-slate-200 dark:bg-slate-700">
                 <div
                   className={`h-4 rounded-full transition-all duration-500 ${
                     isCritical ? 'bg-red-600' : isWarning ? 'bg-orange-500' : 'bg-gradient-to-r from-red-500 to-orange-400'

@@ -204,9 +204,7 @@ export default function ActivityLogsPage() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 sm:text-3xl">{t("header.title")}</h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("header.description")}</p>
           </div>
-          <div className="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-            {t("header.adminOnly")}
-          </div>
+
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">

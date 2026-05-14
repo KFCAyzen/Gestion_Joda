@@ -320,7 +320,7 @@ export default function FeeConfigManagement() {
                 </div>
 
                 {/* Tabs principaux */}
-                <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-slate-700/50 p-1 w-fit">
+                <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-slate-900/60 p-1 w-fit">
                     {([
                         { id: "bourse" as TabId, label: "Procédure Bourse", icon: <GraduationCap className="h-4 w-4" /> },
                         { id: "langues" as TabId, label: "Cours de Langues", icon: <BookOpen className="h-4 w-4" /> },
@@ -330,8 +330,8 @@ export default function FeeConfigManagement() {
                             onClick={() => setActiveTab(id)}
                             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                                 activeTab === id
-                                    ? "bg-white text-slate-900 dark:text-slate-100 shadow-sm"
-                                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100"
+                                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                                    : "text-slate-500 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
                             }`}
                         >
                             {icon}
