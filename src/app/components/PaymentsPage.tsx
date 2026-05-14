@@ -102,9 +102,9 @@ function typeLabel(type: string, tranche: number | null): string {
                 : type;
     if (!tranche) return base;
     const labels: Record<number, string> = {
-        1: "Ouverture de dossier",
-        2: "Caution",
-        3: "Visa",
+        1: "T1",
+        2: "T2",
+        3: "T3",
         4: "T4",
         5: "Inscription cours Anglais",
         6: "Inscription cours Mandarin",
@@ -756,9 +756,9 @@ export default function PaymentsPage() {
                                         }
                                         className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
                                     >
-                                        <option value="1">T1 — Ouverture de dossier</option>
-                                        <option value="2">T2 — Caution</option>
-                                        <option value="3">T3 — Visa</option>
+                                        <option value="1">T1</option>
+                                        <option value="2">T2</option>
+                                        <option value="3">T3</option>
                                         <option value="4">T4</option>
                                         <option value="5">Inscription cours Anglais</option>
                                         <option value="6">Inscription cours Mandarin</option>
