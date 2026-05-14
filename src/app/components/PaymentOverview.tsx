@@ -43,12 +43,12 @@ function computeTrancheState(
     if (!payment) {
         return {
             barPct: 0,
-            barColor: "bg-white/10",
+            barColor: "bg-[var(--student-border)]",
             penalty: 0,
             daysLabel: null as string | null,
-            daysColor: "text-white/55",
+            daysColor: "text-[var(--student-fg-muted)]",
             statusLabel: "Non planifiée",
-            statusBadge: "border-white/10 bg-black/30 text-white/65",
+            statusBadge: "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-fg-muted)]",
         };
     }
 
@@ -72,12 +72,12 @@ function computeTrancheState(
     if (payment.status === "en_validation") {
         return {
             barPct: 85,
-            barColor: "bg-[var(--student-ring-stand)]",
+            barColor: "bg-[var(--student-ring-exercise)]",
             penalty: 0,
             daysLabel: "__in_validation",
-            daysColor: "text-[var(--student-ring-stand)]",
+            daysColor: "text-[var(--student-ring-exercise)]",
             statusLabel: "En validation",
-            statusBadge: "border-white/10 bg-black/30 text-[var(--student-ring-stand)]",
+            statusBadge: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]",
         };
     }
 
@@ -85,12 +85,12 @@ function computeTrancheState(
     if (!payment.date_limite) {
         return {
             barPct: 5,
-            barColor: "bg-white/15",
+            barColor: "bg-[var(--student-border)]",
             penalty: 0,
             daysLabel: "__no_deadline",
-            daysColor: "text-white/55",
+            daysColor: "text-[var(--student-fg-muted)]",
             statusLabel: "En attente",
-            statusBadge: "border-white/10 bg-black/30 text-white/70",
+            statusBadge: "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-fg-muted)]",
         };
     }
 
@@ -136,7 +136,7 @@ function computeTrancheState(
             daysLabel: `__days_left:${daysToDeadline}:${deadline.toISOString()}:${deadline.toLocaleDateString("fr-FR")}`,
             daysColor,
             statusLabel: "En attente",
-            statusBadge: "border-white/10 bg-black/30 text-white/75",
+            statusBadge: "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-fg-muted)]",
         };
     }
 
@@ -151,7 +151,7 @@ function computeTrancheState(
             daysLabel: `__grace:${daysToGraceEnd}:${graceDays}`,
             daysColor: "text-[var(--student-ring-move)]",
             statusLabel: "En attente",
-            statusBadge: "border-white/10 bg-black/30 text-white/75",
+            statusBadge: "border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-move)]",
         };
     }
 
@@ -274,7 +274,7 @@ export default function PaymentOverview({
 
     if (services.length === 0) {
         return (
-            <p className="py-4 text-center text-sm text-white/60">
+            <p className="py-4 text-center text-sm text-[var(--student-fg-muted)]">
                 {t("noService")}
             </p>
         );
@@ -285,24 +285,24 @@ export default function PaymentOverview({
             {/* Résumé financier — glass olive + chiffres néon */}
             <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/50 sm:text-[10px]">{t("totalDue")}</p>
-                    <p className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-white sm:text-lg">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-fg-muted)] sm:text-[10px]">{t("totalDue")}</p>
+                    <p className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-[var(--student-fg)] sm:text-lg">
                         {totalDu.toLocaleString("fr-FR")}
                     </p>
-                    <p className="text-[9px] text-white/45 sm:text-[10px]">FCFA</p>
+                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">FCFA</p>
                 </div>
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-neon-lime)]/80 sm:text-[10px]">{t("paid")}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-ring-exercise)] sm:text-[10px]">{t("paid")}</p>
                     <p
-                        className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-[var(--student-neon-lime)] sm:text-lg"
+                        className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-[var(--student-ring-exercise)] sm:text-lg"
                         style={{ textShadow: "var(--student-pay-glow-soft)" }}
                     >
                         {totalPaye.toLocaleString("fr-FR")}
                     </p>
-                    <p className="text-[9px] text-white/45 sm:text-[10px]">FCFA</p>
+                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">FCFA</p>
                 </div>
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/50 sm:text-[10px]">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-fg-muted)] sm:text-[10px]">
                         {totalPenalties > 0 ? t("remainingWithPenalty") : t("remaining")}
                     </p>
                     <p
@@ -311,13 +311,13 @@ export default function PaymentOverview({
                     >
                         {reste.toLocaleString("fr-FR")}
                     </p>
-                    <p className="text-[9px] text-white/45 sm:text-[10px]">FCFA</p>
+                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">FCFA</p>
                 </div>
             </div>
 
             {totalPenalties > 0 && (
                 <div className="student-pay-pill flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                    <span className="text-xs font-semibold text-white/65">{t("cumulatedPenalties")}</span>
+                    <span className="text-xs font-semibold text-[var(--student-fg-muted)]">{t("cumulatedPenalties")}</span>
                     <span className="text-sm font-semibold tabular-nums text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
                         {fmt(totalPenalties)}
                     </span>
@@ -326,20 +326,20 @@ export default function PaymentOverview({
 
             {/* Progression globale — barre néon lime */}
             <div className="student-pay-surface-soft px-4 py-3.5 sm:px-5 sm:py-4">
-                <div className="mb-2 flex justify-between text-xs text-white/55">
+                <div className="mb-2 flex justify-between text-xs text-[var(--student-fg-muted)]">
                     <span className="font-medium">{t("globalProgress")}</span>
-                    <span className="font-semibold tabular-nums text-[var(--student-neon-lime)]">{pct}%</span>
+                    <span className="font-semibold tabular-nums text-[var(--student-ring-exercise)]">{pct}%</span>
                 </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/45 ring-1 ring-white/[0.06] sm:h-3">
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-[rgba(0,0,0,0.08)] ring-1 ring-[var(--student-border)] dark:bg-black/45 dark:ring-white/[0.06] sm:h-3">
                     <div
-                        className="h-full rounded-full bg-[var(--student-neon-lime)] transition-all duration-700"
+                        className="h-full rounded-full bg-[var(--student-ring-exercise)] transition-all duration-700"
                         style={{
                             width: `${pct}%`,
                             boxShadow: "var(--student-pay-glow)",
                         }}
                     />
                 </div>
-                <div className="mt-1.5 flex justify-between text-[10px] text-white/45">
+                <div className="mt-1.5 flex justify-between text-[10px] text-[var(--student-fg-muted)]">
                     <span>{t("paidAmount", { amount: totalPaye.toLocaleString(locale === "en" ? "en-US" : "fr-FR") })}</span>
                     <span>{t("totalAmount", { amount: totalDu.toLocaleString(locale === "en" ? "en-US" : "fr-FR") })}</span>
                 </div>
@@ -366,14 +366,14 @@ export default function PaymentOverview({
                     <div key={service.type} className="space-y-3">
                         <div className="student-pay-surface-soft flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
                             <div className="min-w-0">
-                                <p className="text-sm font-semibold tracking-tight text-white">{service.label}</p>
-                                <p className="mt-0.5 text-[10px] text-white/50">
+                                <p className="text-sm font-semibold tracking-tight text-[var(--student-fg)]">{service.label}</p>
+                                <p className="mt-0.5 text-[10px] text-[var(--student-fg-muted)]">
                                     {t("installmentsPaid", { paid: paidCount, total: service.tranches.length, plural: service.tranches.length > 1 ? "s" : "" })}
                                 </p>
                             </div>
                             <div className="shrink-0 text-right">
-                                <p className="text-sm font-semibold tabular-nums text-[var(--student-neon-lime)]">{sPct}%</p>
-                                <p className="text-[10px] text-white/45">
+                                <p className="text-sm font-semibold tabular-nums text-[var(--student-ring-exercise)]">{sPct}%</p>
+                                <p className="text-[10px] text-[var(--student-fg-muted)]">
                                     {sPaid.toLocaleString("fr-FR")} / {service.total.toLocaleString("fr-FR")}
                                 </p>
                             </div>
@@ -408,20 +408,20 @@ export default function PaymentOverview({
                                                 <div className="flex items-start gap-3">
                                                     <div
                                                         className={[
-                                                            "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-[12px] font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+                                                            "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-[12px] font-bold",
                                                             payment?.status === "paye"
-                                                                ? "border-[rgba(220,38,38,0.28)] bg-black/35 text-[var(--student-neon-lime)]"
+                                                                ? "border-[rgba(220,38,38,0.28)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-exercise)]"
                                                                 : state.statusLabel === "En retard"
-                                                                  ? "border-[rgba(255,65,85,0.35)] bg-black/35 text-[var(--student-ring-move)]"
+                                                                  ? "border-[rgba(255,65,85,0.35)] bg-[rgba(255,65,85,0.06)] text-[var(--student-ring-move)]"
                                                                   : state.statusLabel === "En validation"
-                                                                    ? "border-white/12 bg-black/35 text-[var(--student-ring-stand)]"
-                                                                    : "border-white/10 bg-black/30 text-white/80",
+                                                                    ? "border-[rgba(220,38,38,0.20)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]"
+                                                                    : "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-fg-muted)]",
                                                         ].join(" ")}
                                                     >
                                                         {tranche.tranche}
                                                     </div>
                                                     <div className="min-w-0 flex-1 pt-0.5">
-                                                        <p className="text-[13px] font-semibold leading-snug text-white sm:text-sm">
+                                                        <p className="text-[13px] font-semibold leading-snug text-[var(--student-fg)] sm:text-sm">
                                                             {tranche.label}
                                                         </p>
                                                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -431,12 +431,12 @@ export default function PaymentOverview({
                                                                 {state.statusLabel === "En retard" ? t("statuses.late") : state.statusLabel === "En validation" ? t("statuses.inValidation") : state.statusLabel === "Non planifiée" ? t("statuses.unplanned") : t("statuses.pending")}
                                                             </span>
                                                             {payment?.date_limite && payment.status !== "paye" ? (
-                                                                <span className="text-[10px] text-white/45">
+                                                                <span className="text-[10px] text-[var(--student-fg-muted)]">
                                                                     {t("deadline", { date: new Date(payment.date_limite).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR") })}
                                                                 </span>
                                                             ) : null}
                                                         </div>
-                                                        <p className="mt-2 text-lg font-semibold tabular-nums tracking-tight text-white">
+                                                        <p className="mt-2 text-lg font-semibold tabular-nums tracking-tight text-[var(--student-fg)]">
                                                             {fmt(tranche.montant)}
                                                         </p>
                                                     </div>
@@ -447,9 +447,9 @@ export default function PaymentOverview({
                                                         <span className={`min-w-0 flex-1 text-[10px] font-medium leading-snug ${state.daysColor}`}>
                                                             {resolveDaysLabel(state.daysLabel, t, locale) ?? "\u00a0"}
                                                         </span>
-                                                        <span className="shrink-0 text-[10px] tabular-nums text-white/45">{state.barPct}%</span>
+                                                        <span className="shrink-0 text-[10px] tabular-nums text-[var(--student-fg-muted)]">{state.barPct}%</span>
                                                     </div>
-                                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/50 ring-1 ring-white/[0.05]">
+                                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(0,0,0,0.08)] ring-1 ring-[var(--student-border)] dark:bg-black/50 dark:ring-white/[0.05]">
                                                         <div
                                                             className={`h-1.5 rounded-full transition-all duration-500 ${state.barColor}`}
                                                             style={{ width: `${state.barPct}%` }}
@@ -461,14 +461,14 @@ export default function PaymentOverview({
                                             <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
                                                 {payment?.status === "paye" ? (
                                                     <div
-                                                        className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border-2 border-[rgba(220,38,38,0.45)] bg-black/40 text-[var(--student-neon-lime)] shadow-[var(--student-pay-glow-soft)]"
+                                                        className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border-2 border-[rgba(220,38,38,0.45)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-exercise)] shadow-[var(--student-pay-glow-soft)]"
                                                         title={t("statuses.paid")}
                                                     >
                                                         <Check className="h-6 w-6 stroke-[2.5]" aria-hidden />
                                                     </div>
                                                 ) : payment?.status === "en_validation" ? (
                                                     <div
-                                                        className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border border-white/14 bg-black/40 text-[var(--student-ring-stand)]"
+                                                        className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border border-[rgba(220,38,38,0.20)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]"
                                                         title={t("statuses.inValidation")}
                                                     >
                                                         <Loader2 className="h-6 w-6 animate-spin opacity-90" aria-hidden />
@@ -488,7 +488,7 @@ export default function PaymentOverview({
 
                                         {state.penalty > 0 ? (
                                             <div className="student-pay-pill flex items-center justify-between gap-2 px-3 py-2">
-                                                <span className="text-[10px] font-semibold text-white/65">{t("latePaymentPenalty")}</span>
+                                                <span className="text-[10px] font-semibold text-[var(--student-fg-muted)]">{t("latePaymentPenalty")}</span>
                                                 <span className="text-xs font-semibold tabular-nums text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
                                                     +{fmt(state.penalty)}
                                                 </span>
@@ -500,13 +500,13 @@ export default function PaymentOverview({
                                                 <button
                                                     type="button"
                                                     onClick={() => onDownloadReceipt(payment)}
-                                                    className="student-focus-ring student-pay-pill flex-1 px-3 py-2 text-center text-xs font-semibold text-[var(--student-neon-lime)] transition-colors hover:bg-white/[0.06] sm:flex-none"
+                                                    className="student-focus-ring student-pay-pill flex-1 px-3 py-2 text-center text-xs font-semibold text-[var(--student-ring-exercise)] transition-colors hover:bg-[rgba(220,38,38,0.06)] sm:flex-none"
                                                 >
                                                     {t("downloadReceipt")}
                                                 </button>
                                             ) : null}
                                             {payment?.status === "en_validation" ? (
-                                                <div className="student-pay-pill flex flex-1 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--student-ring-stand)] sm:flex-none">
+                                                <div className="student-pay-pill flex flex-1 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--student-ring-exercise)] sm:flex-none">
                                                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
                                                     {t("waitingValidation")}
                                                 </div>

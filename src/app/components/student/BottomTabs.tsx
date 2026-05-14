@@ -59,8 +59,8 @@ export function BottomTabs({
                 className={[
                   "flex h-10 w-10 items-center justify-center rounded-2xl border transition-all duration-200",
                   active
-                    ? "border-[rgba(220,38,38,0.25)] bg-[rgba(220,38,38,0.08)] shadow-[0_8px_24px_rgba(220,38,38,0.15)] dark:border-white/18 dark:bg-white/8 dark:shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
-                    : "border-[rgba(220,38,38,0.10)] bg-[rgba(220,38,38,0.04)] dark:border-white/10 dark:bg-white/5",
+                    ? "border-[rgba(255,255,255,0.30)] bg-white/18 shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:border-white/18 dark:bg-white/8 dark:shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
+                    : "border-[rgba(255,255,255,0.12)] bg-white/8 dark:border-white/10 dark:bg-white/5",
                 ].join(" ")}
               >
                 <Icon className={iconCls} />
@@ -68,7 +68,7 @@ export function BottomTabs({
               <span className="truncate">{t(NAV_KEYS[id] as any)}</span>
               {active ? (
                 <span
-                  className="absolute inset-x-5 top-1 h-1 rounded-full bg-[var(--student-ring-move)] opacity-90 shadow-[0_6px_16px_rgba(220,38,38,0.30)]"
+                  className="absolute inset-x-5 top-1 h-1 rounded-full bg-white opacity-90 shadow-[0_6px_16px_rgba(255,255,255,0.30)]"
                   aria-hidden="true"
                 />
               ) : null}

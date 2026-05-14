@@ -20,34 +20,35 @@ interface StudentPaymentsListProps {
 
 export default function StudentPaymentsList({ payments, onBack, getPaymentStatusColor, onGenerateReceipt }: StudentPaymentsListProps) {
     return (
-        <div className="joda-surface">
-            <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
-                <h3 className="text-lg font-semibold text-slate-900">Historique des paiements</h3>
-                <Button variant="link" onClick={onBack} className="h-auto p-0 text-sm text-slate-600">Retour</Button>
+        <div className="student-pay-surface p-4 sm:p-6">
+            <div className="mb-6 flex items-center justify-between border-b pb-4" style={{ borderColor: "var(--student-border)" }}>
+                <h3 className="text-lg font-semibold" style={{ color: "var(--student-fg)" }}>Historique des paiements</h3>
+                <Button variant="link" onClick={onBack} className="h-auto p-0 text-sm" style={{ color: "var(--student-ring-move)" }}>Retour</Button>
             </div>
             <div>
                 {payments.length === 0 ? (
                     <div className="py-12 text-center">
-                        <p className="text-base text-slate-500">Aucun paiement enregistré</p>
+                        <p className="text-base" style={{ color: "var(--student-fg-muted)" }}>Aucun paiement enregistré</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                         {payments.map((pay) => (
-                            <div key={pay.id} className="joda-surface-muted p-3">
+                            <div key={pay.id} className="student-pay-surface-soft p-3">
                                 <div className="mb-3 flex items-start justify-between gap-3">
                                     <div className="min-w-0 flex-1">
-                                        <h4 className="truncate text-sm font-semibold text-slate-900">{pay.description}</h4>
-                                        <p className="text-xs text-slate-600">{pay.date}</p>
+                                        <h4 className="truncate text-sm font-semibold" style={{ color: "var(--student-fg)" }}>{pay.description}</h4>
+                                        <p className="text-xs" style={{ color: "var(--student-fg-muted)" }}>{pay.date}</p>
                                     </div>
                                     <div className="shrink-0 text-right">
-                                        <p className="text-sm font-bold text-slate-900">{pay.amount.toLocaleString()} FCFA</p>
+                                        <p className="text-sm font-bold" style={{ color: "var(--student-ring-exercise)" }}>{pay.amount.toLocaleString()} FCFA</p>
                                         <span className={`rounded-full px-2 py-0.5 text-xs ${getPaymentStatusColor(pay.status)}`}>{pay.status}</span>
                                     </div>
                                 </div>
                                 {pay.status === "paye" && (
                                     <Button
                                         onClick={() => onGenerateReceipt(pay)}
-                                        className="mt-3 flex w-full items-center justify-center gap-2 bg-green-600 hover:bg-green-700"
+                                        className="mt-3 flex w-full items-center justify-center gap-2"
+                                        style={{ background: "var(--student-ring-move)", color: "var(--student-neon-ink)" }}
                                         size="sm"
                                     >
                                         Télécharger le reçu

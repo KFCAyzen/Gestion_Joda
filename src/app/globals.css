@@ -42,36 +42,36 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Student portal — Joda brand — LIGHT MODE */
-  --student-ink: #ffffff;
-  --student-bg: radial-gradient(circle at 20% 0%, rgba(220, 38, 38, 0.07), transparent 40%),
-    radial-gradient(circle at 80% 20%, rgba(185, 28, 28, 0.04), transparent 42%),
-    radial-gradient(circle at 55% 90%, rgba(153, 27, 27, 0.05), transparent 44%),
-    linear-gradient(180deg, #fafafa 0%, #f5f5f5 55%, #f0f0f0 100%);
-  --student-fg: #1a1a1a;
-  --student-fg-muted: #4b4b4b;
-  --student-border: rgba(220, 38, 38, 0.14);
-  --student-surface: rgba(255, 255, 255, 0.90);
-  --student-surface-2: rgba(255, 255, 255, 0.70);
-  --student-shadow: 0 26px 90px rgba(0, 0, 0, 0.10);
-  --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.08);
+  /* Student portal — Joda brand — LIGHT MODE (rouge dominant, blanc secondaire) */
+  --student-ink: #7f1d1d;
+  --student-bg: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.18), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.10), transparent 42%),
+    radial-gradient(circle at 55% 90%, rgba(185, 28, 28, 0.25), transparent 44%),
+    linear-gradient(180deg, #c41e1e 0%, #b91c1c 55%, #991b1b 100%);
+  --student-fg: #ffffff;
+  --student-fg-muted: rgba(255, 255, 255, 0.72);
+  --student-border: rgba(255, 255, 255, 0.18);
+  --student-surface: rgba(255, 255, 255, 0.12);
+  --student-surface-2: rgba(255, 255, 255, 0.07);
+  --student-shadow: 0 26px 90px rgba(0, 0, 0, 0.22);
+  --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.16);
   --student-radius: 1.75rem;
 
-  /* Joda rings — light (rouge principal / rouge moyen / rouge fonce) */
-  --student-ring-move: #dc2626;
-  --student-ring-exercise: #b91c1c;
-  --student-ring-stand: #7f1d1d;
-  --student-glow-move: 0 0 0.75rem rgba(220, 38, 38, 0.30);
-  --student-glow-exercise: 0 0 0.75rem rgba(185, 28, 28, 0.22);
-  --student-glow-stand: 0 0 0.75rem rgba(127, 29, 29, 0.20);
+  /* Joda rings — light */
+  --student-ring-move: #ffffff;
+  --student-ring-exercise: rgba(255, 255, 255, 0.90);
+  --student-ring-stand: rgba(255, 255, 255, 0.65);
+  --student-glow-move: 0 0 0.75rem rgba(255, 255, 255, 0.40);
+  --student-glow-exercise: 0 0 0.75rem rgba(255, 255, 255, 0.28);
+  --student-glow-stand: 0 0 0.75rem rgba(255, 255, 255, 0.18);
 
   /* Joda CTA accent — light */
-  --student-neon-lime: #dc2626;
-  --student-neon-lime-mid: #b91c1c;
-  --student-neon-mid: #b91c1c;
-  --student-neon-ink: #ffffff;
-  --student-pay-glow: 0 0 28px rgba(220, 38, 38, 0.30);
-  --student-pay-glow-soft: 0 0 14px rgba(220, 38, 38, 0.18);
+  --student-neon-lime: #ffffff;
+  --student-neon-lime-mid: rgba(255, 255, 255, 0.85);
+  --student-neon-mid: rgba(255, 255, 255, 0.85);
+  --student-neon-ink: #b91c1c;
+  --student-pay-glow: 0 0 28px rgba(255, 255, 255, 0.35);
+  --student-pay-glow-soft: 0 0 14px rgba(255, 255, 255, 0.22);
 }
 
 * {
@@ -625,9 +625,9 @@ body {
 
   .student-surface-soft {
     border-radius: calc(var(--student-radius) - 0.25rem);
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(220, 38, 38, 0.12);
-    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(18px);
   }
 
@@ -640,9 +640,9 @@ body {
   /* ── Bottom tabs ── */
   .student-bottom-tabs {
     @apply backdrop-blur-xl;
-    background: linear-gradient(180deg, rgba(250, 250, 250, 0.88), rgba(245, 245, 245, 0.96));
-    border-top: 1px solid rgba(220, 38, 38, 0.14);
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
+    background: linear-gradient(180deg, rgba(185, 28, 28, 0.92), rgba(153, 27, 27, 0.97));
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
   }
 
   .dark .student-bottom-tabs {
@@ -654,9 +654,9 @@ body {
   /* ── Chip ── */
   .student-chip {
     border-radius: 9999px;
-    background: rgba(220, 38, 38, 0.06);
-    border: 1px solid rgba(220, 38, 38, 0.18);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
     backdrop-filter: blur(18px);
     color: var(--student-fg);
   }
@@ -672,8 +672,8 @@ body {
 
   .student-focus-ring:focus-visible {
     box-shadow:
-      0 0 0 2px rgba(220, 38, 38, 0.15),
-      0 0 0 4px rgba(220, 38, 38, 0.35);
+      0 0 0 2px rgba(255, 255, 255, 0.20),
+      0 0 0 4px rgba(255, 255, 255, 0.50);
   }
 
   .dark .student-focus-ring:focus-visible {
@@ -687,19 +687,19 @@ body {
     --student-local-neon: var(--student-neon-lime);
   }
 
-  /* ── Pay surfaces — light ── */
+  /* ── Pay surfaces — light (rouge dominant) ── */
   .student-pay-surface {
     border-radius: var(--student-radius);
-    border: 1px solid rgba(220, 38, 38, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     background: linear-gradient(
       155deg,
-      rgba(255, 245, 245, 0.95) 0%,
-      rgba(255, 250, 250, 0.90) 48%,
-      rgba(255, 255, 255, 0.88) 100%
+      rgba(196, 30, 30, 0.85) 0%,
+      rgba(185, 28, 28, 0.90) 48%,
+      rgba(153, 27, 27, 0.92) 100%
     );
     box-shadow:
-      0 12px 40px rgba(220, 38, 38, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.90);
+      0 12px 40px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.20);
     backdrop-filter: blur(22px);
   }
 
@@ -718,13 +718,9 @@ body {
 
   .student-pay-surface-soft {
     border-radius: calc(var(--student-radius) - 0.25rem);
-    border: 1px solid rgba(220, 38, 38, 0.12);
-    background: linear-gradient(
-      180deg,
-      rgba(255, 248, 248, 0.92) 0%,
-      rgba(255, 252, 252, 0.85) 100%
-    );
-    box-shadow: 0 6px 24px rgba(220, 38, 38, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(18px);
   }
 
@@ -740,9 +736,9 @@ body {
 
   .student-pay-pill {
     border-radius: 9999px;
-    border: 1px solid rgba(220, 38, 38, 0.14);
-    background: rgba(220, 38, 38, 0.05);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.80);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.10);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(12px);
   }
 
@@ -754,16 +750,16 @@ body {
 
   /* ── Modal panel ── */
   .student-pay-modal-panel {
-    border: 1px solid rgba(220, 38, 38, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     background: linear-gradient(
       185deg,
-      rgba(255, 245, 245, 0.98) 0%,
-      rgba(255, 252, 252, 0.97) 55%,
-      rgba(255, 255, 255, 0.98) 100%
+      rgba(196, 30, 30, 0.96) 0%,
+      rgba(185, 28, 28, 0.97) 55%,
+      rgba(153, 27, 27, 0.98) 100%
     );
     box-shadow:
-      0 28px 90px rgba(0, 0, 0, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      0 28px 90px rgba(0, 0, 0, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(22px);
   }
 
@@ -782,8 +778,8 @@ body {
 
   .student-payments-scope .student-focus-ring:focus-visible {
     box-shadow:
-      0 0 0 2px rgba(220, 38, 38, 0.15),
-      0 0 0 4px rgba(220, 38, 38, 0.38);
+      0 0 0 2px rgba(255, 255, 255, 0.20),
+      0 0 0 4px rgba(255, 255, 255, 0.50);
   }
 
   .dark .student-payments-scope .student-focus-ring:focus-visible {

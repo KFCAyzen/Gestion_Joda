@@ -41,7 +41,7 @@ export function StudentSidebarNav({
 }: Props) {
     const t = useTranslations("student.portal.sidebar");
     return (
-        <aside className="hidden w-56 shrink-0 flex-col border-r border-[rgba(220,38,38,0.12)] py-5 dark:border-white/8 md:flex lg:w-64">
+        <aside className="hidden w-56 shrink-0 flex-col border-r border-[var(--student-border)] py-5 dark:border-white/8 md:flex lg:w-64">
             {/* Student identity */}
             <div className="mb-6 px-4">
                 <div className="flex items-center gap-3">
@@ -69,15 +69,15 @@ export function StudentSidebarNav({
                             onClick={() => onChangeView("messaging")}
                             className={`w-full rounded-xl px-3 py-2.5 text-left transition-colors ${
                                 view === "messaging"
-                                    ? "bg-[rgba(220,38,38,0.10)] dark:bg-white/10"
-                                    : "hover:bg-[rgba(220,38,38,0.06)] dark:hover:bg-white/6"
+                                    ? "bg-white/15 dark:bg-white/10"
+                                    : "hover:bg-white/10 dark:hover:bg-white/6"
                             }`}
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2.5">
                                     <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-700 text-[10px] font-bold text-white">
                                         {avatarInitials(conv.agentName)}
-                                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500 dark:border-[#1a1a2e]" />
+                                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[rgba(185,28,28,0.9)] bg-green-400 dark:border-[#1a1a2e]" />
                                     </div>
                                     <div className="min-w-0">
                                         <p className="truncate text-[12px] font-semibold text-[var(--student-fg)]">
@@ -102,11 +102,11 @@ export function StudentSidebarNav({
                     <button
                         onClick={() => onChangeView("notifications")}
                         className={`w-full rounded-xl px-3 py-2.5 text-left transition-colors ${
-                            view === "notifications" ? "bg-[rgba(220,38,38,0.10)] dark:bg-white/10" : "hover:bg-[rgba(220,38,38,0.06)] dark:hover:bg-white/6"
+                            view === "notifications" ? "bg-white/15 dark:bg-white/10" : "hover:bg-white/10 dark:hover:bg-white/6"
                         }`}
                     >
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(220,38,38,0.08)] text-[var(--student-ring-move)] dark:bg-white/8 dark:text-white/60">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-[var(--student-ring-move)] dark:bg-white/8 dark:text-white/60">
                                 <Bell className="h-3.5 w-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
@@ -141,7 +141,7 @@ export function StudentSidebarNav({
                         <button
                             key={item.view}
                             onClick={() => onChangeView(item.view)}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] text-[var(--student-fg-muted)] transition-colors hover:bg-[rgba(220,38,38,0.06)] hover:text-[var(--student-ring-move)] dark:hover:bg-white/6 dark:hover:text-white"
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] text-[var(--student-fg-muted)] transition-colors hover:bg-white/10 hover:text-[var(--student-ring-move)] dark:hover:bg-white/6 dark:hover:text-white"
                         >
                             {item.icon}
                             {t(item.labelKey as any)}
