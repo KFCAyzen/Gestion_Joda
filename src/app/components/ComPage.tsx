@@ -219,7 +219,7 @@ export default function ComPage() {
                 <button
                   onClick={() => void loadCredit()}
                   disabled={creditLoading}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:bg-slate-700/50 hover:text-slate-600 dark:text-slate-400 transition-colors"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-600 dark:text-slate-400 transition-colors"
                   title={ts("header.refreshCredit")}
                 >
                   <RefreshCw className={`h-4 w-4 ${creditLoading ? "animate-spin" : ""}`} />
@@ -235,8 +235,8 @@ export default function ComPage() {
             onClick={() => setTab("messages")}
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
               tab === "messages"
-                ? "bg-white text-slate-900 dark:text-slate-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
             }`}
           >
             <MessageSquare className="h-4 w-4" />
@@ -246,8 +246,8 @@ export default function ComPage() {
             onClick={() => setTab("sms")}
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
               tab === "sms"
-                ? "bg-white text-slate-900 dark:text-slate-100 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
             }`}
           >
             <Smartphone className="h-4 w-4" />
@@ -288,13 +288,12 @@ export default function ComPage() {
                   <div className="py-10 text-center text-slate-400">{t("students.empty")}</div>
                 ) : (
                   <div className="max-h-[520px] overflow-auto rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
-                    <ul className="divide-y divide-slate-100">
-                      {msgFiltered.map((s) => {
+                    <ul className="divide-y divide-slate-100 dark:divide-slate-700">{msgFiltered.map((s) => {
                         const checked = msgSelected.has(s.id);
                         const displayName = `${s.prenom ?? ""} ${s.nom ?? ""}`.trim();
                         return (
-                          <li key={s.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:bg-slate-800/50">
-                            <input type="checkbox" checked={checked} onChange={() => toggleMsg(s.id)} className="h-4 w-4" />
+                          <li key={s.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <input type="checkbox" checked={checked} onChange={() => toggleMsg(s.id)} className="h-4 w-4 accent-rose-600" />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between gap-2">
                                 <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{displayName}</p>
@@ -328,7 +327,7 @@ export default function ComPage() {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder={t("composer.messagePlaceholder")}
-                    className="min-h-[220px] w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-200"
+                    className="min-h-[220px] w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-200"
                   />
                 </div>
                 <Button onClick={() => void handleSendMsg()} disabled={sending || msgSelected.size === 0} className="w-full bg-rose-600 hover:bg-rose-700">
@@ -373,22 +372,21 @@ export default function ComPage() {
                   <div className="py-10 text-center text-slate-400">{ts("students.empty")}</div>
                 ) : (
                   <div className="max-h-[520px] overflow-auto rounded-xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
-                    <ul className="divide-y divide-slate-100">
-                      {smsFiltered.map((s) => {
+                    <ul className="divide-y divide-slate-100 dark:divide-slate-700">{smsFiltered.map((s) => {
                         const checked = smsSelected.has(s.id);
                         const displayName = `${s.prenom ?? ""} ${s.nom ?? ""}`.trim();
                         const phoneOk = hasPhone(s);
                         return (
                           <li
                             key={s.id}
-                            className={`flex items-center gap-3 px-4 py-3 ${phoneOk ? "hover:bg-slate-50 dark:bg-slate-800/50" : "opacity-50"}`}
+                            className={`flex items-center gap-3 px-4 py-3 ${phoneOk ? "hover:bg-slate-50 dark:hover:bg-slate-800/50" : "opacity-50"}`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
                               onChange={() => phoneOk && toggleSms(s.id)}
                               disabled={!phoneOk}
-                              className="h-4 w-4"
+                              className="h-4 w-4 accent-rose-600"
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between gap-2">
@@ -440,7 +438,7 @@ export default function ComPage() {
                     value={smsMessage}
                     onChange={(e) => setSmsMessage(e.target.value)}
                     placeholder={ts("composer.messagePlaceholder")}
-                    className="min-h-[180px] w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-200"
+                    className="min-h-[180px] w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-200"
                   />
                 </div>
 
