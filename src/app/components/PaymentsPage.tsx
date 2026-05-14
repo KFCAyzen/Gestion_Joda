@@ -401,7 +401,7 @@ export default function PaymentsPage() {
         <ProtectedRoute requiredRole="agent">
             <div className="-m-4 sm:-m-5 flex flex-col bg-white dark:bg-slate-900" style={{ minHeight: "calc(100vh - 130px)" }}>
                 {/* Header */}
-                <div className="border-b border-gray-100 px-6 py-4">
+                <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-4">
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                         Finance &rsaquo; Paiements
                     </p>
@@ -409,12 +409,12 @@ export default function PaymentsPage() {
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Paiements</h1>
                         <div className="flex items-center gap-2">
                             {aValiderList.length > 0 && (
-                                <span className="flex items-center gap-1.5 rounded-full border border-orange-300 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700">
+                                <span className="flex items-center gap-1.5 rounded-full border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400 px-3 py-1.5 text-sm font-medium text-orange-700">
                                     <AlertTriangle className="h-3.5 w-3.5" />
                                     {aValiderList.length} à valider
                                 </span>
                             )}
-                            <button className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50">
+                            <button className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                 <Filter className="h-3.5 w-3.5" />
                                 Filtrer
                             </button>
@@ -431,7 +431,7 @@ export default function PaymentsPage() {
                     </div>
 
                     {/* Tabs */}
-                    <div className="mt-4 flex gap-6 border-b border-gray-100">
+                    <div className="mt-4 flex gap-6 border-b border-gray-100 dark:border-slate-700">
                         {TABS.map((t) => (
                             <button
                                 key={t.id}
@@ -447,7 +447,7 @@ export default function PaymentsPage() {
                                     <span
                                         className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
                                             tab === t.id
-                                                ? "bg-red-100 text-red-600"
+                                                ? "bg-red-100 dark:bg-red-900/30 dark:text-red-400 text-red-600"
                                                 : "bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400"
                                         }`}
                                     >
@@ -547,7 +547,7 @@ export default function PaymentsPage() {
                         ) : (
                             <table className="w-full">
                                 <thead>
-                                    <tr className="border-b border-gray-100">
+                                    <tr className="border-b border-gray-100 dark:border-slate-700">
                                         <th className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                                             Étudiant
                                         </th>
@@ -585,10 +585,10 @@ export default function PaymentsPage() {
                                         return (
                                             <tr
                                                 key={payment.id}
-                                                className={`border-b border-gray-50 transition-colors ${
+                                                className={`border-b border-gray-100 dark:border-slate-700/60 transition-colors ${
                                                     isOverdue
-                                                        ? "bg-red-50 dark:bg-red-900/20/60"
-                                                        : "hover:bg-gray-50 dark:bg-gray-800/50/60"
+                                                        ? "bg-red-50 dark:bg-red-900/20"
+                                                        : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                                 }`}
                                             >
                                                 <td className="px-6 py-3.5">
@@ -619,15 +619,15 @@ export default function PaymentsPage() {
                                                 </td>
                                                 <td className="px-3 py-3.5">
                                                     {isOverdue ? (
-                                                        <span className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+                                                        <span className="rounded-full bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-2.5 py-1 text-[11px] font-semibold text-red-600">
                                                             +{days}j retard
                                                         </span>
                                                     ) : payment.status === "paye" ? (
-                                                        <span className="rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700">
+                                                        <span className="rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-1 text-[11px] font-semibold text-green-700">
                                                             Validé
                                                         </span>
                                                     ) : (
-                                                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-semibold text-orange-700">
+                                                        <span className="rounded-full bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 px-2.5 py-1 text-[11px] font-semibold text-orange-700">
                                                             En attente
                                                         </span>
                                                     )}
@@ -637,7 +637,7 @@ export default function PaymentsPage() {
                                                         {payment.status === "paye" ? (
                                                             <button
                                                                 onClick={() => handlePrint(payment)}
-                                                                className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50"
+                                                                className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                                             >
                                                                 <Printer className="h-3 w-3" />
                                                                 Reçu
@@ -680,8 +680,8 @@ export default function PaymentsPage() {
                     </div>
 
                     {/* RIGHT — Compte du jour */}
-                    <div className="hidden w-72 shrink-0 flex-col border-l border-gray-100 xl:flex">
-                        <div className="border-b border-gray-100 px-5 py-4">
+                    <div className="hidden w-72 shrink-0 flex-col border-l border-gray-100 dark:border-slate-700 xl:flex">
+                        <div className="border-b border-gray-100 dark:border-slate-700 px-5 py-4">
                             <div className="flex items-center justify-between">
                                 <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                                     Compte du jour
@@ -704,7 +704,7 @@ export default function PaymentsPage() {
                                         −{fmtShort(totalSorties)}
                                     </span>
                                 </div>
-                                <div className="my-3 border-t border-gray-100" />
+                                <div className="my-3 border-t border-gray-100 dark:border-slate-700" />
                                 <div>
                                     <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                                         Solde du jour
@@ -722,7 +722,7 @@ export default function PaymentsPage() {
 
                             <button
                                 onClick={() => window.location.href = "../comptabilite"}
-                                className="mt-4 w-full rounded-lg border border-gray-200 dark:border-gray-700 py-2 text-center text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50"
+                                className="mt-4 w-full rounded-lg border border-gray-200 dark:border-gray-700 py-2 text-center text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                             >
                                 Voir le détail compta →
                             </button>
@@ -740,7 +740,7 @@ export default function PaymentsPage() {
                                     return (
                                         <div
                                             key={p.id}
-                                            className="mb-3 rounded-xl border border-orange-200 bg-orange-50 p-3"
+                                            className="mb-3 rounded-xl border border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 p-3"
                                         >
                                             <div className="flex items-start gap-2">
                                                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-500" />
@@ -758,7 +758,7 @@ export default function PaymentsPage() {
 
                         {/* Validate all */}
                         {tab === "a_valider" && filtered.length > 0 && isAdminLike && (
-                            <div className="mt-auto border-t border-gray-100 p-4">
+                            <div className="mt-auto border-t border-gray-100 dark:border-slate-700 p-4">
                                 <button
                                     onClick={() =>
                                         setConfirmDialog({
@@ -782,7 +782,7 @@ export default function PaymentsPage() {
 
                 {/* Mobile bottom action */}
                 {tab === "a_valider" && filtered.length > 0 && isAdminLike && (
-                    <div className="border-t border-gray-100 p-4 xl:hidden">
+                    <div className="border-t border-gray-100 dark:border-slate-700 p-4 xl:hidden">
                         <button
                             onClick={() =>
                                 setConfirmDialog({
@@ -916,7 +916,7 @@ export default function PaymentsPage() {
                         <div className="mt-6 flex gap-3">
                             <button
                                 onClick={() => setShowRegisterModal(false)}
-                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-800/50"
+                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                             >
                                 Annuler
                             </button>
@@ -975,7 +975,7 @@ export default function PaymentsPage() {
                                             <span>Montant principal</span>
                                             <strong>{fmt(penaltyModal.montant)}</strong>
                                         </div>
-                                        <div className="border-t border-gray-100 pt-2">
+                                        <div className="border-t border-gray-100 dark:border-slate-700 pt-2">
                                             <div className="flex justify-between text-base font-bold text-red-600">
                                                 <span>Total dû</span>
                                                 <span>{fmt(penaltyModal.montant + (penaltyModal.penalites || 0))}</span>

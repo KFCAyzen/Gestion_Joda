@@ -383,7 +383,7 @@ export default function LivreComptable() {
         <ProtectedRoute requiredRole="agent">
             <div className="-m-4 sm:-m-5 flex flex-col bg-white dark:bg-slate-900" style={{ minHeight: "calc(100vh - 130px)" }}>
                 {/* Header */}
-                <div className="border-b border-gray-100 px-6 py-4">
+                <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-4">
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                         Finance &rsaquo; Livre comptable
                     </p>
@@ -395,7 +395,7 @@ export default function LivreComptable() {
                             <div className="flex items-center gap-1">
                                 <button
                                     onClick={prevDay}
-                                    className="rounded-full border border-gray-200 dark:border-gray-700 p-1 hover:bg-gray-50 dark:bg-gray-800/50"
+                                    className="rounded-full border border-gray-200 dark:border-gray-700 p-1 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                 >
                                     <ChevronLeft className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                 </button>
@@ -412,7 +412,7 @@ export default function LivreComptable() {
                             <select
                                 value={catFilter}
                                 onChange={(e) => { setCatFilter(e.target.value); setPage(1); }}
-                                className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 outline-none hover:bg-gray-50 dark:bg-gray-800/50"
+                                className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 outline-none hover:bg-gray-50 dark:hover:bg-gray-800/50"
                             >
                                 <option value="tout">Catégorie</option>
                                 <option value="entree">Entrées uniquement</option>
@@ -442,7 +442,7 @@ export default function LivreComptable() {
                 {/* Stats cards */}
                 <div className="grid grid-cols-3 gap-4 px-6 py-4">
                     {/* Entrées */}
-                    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                    <div className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                             Entrées jour
                         </p>
@@ -451,7 +451,7 @@ export default function LivreComptable() {
                         </p>
                     </div>
                     {/* Sorties */}
-                    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                    <div className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                             Sorties jour
                         </p>
@@ -496,7 +496,7 @@ export default function LivreComptable() {
                     ) : (
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-gray-100">
+                                <tr className="border-b border-gray-100 dark:border-slate-700">
                                     {["Heure", "Type", "Désignation", "Étudiant", "Catégorie", "", "Montant", "Validé par"].map(
                                         (h) => (
                                             <th
@@ -513,12 +513,12 @@ export default function LivreComptable() {
                                 {pageRows.map((row) => (
                                     <tr
                                         key={row.id}
-                                        className={`border-b border-gray-50 text-sm ${
+                                        className={`border-b border-gray-100 dark:border-slate-700/60 text-sm ${
                                             row.needsValidation
-                                                ? "bg-amber-50 dark:bg-amber-900/20/70"
+                                                ? "bg-amber-50 dark:bg-amber-900/20"
                                                 : row.kind === "sortie"
-                                                  ? "hover:bg-gray-50 dark:bg-gray-800/50/50"
-                                                  : "hover:bg-gray-50 dark:bg-gray-800/50/50"
+                                                  ? "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                                  : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                         }`}
                                     >
                                         <td className="py-3 pl-0 pr-3 font-mono text-xs text-gray-500 dark:text-gray-400">
@@ -528,8 +528,8 @@ export default function LivreComptable() {
                                             <span
                                                 className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                                                     row.kind === "entree"
-                                                        ? "bg-green-100 text-green-700"
-                                                        : "bg-orange-100 text-orange-700"
+                                                        ? "bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700"
+                                                        : "bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 text-orange-700"
                                                 }`}
                                             >
                                                 {row.kind === "entree" ? "Entrée" : "Sortie"}
@@ -588,7 +588,7 @@ export default function LivreComptable() {
 
                 {/* Footer */}
                 {filtered.length > 0 && (
-                    <div className="border-t border-gray-100 px-6 py-3">
+                    <div className="border-t border-gray-100 dark:border-slate-700 px-6 py-3">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex items-center gap-6 text-sm">
                                 <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
@@ -614,14 +614,14 @@ export default function LivreComptable() {
                                     <button
                                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                                         disabled={page === 1}
-                                        className="rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs disabled:opacity-30 hover:bg-gray-50 dark:bg-gray-800/50"
+                                        className="rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                     >
                                         ←
                                     </button>
                                     <button
                                         onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                         disabled={page === totalPages}
-                                        className="rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs disabled:opacity-30 hover:bg-gray-50 dark:bg-gray-800/50"
+                                        className="rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                     >
                                         →
                                     </button>
@@ -654,7 +654,7 @@ export default function LivreComptable() {
                     </button>
                 )}
                 {isAdminLike && (
-                    <div className="hidden items-center border-t border-gray-100 px-6 py-3 xl:flex">
+                    <div className="hidden items-center border-t border-gray-100 dark:border-slate-700 px-6 py-3 xl:flex">
                         <button
                             onClick={() => setShowNewModal(true)}
                             className="flex items-center gap-2 rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700"
@@ -759,7 +759,7 @@ export default function LivreComptable() {
                         <div className="mt-6 flex gap-3">
                             <button
                                 onClick={() => setShowNewModal(false)}
-                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-800/50"
+                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                             >
                                 Annuler
                             </button>

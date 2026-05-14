@@ -793,7 +793,7 @@ export default function StudentManagement() {
                             exit={{ opacity: 0 }}
                         >
                             <motion.div
-                                className="flex w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl"
+                                className="flex w-full max-w-2xl flex-col rounded-2xl bg-white dark:bg-slate-900 shadow-2xl"
                                 style={{ maxHeight: "90vh" }}
                                 initial={{ scale: 0.94, y: 20, opacity: 0 }}
                                 animate={{ scale: 1, y: 0, opacity: 1 }}
