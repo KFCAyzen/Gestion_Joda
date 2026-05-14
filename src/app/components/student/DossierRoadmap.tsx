@@ -689,7 +689,7 @@ export function DossierRoadmap({
   return (
     <div
       className={cn(
-        "relative flex min-h-0 w-full min-w-0 max-w-none flex-1 flex-col rounded-2xl bg-[#252b31] px-4 pb-8 pt-5 sm:px-5 sm:pb-9 sm:pt-6",
+        "relative flex min-h-0 w-full min-w-0 max-w-none flex-1 flex-col rounded-2xl bg-[rgba(255,255,255,0.08)] px-4 pb-8 pt-5 sm:px-5 sm:pb-9 sm:pt-6",
         className,
       )}
     >

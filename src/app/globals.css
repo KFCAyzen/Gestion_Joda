@@ -613,7 +613,7 @@ body {
   /* ── Surfaces ── */
   .student-surface {
     border-radius: var(--student-radius);
-    background: var(--student-surface);
+    background: rgba(255, 255, 255, 0.10);
     border: 1px solid var(--student-border);
     box-shadow: var(--student-shadow-2);
     backdrop-filter: blur(22px);

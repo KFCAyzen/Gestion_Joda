@@ -658,14 +658,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                 <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
                                             </CardHeader>
                                             <CardContent className="space-y-4">
-                                                <div className="flex items-center justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-3">
+                                                <div className="flex items-center justify-between border-b border-[var(--student-border)] pb-3">
                                                     <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.currentStep")}</span>
                                                     <Badge className={`rounded-full border ${STATUS_COLORS[dossier.status]}`}>
                                                         {t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })}
                                                     </Badge>
                                                 </div>
                                                 {universityName && (
-                                                    <div className="flex items-center justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-3">
+                                                    <div className="flex items-center justify-between border-b border-[var(--student-border)] pb-3">
                                                         <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.university")}</span>
                                                         <span className="text-sm font-medium text-[var(--student-fg)]">{universityName}</span>
                                                     </div>
