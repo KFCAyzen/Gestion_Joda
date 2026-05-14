@@ -316,23 +316,33 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                 </ul>
             </div>
 
-            <Card className="student-pay-surface-soft border-0 shadow-none ring-1 ring-white/10">
+            <Card className="student-pay-surface-soft border-0 shadow-none bg-transparent ring-0">
                 <CardContent className="pt-6">
                     <div className="mb-2 flex items-center justify-between">
-                        <p className="text-sm font-medium text-white/70">Complétion du dossier</p>
-                        <span className="text-sm font-semibold tabular-nums text-[var(--student-neon-lime)]">{pct}%</span>
+                        <p className="text-sm font-medium text-[var(--student-fg-muted)]">Complétion du dossier</p>
+                        <span className="text-sm font-semibold tabular-nums text-[var(--student-fg)]">{pct}%</span>
                     </div>
-                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/45 ring-1 ring-white/[0.06]">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-[rgba(0,0,0,0.15)] ring-1 ring-[var(--student-border)] dark:bg-black/45 dark:ring-white/[0.06]">
                         <div
-                            className="h-full rounded-full bg-[var(--student-neon-lime)] transition-all duration-500"
-                            style={{ width: `${pct}%`, boxShadow: "var(--student-pay-glow-soft)" }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                                width: `${pct}%`,
+                                background: pct === 100
+                                    ? "rgba(255,255,255,1)"
+                                    : pct >= 67
+                                      ? "rgba(255,255,255,0.85)"
+                                      : pct >= 34
+                                        ? "rgba(255,255,255,0.60)"
+                                        : "rgba(255,255,255,0.35)",
+                                boxShadow: pct === 100 ? "var(--student-pay-glow-soft)" : undefined,
+                            }}
                         />
                     </div>
-                    <p className="mt-2 text-xs text-white/50">
+                    <p className="mt-2 text-xs text-[var(--student-fg-muted)]">
                         {completion}/{total} documents obligatoires fournis
                     </p>
                     {pct === 100 && (
-                        <div className="student-pay-pill mt-3 flex items-start gap-2 px-4 py-3 text-sm text-[var(--student-neon-lime)]">
+                        <div className="student-pay-pill mt-3 flex items-start gap-2 px-4 py-3 text-sm text-[var(--student-fg)]">
                             <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                             <span>Tous les documents ont été soumis. Ton dossier est en traitement.</span>
                         </div>
