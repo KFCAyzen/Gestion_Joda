@@ -1,8 +1,9 @@
 "use client";
 
-import { Bell, LogOut } from "lucide-react";
+import { Bell, LogOut, Sun, Moon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { StudentView } from "./types";
+import { useTheme } from "@/app/context/ThemeContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,12 +56,13 @@ export function StudentHeader({
 }) {
   void _eyebrow;
   const tPortal = useTranslations("student.portal");
+  const { actualTheme, setTheme } = useTheme();
   const initials = getInitials(userName);
 
   return (
     <header className="sticky top-0 z-30 border-b border-[rgba(220,38,38,0.12)] bg-white/85 backdrop-blur-xl dark:border-white/[0.06] dark:bg-black/35">
       <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2.5 sm:px-6 lg:px-8">
-        <div className="w-[5rem] shrink-0 sm:w-[5.5rem]" aria-hidden />
+        <div className="w-[7rem] shrink-0 sm:w-[7.5rem]" aria-hidden />
 
         <div className="min-w-0 flex-1 text-center">
           <h1 className="truncate text-[15px] font-semibold leading-tight tracking-tight text-[var(--student-fg)] sm:text-base">
@@ -76,7 +78,15 @@ export function StudentHeader({
           ) : null}
         </div>
 
-        <div className="flex w-[5rem] shrink-0 justify-end gap-1 sm:w-[5.5rem] sm:gap-1.5">
+        <div className="flex w-[7rem] shrink-0 justify-end gap-1 sm:w-[7.5rem] sm:gap-1.5">
+          <button
+            type="button"
+            onClick={() => setTheme(actualTheme === "light" ? "dark" : "light")}
+            className={iconBtn}
+            aria-label="Changer le thème"
+          >
+            {actualTheme === "light" ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
+          </button>
           <button
             type="button"
             onClick={onNotifications}
