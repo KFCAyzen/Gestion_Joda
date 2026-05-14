@@ -244,8 +244,8 @@ async function handleCreateUser(req: NextRequest) {
     // SMS si numéro disponible
     if (telephone) {
         const smsText = isEn
-            ? `Hello ${name}, your JODA account has been created. Username: ${username}. Log in at gestion-joda.vercel.app to set your password.`
-            : `Bonjour ${name}, votre compte JODA a été créé. Identifiant: ${username}. Connectez-vous sur gestion-joda.vercel.app pour définir votre mot de passe.`;
+            ? `Hello ${name}, your JODA account has been created.\nUsername: ${username}\nPassword: ${password}\nLogin: https://portal-joda.company`
+            : `Bonjour ${name}, votre compte JODA a été créé.\nIdentifiant: ${username}\nMot de passe: ${password}\nConnexion: https://portal-joda.company`;
         sendSmsToPhone(telephone, smsText).catch(console.error);
     }
 

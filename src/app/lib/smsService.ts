@@ -18,7 +18,7 @@ export async function sendSmsToPhone(phone: string, message: string): Promise<bo
       body: JSON.stringify({
         user: process.env.SMS_API_USER!,
         password: process.env.SMS_API_PASSWORD!,
-        senderid: process.env.SMS_SENDER_ID || "JODA",
+        senderid: process.env.SMS_SENDER_ID || "JodaCompany",
         sms: message,
         mobiles: normalized,
       }),
@@ -55,7 +55,7 @@ export async function sendSmsToPhones(
       body: JSON.stringify({
         user: process.env.SMS_API_USER!,
         password: process.env.SMS_API_PASSWORD!,
-        senderid: process.env.SMS_SENDER_ID || "JODA",
+        senderid: process.env.SMS_SENDER_ID || "JodaCompany",
         sms: message,
         mobiles: validPhones.join(","),
       }),
