@@ -108,13 +108,13 @@
        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
          <defs>
            <filter id="ringGlowMove" x="-50%" y="-50%" width="200%" height="200%">
-             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(220,38,38,0.55)" />
+             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(245,158,11,0.55)" />
            </filter>
            <filter id="ringGlowExercise" x="-50%" y="-50%" width="200%" height="200%">
-             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(185,28,28,0.45)" />
+             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(167,139,250,0.50)" />
            </filter>
            <filter id="ringGlowStand" x="-50%" y="-50%" width="200%" height="200%">
-             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(127,29,29,0.40)" />
+             <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(74,222,128,0.45)" />
            </filter>
          </defs>
  
@@ -124,7 +124,7 @@
              radius={90}
              stroke={13}
              valuePct={movePct}
-             strokeClassName="stroke-[var(--student-ring-move)]"
+             strokeClassName="stroke-[#f59e0b]"
              glow="url(#ringGlowMove)"
            />
            <Ring
@@ -132,7 +132,7 @@
              radius={70}
              stroke={13}
              valuePct={exercisePct}
-             strokeClassName="stroke-[var(--student-ring-exercise)]"
+             strokeClassName="stroke-[#a78bfa]"
              glow="url(#ringGlowExercise)"
            />
            <Ring
@@ -140,7 +140,7 @@
              radius={50}
              stroke={13}
              valuePct={standPct}
-             strokeClassName="stroke-[var(--student-ring-stand)]"
+             strokeClassName="stroke-[#4ade80]"
              glow="url(#ringGlowStand)"
            />
          </g>
