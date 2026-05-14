@@ -102,7 +102,7 @@
    labelBottom?: string;
    className?: string;
  }) {
-   const size = 172;
+   const size = 220;
    return (
      <div className={cn("relative", className)}>
        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
@@ -121,24 +121,24 @@
          <g>
            <Ring
              size={size}
-             radius={70}
-             stroke={12}
+             radius={90}
+             stroke={13}
              valuePct={movePct}
              strokeClassName="stroke-[var(--student-ring-move)]"
              glow="url(#ringGlowMove)"
            />
            <Ring
              size={size}
-             radius={54}
-             stroke={12}
+             radius={70}
+             stroke={13}
              valuePct={exercisePct}
              strokeClassName="stroke-[var(--student-ring-exercise)]"
              glow="url(#ringGlowExercise)"
            />
            <Ring
              size={size}
-             radius={38}
-             stroke={12}
+             radius={50}
+             stroke={13}
              valuePct={standPct}
              strokeClassName="stroke-[var(--student-ring-stand)]"
              glow="url(#ringGlowStand)"

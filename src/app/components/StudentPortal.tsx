@@ -423,6 +423,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         return Math.round((idx / DOSSIER_ROADMAP_LAST_IDX) * 100);
     })();
 
+    // Ring interne : urgence prochaine échéance (100% = serein, 0% = en retard)
+    const deadlineUrgencyPct = (() => {
+        if (!nextDue?.date_limite) return overdue.length > 0 ? 0 : 100;
+        const daysLeft = Math.ceil((new Date(nextDue.date_limite).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysLeft <= 0) return 0;
+        return Math.min(100, Math.round((daysLeft / 30) * 100));
+    })();
+
     const nextAction = overdue.length > 0
         ? { tone: "danger" as const, title: t("dashboard.followPayments"), detail: `${overdue.length} paiement(s) en retard`, cta: { label: t("portal.nav.payments"), view: "payments" as View } }
         : nextDue
@@ -467,9 +475,9 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         <div className="flex items-center justify-center md:justify-start">
                             <ActivityRings
                                 movePct={paymentsProgressPct}
-                                exercisePct={docsProgressPct}
-                                standPct={dossierStepPct}
-                                labelBottom={`${Math.max(0, Math.round((paymentsProgressPct + docsProgressPct + dossierStepPct) / 3))}%`}
+                                exercisePct={dossierStepPct}
+                                standPct={deadlineUrgencyPct}
+                                labelBottom={`${Math.round((paymentsProgressPct + dossierStepPct + deadlineUrgencyPct) / 3)}%`}
                             />
                         </div>
 
