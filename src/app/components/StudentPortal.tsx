@@ -432,10 +432,10 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
 
     const toneStyles = nextAction.tone === "danger"
-        ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] text-[var(--student-ring-move)]", ring: "ring-[var(--student-border)]" }
+        ? { icon: <AlertTriangle className="h-5 w-5 text-[#f97316]" />, bg: "border-[rgba(255,255,255,0.25)] bg-[rgba(0,0,0,0.20)] text-[#f97316]", ring: "ring-[rgba(255,165,0,0.35)]" }
         : nextAction.tone === "warn"
-          ? { icon: <AlertTriangle className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)]", ring: "ring-[var(--student-border)]" }
-          : { icon: <CheckCircle2 className="h-5 w-5" />, bg: "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.05)] text-[var(--student-ring-exercise)]", ring: "ring-[var(--student-border)]" };
+          ? { icon: <AlertTriangle className="h-5 w-5 text-[#f59e0b]" />, bg: "border-[rgba(255,255,255,0.20)] bg-[rgba(0,0,0,0.18)] text-[#f59e0b]", ring: "ring-[rgba(255,200,0,0.25)]" }
+          : { icon: <CheckCircle2 className="h-5 w-5 text-[#4ade80]" />, bg: "border-[rgba(255,255,255,0.20)] bg-[rgba(0,0,0,0.18)] text-[#4ade80]", ring: "ring-[rgba(74,222,128,0.30)]" };
 
     return (
         <>
@@ -489,7 +489,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     </div>
                                 </div>
                                 <Button
-                                    className="mt-4 w-full rounded-2xl border border-[rgba(220,38,38,0.25)] bg-[rgba(220,38,38,0.08)] text-[var(--student-ring-move)] shadow-[0_8px_24px_rgba(220,38,38,0.15)] hover:bg-[rgba(220,38,38,0.14)] dark:bg-[linear-gradient(135deg,rgba(220,38,38,0.35),rgba(185,28,28,0.25))] dark:text-white dark:shadow-[0_16px_44px_rgba(0,0,0,0.35)] dark:hover:bg-[linear-gradient(135deg,rgba(220,38,38,0.45),rgba(185,28,28,0.32))] sm:w-auto sm:self-start"
+                                    onClick={() => setView(nextAction.cta.view)}
+                                    className="mt-4 w-full rounded-2xl border border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.12)] text-white shadow-none hover:bg-[rgba(255,255,255,0.20)] dark:bg-[linear-gradient(135deg,rgba(220,38,38,0.35),rgba(185,28,28,0.25))] dark:text-white dark:hover:bg-[linear-gradient(135deg,rgba(220,38,38,0.45),rgba(185,28,28,0.32))] sm:w-auto sm:self-start"
                                 >
                                     {nextAction.cta.label}
                                     <ArrowRight className="ml-2 h-4 w-4" />
