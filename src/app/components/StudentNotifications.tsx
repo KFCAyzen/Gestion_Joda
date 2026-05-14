@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { executeBatch } from "../utils/dbOperations";
@@ -102,6 +101,7 @@ export default function StudentNotifications({ user, onBack }: Props) {
                 eyebrow="Centre"
                 title={t("title")}
                 subtitle={unreadCount > 0 ? t("unreadCount", { count: unreadCount }) : t("allRead")}
+                className=""
                 right={
                     <div className="flex flex-wrap gap-2">
                         {onBack ? (
@@ -142,16 +142,16 @@ export default function StudentNotifications({ user, onBack }: Props) {
                 ))}
             </div>
 
-            <Card className="student-surface border-0 shadow-none">
-                <CardContent className="p-0">
+            <div className="student-surface overflow-hidden">
+                <div className="p-0">
                     {loading ? (
-                        <div className="py-12 text-center text-white/65">{t("loading")}</div>
+                        <div className="py-12 text-center text-[var(--student-fg-muted)]">{t("loading")}</div>
                     ) : filtered.length === 0 ? (
                         <div className="p-4">
                             <EmptyState title={t("empty")} description="Quand l’équipe valide un paiement ou un document, tu reçois une notification ici." />
                         </div>
                     ) : (
-                        <div className="divide-y divide-white/10">
+                        <div className="divide-y divide-[var(--student-border)]">
                             {filtered.map((notif) => {
                                 const cfg = TYPE_CONFIG[notif.type] || { labelKey: "unknown", tone: "neutral" as const, icon: "INF" };
                                 const toneCls = toneToText(cfg.tone);
@@ -160,28 +160,28 @@ export default function StudentNotifications({ user, onBack }: Props) {
                                         key={notif.id}
                                         onClick={() => !notif.read && markAsRead(notif.id)}
                                         className={[
-                                            "flex cursor-pointer gap-3 p-4 transition-colors hover:bg-white/5",
-                                            !notif.read ? "bg-white/4" : "",
+                                            "flex cursor-pointer gap-3 p-4 transition-colors hover:bg-[var(--student-surface-2)]",
+                                            !notif.read ? "bg-[var(--student-surface-2)]" : "",
                                         ].join(" ")}
                                     >
-                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-[0_14px_34px_rgba(0,0,0,0.35)]">
+                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-[var(--student-border)] bg-[var(--student-surface-2)] shadow-[0_14px_34px_rgba(0,0,0,0.35)]">
                                             <span className={`text-xs font-bold ${toneCls}`}>{cfg.icon}</span>
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-start justify-between gap-2">
-                                                <p className={`text-sm font-semibold ${notif.read ? "text-white/70" : "text-white"}`}>{notif.titre}</p>
-                                                <span className="whitespace-nowrap text-xs text-white/50">
+                                                <p className={`text-sm font-semibold ${notif.read ? "text-[var(--student-fg-muted)]" : "text-[var(--student-fg)]"}`}>{notif.titre}</p>
+                                                <span className="whitespace-nowrap text-xs text-[var(--student-fg-muted)]">
                                                     {notif.created_at ? new Date(notif.created_at).toLocaleDateString(dateLocale) : "-"}
                                                 </span>
                                             </div>
-                                            <p className="mt-0.5 text-sm text-white/65">{notif.message}</p>
-                                            <Badge className={`mt-1 rounded-full border border-white/12 bg-white/5 ${toneCls}`}>
+                                            <p className="mt-0.5 text-sm text-[var(--student-fg-muted)]">{notif.message}</p>
+                                            <Badge className={`mt-1 rounded-full border border-[var(--student-border)] bg-[var(--student-surface-2)] ${toneCls}`}>
                                                 {cfg.labelKey === "unknown" ? notif.type : t(`types.${cfg.labelKey}`)}
                                             </Badge>
                                         </div>
                                         {!notif.read && (
                                             <div
-                                                className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-[var(--student-ring-move)] shadow-[0_0_14px_rgba(255,45,85,0.55)]"
+                                                className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-[var(--student-ring-move)] shadow-[0_0_8px_var(--student-ring-move)]"
                                                 aria-label="Non lu"
                                             />
                                         )}
@@ -190,8 +190,8 @@ export default function StudentNotifications({ user, onBack }: Props) {
                             })}
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }

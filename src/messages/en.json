@@ -1008,8 +1008,21 @@
   },
   "comPage": {
     "tabs": {
-      "messages": "Messages",
+      "conversations": "Conversations",
+      "messages": "Broadcast",
       "sms": "SMS Marketing"
+    },
+    "conversations": {
+      "title": "Student Conversations",
+      "search": "Search a student…",
+      "empty": "No conversations",
+      "noMessages": "No messages yet",
+      "loading": "Loading…",
+      "inputPlaceholder": "Write a message…",
+      "send": "Send",
+      "you": "You",
+      "today": "Today",
+      "yesterday": "Yesterday"
     },
     "header": {
       "eyebrow": "Communication",

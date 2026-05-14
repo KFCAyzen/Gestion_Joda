@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useNotificationContext } from "../context/NotificationContext";
-import { MessageSquare, Phone, PhoneOff, RefreshCw, Send, Smartphone } from "lucide-react";
+import { Inbox, MessageSquare, Phone, PhoneOff, RefreshCw, Send, Smartphone } from "lucide-react";
 
 type MsgStudent = {
   id: string;
@@ -28,6 +28,27 @@ type SmsStudent = {
   telephone: string | null;
 };
 
+type ConvStudent = {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string | null;
+  user_id: string | null;
+  lastMessage: string | null;
+  lastAt: string | null;
+  unread: number;
+};
+
+type ConvMessage = {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  subject: string;
+  content: string;
+  read: boolean;
+  created_at: string;
+};
+
 const SMS_MAX_CHARS = 160;
 
 export default function ComPage() {
@@ -37,7 +58,7 @@ export default function ComPage() {
   const supabase = createClient();
   const { showNotification } = useNotificationContext();
 
-  const [tab, setTab] = useState<"messages" | "sms">("messages");
+  const [tab, setTab] = useState<"conversations" | "messages" | "sms">("conversations");
 
   // ── Messages tab state ────────────────────────────────────────────────────
   const [msgStudents, setMsgStudents] = useState<MsgStudent[]>([]);
@@ -47,6 +68,17 @@ export default function ComPage() {
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
+
+  // ── Conversations tab state ───────────────────────────────────────────────
+  const [conversations, setConversations] = useState<ConvStudent[]>([]);
+  const [convLoading, setConvLoading] = useState(true);
+  const [convSearch, setConvSearch] = useState("");
+  const [activeStudent, setActiveStudent] = useState<ConvStudent | null>(null);
+  const [threadMessages, setThreadMessages] = useState<ConvMessage[]>([]);
+  const [threadLoading, setThreadLoading] = useState(false);
+  const [convInput, setConvInput] = useState("");
+  const [convSending, setConvSending] = useState(false);
+  const threadEndRef = useRef<HTMLDivElement>(null);
 
   // ── SMS tab state ─────────────────────────────────────────────────────────
   const [smsStudents, setSmsStudents] = useState<SmsStudent[]>([]);
@@ -88,6 +120,22 @@ export default function ComPage() {
     void load();
   }, [supabase, showNotification, ts]);
 
+  // Load conversations list (uses admin API to bypass RLS)
+  useEffect(() => {
+    const load = async () => {
+      setConvLoading(true);
+      try {
+        const res = await fetch("/api/conversation");
+        if (res.ok) {
+          const data = await res.json();
+          setConversations(data.conversations ?? []);
+        }
+      } catch { /* silent */ }
+      setConvLoading(false);
+    };
+    void load();
+  }, []);
+
   const loadCredit = async () => {
     setCreditLoading(true);
     try {
@@ -101,6 +149,78 @@ export default function ComPage() {
   };
 
   useEffect(() => { void loadCredit(); }, []);
+
+  // ── Conversations helpers ─────────────────────────────────────────────────
+  const convFiltered = useMemo(() => {
+    const q = convSearch.trim().toLowerCase();
+    if (!q) return conversations;
+    return conversations.filter((s) => {
+      const name = `${s.prenom ?? ""} ${s.nom ?? ""}`.toLowerCase();
+      return name.includes(q) || (s.email ?? "").toLowerCase().includes(q);
+    });
+  }, [conversations, convSearch]);
+
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [threadMessages]);
+
+  const openConversation = async (s: ConvStudent) => {
+    setActiveStudent(s);
+    setThreadLoading(true);
+    setThreadMessages([]);
+
+    try {
+      const res = await fetch(`/api/conversation/${s.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setThreadMessages(data.messages ?? []);
+      }
+    } catch { /* silent */ }
+    setThreadLoading(false);
+
+    // Mark student→agent messages as read (agent is to_user_id, RLS allows it)
+    if (user?.id && s.user_id) {
+      await supabase
+        .from("messages")
+        .update({ read: true })
+        .eq("from_user_id", s.user_id)
+        .eq("to_user_id", user.id)
+        .eq("read", false);
+      setConversations((prev) => prev.map((c) => (c.id === s.id ? { ...c, unread: 0 } : c)));
+    }
+  };
+
+  const sendConvReply = async () => {
+    if (!convInput.trim() || !activeStudent || convSending) return;
+    setConvSending(true);
+    try {
+      const res = await fetch("/api/send-student-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentIds: [activeStudent.id], subject: "Message", content: convInput.trim() }),
+      });
+      if (res.ok) {
+        setConvInput("");
+        const threadRes = await fetch(`/api/conversation/${activeStudent.id}`);
+        if (threadRes.ok) {
+          const data = await threadRes.json();
+          const msgs = (data.messages ?? []) as ConvMessage[];
+          setThreadMessages(msgs);
+          const last = msgs[msgs.length - 1];
+          if (last) {
+            setConversations((prev) =>
+              prev.map((c) => (c.id === activeStudent.id ? { ...c, lastMessage: last.content, lastAt: last.created_at } : c))
+            );
+          }
+        }
+      } else {
+        showNotification(t("messages.sendError"), "error");
+      }
+    } catch {
+      showNotification(t("messages.sendError"), "error");
+    }
+    setConvSending(false);
+  };
 
   // ── Messages helpers ──────────────────────────────────────────────────────
   const msgFiltered = useMemo(() => {
@@ -232,6 +352,17 @@ export default function ComPage() {
         {/* Tabs */}
         <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-slate-700/50 p-1 w-fit">
           <button
+            onClick={() => setTab("conversations")}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+              tab === "conversations"
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            <Inbox className="h-4 w-4" />
+            {t("tabs.conversations")}
+          </button>
+          <button
             onClick={() => setTab("messages")}
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
               tab === "messages"
@@ -254,6 +385,143 @@ export default function ComPage() {
             {t("tabs.sms")}
           </button>
         </div>
+
+        {/* ── Conversations tab ─────────────────────────────────────────────── */}
+        {tab === "conversations" && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_1fr]">
+            {/* Student list */}
+            <Card className="joda-surface border-0 shadow-none">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t("conversations.title")}</CardTitle>
+                <Input
+                  value={convSearch}
+                  onChange={(e) => setConvSearch(e.target.value)}
+                  placeholder={t("conversations.search")}
+                  className="mt-2"
+                />
+              </CardHeader>
+              <CardContent className="p-0">
+                {convLoading ? (
+                  <p className="py-10 text-center text-sm text-slate-400">{t("conversations.loading")}</p>
+                ) : convFiltered.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-slate-400">{t("conversations.empty")}</p>
+                ) : (
+                  <ul className="divide-y divide-slate-100 dark:divide-slate-700 max-h-[600px] overflow-auto">
+                    {convFiltered.map((s) => {
+                      const name = `${s.prenom ?? ""} ${s.nom ?? ""}`.trim();
+                      const initials = `${(s.prenom ?? "")[0] ?? ""}${(s.nom ?? "")[0] ?? ""}`.toUpperCase();
+                      const isActive = activeStudent?.id === s.id;
+                      return (
+                        <li
+                          key={s.id}
+                          onClick={() => void openConversation(s)}
+                          className={`flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors ${
+                            isActive
+                              ? "bg-rose-50 dark:bg-rose-900/20"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          }`}
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/40 text-xs font-bold text-rose-700 dark:text-rose-300">
+                            {initials || "?"}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{name}</p>
+                            <p className="truncate text-xs text-slate-400">
+                              {s.lastMessage ?? t("conversations.noMessages")}
+                            </p>
+                          </div>
+                          {s.unread > 0 && (
+                            <Badge className="bg-rose-600 text-white text-xs shrink-0">{s.unread}</Badge>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Thread */}
+            {activeStudent ? (
+              <Card className="joda-surface border-0 shadow-none flex flex-col">
+                <CardHeader className="pb-2 border-b border-slate-100 dark:border-slate-700">
+                  <CardTitle className="text-base">
+                    {`${activeStudent.prenom ?? ""} ${activeStudent.nom ?? ""}`.trim()}
+                  </CardTitle>
+                  {activeStudent.email && (
+                    <p className="text-xs text-slate-400">{activeStudent.email}</p>
+                  )}
+                </CardHeader>
+                <CardContent className="flex flex-col flex-1 p-0 overflow-hidden">
+                  <div className="flex-1 overflow-auto px-4 py-4 space-y-3 max-h-[460px]">
+                    {threadLoading ? (
+                      <p className="text-center text-sm text-slate-400 py-10">{t("conversations.loading")}</p>
+                    ) : threadMessages.length === 0 ? (
+                      <p className="text-center text-sm text-slate-400 py-10">{t("conversations.noMessages")}</p>
+                    ) : (
+                      threadMessages.map((m) => {
+                        const fromMe = m.from_user_id === user?.id;
+                        const date = new Date(m.created_at);
+                        const today = new Date();
+                        const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+                        const sameDay = (a: Date, b: Date) =>
+                          a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+                        const dateLabel = sameDay(date, today)
+                          ? t("conversations.today")
+                          : sameDay(date, yesterday)
+                          ? t("conversations.yesterday")
+                          : date.toLocaleDateString();
+                        const timeLabel = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                        return (
+                          <div key={m.id} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
+                            <div
+                              className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
+                                fromMe
+                                  ? "bg-rose-600 text-white rounded-tr-sm"
+                                  : "bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-tl-sm"
+                              }`}
+                            >
+                              <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                              <p className={`mt-1 text-[10px] ${fromMe ? "text-rose-200" : "text-slate-400"}`}>
+                                {dateLabel} {timeLabel}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={threadEndRef} />
+                  </div>
+                  {/* Reply bar */}
+                  <div className="border-t border-slate-100 dark:border-slate-700 px-4 py-3 flex gap-2 items-end">
+                    <textarea
+                      value={convInput}
+                      onChange={(e) => setConvInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendConvReply(); } }}
+                      placeholder={t("conversations.inputPlaceholder")}
+                      rows={2}
+                      className="flex-1 resize-none rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-200"
+                    />
+                    <Button
+                      onClick={() => void sendConvReply()}
+                      disabled={convSending || !convInput.trim()}
+                      className="h-10 w-10 shrink-0 rounded-xl bg-rose-600 hover:bg-rose-700 p-0"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="joda-surface border-0 shadow-none flex items-center justify-center">
+                <div className="text-center text-slate-400 py-20">
+                  <Inbox className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">{t("conversations.empty")}</p>
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* ── Messages tab ─────────────────────────────────────────────────── */}
         {tab === "messages" && (

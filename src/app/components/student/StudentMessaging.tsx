@@ -11,6 +11,7 @@ import { ChevronLeft, Mail, MailOpen, SendHorizonal } from "lucide-react";
 interface Message {
   id: string;
   from_user_id: string;
+  to_user_id: string;
   subject: string;
   content: string;
   read: boolean;
@@ -40,8 +41,8 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
     setLoading(true);
     const { data } = await supabase
       .from("messages")
-      .select("id, from_user_id, subject, content, read, created_at, metadata")
-      .eq("to_user_id", userId)
+      .select("id, from_user_id, to_user_id, subject, content, read, created_at, metadata")
+      .or(`to_user_id.eq.${userId},from_user_id.eq.${userId}`)
       .order("created_at", { ascending: false });
     const msgs = (data as Message[]) ?? [];
     setMessages(msgs);
