@@ -557,6 +557,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             subtitle={t("payments.description")}
                         />
                         <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
+                            <CardContent className="p-0 pt-6">
                                 <PaymentOverview
                                     choix={studentChoix}
                                     langue={studentLangue}
@@ -573,6 +574,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
                         {payments.length > 0 && (
                             <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
+                                <CardHeader>
                                     <CardTitle className="text-base font-semibold tracking-tight text-[var(--student-fg)]">{t("payments.paymentHistory")}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
