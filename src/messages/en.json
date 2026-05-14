@@ -809,6 +809,8 @@
       "today": "Today",
       "week": "This week",
       "month": "This month",
+      "quarter": "This quarter",
+      "semester": "This semester",
       "year": "This year",
       "custom": "Custom"
     },

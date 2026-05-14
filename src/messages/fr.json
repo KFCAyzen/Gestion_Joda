@@ -809,6 +809,8 @@
       "today": "Aujourd'hui",
       "week": "Cette semaine",
       "month": "Ce mois",
+      "quarter": "Ce trimestre",
+      "semester": "Ce semestre",
       "year": "Cette année",
       "custom": "Personnalisé"
     },

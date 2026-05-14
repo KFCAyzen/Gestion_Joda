@@ -126,6 +126,8 @@ function dayKey(d: Date): string {
     return d.toISOString().slice(0, 10);
 }
 
+type ViewMode = "jour" | "semaine" | "mois" | "trimestre" | "semestre" | "annee";
+
 const PAGE_SIZE = 10;
 
 export default function LivreComptable() {
@@ -134,6 +136,7 @@ export default function LivreComptable() {
     const { showNotification } = useNotificationContext();
 
     const [viewDate, setViewDate] = useState<Date>(new Date());
+    const [viewMode, setViewMode] = useState<ViewMode>("jour");
     const [entrees, setEntrees] = useState<EntreeComptable[]>([]);
     const [sorties, setSorties] = useState<SortieComptable[]>([]);
     const [users, setUsers] = useState<AppUser[]>([]);
@@ -197,9 +200,33 @@ export default function LivreComptable() {
         [students]
     );
 
-    // Build unified ledger for the current day
-    const dayStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate());
-    const dayEnd = new Date(dayStart.getTime() + 86400000);
+    // Build unified ledger for the current period
+    const getPeriodBounds = () => {
+        const d = viewDate;
+        const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+        switch (viewMode) {
+            case "semaine": {
+                const dow = d.getDay();
+                const start = new Date(y, m, day - dow);
+                return { start, end: new Date(start.getTime() + 7 * 86400000) };
+            }
+            case "mois":
+                return { start: new Date(y, m, 1), end: new Date(y, m + 1, 1) };
+            case "trimestre": {
+                const q = Math.floor(m / 3);
+                return { start: new Date(y, q * 3, 1), end: new Date(y, q * 3 + 3, 1) };
+            }
+            case "semestre": {
+                const s = m < 6 ? 0 : 1;
+                return { start: new Date(y, s * 6, 1), end: new Date(y, s * 6 + 6, 1) };
+            }
+            case "annee":
+                return { start: new Date(y, 0, 1), end: new Date(y + 1, 0, 1) };
+            default:
+                return { start: new Date(y, m, day), end: new Date(y, m, day + 1) };
+        }
+    };
+    const { start: dayStart, end: dayEnd } = getPeriodBounds();
 
     const dayEntrees = entrees.filter((e) => {
         const d = new Date(e.date);
@@ -258,19 +285,47 @@ export default function LivreComptable() {
     const soldeBy = lastValidated ? getUserName(lastValidated.validated_by) : null;
     const soldeAt = lastValidated?.validated_at ? fmtTime(lastValidated.validated_at) : null;
 
-    const prevDay = () => {
+    const periodLabel = () => {
+        const d = viewDate;
+        const opts: Intl.DateTimeFormatOptions =
+            viewMode === "jour" ? { day: "numeric", month: "long", year: "numeric" }
+            : viewMode === "semaine" ? { day: "numeric", month: "short" }
+            : viewMode === "mois" ? { month: "long", year: "numeric" }
+            : viewMode === "trimestre" ? { month: "short", year: "numeric" }
+            : viewMode === "semestre" ? { month: "short", year: "numeric" }
+            : { year: "numeric" };
+        if (viewMode === "semaine") {
+            const { start, end } = getPeriodBounds();
+            return `${fmtShortDate(start)} – ${fmtShortDate(new Date(end.getTime() - 86400000))}`;
+        }
+        if (viewMode === "trimestre") {
+            const q = Math.floor(d.getMonth() / 3) + 1;
+            return `T${q} ${d.getFullYear()}`;
+        }
+        if (viewMode === "semestre") {
+            const s = d.getMonth() < 6 ? 1 : 2;
+            return `S${s} ${d.getFullYear()}`;
+        }
+        return d.toLocaleDateString("fr-FR", opts);
+    };
+
+    const navigate = (dir: 1 | -1) => {
         const d = new Date(viewDate);
-        d.setDate(d.getDate() - 1);
+        const delta: Record<ViewMode, number> = { jour: 1, semaine: 7, mois: 0, trimestre: 0, semestre: 0, annee: 0 };
+        if (viewMode === "mois") d.setMonth(d.getMonth() + dir);
+        else if (viewMode === "trimestre") d.setMonth(d.getMonth() + dir * 3);
+        else if (viewMode === "semestre") d.setMonth(d.getMonth() + dir * 6);
+        else if (viewMode === "annee") d.setFullYear(d.getFullYear() + dir);
+        else d.setDate(d.getDate() + dir * delta[viewMode]);
         setViewDate(d);
         setPage(1);
     };
-    const nextDay = () => {
-        const d = new Date(viewDate);
-        d.setDate(d.getDate() + 1);
-        setViewDate(d);
-        setPage(1);
+
+    const isCurrentPeriod = () => {
+        const now = new Date();
+        const { start, end } = getPeriodBounds();
+        return now >= start && now < end;
     };
-    const isToday = dayKey(viewDate) === dayKey(new Date());
 
     const handleValidateSortie = async (id: string) => {
         if (!user || !isAdminLike) return;
@@ -348,7 +403,7 @@ export default function LivreComptable() {
             type: r.kind,
         }));
         await printAccountingHtmlReport({
-            title: `Rapport comptable — ${fmtFullDate(viewDate)}`,
+            title: `Rapport comptable — ${periodLabel()}`,
             period: { start: dayStart.toISOString(), end: dayEnd.toISOString() },
             entries: ops,
             summary: { totalEntrees, totalSorties, balance: solde },
@@ -372,7 +427,7 @@ export default function LivreComptable() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `livre-comptable-${dayKey(viewDate)}.csv`;
+        a.download = `livre-comptable-${viewMode}-${dayKey(viewDate)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -391,28 +446,40 @@ export default function LivreComptable() {
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Livre</h1>
                             <span className="text-xl text-gray-400">·</span>
-                            <span className="text-xl font-medium text-gray-700 dark:text-gray-300">{fmtFullDate(viewDate)}</span>
+                            <span className="text-xl font-medium text-gray-700 dark:text-gray-300">{periodLabel()}</span>
                             <div className="flex items-center gap-1">
                                 <button
-                                    onClick={prevDay}
+                                    onClick={() => navigate(-1)}
                                     className="rounded-full border border-gray-200 dark:border-gray-700 p-1 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                 >
                                     <ChevronLeft className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                 </button>
                                 <button
-                                    onClick={nextDay}
-                                    disabled={isToday}
+                                    onClick={() => navigate(1)}
+                                    disabled={isCurrentPeriod()}
                                     className="rounded-full border border-gray-200 dark:border-gray-700 p-1 hover:bg-gray-50 dark:bg-gray-800/50 disabled:opacity-30"
                                 >
                                     <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                 </button>
                             </div>
+                            <select
+                                value={viewMode}
+                                onChange={(e) => { setViewMode(e.target.value as ViewMode); setPage(1); }}
+                                className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-slate-800 outline-none hover:bg-gray-50 dark:hover:bg-gray-700 dark:[color-scheme:dark]"
+                            >
+                                <option value="jour">Jour</option>
+                                <option value="semaine">Semaine</option>
+                                <option value="mois">Mois</option>
+                                <option value="trimestre">Trimestre</option>
+                                <option value="semestre">Semestre</option>
+                                <option value="annee">Année</option>
+                            </select>
                         </div>
                         <div className="flex items-center gap-2">
                             <select
                                 value={catFilter}
                                 onChange={(e) => { setCatFilter(e.target.value); setPage(1); }}
-                                className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 outline-none hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-slate-800 outline-none hover:bg-gray-50 dark:hover:bg-gray-700 dark:[color-scheme:dark]"
                             >
                                 <option value="tout">Catégorie</option>
                                 <option value="entree">Entrées uniquement</option>
@@ -444,7 +511,7 @@ export default function LivreComptable() {
                     {/* Entrées */}
                     <div className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                            Entrées jour
+                            Entrées {viewMode === "jour" ? "jour" : "période"}
                         </p>
                         <p className="mt-2 text-2xl font-bold text-green-600">
                             +{fmt(totalEntrees)} F
@@ -453,7 +520,7 @@ export default function LivreComptable() {
                     {/* Sorties */}
                     <div className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                            Sorties jour
+                            Sorties {viewMode === "jour" ? "jour" : "période"}
                         </p>
                         <p className="mt-2 text-2xl font-bold text-red-500">
                             −{fmt(totalSorties)} F
@@ -463,7 +530,7 @@ export default function LivreComptable() {
                     <div className="rounded-xl bg-gray-900 p-4">
                         <div className="flex items-start justify-between">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                                Solde jour
+                                Solde {viewMode === "jour" ? "jour" : "période"}
                             </p>
                             {soldeBy && soldeAt && (
                                 <span className="text-[10px] text-gray-400">
@@ -627,16 +694,10 @@ export default function LivreComptable() {
                                     </button>
                                 </div>
                                 <button
-                                    onClick={prevDay}
+                                    onClick={() => navigate(-1)}
                                     className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
                                 >
-                                    Voir hier ·{" "}
-                                    {(() => {
-                                        const d = new Date(viewDate);
-                                        d.setDate(d.getDate() - 1);
-                                        return fmtShortDate(d);
-                                    })()}{" "}
-                                    →
+                                    Période précédente →
                                 </button>
                             </div>
                         </div>
@@ -731,7 +792,7 @@ export default function LivreComptable() {
                                     <select
                                         value={newForm.type}
                                         onChange={(e) => setNewForm((f) => ({ ...f, type: e.target.value }))}
-                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-800 outline-none focus:border-gray-400 dark:[color-scheme:dark]"
                                     >
                                         {TYPES_ENTREES.map((t) => (
                                             <option key={t} value={t}>{catLabel(t)}</option>
@@ -746,7 +807,7 @@ export default function LivreComptable() {
                                     <select
                                         value={newForm.categorie}
                                         onChange={(e) => setNewForm((f) => ({ ...f, categorie: e.target.value }))}
-                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-800 outline-none focus:border-gray-400 dark:[color-scheme:dark]"
                                     >
                                         {CATEGORIES_SORTIES.map((c) => (
                                             <option key={c} value={c}>{catLabel(c)}</option>

@@ -58,7 +58,7 @@ interface SortieComptable {
 }
 
 type Tab = "entrees" | "sorties" | "rapport" | "budgets" | "categories";
-type PeriodFilter = "jour" | "semaine" | "mois" | "annee" | "personnalise";
+type PeriodFilter = "jour" | "semaine" | "mois" | "trimestre" | "semestre" | "annee" | "personnalise";
 type ReportScope = "all" | "entrees" | "sorties";
 
 interface Budget {
@@ -165,6 +165,8 @@ export default function AccountingPage() {
             case "jour": return t("periods.today");
             case "semaine": return t("periods.week");
             case "mois": return t("periods.month");
+            case "trimestre": return t("periods.quarter");
+            case "semestre": return t("periods.semester");
             case "annee": return t("periods.year");
             case "personnalise": return t("periods.custom");
             case "mensuel": return t("budgetPeriods.monthly");
@@ -337,6 +339,18 @@ export default function AccountingPage() {
                 start = new Date(now.getFullYear(), now.getMonth(), 1);
                 end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
                 break;
+            case "trimestre": {
+                const q = Math.floor(now.getMonth() / 3);
+                start = new Date(now.getFullYear(), q * 3, 1);
+                end = new Date(now.getFullYear(), q * 3 + 3, 0, 23, 59, 59);
+                break;
+            }
+            case "semestre": {
+                const s = now.getMonth() < 6 ? 0 : 1;
+                start = new Date(now.getFullYear(), s * 6, 1);
+                end = new Date(now.getFullYear(), s * 6 + 6, 0, 23, 59, 59);
+                break;
+            }
             case "annee":
                 start = new Date(now.getFullYear(), 0, 1);
                 end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
@@ -831,6 +845,8 @@ export default function AccountingPage() {
                                         <SelectItem value="jour">{t("periods.today")}</SelectItem>
                                         <SelectItem value="semaine">{t("periods.week")}</SelectItem>
                                         <SelectItem value="mois">{t("periods.month")}</SelectItem>
+                                        <SelectItem value="trimestre">{t("periods.quarter")}</SelectItem>
+                                        <SelectItem value="semestre">{t("periods.semester")}</SelectItem>
                                         <SelectItem value="annee">{t("periods.year")}</SelectItem>
                                         <SelectItem value="personnalise">{t("periods.custom")}</SelectItem>
                                     </SelectContent>
