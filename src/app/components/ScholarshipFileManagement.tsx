@@ -219,12 +219,12 @@ export default function ScholarshipFileManagement() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "admission_validee": return "bg-emerald-100 text-emerald-800";
+            case "admission_validee": return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300";
             case "en_cours": return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
-            case "admission_rejetee": return "bg-rose-100 text-rose-800";
-            case "document_manquant": return "bg-amber-100 text-amber-800";
-            case "document_recu": return "bg-teal-100 text-teal-800";
-            case "visa_en_cours": return "bg-purple-100 text-purple-800";
+            case "admission_rejetee": return "bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-300";
+            case "document_manquant": return "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300";
+            case "document_recu": return "bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300";
+            case "visa_en_cours": return "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300";
             case "termine": return "bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300";
             default: return "bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300";
         }
@@ -281,7 +281,7 @@ export default function ScholarshipFileManagement() {
                 <div className="joda-surface flex items-center gap-4">
                     <button
                         onClick={closeFile}
-                        className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-50 dark:bg-slate-800/50"
+                        className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         {t("actions.back")}
@@ -467,7 +467,7 @@ export default function ScholarshipFileManagement() {
                     {filteredFiles.map(file => (
                         <div
                             key={file.id}
-                            className="relative cursor-pointer overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)]"
+                            className="relative cursor-pointer overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(15,23,42,0.12)]"
                             onClick={() => openFile(file)}
                         >
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.92),transparent_34%)]" />
@@ -479,7 +479,7 @@ export default function ScholarshipFileManagement() {
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <h3 className="text-lg font-bold text-slate-950">{file.studentName}</h3>
+                                                <h3 className="text-lg font-bold text-slate-950 dark:text-slate-100">{file.studentName}</h3>
                                                 {file.status === "admission_validee" && <Sparkles className="h-4 w-4 text-emerald-500" />}
                                             </div>
                                             <p className="text-sm text-slate-500 dark:text-slate-400">{file.program}</p>
@@ -491,14 +491,14 @@ export default function ScholarshipFileManagement() {
                                 </div>
 
                                 <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="rounded-[1.4rem] border border-white/80 bg-white/75 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                                    <div className="rounded-[1.4rem] border border-white/80 dark:border-slate-700 bg-white/75 dark:bg-slate-700/50 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                                         <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                                             <School2 className="h-3.5 w-3.5" />
                                             {t("card.targetUniversity")}
                                         </div>
                                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{file.university}</p>
                                     </div>
-                                    <div className="rounded-[1.4rem] border border-white/80 bg-white/75 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                                    <div className="rounded-[1.4rem] border border-white/80 dark:border-slate-700 bg-white/75 dark:bg-slate-700/50 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                                         <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                                             <CalendarDays className="h-3.5 w-3.5" />
                                             {t("card.deposit")}
@@ -508,7 +508,7 @@ export default function ScholarshipFileManagement() {
                                 </div>
 
                                 {file.notes_internes && (
-                                    <div className="flex items-start gap-3 rounded-[1.4rem] border border-sky-200 bg-sky-50/80 p-4">
+                                    <div className="flex items-start gap-3 rounded-[1.4rem] border border-sky-200 dark:border-sky-800 bg-sky-50/80 dark:bg-sky-900/20 p-4">
                                         <Clock3 className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-500" />
                                         <div>
                                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">{t("card.followUpNote")}</p>
