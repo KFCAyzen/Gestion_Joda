@@ -410,7 +410,7 @@ export default function UserManagement() {
                                     className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                                         activeTab === tab
                                             ? "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-[0_12px_28px_rgba(239,68,68,0.28)]"
-                                            : "bg-white/70 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200"
+                                            : "bg-white/70 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                                     }`}
                                 >
                                     {tab === "users" ? t("tabs.users", { count: dbUsers.length }) : t("tabs.create")}
@@ -454,8 +454,8 @@ export default function UserManagement() {
                                                     <Badge
                                                         className={
                                                             entry.is_active === false
-                                                                ? "bg-red-100 text-red-700 dark:text-red-300 hover:bg-red-100"
-                                                                : "bg-emerald-100 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
+                                                                ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40"
+                                                                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
                                                         }
                                                     >
                                                         {entry.is_active === false ? t("status.disabled") : t("status.active")}
