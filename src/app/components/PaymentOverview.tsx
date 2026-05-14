@@ -330,7 +330,7 @@ export default function PaymentOverview({
                     <span className="font-medium">{t("globalProgress")}</span>
                     <span className="font-semibold tabular-nums text-[var(--student-ring-exercise)]">{pct}%</span>
                 </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-[rgba(0,0,0,0.08)] ring-1 ring-[var(--student-border)] dark:bg-black/45 dark:ring-white/[0.06] sm:h-3">
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/25 dark:bg-black/45 sm:h-3">
                     <div
                         className="h-full rounded-full bg-[var(--student-ring-exercise)] transition-all duration-700"
                         style={{
@@ -449,7 +449,7 @@ export default function PaymentOverview({
                                                         </span>
                                                         <span className="shrink-0 text-[10px] tabular-nums text-[var(--student-fg-muted)]">{state.barPct}%</span>
                                                     </div>
-                                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(0,0,0,0.08)] ring-1 ring-[var(--student-border)] dark:bg-black/50 dark:ring-white/[0.05]">
+                                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/25 dark:bg-black/50">
                                                         <div
                                                             className={`h-1.5 rounded-full transition-all duration-500 ${state.barColor}`}
                                                             style={{ width: `${state.barPct}%` }}

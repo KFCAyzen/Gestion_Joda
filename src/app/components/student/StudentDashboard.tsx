@@ -76,8 +76,8 @@ export default function StudentDashboard({
                             <span className="text-slate-600">Progression</span>
                             <span className="font-semibold text-slate-900">{studentFile?.completionRate || 0}%</span>
                         </div>
-                        <div className="h-3 w-full rounded-full bg-slate-200">
-                            <div className="h-3 rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${studentFile?.completionRate || 0}%` }} />
+                        <div className="h-3 w-full rounded-full bg-black/25 dark:bg-white/10">
+                            <div className="h-3 rounded-full bg-[#4ade80]" style={{ width: `${studentFile?.completionRate || 0}%` }} />
                         </div>
                     </div>
                     <div className="flex items-center justify-between rounded-lg bg-slate-50 p-3">

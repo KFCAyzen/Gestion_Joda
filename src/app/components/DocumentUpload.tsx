@@ -322,19 +322,19 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                         <p className="text-sm font-medium text-[var(--student-fg-muted)]">Complétion du dossier</p>
                         <span className="text-sm font-semibold tabular-nums text-[var(--student-fg)]">{pct}%</span>
                     </div>
-                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-[rgba(0,0,0,0.15)] ring-1 ring-[var(--student-border)] dark:bg-black/45 dark:ring-white/[0.06]">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/25 dark:bg-black/45">
                         <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{
                                 width: `${pct}%`,
                                 background: pct === 100
-                                    ? "rgba(255,255,255,1)"
+                                    ? "#22c55e"
                                     : pct >= 67
-                                      ? "rgba(255,255,255,0.85)"
+                                      ? "#4ade80"
                                       : pct >= 34
-                                        ? "rgba(255,255,255,0.60)"
-                                        : "rgba(255,255,255,0.35)",
-                                boxShadow: pct === 100 ? "var(--student-pay-glow-soft)" : undefined,
+                                        ? "#f59e0b"
+                                        : "#f97316",
+                                boxShadow: pct === 100 ? "0 0 12px rgba(34,197,94,0.50)" : undefined,
                             }}
                         />
                     </div>
@@ -351,7 +351,7 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
             </Card>
 
             {docs.length > 0 && (
-                <div className="student-pay-pill flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="student-pay-pill rounded-2xl flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                         <p className="text-sm font-semibold text-white">
                             {notifSent ? "Dossier envoyé à l'équipe" : "Envoyer mon dossier à l'équipe"}

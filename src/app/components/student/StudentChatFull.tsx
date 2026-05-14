@@ -337,9 +337,9 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                         {dossier.docsOk}/{dossier.docsTotal}
                                     </span>
                                 </div>
-                                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--student-border)]">
+                                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/25 dark:bg-[var(--student-border)]">
                                     <div
-                                        className="h-1.5 rounded-full bg-blue-400"
+                                        className="h-1.5 rounded-full bg-[#f59e0b]"
                                         style={{
                                             width: `${Math.round((dossier.docsOk / dossier.docsTotal) * 100)}%`,
                                         }}

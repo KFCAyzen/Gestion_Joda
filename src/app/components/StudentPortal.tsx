@@ -507,8 +507,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         <p className="text-2xl font-semibold tracking-tight text-[var(--student-fg)]">{unpaid.length}</p>
                                         <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{paymentsProgressPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.08)] dark:bg-white/10">
-                                        <div className="h-1.5 rounded-full bg-[var(--student-ring-move)]" style={{ width: `${Math.min(100, paymentsProgressPct)}%` }} />
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/25 dark:bg-white/10">
+                                        <div className="h-1.5 rounded-full bg-[#f59e0b]" style={{ width: `${Math.min(100, paymentsProgressPct)}%` }} />
                                     </div>
                                 </button>
 
@@ -522,8 +522,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         <p className="text-2xl font-semibold tracking-tight text-[var(--student-fg)]">{pendingDocs.length}</p>
                                         <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{docsProgressPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.08)] dark:bg-white/10">
-                                        <div className="h-1.5 rounded-full bg-[var(--student-ring-exercise)]" style={{ width: `${Math.min(100, docsProgressPct)}%` }} />
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/25 dark:bg-white/10">
+                                        <div className="h-1.5 rounded-full bg-[#4ade80]" style={{ width: `${Math.min(100, docsProgressPct)}%` }} />
                                     </div>
                                 </button>
 
@@ -537,8 +537,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         <p className="truncate text-base font-semibold tracking-tight text-[var(--student-fg)]">{dossierStatusLabel ? dossierStatusLabel : t("dossier.noFile")}</p>
                                         <p className="text-xs font-semibold text-[var(--student-fg-muted)]">{dossierStepPct}%</p>
                                     </div>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(220,38,38,0.08)] dark:bg-white/10">
-                                        <div className="h-1.5 rounded-full bg-[var(--student-ring-stand)]" style={{ width: `${Math.min(100, dossierStepPct)}%` }} />
+                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/25 dark:bg-white/10">
+                                        <div className="h-1.5 rounded-full bg-[#f59e0b]" style={{ width: `${Math.min(100, dossierStepPct)}%` }} />
                                     </div>
                                 </button>
                             </div>
