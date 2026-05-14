@@ -79,7 +79,7 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
         <button
           type="button"
           onClick={() => setSelected(null)}
-          className="student-focus-ring flex items-center gap-1.5 text-sm text-white/55 hover:text-white"
+          className="student-focus-ring flex items-center gap-1.5 text-sm text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]"
         >
           <ChevronLeft className="h-4 w-4" />
           {t("back")}
@@ -88,10 +88,10 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
           <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--student-ring-stand)]">
             {formatDate(selected.created_at)}
           </p>
-          <h3 className="text-base font-semibold text-white sm:text-lg">
+          <h3 className="text-base font-semibold text-[var(--student-fg)] sm:text-lg">
             {selected.subject}
           </h3>
-          <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-white/75">
+          <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-[var(--student-fg-muted)]">
             {selected.content}
           </div>
         </div>
@@ -125,12 +125,12 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
                 type="button"
                 onClick={() => void openMessage(msg)}
                 className={cn(
-                  "student-focus-ring student-surface w-full rounded-2xl p-4 text-left transition-colors hover:bg-white/[0.07]",
+                  "student-focus-ring student-surface w-full rounded-2xl p-4 text-left transition-colors hover:bg-[rgba(220,38,38,0.04)] dark:hover:bg-white/[0.07]",
                   !msg.read && "border-l-2 border-[var(--student-ring-stand)]",
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 shrink-0 text-white/40">
+                  <span className="mt-0.5 shrink-0 text-[var(--student-fg-muted)]">
                     {msg.read ? (
                       <MailOpen className="h-4 w-4" />
                     ) : (
@@ -143,17 +143,17 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
                         className={cn(
                           "truncate text-sm",
                           msg.read
-                            ? "font-normal text-white/70"
-                            : "font-semibold text-white",
+                            ? "font-normal text-[var(--student-fg-muted)]"
+                            : "font-semibold text-[var(--student-fg)]",
                         )}
                       >
                         {msg.subject}
                       </p>
-                      <span className="shrink-0 text-[10px] text-white/35">
+                      <span className="shrink-0 text-[10px] text-[var(--student-fg-muted)] opacity-60">
                         {formatDate(msg.created_at)}
                       </span>
                     </div>
-                    <p className="mt-0.5 line-clamp-2 text-[12px] text-white/45">
+                    <p className="mt-0.5 line-clamp-2 text-[12px] text-[var(--student-fg-muted)]">
                       {msg.content}
                     </p>
                   </div>

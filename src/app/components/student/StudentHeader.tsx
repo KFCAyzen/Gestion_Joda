@@ -60,7 +60,7 @@ export function StudentHeader({
   const initials = getInitials(userName);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[rgba(220,38,38,0.12)] bg-white/85 backdrop-blur-xl dark:border-white/[0.06] dark:bg-black/35">
+    <header className="sticky top-0 z-30 border-b border-[var(--student-border)] bg-white/85 backdrop-blur-xl dark:bg-black/35">
       <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2.5 sm:px-6 lg:px-8">
         <div className="w-[7rem] shrink-0 sm:w-[7.5rem]" aria-hidden />
 

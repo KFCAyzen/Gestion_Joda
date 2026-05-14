@@ -184,10 +184,10 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
             {/* CENTER — Chat */}
             <div className="flex flex-1 flex-col overflow-hidden">
                 {/* Chat header */}
-                <div className="flex items-center gap-3 border-b border-white/8 px-4 py-3">
+                <div className="flex items-center gap-3 border-b border-[var(--student-border)] px-4 py-3">
                     <button
                         onClick={onBack}
-                        className="flex items-center text-white/50 hover:text-white md:hidden"
+                        className="flex items-center text-[var(--student-fg-muted)] hover:text-[var(--student-fg)] md:hidden"
                     >
                         <ChevronLeft className="h-5 w-5" />
                     </button>
@@ -195,18 +195,18 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-sm font-bold text-white">
                             {avatarInitials(agentName)}
                         </div>
-                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#1a1a2e] bg-green-400" />
+                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--student-surface)] bg-green-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white">{agentName} · <span className="font-normal text-white/60">{t("yourAgent")}</span></p>
-                        <p className="text-[11px] text-white/45">{t("onlineStatus")}</p>
+                        <p className="text-sm font-semibold text-[var(--student-fg)]">{agentName} · <span className="font-normal text-[var(--student-fg-muted)]">{t("yourAgent")}</span></p>
+                        <p className="text-[11px] text-[var(--student-fg-muted)] opacity-70">{t("onlineStatus")}</p>
                     </div>
                     {dossier && (
-                        <span className="hidden rounded-full border border-white/12 bg-white/6 px-2.5 py-1 text-[11px] text-white/70 sm:inline">
+                        <span className="hidden rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] px-2.5 py-1 text-[11px] text-[var(--student-fg-muted)] sm:inline">
                             {dossierStatusLabel[dossier.status] ?? dossier.status}
                         </span>
                     )}
-                    <button className="text-white/40 hover:text-white/70 md:hidden">
+                    <button className="text-[var(--student-fg-muted)] hover:text-[var(--student-fg)] md:hidden">
                         <MoreVertical className="h-5 w-5" />
                     </button>
                 </div>
@@ -214,11 +214,11 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto px-4 py-4">
                     {loading ? (
-                        <div className="flex items-center justify-center py-12 text-sm text-white/40">
+                        <div className="flex items-center justify-center py-12 text-sm text-[var(--student-fg-muted)]">
                             {t("loading")}
                         </div>
                     ) : messages.length === 0 ? (
-                        <div className="flex items-center justify-center py-12 text-sm text-white/40">
+                        <div className="flex items-center justify-center py-12 text-sm text-[var(--student-fg-muted)]">
                             {t("empty")}
                         </div>
                     ) : (
@@ -226,11 +226,11 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                             <div key={group.label}>
                                 {/* Date separator */}
                                 <div className="my-4 flex items-center gap-3">
-                                    <div className="h-px flex-1 bg-white/8" />
-                                    <span className="text-[10px] font-semibold tracking-widest text-white/30">
+                                    <div className="h-px flex-1 bg-[var(--student-border)]" />
+                                    <span className="text-[10px] font-semibold tracking-widest text-[var(--student-fg-muted)] opacity-60">
                                         — {group.label} —
                                     </span>
-                                    <div className="h-px flex-1 bg-white/8" />
+                                    <div className="h-px flex-1 bg-[var(--student-border)]" />
                                 </div>
 
                                 {group.messages.map((msg) => {
@@ -240,7 +240,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                     if (isSystem) {
                                         return (
                                             <div key={msg.id} className="my-3 flex justify-center">
-                                                <span className="rounded-full border border-white/10 bg-white/6 px-4 py-1.5 text-[11px] text-white/55">
+                                                <span className="rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] px-4 py-1.5 text-[11px] text-[var(--student-fg-muted)]">
                                                     {msg.content}
                                                 </span>
                                             </div>
@@ -260,19 +260,19 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                             <div
                                                 className={`max-w-[72%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                                                     isOwn
-                                                        ? "rounded-br-sm bg-gray-900 text-white"
-                                                        : "rounded-bl-sm bg-white/8 text-white/85"
+                                                        ? "rounded-br-sm bg-[rgba(220,38,38,0.10)] dark:bg-gray-900 text-[var(--student-fg)]"
+                                                        : "rounded-bl-sm bg-[var(--student-surface)] text-[var(--student-fg)]"
                                                 }`}
                                             >
                                                 {msg.content}
                                                 <div
-                                                    className={`mt-1 text-[10px] ${
-                                                        isOwn ? "text-white/35 text-right" : "text-white/30"
+                                                    className={`mt-1 text-[10px] text-[var(--student-fg-muted)] opacity-60 ${
+                                                        isOwn ? "text-right" : ""
                                                     }`}
                                                 >
                                                     {fmtTime(msg.created_at)}
                                                     {isOwn && (
-                                                        <span className="ml-1 text-white/30">✓✓</span>
+                                                        <span className="ml-1 opacity-50">✓✓</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -286,9 +286,9 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                 </div>
 
                 {/* Input bar */}
-                <div className="border-t border-white/8 px-4 py-3">
-                    <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
-                        <button className="shrink-0 text-white/40 hover:text-white/60">
+                <div className="border-t border-[var(--student-border)] px-4 py-3">
+                    <div className="flex items-center gap-2 rounded-2xl border border-[var(--student-border)] bg-[var(--student-surface)] px-3 py-2">
+                        <button className="shrink-0 text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]">
                             <Paperclip className="h-5 w-5" />
                         </button>
                         <input
@@ -297,9 +297,9 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                             onChange={(e) => setText(e.target.value)}
                             onKeyDown={handleKey}
                             placeholder={t("inputPlaceholder", { name: agentName.split(" ")[0] })}
-                            className="flex-1 bg-transparent text-sm text-white placeholder-white/30 outline-none"
+                            className="flex-1 bg-transparent text-sm text-[var(--student-fg)] placeholder:text-[var(--student-fg-muted)] outline-none"
                         />
-                        <button className="shrink-0 text-white/40 hover:text-white/60">
+                        <button className="shrink-0 text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]">
                             <Mic className="h-5 w-5" />
                         </button>
                         <button
@@ -316,28 +316,28 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
 
             {/* RIGHT — Context panel (desktop only) */}
             {dossier && (
-                <aside className="hidden w-60 shrink-0 flex-col border-l border-white/8 overflow-y-auto xl:flex">
-                    <div className="border-b border-white/8 px-4 py-4">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                <aside className="hidden w-60 shrink-0 flex-col border-l border-[var(--student-border)] overflow-y-auto xl:flex">
+                    <div className="border-b border-[var(--student-border)] px-4 py-4">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)] opacity-60">
                             {t("activeFile")}
                         </p>
-                        <p className="mt-2 text-base font-semibold text-white">
+                        <p className="mt-2 text-base font-semibold text-[var(--student-fg)]">
                             {dossier.university ?? t("university")}
                         </p>
                         {dossier.program && (
-                            <p className="text-[12px] text-white/50">{dossier.program}</p>
+                            <p className="text-[12px] text-[var(--student-fg-muted)]">{dossier.program}</p>
                         )}
 
                         {/* Documents progress */}
                         {dossier.docsTotal > 0 && (
                             <div className="mt-3">
                                 <div className="flex items-center justify-between text-[11px]">
-                                    <span className="text-white/50">{t("documents")}</span>
-                                    <span className="font-semibold text-white/80">
+                                    <span className="text-[var(--student-fg-muted)] opacity-70">{t("documents")}</span>
+                                    <span className="font-semibold text-[var(--student-fg)] opacity-80">
                                         {dossier.docsOk}/{dossier.docsTotal}
                                     </span>
                                 </div>
-                                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--student-border)]">
                                     <div
                                         className="h-1.5 rounded-full bg-blue-400"
                                         style={{
@@ -352,13 +352,13 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                     {/* Next step */}
                     {dossier.nextStep && (
                         <div className="border-b border-white/8 px-4 py-4">
-                            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)] opacity-60">
                                 {t("nextStep")}
                             </p>
                             <div className="mt-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3">
-                                <p className="text-sm font-semibold text-white">{dossier.nextStep}</p>
+                                <p className="text-sm font-semibold text-[var(--student-fg)]">{dossier.nextStep}</p>
                                 {dossier.nextStepAt && (
-                                    <p className="mt-1 text-[11px] text-white/50">{dossier.nextStepAt}</p>
+                                    <p className="mt-1 text-[11px] text-[var(--student-fg-muted)]">{dossier.nextStepAt}</p>
                                 )}
                             </div>
                         </div>
@@ -367,16 +367,16 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                     {/* Next payment */}
                     {nextPayment && (
                         <div className="px-4 py-4">
-                            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)] opacity-60">
                                 {t("nextPayment")}
                             </p>
                             <div className="mt-2">
-                                <p className="text-sm font-medium text-white">{nextPayment.label}</p>
-                                <p className="text-base font-bold text-white">
+                                <p className="text-sm font-medium text-[var(--student-fg)]">{nextPayment.label}</p>
+                                <p className="text-base font-bold text-[var(--student-fg)]">
                                     {nextPayment.montant.toLocaleString("fr-FR")} F
                                 </p>
                                 {nextPayment.dateLimite && (
-                                    <p className="text-[11px] text-white/45">
+                                    <p className="text-[11px] text-[var(--student-fg-muted)]">
                                         {t("dueOn", { date: new Date(nextPayment.dateLimite).toLocaleDateString(locale, { day: "numeric", month: "short" }) })}
                                         {nextPayment.daysLeft !== null && ` · ${t("daysLeft", { count: nextPayment.daysLeft })}`}
                                     </p>
