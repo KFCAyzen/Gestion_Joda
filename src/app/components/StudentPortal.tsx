@@ -431,13 +431,21 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         return Math.min(100, Math.round((daysLeft / 30) * 100));
     })();
 
+    const daysUntilNextDue = nextDue?.date_limite
+        ? Math.ceil((new Date(nextDue.date_limite).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+
     const nextAction = overdue.length > 0
         ? { tone: "danger" as const, title: t("dashboard.followPayments"), detail: `${overdue.length} paiement(s) en retard`, cta: { label: t("portal.nav.payments"), view: "payments" as View } }
-        : nextDue
-          ? { tone: "warn" as const, title: "Prochaine échéance", detail: `${getPaymentTypeLabel(nextDue.type)} — ${nextDue.date_limite ? new Date(nextDue.date_limite).toLocaleDateString(locale) : ""}`, cta: { label: t("payments.makePayment"), view: "payments" as View } }
-          : pendingDocs.length > 0
-            ? { tone: "warn" as const, title: "Documents à compléter", detail: `${pendingDocs.length} document(s) à vérifier / renvoyer`, cta: { label: t("portal.nav.documents"), view: "documents" as View } }
-            : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
+        : unreadMessages > 0
+          ? { tone: "warn" as const, title: "Nouveau message", detail: lastMessagePreview || "Vous avez un message non lu", cta: { label: "Voir la messagerie", view: "messaging" as View } }
+          : daysUntilNextDue !== null && daysUntilNextDue <= 7
+            ? { tone: "danger" as const, title: "Échéance imminente", detail: `${getPaymentTypeLabel(nextDue!.type)} — dans ${daysUntilNextDue} jour(s)`, cta: { label: t("payments.makePayment"), view: "payments" as View } }
+            : nextDue
+              ? { tone: "warn" as const, title: "Prochaine échéance", detail: `${getPaymentTypeLabel(nextDue.type)} — ${nextDue.date_limite ? new Date(nextDue.date_limite).toLocaleDateString(locale) : ""}`, cta: { label: t("payments.makePayment"), view: "payments" as View } }
+              : pendingDocs.length > 0
+                ? { tone: "warn" as const, title: "Documents à compléter", detail: `${pendingDocs.length} document(s) à vérifier / renvoyer`, cta: { label: t("portal.nav.documents"), view: "documents" as View } }
+                : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
 
     const toneStyles = nextAction.tone === "danger"
         ? { icon: <AlertTriangle className="h-5 w-5 text-[#f97316]" />, bg: "border-[rgba(255,255,255,0.25)] bg-[rgba(0,0,0,0.20)] text-[#f97316]", ring: "ring-[rgba(255,165,0,0.35)]" }
