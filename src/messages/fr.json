@@ -486,7 +486,7 @@
       "seeDetails": "Voir les détails →"
     },
     "payments": {
-      "title": "Gestion des Paiements",
+      "title": "Évolution des paiements",
       "description": "Gérez vos paiements, téléchargez les reçus et consultez l'historique.",
       "scholarship": "Procédure Bourse",
       "mandarin": "Cours de Mandarin",
@@ -539,7 +539,7 @@
       "other": "Autre document"
     },
     "dossier": {
-      "title": "Mon Dossier",
+      "title": "Évolution de mon dossier",
       "subtitle": "Dossier de bourse",
       "description": "Suivi de l'avancement de ta candidature.",
       "applicationDate": "Date de candidature",
