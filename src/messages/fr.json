@@ -463,7 +463,12 @@
         "loading": "Chargement...",
         "empty": "Aucun message",
         "emptyDescription": "Vous n'avez pas encore reçu de message.",
-        "back": "Messagerie"
+        "back": "Messagerie",
+        "replyPlaceholder": "Écrire un message à l'équipe Joda…",
+        "send": "Envoyer",
+        "sending": "Envoi…",
+        "sent": "Message envoyé !",
+        "sendError": "Erreur lors de l'envoi."
       }
     },
     "dashboard": {
