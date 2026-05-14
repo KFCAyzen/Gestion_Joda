@@ -421,7 +421,7 @@ export default function UserManagement() {
 
                     <CardContent className="pt-6">
                         {error && <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">{error}</div>}
-                        {success && <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">{success}</div>}
+                        {success && <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-300">{success}</div>}
 
                         {activeTab === "users" && !selectedUser &&
                             (loading ? (
