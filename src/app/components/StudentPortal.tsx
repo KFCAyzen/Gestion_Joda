@@ -469,7 +469,6 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 movePct={paymentsProgressPct}
                                 exercisePct={docsProgressPct}
                                 standPct={dossierStepPct}
-                                labelTop="Aujourd’hui"
                                 labelBottom={`${Math.max(0, Math.round((paymentsProgressPct + docsProgressPct + dossierStepPct) / 3))}%`}
                             />
                         </div>
