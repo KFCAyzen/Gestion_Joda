@@ -262,13 +262,13 @@ export default function LoginPage() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute right-0 mt-2 w-32 rounded-xl bg-white/95 backdrop-blur-sm shadow-xl border border-gray-100 overflow-hidden z-50"
+                                    className="absolute right-0 mt-2 w-32 rounded-xl bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden z-50"
                                 >
                                     {locales.map((loc) => (
                                         <button
                                             key={loc}
                                             onClick={() => switchLocale(loc)}
-                                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-red-50 dark:bg-red-900/20 ${
+                                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 ${
                                                 locale === loc ? "text-red-600 bg-red-50 dark:bg-red-900/20" : "text-gray-700 dark:text-gray-300"
                                             }`}
                                         >
@@ -344,7 +344,7 @@ export default function LoginPage() {
                         {/* Panneau formulaire */}
                         <motion.div
                             className="flex flex-1 flex-col justify-center overflow-y-auto px-6 py-8 text-gray-900 dark:text-gray-100 sm:p-8 lg:p-10"
-                            style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)" }}
+                            style={{ background: theme === "dark" ? "rgba(15,23,42,0.97)" : "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)" }}
                             initial={{ x: 60, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
@@ -379,8 +379,7 @@ export default function LoginPage() {
                                             type="text"
                                             value={identifier}
                                             onChange={(e) => setIdentifier(e.target.value)}
-                                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
-                                            placeholder={t("identifierPlaceholder")}
+                                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none transition focus:border-red-400 focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30"
                                             required
                                             autoComplete="username"
                                             whileFocus={{ scale: 1.01 }}
@@ -398,7 +397,7 @@ export default function LoginPage() {
                                                 type={showPassword ? "text" : "password"}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
-                                                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 pr-12 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 pr-12 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none transition focus:border-red-400 focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30"
                                                 placeholder={t("passwordPlaceholder")}
                                                 required
                                                 autoComplete="current-password"
