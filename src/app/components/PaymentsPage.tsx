@@ -106,8 +106,6 @@ function typeLabel(type: string, tranche: number | null): string {
         2: "T2",
         3: "T3",
         4: "T4",
-        5: "Inscription cours Anglais",
-        6: "Inscription cours Mandarin",
     };
     return `${base} — ${labels[tranche] ?? `T${tranche}`}`;
 }
@@ -760,8 +758,6 @@ export default function PaymentsPage() {
                                         <option value="2">T2</option>
                                         <option value="3">T3</option>
                                         <option value="4">T4</option>
-                                        <option value="5">Inscription cours Anglais</option>
-                                        <option value="6">Inscription cours Mandarin</option>
                                     </select>
                                 </div>
                             </div>
