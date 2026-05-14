@@ -335,7 +335,8 @@
       "save": "Enregistrer",
       "add": "Ajouter",
       "modify": "Modifier",
-      "understood": "Compris"
+      "understood": "Compris",
+      "printCard": "Imprimer fiche"
     },
     "detail": {
       "contact": "Contact",

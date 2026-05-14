@@ -335,7 +335,8 @@
       "save": "Save",
       "add": "Add",
       "modify": "Edit",
-      "understood": "Got it"
+      "understood": "Got it",
+      "printCard": "Print card"
     },
     "detail": {
       "contact": "Contact",

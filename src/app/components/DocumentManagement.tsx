@@ -164,7 +164,7 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 mb-2">
                         <div 
                             className="bg-red-600 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${getCompletionRate()}%` }}

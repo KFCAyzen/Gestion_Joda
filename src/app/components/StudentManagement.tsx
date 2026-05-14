@@ -625,7 +625,7 @@ export default function StudentManagement() {
                                 {t("subtitle")}
                             </p>
                         </div>
-                        {canEdit && <Button onClick={openCreateForm}>{t("addButton")}</Button>}
+                        {canEdit && <Button onClick={openCreateForm} className="bg-red-600 hover:bg-red-700 text-white">{t("addButton")}</Button>}
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -809,7 +809,7 @@ export default function StudentManagement() {
                                             <Badge variant="outline">{getGenderLabel(selectedStudent.sexe)}</Badge>
                                         </div>
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => setSelectedStudent(null)}>✕</Button>
+                                    <Button variant="outline" size="sm" className="border-0 text-white hover:bg-slate-700" onClick={() => setSelectedStudent(null)}>✕</Button>
                                 </div>
 
                                 {/* Corps défilable */}
@@ -893,6 +893,7 @@ export default function StudentManagement() {
                                 <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 dark:border-slate-700 px-6 py-4">
                                     <Button
                                         variant="outline"
+                                        className="dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
                                         onClick={() => printStudentCard(selectedStudent)}
                                     >
                                         <Printer className="mr-2 h-4 w-4" />
@@ -901,6 +902,7 @@ export default function StudentManagement() {
                                     {canEdit && (
                                         <Button
                                             variant="outline"
+                                            className="dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
                                             onClick={() => {
                                                 openEditForm(selectedStudent);
                                                 setSelectedStudent(null);
@@ -910,7 +912,7 @@ export default function StudentManagement() {
                                             {t("actions.edit")}
                                         </Button>
                                     )}
-                                    <Button onClick={() => setSelectedStudent(null)}>{t("actions.close")}</Button>
+                                    <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setSelectedStudent(null)}>{t("actions.close")}</Button>
                                 </div>
                             </motion.div>
                         </motion.div>
