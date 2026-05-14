@@ -41,7 +41,7 @@ export function LanguageSwitcher() {
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Change language"
-        className="relative"
+        className="relative text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
       >
         <Globe className="h-4 w-4" />
         <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[9px] font-bold text-white">

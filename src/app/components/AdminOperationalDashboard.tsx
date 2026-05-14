@@ -74,10 +74,10 @@ function getBadge(log: ActivityLog): { label: string; style: string } | null {
         return { label: "À valider", style: "border border-red-300 text-red-600 bg-red-50 dark:bg-red-900/20" };
     }
     if (log.activity_type === "document_upload") {
-        return { label: "Prêt à examiner", style: "border border-green-300 text-green-700 bg-green-50" };
+        return { label: "Prêt à examiner", style: "border border-green-300 text-green-700 bg-green-50 dark:border-green-700 dark:text-green-400 dark:bg-green-900/20" };
     }
     if (log.activity_type === "dossier_status_change" && meta?.new_status === "admission_validee") {
-        return { label: "Admission", style: "border border-orange-300 text-orange-700 bg-orange-50" };
+        return { label: "Admission", style: "border border-orange-300 text-orange-700 bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:bg-orange-900/20" };
     }
     if (log.activity_type === "dossier_status_change" && meta?.new_status === "visa_en_cours") {
         return { label: "Visa", style: "border border-blue-300 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20" };
@@ -376,7 +376,7 @@ export default function AdminOperationalDashboard() {
         <ProtectedRoute requiredRole="user">
         <div className="-m-4 sm:-m-5 flex flex-col bg-white dark:bg-slate-900" style={{ height: "calc(100vh - 130px)" }}>
             {/* Top bar */}
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-700 px-6 py-3">
                 <div className="flex items-center gap-6">
                     <div>
                         <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</span>
@@ -389,8 +389,8 @@ export default function AdminOperationalDashboard() {
                                 onClick={() => setView(v)}
                                 className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                                     view === v
-                                        ? "bg-white text-gray-900 dark:text-gray-100 shadow-sm"
-                                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
+                                        ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                                 }`}
                             >
                                 {v.charAt(0).toUpperCase() + v.slice(1)}
@@ -399,7 +399,7 @@ export default function AdminOperationalDashboard() {
                     </div>
                     <button
                         onClick={() => setShowSearch(!showSearch)}
-                        className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50"
+                        className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                     >
                         <Search className="h-3.5 w-3.5" />
                         Rechercher
@@ -415,7 +415,7 @@ export default function AdminOperationalDashboard() {
             </div>
 
             {showSearch && (
-                <div className="border-b border-gray-100 px-6 py-2">
+                <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-2">
                     <input
                         autoFocus
                         type="text"
@@ -430,7 +430,7 @@ export default function AdminOperationalDashboard() {
             {/* Main 3-column layout */}
             <div className="flex flex-1 overflow-hidden">
                 {/* LEFT — Activity journal */}
-                <div className="flex w-[52%] flex-col overflow-y-auto border-r border-gray-100">
+                <div className="flex w-[52%] flex-col overflow-y-auto border-r border-gray-100 dark:border-slate-700">
                     {isLoading ? (
                         <div className="flex flex-1 items-center justify-center py-16 text-sm text-gray-400">
                             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -454,7 +454,7 @@ export default function AdminOperationalDashboard() {
                                         <div
                                             key={log.id}
                                             className={`flex items-start gap-4 border-b border-gray-50 px-6 py-3 ${
-                                                alert ? "bg-red-50 dark:bg-red-900/20/70" : "hover:bg-gray-50 dark:bg-gray-800/50/50"
+                                                alert ? "bg-red-50 dark:bg-red-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                             }`}
                                         >
                                             <span className="mt-0.5 w-10 shrink-0 text-right text-xs text-gray-400">{formatTime(log.created_at)}</span>
@@ -483,16 +483,16 @@ export default function AdminOperationalDashboard() {
                 </div>
 
                 {/* CENTER — Stats */}
-                <div className="flex w-[28%] flex-col gap-0 overflow-y-auto border-r border-gray-100">
+                <div className="flex w-[28%] flex-col gap-0 overflow-y-auto border-r border-gray-100 dark:border-slate-700">
                     {/* À TRAITER */}
-                    <div className="border-b border-gray-100 px-6 py-5">
+                    <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-5">
                         <p className="text-[10px] font-semibold tracking-widest text-gray-400">À TRAITER</p>
                         <p className="mt-1 text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100">{stats.aTraiter}</p>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">dossiers en attente</p>
                     </div>
 
                     {/* DOSSIERS OUVERTS */}
-                    <div className="border-b border-gray-100 px-6 py-5">
+                    <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-5">
                         <p className="text-[10px] font-semibold tracking-widest text-gray-400">DOSSIERS OUVERTS</p>
                         <p className="mt-1 text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100">{stats.dossiersOuverts}</p>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -502,7 +502,7 @@ export default function AdminOperationalDashboard() {
                     </div>
 
                     {/* ENCAISSÉ CE MOIS */}
-                    <div className="border-b border-gray-100 px-6 py-5">
+                    <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-5">
                         <p className="text-[10px] font-semibold tracking-widest text-gray-400">ENCAISSÉ CE MOIS</p>
                         <p className="mt-1 text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100">{formatCompact(stats.encaisseeMois)}</p>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -515,7 +515,7 @@ export default function AdminOperationalDashboard() {
                     </div>
 
                     {/* FLUX 7 JOURS */}
-                    <div className="border-b border-gray-100 px-6 py-5">
+                    <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-5">
                         <div className="mb-3 flex items-center justify-between">
                             <p className="text-[10px] font-semibold tracking-widest text-gray-400">FLUX 7 JOURS</p>
                             <span className="text-[10px] text-gray-400">candidatures</span>
@@ -583,7 +583,7 @@ export default function AdminOperationalDashboard() {
                     </div>
 
                     {recentLogs.length > 0 && (
-                        <div className="border-b border-gray-100 px-4 py-2">
+                        <div className="border-b border-gray-100 dark:border-slate-700 px-4 py-2">
                             <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-400">
                                 {(() => {
                                     const now = new Date();
@@ -601,7 +601,7 @@ export default function AdminOperationalDashboard() {
                             return (
                                 <div
                                     key={log.id}
-                                    className={`border-b border-gray-50 px-4 py-2.5 ${alert ? "bg-red-50 dark:bg-red-900/20/60" : ""}`}
+                                    className={`border-b border-gray-50 dark:border-slate-700/50 px-4 py-2.5 ${alert ? "bg-red-50 dark:bg-red-900/20" : ""}`}
                                 >
                                     <div className="flex items-start gap-2">
                                         <span className="shrink-0 text-[11px] text-gray-400">{formatTime(log.created_at)}</span>
