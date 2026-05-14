@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useId,
   useLayoutEffect,
   useMemo,
@@ -572,7 +573,9 @@ export function DossierRoadmap({
 }) {
   const t = useTranslations("student.dossier");
   const admissionStepIdx = steps.findIndex((s) => s.key === "admission");
-  const uid = useId().replace(/:/g, "");
+  const rawId = useId();
+  const [uid, setUid] = useState("");
+  useEffect(() => { setUid(rawId.replace(/:/g, "")); }, [rawId]);
   const trackAreaRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<SVGPathElement>(null);
   const [layout, setLayout] = useState({ w: MIN_VIEW_W, h: 0 });
@@ -641,7 +644,7 @@ export function DossierRoadmap({
     measurePath();
   }, [measurePath, d, viewW, H]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     window.addEventListener("resize", measurePath);
     return () => window.removeEventListener("resize", measurePath);
   }, [measurePath]);
