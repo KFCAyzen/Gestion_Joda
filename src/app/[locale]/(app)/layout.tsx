@@ -526,7 +526,7 @@ function AppShell({ children }: { children: ReactNode }) {
                 </header>
 
                 <main className="flex-1 overflow-auto gradient-bg app-main">
-                    <div className="p-2 sm:p-6 dark:p-0">
+                    <div className="p-2 sm:p-6">
                         <div className="app-content-shell">{children}</div>
                     </div>
                 </main>

@@ -216,6 +216,10 @@ body {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
   }
 
+  .dark .gradient-bg {
+    background: #0f172a !important;
+  }
+
   .btn-gradient {
     background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
     box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3) !important;
@@ -461,8 +465,6 @@ body {
     border: none;
     border-radius: 0;
     box-shadow: none;
-    padding: 0;
-    margin: 0;
   }
 
   .joda-surface {
