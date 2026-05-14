@@ -556,8 +556,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             title={t("payments.title")}
                             subtitle={t("payments.description")}
                         />
-                        <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none">
-                            <CardContent className="p-0 pt-6">
+                        <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
                                 <PaymentOverview
                                     choix={studentChoix}
                                     langue={studentLangue}
@@ -573,8 +572,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </Card>
 
                         {payments.length > 0 && (
-                            <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none">
-                                <CardHeader>
+                            <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
                                     <CardTitle className="text-base font-semibold tracking-tight text-[var(--student-fg)]">{t("payments.paymentHistory")}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -653,7 +651,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             <>
                                 <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
                                     <div className="space-y-6">
-                                        <Card className="student-surface rounded-[2rem] border-0 shadow-none">
+                                        <Card className="student-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
                                             <CardHeader>
                                                 <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
                                             </CardHeader>
@@ -680,7 +678,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         </Card>
 
                                         {dossier.notes_internes ? (
-                                            <Card className="student-surface rounded-[2rem] border-0 shadow-none">
+                                            <Card className="student-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
                                                 <CardHeader>
                                                     <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
                                                 </CardHeader>
@@ -691,7 +689,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                         ) : null}
                                     </div>
 
-                                    <Card className="student-surface flex h-full min-h-[32rem] w-full min-w-0 flex-col gap-0 rounded-[2rem] border-0 p-0 shadow-none">
+                                    <Card className="student-surface flex h-full min-h-[32rem] w-full min-w-0 flex-col gap-0 rounded-[2rem] border-0 p-0 shadow-none bg-transparent ring-0">
                                         <CardContent className="flex min-h-0 min-w-0 w-full flex-1 flex-col p-0">
                                             <DossierRoadmap
                                                 className="min-h-0"
