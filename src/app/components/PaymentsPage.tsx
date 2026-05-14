@@ -47,7 +47,7 @@ interface AccountingEntry {
     description: string;
 }
 
-type Tab = "a_valider" | "en_retard" | "valides" | "tous";
+type Tab = "a_valider" | "en_retard" | "valides" | "tous" | "encaisser";
 
 const AVATAR_PALETTE = [
     "bg-blue-500",
@@ -122,6 +122,14 @@ export default function PaymentsPage() {
     const [sorties, setSorties] = useState<AccountingEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<Tab>("a_valider");
+    const [encaisserForm, setEncaisserForm] = useState({
+        student_id: "",
+        type: "bourse",
+        tranche: "1",
+        montant: "",
+        date_paiement: new Date().toISOString().slice(0, 10),
+    });
+    const [encaisserSaving, setEncaisserSaving] = useState(false);
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean;
         title: string;
@@ -311,6 +319,46 @@ export default function PaymentsPage() {
         }
     };
 
+    const handleEncaisser = async () => {
+        if (!user || !encaisserForm.student_id || !encaisserForm.montant) return;
+        setEncaisserSaving(true);
+        try {
+            const nowIso = new Date().toISOString();
+            const { data: payment } = await supabase.from("payments").insert({
+                student_id: encaisserForm.student_id,
+                type: encaisserForm.type,
+                tranche: encaisserForm.tranche ? parseInt(encaisserForm.tranche) : null,
+                montant: parseInt(encaisserForm.montant),
+                status: "en_validation",
+                date_paiement: encaisserForm.date_paiement,
+                date_limite: encaisserForm.date_paiement,
+                penalites: 0,
+                created_at: nowIso,
+            }).select().single();
+
+            const student = getStudent(encaisserForm.student_id);
+            if (student && payment) {
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "payment_create", "payment", payment.id,
+                    `Encaissement enregistré — ${typeLabel(encaisserForm.type, parseInt(encaisserForm.tranche))} — ${student.nom} ${student.prenom}`,
+                    { montant: encaisserForm.montant }
+                );
+                void downloadReceipt(
+                    { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: null, validated_at: null },
+                    { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "" }
+                );
+            }
+            showNotification("Encaissement enregistré — en attente de validation", "success");
+            setEncaisserForm({ student_id: "", type: "bourse", tranche: "1", montant: "", date_paiement: new Date().toISOString().slice(0, 10) });
+            loadData();
+        } catch {
+            showNotification("Erreur lors de l'enregistrement", "error");
+        } finally {
+            setEncaisserSaving(false);
+        }
+    };
+
     const handlePrint = (payment: Payment) => {
         const student = getStudent(payment.student_id);
         if (!student) return;
@@ -346,6 +394,7 @@ export default function PaymentsPage() {
         { id: "en_retard", label: "En retard", count: enRetardList.length },
         { id: "valides", label: "Validés" },
         { id: "tous", label: "Tous" },
+        { id: "encaisser", label: "Encaisser" },
     ];
 
     return (
@@ -422,6 +471,78 @@ export default function PaymentsPage() {
                             <div className="flex flex-col items-center justify-center py-20 text-sm text-gray-400">
                                 <CheckCircle2 className="mb-3 h-8 w-8 text-gray-200" />
                                 Aucun paiement dans cette catégorie
+                            </div>
+                        ) : tab === "encaisser" ? (
+                            <div className="mx-auto max-w-md p-6">
+                                <p className="mb-5 text-sm text-gray-500">Enregistre un paiement reçu. Une quittance sera imprimée automatiquement et le paiement sera soumis à validation.</p>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">Étudiant</label>
+                                        <select
+                                            value={encaisserForm.student_id}
+                                            onChange={(e) => setEncaisserForm((f) => ({ ...f, student_id: e.target.value }))}
+                                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        >
+                                            <option value="">Choisir un étudiant…</option>
+                                            {students.map((s) => (
+                                                <option key={s.id} value={s.id}>{s.nom} {s.prenom}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">Type</label>
+                                            <select
+                                                value={encaisserForm.type}
+                                                onChange={(e) => setEncaisserForm((f) => ({ ...f, type: e.target.value }))}
+                                                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                            >
+                                                <option value="bourse">Bourse</option>
+                                                <option value="mandarin">Mandarin</option>
+                                                <option value="anglais">Anglais</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">Tranche</label>
+                                            <select
+                                                value={encaisserForm.tranche}
+                                                onChange={(e) => setEncaisserForm((f) => ({ ...f, tranche: e.target.value }))}
+                                                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                            >
+                                                <option value="1">T1</option>
+                                                <option value="2">T2</option>
+                                                <option value="3">T3</option>
+                                                <option value="4">T4</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">Montant (FCFA)</label>
+                                        <input
+                                            type="number"
+                                            placeholder="ex: 100000"
+                                            value={encaisserForm.montant}
+                                            onChange={(e) => setEncaisserForm((f) => ({ ...f, montant: e.target.value }))}
+                                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">Date du paiement</label>
+                                        <input
+                                            type="date"
+                                            value={encaisserForm.date_paiement}
+                                            onChange={(e) => setEncaisserForm((f) => ({ ...f, date_paiement: e.target.value }))}
+                                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleEncaisser}
+                                        disabled={encaisserSaving || !encaisserForm.student_id || !encaisserForm.montant}
+                                        className="w-full rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                                    >
+                                        {encaisserSaving ? "Enregistrement…" : "Encaisser et imprimer la quittance"}
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <table className="w-full">
