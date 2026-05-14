@@ -1,3 +1,5 @@
+import { fetchLogoBase64 } from "./logoLoader";
+
 type ReportScope = "all" | "entrees" | "sorties";
 
 type AccountingOperation = {
@@ -82,7 +84,13 @@ export async function printAccountingHtmlReport(params: {
   const scopeLabel = scope === "entrees" ? "Entrées uniquement" : scope === "sorties" ? "Sorties uniquement" : "Entrées & Sorties";
   const journalRows = buildJournalRows(params.entries, locale, scope);
 
+  const logoSrc = await fetchLogoBase64();
+  const logoHtml = logoSrc
+    ? `<img src="${logoSrc}" alt="Joda Company" style="width:46px;height:46px;object-fit:contain;display:block;background:#fff;border-radius:10px;padding:4px;">`
+    : `<div class="brand-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>`;
+
   const html = template
+    .replaceAll("{{LOGO_HTML}}", logoHtml)
     .replaceAll("{{DATE_EMISSION}}", escapeHtml(new Date().toLocaleDateString(locale)))
     .replaceAll("{{PERIODE_DEBUT}}", escapeHtml(formatDate(params.period.start, locale)))
     .replaceAll("{{PERIODE_FIN}}", escapeHtml(formatDate(params.period.end, locale)))

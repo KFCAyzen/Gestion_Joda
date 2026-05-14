@@ -10,6 +10,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Pagination from "./Pagination";
 import { getFriendlyErrorMessage } from "../lib/feedback";
 import { logActivity } from "../utils/activityLogger";
+import { fetchLogoBase64 } from "../utils/logoLoader";
 import {
     buildStudentAuthEmail,
     buildStudentUsername,
@@ -120,8 +121,12 @@ export default function StudentManagement() {
         return choice;
     };
 
-    const printStudentCard = (s: Student) => {
+    const printStudentCard = async (s: Student) => {
         const createdAt = new Date(s.created_at).toLocaleDateString(dateLocale);
+        const logoSrc = await fetchLogoBase64();
+        const logoTag = logoSrc
+            ? `<img src="${logoSrc}" alt="Joda Company" style="width:46px;height:46px;object-fit:contain;display:block;background:#fff;border-radius:10px;padding:4px;">`
+            : `<div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3L2 9l10 6 10-6-10-6zM2 15l10 6 10-6M2 12l10 6 10-6"/></svg></div>`;
         const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -163,7 +168,7 @@ export default function StudentManagement() {
 <body>
   <div class="header">
     <div class="header-brand">
-      <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3L2 9l10 6 10-6-10-6zM2 15l10 6 10-6M2 12l10 6 10-6"/></svg></div>
+      ${logoTag}
       <div>
         <div class="brand-name">JODA COMPANY</div>
         <div class="brand-sub">Gestion de Bourses &amp; Cours de Langue — Douala, Cameroun</div>
@@ -894,7 +899,7 @@ export default function StudentManagement() {
                                     <Button
                                         variant="outline"
                                         className="dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
-                                        onClick={() => printStudentCard(selectedStudent)}
+                                        onClick={() => void printStudentCard(selectedStudent)}
                                     >
                                         <Printer className="mr-2 h-4 w-4" />
                                         {t("actions.printCard") || "Imprimer fiche"}
