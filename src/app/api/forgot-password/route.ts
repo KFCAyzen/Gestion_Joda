@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
         const { data, error } = await supabaseAdmin.auth.admin.generateLink({
             type: "recovery",
             email: authEmail,
-            options: { redirectTo: "https://gestion-joda.vercel.app/auth/callback" },
+            options: { redirectTo: "https://portal-joda.company/auth/callback" },
         });
 
         if (error) {

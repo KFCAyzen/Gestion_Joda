@@ -129,13 +129,13 @@ async function handleCreateUser(req: NextRequest) {
     }
 
     // Générer un lien de définition de mot de passe
-    let setPasswordLink = 'https://gestion-joda.vercel.app';
+    let setPasswordLink = 'https://portal-joda.company';
     try {
         const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',
             email: supabaseEmail,
             options: {
-                redirectTo: 'https://gestion-joda.vercel.app/auth/callback',
+                redirectTo: 'https://portal-joda.company/auth/callback',
             },
         });
         if (linkData?.properties?.action_link) {
