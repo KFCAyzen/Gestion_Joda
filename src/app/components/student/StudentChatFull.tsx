@@ -141,18 +141,29 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
     }, [userId, load]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const send = async () => {
-        if (!text.trim() || sending || !agentUserId) return;
+        if (!text.trim() || sending) return;
         setSending(true);
         const content = text.trim();
         setText("");
-        await supabase.from("messages").insert({
-            from_user_id: userId,
-            to_user_id: agentUserId,
-            subject: "Réponse étudiant",
-            content,
-            read: false,
-            created_at: new Date().toISOString(),
-        });
+
+        if (agentUserId) {
+            await supabase.from("messages").insert({
+                from_user_id: userId,
+                to_user_id: agentUserId,
+                subject: "Réponse étudiant",
+                content,
+                read: false,
+                created_at: new Date().toISOString(),
+            });
+        } else {
+            // No agent identified yet — broadcast to all admins/agents via API
+            await fetch("/api/student-send-message", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subject: "Message étudiant", content }),
+            });
+        }
+
         await load();
         setSending(false);
     };
@@ -180,39 +191,46 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
 
     return (
         /* Full layout: on md+ = 3 columns, on mobile = single column */
-        <div className="flex h-[calc(100vh-4rem)] overflow-hidden md:h-[calc(100vh-4rem)]">
+        <div className="flex h-[calc(100dvh-4rem)] overflow-hidden md:h-[calc(100vh-4rem)]">
             {/* CENTER — Chat */}
             <div className="flex flex-1 flex-col overflow-hidden">
                 {/* Chat header */}
-                <div className="flex items-center gap-3 border-b border-[var(--student-border)] px-4 py-3">
+                <div className="flex items-center gap-2.5 border-b border-[var(--student-border)] bg-[var(--student-surface-2)] px-3 py-2.5 backdrop-blur-xl sm:gap-3 sm:px-4 sm:py-3">
                     <button
                         onClick={onBack}
-                        className="flex items-center text-[var(--student-fg-muted)] hover:text-[var(--student-fg)] md:hidden"
+                        aria-label="Retour"
+                        className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--student-fg-muted)] transition-colors hover:bg-[var(--student-surface)] hover:text-[var(--student-fg)] md:hidden"
                     >
                         <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <div className="relative">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-sm font-bold text-white">
+                    <div className="relative shrink-0">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-[13px] font-bold text-white shadow-[0_4px_12px_rgba(220,38,38,0.30)]">
                             {avatarInitials(agentName)}
                         </div>
-                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--student-surface)] bg-green-400" />
+                        <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--student-ink)] bg-green-400" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[var(--student-fg)]">{agentName} · <span className="font-normal text-[var(--student-fg-muted)]">{t("yourAgent")}</span></p>
-                        <p className="text-[11px] text-[var(--student-fg-muted)] opacity-70">{t("onlineStatus")}</p>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14px] font-semibold leading-tight text-[var(--student-fg)] sm:text-sm">
+                            {agentName}
+                            <span className="ml-1 font-normal text-[var(--student-fg-muted)]">· {t("yourAgent")}</span>
+                        </p>
+                        <p className="mt-0.5 truncate text-[11px] leading-tight text-[var(--student-fg-muted)] opacity-75">{t("onlineStatus")}</p>
                     </div>
                     {dossier && (
-                        <span className="hidden rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] px-2.5 py-1 text-[11px] text-[var(--student-fg-muted)] sm:inline">
+                        <span className="hidden shrink-0 rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] px-2.5 py-1 text-[11px] text-[var(--student-fg-muted)] sm:inline">
                             {dossierStatusLabel[dossier.status] ?? dossier.status}
                         </span>
                     )}
-                    <button className="text-[var(--student-fg-muted)] hover:text-[var(--student-fg)] md:hidden">
+                    <button
+                        aria-label="Options"
+                        className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--student-fg-muted)] transition-colors hover:bg-[var(--student-surface)] hover:text-[var(--student-fg)] md:hidden"
+                    >
                         <MoreVertical className="h-5 w-5" />
                     </button>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-4 py-4">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-4">
                     {loading ? (
                         <div className="flex items-center justify-center py-12 text-sm text-[var(--student-fg-muted)]">
                             {t("loading")}
@@ -225,12 +243,10 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                         groups.map((group) => (
                             <div key={group.label}>
                                 {/* Date separator */}
-                                <div className="my-4 flex items-center gap-3">
-                                    <div className="h-px flex-1 bg-[var(--student-border)]" />
-                                    <span className="text-[10px] font-semibold tracking-widest text-[var(--student-fg-muted)] opacity-60">
-                                        — {group.label} —
+                                <div className="my-4 flex items-center justify-center">
+                                    <span className="rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] px-3 py-1 text-[10px] font-semibold tracking-widest text-[var(--student-fg-muted)] opacity-80">
+                                        {group.label}
                                     </span>
-                                    <div className="h-px flex-1 bg-[var(--student-border)]" />
                                 </div>
 
                                 {group.messages.map((msg) => {
@@ -250,30 +266,30 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                     return (
                                         <div
                                             key={msg.id}
-                                            className={`mb-3 flex gap-2.5 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
+                                            className={`mb-2 flex items-end gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
                                         >
-                                            {!isOwn && (
-                                                <div className="mt-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-[10px] font-bold text-white">
+                                            {!isOwn ? (
+                                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-rose-500 text-[10px] font-bold text-white shadow-[0_2px_8px_rgba(220,38,38,0.25)]">
                                                     {avatarInitials(agentName)}
                                                 </div>
+                                            ) : (
+                                                <div className="w-7 shrink-0" aria-hidden />
                                             )}
                                             <div
-                                                className={`max-w-[72%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                                                className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.06)] sm:max-w-[72%] sm:px-4 sm:py-3 sm:text-sm ${
                                                     isOwn
-                                                        ? "rounded-br-sm bg-[rgba(220,38,38,0.10)] dark:bg-gray-900 text-[var(--student-fg)]"
-                                                        : "rounded-bl-sm bg-[var(--student-surface)] text-[var(--student-fg)]"
+                                                        ? "rounded-br-md bg-red-600 text-white"
+                                                        : "rounded-bl-md border border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-fg)]"
                                                 }`}
                                             >
                                                 {msg.content}
                                                 <div
-                                                    className={`mt-1 text-[10px] text-[var(--student-fg-muted)] opacity-60 ${
-                                                        isOwn ? "text-right" : ""
+                                                    className={`mt-1 flex items-center gap-1 text-[10px] ${
+                                                        isOwn ? "justify-end text-white/70" : "text-[var(--student-fg-muted)] opacity-70"
                                                     }`}
                                                 >
-                                                    {fmtTime(msg.created_at)}
-                                                    {isOwn && (
-                                                        <span className="ml-1 opacity-50">✓✓</span>
-                                                    )}
+                                                    <span>{fmtTime(msg.created_at)}</span>
+                                                    {isOwn && <span aria-hidden>✓✓</span>}
                                                 </div>
                                             </div>
                                         </div>
@@ -285,11 +301,15 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                     <div ref={bottomRef} />
                 </div>
 
-                {/* Input bar */}
-                <div className="border-t border-[var(--student-border)] px-4 py-3">
-                    <div className="flex items-center gap-2 rounded-2xl border border-[var(--student-border)] bg-[var(--student-surface)] px-3 py-2">
-                        <button className="shrink-0 text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]">
-                            <Paperclip className="h-5 w-5" />
+                {/* Compose bar */}
+                <div className="border-t border-[var(--student-border)] bg-[var(--student-surface-2)] px-2.5 pt-2 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] backdrop-blur-xl md:px-4 md:py-3 md:pb-3">
+                    <div className="flex items-center gap-1 rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] py-1 pl-1 pr-1 shadow-[0_2px_12px_rgba(0,0,0,0.08)] sm:gap-1.5">
+                        <button
+                            type="button"
+                            aria-label="Joindre un fichier"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--student-fg-muted)] transition-colors hover:bg-[var(--student-surface-2)] hover:text-[var(--student-fg)] active:scale-95 sm:h-9 sm:w-9"
+                        >
+                            <Paperclip className="h-[18px] w-[18px]" />
                         </button>
                         <input
                             type="text"
@@ -297,18 +317,27 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                             onChange={(e) => setText(e.target.value)}
                             onKeyDown={handleKey}
                             placeholder={t("inputPlaceholder", { name: agentName.split(" ")[0] })}
-                            className="flex-1 bg-transparent text-sm text-[var(--student-fg)] placeholder:text-[var(--student-fg-muted)] outline-none"
+                            enterKeyHint="send"
+                            autoComplete="off"
+                            className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[15px] text-[var(--student-fg)] placeholder:text-[var(--student-fg-muted)] outline-none sm:text-sm"
                         />
-                        <button className="shrink-0 text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]">
-                            <Mic className="h-5 w-5" />
-                        </button>
+                        {!text.trim() && (
+                            <button
+                                type="button"
+                                aria-label="Message vocal"
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--student-fg-muted)] transition-colors hover:bg-[var(--student-surface-2)] hover:text-[var(--student-fg)] active:scale-95 sm:h-9 sm:w-9"
+                            >
+                                <Mic className="h-[18px] w-[18px]" />
+                            </button>
+                        )}
                         <button
                             onClick={() => void send()}
-                            disabled={!text.trim() || sending || !agentUserId}
-                            className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
+                            disabled={!text.trim() || sending}
+                            aria-label={t("send")}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.45)] transition-all hover:bg-red-700 active:scale-95 disabled:opacity-40 disabled:shadow-none disabled:active:scale-100 sm:h-9 sm:w-auto sm:px-4"
                         >
-                            <Send className="h-4 w-4" />
-                            {t("send")}
+                            <Send className="h-[18px] w-[18px] sm:h-4 sm:w-4" />
+                            <span className="hidden text-sm font-semibold sm:inline">{t("send")}</span>
                         </button>
                     </div>
                 </div>
