@@ -164,7 +164,7 @@ body {
   background: #dc2626;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #64748b;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #ef4444;
