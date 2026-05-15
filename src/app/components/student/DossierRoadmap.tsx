@@ -794,8 +794,8 @@ export function DossierRoadmap({
               >
                 <polygon
                   points="-7,-4 8,0 -7,4"
-                  fill={lit ? "var(--student-neon-lime)" : "rgba(255,255,255,0.85)"}
-                  stroke={lit ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.2)"}
+                  fill={lit ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)"}
+                  stroke={lit ? "rgba(180,0,0,0.35)" : "rgba(255,255,255,0.2)"}
                   strokeWidth={0.6}
                 />
               </g>
@@ -838,12 +838,12 @@ export function DossierRoadmap({
                   cx={p.x}
                   cy={p.y}
                   r={r}
-                  fill={done ? "#dde1e6" : "none"}
-                  stroke="rgba(255,255,255,0.6)"
-                  strokeWidth={done ? 0 : 2}
+                  fill="rgba(255,255,255,0.92)"
+                  stroke="rgba(180,0,0,0.30)"
+                  strokeWidth={1.5}
                   opacity={done ? 1 : 0.55}
                 />
-                {done && <circle cx={p.x} cy={p.y} r={4} fill="rgba(255,255,255,0.5)" />}
+                {done && <circle cx={p.x} cy={p.y} r={4} fill="#b91c1c" />}
               </g>
             );
           })}
