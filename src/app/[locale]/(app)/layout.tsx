@@ -354,20 +354,22 @@ function AppShell({ children }: { children: ReactNode }) {
                         <p className="sidebar-eyebrow">{t('workspace')}</p>
                         <h1 className="text-lg font-semibold text-white tracking-tight truncate">{t('companyName')}</h1>
                         <p className="text-xs text-white/65 truncate">{t('companyDescription')}</p>
-                        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/15 px-2.5 py-1 text-[11px] font-medium text-white/80">
-                            <span className="h-2 w-2 rounded-full bg-white/70" />
-                            {t('systemActive')}
-                        </div>
                     </div>
                 </div>
 
                 <nav className="flex-1 px-4 py-5 overflow-y-auto">
-                    <div className="space-y-3.5">
-                        {availableSections.map((section) => {
+                    <div className="space-y-1">
+                        {availableSections.map((section, index) => {
                             const isOpen = openSections[section.id] ?? false;
                             const hasActive = section.items.some((item) => item.id === activeRouteId);
                             return (
-                                <div key={section.id} className="sidebar-section-card">
+                                <div key={section.id}>
+                                {index > 0 && (
+                                    <div className="flex items-center gap-2 py-1.5 px-1">
+                                        <div className="h-px flex-1 bg-white/15" />
+                                    </div>
+                                )}
+                                <div className="sidebar-section-card">
                                     <button
                                         onClick={() =>
                                             setOpenSections((prev) => ({
@@ -405,6 +407,7 @@ function AppShell({ children }: { children: ReactNode }) {
                                             ))}
                                         </div>
                                     )}
+                                </div>
                                 </div>
                             );
                         })}
