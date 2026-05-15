@@ -1,7 +1,10 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = 'Joda Company <contact@portal-joda.company>';
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // ── Language helpers ───────────────────────────────────────────────────────────
 
@@ -95,7 +98,7 @@ export async function sendPaymentReminder(data: PaymentReminderData): Promise<bo
   const year = new Date().getFullYear();
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [data.studentEmail],
       subject,
@@ -252,7 +255,7 @@ export async function sendPaymentResultEmail(data: PaymentResultEmailData): Prom
   const statusBorder = data.isValid ? '#bbf7d0' : '#fecaca';
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [data.studentEmail],
       subject: `${data.isValid ? '✅' : '❌'} ${statusLabel} — ${typeName} ${isEn ? 'Instalment' : 'Tranche'} ${data.tranche}`,
@@ -330,7 +333,7 @@ export async function sendPaymentDeclarationEmail(data: PaymentDeclarationEmailD
   const year = new Date().getFullYear();
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.staffEmails,
       subject: `💳 Nouvelle déclaration de paiement — ${data.studentName}`,
@@ -401,7 +404,7 @@ export async function sendDocumentSubmissionEmail(data: DocumentSubmissionEmailD
   const year = new Date().getFullYear();
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.staffEmails,
       subject: `📂 Documents soumis — ${data.studentName}`,
@@ -459,7 +462,7 @@ export async function sendStudentMessageEmail(data: StudentMessageEmailData): Pr
   const year = new Date().getFullYear();
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [data.studentEmail],
       subject: `✉️ ${isEn ? 'New message' : 'Nouveau message'} — ${data.subject}`,
@@ -529,7 +532,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   };
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [data.email],
       subject: isEn
