@@ -31,7 +31,7 @@ const REF_ANCHORS: { x: number; y: number }[] = [
   { x: 180, y: 252 },
   { x: 160, y: 356 },
   { x: 36, y: 436 },
-  { x: 42, y: 506 },
+  { x: 165, y: 530 },
   { x: 288, y: 606 },
   { x: 258, y: 724 },
 ];
@@ -525,13 +525,14 @@ function referenceSnakePath(
   const c2 = p(166, 356);
   const c3 = p(108, 372);
   const c4 = p(48, 370);
-  // Segment a[4]→a[5] : courbe légèrement vers la gauche (bypass du clamp SNAKE_EDGE_MARGIN_X)
-  const c5 = { x: 2 * scaleX, y: (456 + SNAKE_OFFSET_Y) * scaleX * stretchY };
-  const c6 = { x: 4 * scaleX, y: (484 + SNAKE_OFFSET_Y) * scaleX * stretchY };
-  const c7 = p(44, 516);
-  const c8 = p(66, 528);
-  const c9 = p(132, 530);
-  const c10 = p(244, 530);
+  // Segment a[4]→a[5] : remonte du bord gauche vers le centre sans déborder
+  const c5 = p(90, 468);
+  const c6 = p(90, 518);
+  const c7 = p(140, 530);
+  const c8 = p(155, 530);
+  // Segment a[5]→a[6] : continue vers la droite
+  const c9 = p(200, 530);
+  const c10 = p(260, 530);
   const c11 = p(306, 528);
   const c12 = p(286, 648);
   const c13 = p(260, 700);
@@ -665,7 +666,7 @@ export function DossierRoadmap({
     const isRightEdge = p.x > viewW * 0.74;
     const alignRight = isRightEdge || (!isLeftEdge && (i === 0 || i === 3 || i === 6));
     const gap = isLeftEdge || isRightEdge ? 20 : 16;
-    const xNudge = [0, 0, 0, 0, 120, -226, 35, 0][i] ?? 0;
+    const xNudge = [0, 0, 0, 0, 70, -226, -45, 0][i] ?? 0;
     const yNudge = [0, 0, 0, 0, -8, 12, -10, 42][i] ?? 0;
 
     if (alignRight) {
@@ -701,7 +702,7 @@ export function DossierRoadmap({
       </h2>
       <div
         ref={trackAreaRef}
-        className="relative min-h-[100vh] w-full min-w-0 max-w-none flex-1"
+        className="relative min-h-[80vh] w-full min-w-0 max-w-none flex-1"
       >
         <svg
           className="absolute inset-0 block h-full min-w-full w-full max-w-none"
@@ -864,20 +865,14 @@ export function DossierRoadmap({
             const eyebrow = (
               <p
                 className={cn(
-                  "text-[13px] font-bold uppercase leading-tight tracking-[0.10em]",
+                  "text-[11px] font-bold uppercase leading-tight tracking-[0.08em]",
                   isRejectStep && "text-[var(--student-ring-move)]",
                   !isRejectStep && isCurrent && "text-[var(--student-neon-lime)]",
-                  !isRejectStep &&
-                    done &&
-                    !isCurrent &&
-                    "text-[var(--student-neon-lime)]/85",
-                  !isRejectStep &&
-                    !done &&
-                    !isCurrent &&
-                    "text-[var(--student-neon-lime)]/38",
+                  !isRejectStep && done && !isCurrent && "text-[var(--student-neon-lime)]/85",
+                  !isRejectStep && !done && !isCurrent && "text-[var(--student-neon-lime)]/38",
                 )}
               >
-                {t("roadmapPhase", { n: phaseLabel })}
+                {step.label}
               </p>
             );
 
@@ -899,15 +894,8 @@ export function DossierRoadmap({
                   )}
                 >
                   {eyebrow}
-                  <p
-                    className={cn(
-                      "mt-0.5 text-[11px] font-normal leading-snug",
-                      isRejectStep && "text-[var(--student-ring-move)]/80",
-                      !isRejectStep && (isCurrent || done) && "text-white/70",
-                      !isRejectStep && !done && !isCurrent && "text-white/30",
-                    )}
-                  >
-                    {step.label}
+                  <p className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.18em] text-[rgba(255,255,255,0.40)]">
+                    {t("roadmapPhase", { n: phaseLabel })}
                   </p>
                   {isCurrent ? (
                     <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--student-ring-stand)]">
