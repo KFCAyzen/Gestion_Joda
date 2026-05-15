@@ -41,9 +41,9 @@ export function StudentSidebarNav({
 }: Props) {
     const t = useTranslations("student.portal.sidebar");
     return (
-        <aside className="hidden w-56 shrink-0 flex-col border-r border-[var(--student-border)] py-5 dark:border-white/8 md:flex lg:w-64">
+        <aside className="student-sidebar hidden w-56 shrink-0 flex-col border-r border-[var(--student-border)] py-5 dark:border-white/8 md:flex lg:w-64 overflow-y-auto">
             {/* Student identity */}
-            <div className="mb-6 px-4">
+            <div className="px-4 pb-4">
                 <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-600 to-red-800 text-sm font-bold text-white shadow-[0_8px_20px_rgba(220,38,38,0.35)]">
                         {avatarInitials(userName)}
@@ -58,11 +58,14 @@ export function StudentSidebarNav({
             </div>
 
             {/* Conversations */}
-            <div className="mb-4 px-4">
-                <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)]">
-                    {t("conversations")}
-                </p>
-                <div className="space-y-1">
+            <div className="mb-4">
+                <div className="mb-2 flex items-center gap-2 px-4">
+                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                        {t("conversations")}
+                    </span>
+                    <div className="h-px flex-1 bg-white/10" />
+                </div>
+                <div className="space-y-1 px-4">
                     {conversations.map((conv) => (
                         <button
                             key={conv.id}
@@ -109,30 +112,21 @@ export function StudentSidebarNav({
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-[var(--student-ring-move)] dark:bg-white/8 dark:text-white/60">
                                 <Bell className="h-3.5 w-3.5" />
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-[12px] font-semibold text-[var(--student-fg)]">{t("systemNotifications")}</p>
-                                {systemNotifCount > 0 && (
-                                    <p className="text-[10px] text-[var(--student-fg-muted)]">
-                                        {systemNotifCount > 1 ? t("newNotificationsPlural", { count: systemNotifCount }) : t("newNotifications", { count: systemNotifCount })}
-                                    </p>
-                                )}
-                            </div>
-                            {systemNotifCount > 0 && (
-                                <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                                    {systemNotifCount}
-                                </span>
-                            )}
+                            <p className="min-w-0 flex-1 text-[12px] font-semibold text-[var(--student-fg)]">{t("systemNotifications")}</p>
                         </div>
                     </button>
                 </div>
             </div>
 
             {/* Quick actions */}
-            <div className="mt-auto px-4">
-                <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)]">
-                    {t("quickActions")}
-                </p>
-                <div className="space-y-0.5">
+            <div className="mt-auto">
+                <div className="mb-2 flex items-center gap-2 px-4">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                        {t("quickActions")}
+                    </span>
+                </div>
+                <div className="space-y-0.5 px-4">
                     {[
                         { labelKey: "uploadDocument", icon: <Upload className="h-3.5 w-3.5" />, view: "documents" as StudentView },
                         { labelKey: "viewPayments", icon: <WalletCards className="h-3.5 w-3.5" />, view: "payments" as StudentView },

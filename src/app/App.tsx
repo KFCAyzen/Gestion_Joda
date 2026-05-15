@@ -385,21 +385,23 @@ function AppContent() {
                         <p className="sidebar-eyebrow">Workspace Joda</p>
                         <h1 className="text-lg font-semibold text-slate-900 tracking-tight truncate">Joda Company</h1>
                         <p className="text-xs text-slate-500 truncate">Gestion des bourses et opérations</p>
-                        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.8)]" />
-                            Système actif
-                        </div>
                     </div>
                 </div>
 
                 <nav className="flex-1 px-4 py-5 overflow-y-auto">
-                    <div className="space-y-3.5">
-                        {availableSections.map((section) => {
+                    <div className="space-y-1">
+                        {availableSections.map((section, index) => {
                             const isOpen = openSections[section.id] ?? false;
                             const hasActiveItem = section.items.some((item) => item.id === currentPage);
 
                             return (
-                                <div key={section.id} className="sidebar-section-card">
+                                <div key={section.id}>
+                                {index > 0 && (
+                                    <div className="flex items-center gap-2 py-1.5 px-1">
+                                        <div className="h-px flex-1 bg-white/15" />
+                                    </div>
+                                )}
+                                <div className="sidebar-section-card">
                                     <button
                                         onClick={() => toggleSection(section.id)}
                                         className={`w-full flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-[1.25rem] transition-all duration-300 ${
@@ -445,6 +447,7 @@ function AppContent() {
                                             ))}
                                         </div>
                                     )}
+                                </div>
                                 </div>
                             );
                         })}

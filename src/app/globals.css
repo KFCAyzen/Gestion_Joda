@@ -178,6 +178,27 @@ body {
    background: #64748b;
  }
 
+/* Student sidebar — scrollbar ultra-fine thémée */
+.student-sidebar::-webkit-scrollbar {
+  width: 3px;
+}
+.student-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.student-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+.student-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 38, 38, 0.45);
+}
+/* Firefox */
+.student-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
 /* Tailwind Custom Components - LOCKED */
 @layer components {
   .glass-card {
@@ -228,6 +249,25 @@ body {
   .sidebar-shell {
     position: relative;
     overflow: hidden;
+  }
+
+  /* Admin sidebar nav — scrollbar fine sur fond rouge */
+  .glass-sidebar nav::-webkit-scrollbar {
+    width: 3px;
+  }
+  .glass-sidebar nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .glass-sidebar nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 99px;
+  }
+  .glass-sidebar nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.42);
+  }
+  .glass-sidebar nav {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
   }
 
   .sidebar-orb { display: none; }
