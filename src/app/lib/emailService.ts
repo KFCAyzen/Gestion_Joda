@@ -1,12 +1,7 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = 'Joda Company <contact@portal-joda.company>';
 
 // ── Language helpers ───────────────────────────────────────────────────────────
 
@@ -100,9 +95,9 @@ export async function sendPaymentReminder(data: PaymentReminderData): Promise<bo
   const year = new Date().getFullYear();
 
   try {
-    await transporter.sendMail({
-      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
-      to: data.studentEmail,
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [data.studentEmail],
       subject,
       html: `
 <!DOCTYPE html>
@@ -257,9 +252,9 @@ export async function sendPaymentResultEmail(data: PaymentResultEmailData): Prom
   const statusBorder = data.isValid ? '#bbf7d0' : '#fecaca';
 
   try {
-    await transporter.sendMail({
-      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
-      to: data.studentEmail,
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [data.studentEmail],
       subject: `${data.isValid ? '✅' : '❌'} ${statusLabel} — ${typeName} ${isEn ? 'Instalment' : 'Tranche'} ${data.tranche}`,
       html: `<!DOCTYPE html>
 <html lang="${lang}"><head><meta charset="UTF-8"/></head>
@@ -335,8 +330,8 @@ export async function sendPaymentDeclarationEmail(data: PaymentDeclarationEmailD
   const year = new Date().getFullYear();
 
   try {
-    await transporter.sendMail({
-      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
+    await resend.emails.send({
+      from: FROM_EMAIL,
       to: data.staffEmails,
       subject: `💳 Nouvelle déclaration de paiement — ${data.studentName}`,
       html: `<!DOCTYPE html>
@@ -406,8 +401,8 @@ export async function sendDocumentSubmissionEmail(data: DocumentSubmissionEmailD
   const year = new Date().getFullYear();
 
   try {
-    await transporter.sendMail({
-      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
+    await resend.emails.send({
+      from: FROM_EMAIL,
       to: data.staffEmails,
       subject: `📂 Documents soumis — ${data.studentName}`,
       html: `<!DOCTYPE html>
@@ -464,9 +459,9 @@ export async function sendStudentMessageEmail(data: StudentMessageEmailData): Pr
   const year = new Date().getFullYear();
 
   try {
-    await transporter.sendMail({
-      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
-      to: data.studentEmail,
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [data.studentEmail],
       subject: `✉️ ${isEn ? 'New message' : 'Nouveau message'} — ${data.subject}`,
       html: `<!DOCTYPE html>
 <html lang="${lang}"><head><meta charset="UTF-8"/></head>
@@ -534,9 +529,9 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   };
 
   try {
-    await transporter.sendMail({
-      from: `"Joda Company" <${process.env.GMAIL_USER}>`,
-      to: data.email,
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [data.email],
       subject: isEn
         ? 'Welcome to the Joda Company platform'
         : 'Bienvenue sur la plateforme Joda Company',

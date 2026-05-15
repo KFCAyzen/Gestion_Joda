@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { buildStudentAuthEmail } from "@/app/lib/student-auth";
 import { getLang, type Lang } from "@/app/lib/emailService";
 
@@ -9,13 +9,8 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
 function resetEmailHtml(name: string, resetLink: string, year: number, lang: Lang = 'fr') {
     const isEn = lang === 'en';
@@ -142,9 +137,9 @@ export async function POST(req: NextRequest) {
         const resetLink = data.properties.action_link;
 
         const isEn = lang === 'en';
-        await transporter.sendMail({
-            from: `"Joda Company" <${process.env.GMAIL_USER}>`,
-            to: recipientEmail,
+        await resend.emails.send({
+            from: FROM_EMAIL,
+            to: [recipientEmail],
             subject: isEn
                 ? "Password reset - Joda Company"
                 : "Réinitialisation de votre mot de passe - Joda Company",

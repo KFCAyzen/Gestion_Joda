@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
 export async function POST(req: NextRequest) {
     const { name, email, username, password, role } = await req.json();
@@ -25,9 +20,9 @@ export async function POST(req: NextRequest) {
     };
 
     try {
-        await transporter.sendMail({
-            from: `"Joda Company" <${process.env.GMAIL_USER}>`,
-            to: email,
+        await resend.emails.send({
+            from: FROM_EMAIL,
+            to: [email],
             subject: "Vos informations de connexion - Joda Company",
             html: `
 <!DOCTYPE html>

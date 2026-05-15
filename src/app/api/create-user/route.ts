@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { requireRole } from "@/app/lib/auth";
 import { getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
@@ -10,13 +10,8 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
 function getCreateUserErrorMessage(error: unknown) {
     const rawMessage = error && typeof error === "object" && "message" in error && typeof error.message === "string"
@@ -159,9 +154,9 @@ async function handleCreateUser(req: NextRequest) {
     const rights = isEn ? "All rights reserved" : "Tous droits réservés";
 
     try {
-        await transporter.sendMail({
-            from: `"Joda Company" <${process.env.GMAIL_USER}>`,
-            to: email,
+        await resend.emails.send({
+            from: FROM_EMAIL,
+            to: [email],
             subject: isEn
                 ? "Welcome to Joda Company — Activate your account"
                 : "Bienvenue sur Joda Company — Activez votre compte",

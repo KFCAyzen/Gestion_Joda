@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { requireRole } from "@/app/lib/auth";
 
 const supabaseAdmin = createClient(
@@ -8,13 +8,8 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
 async function handleResetPassword(req: NextRequest) {
     try {
@@ -75,9 +70,9 @@ async function handleResetPassword(req: NextRequest) {
 
         const resetLink = data.properties.action_link;
 
-        await transporter.sendMail({
-            from: `"Joda Company" <${process.env.GMAIL_USER}>`,
-            to: recipientEmail,
+        await resend.emails.send({
+            from: FROM_EMAIL,
+            to: [recipientEmail],
             subject: "Réinitialisation de votre mot de passe - Joda Company",
             html: `
 <!DOCTYPE html>
