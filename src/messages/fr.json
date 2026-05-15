@@ -631,7 +631,7 @@
     "status": {
       "document_received": "Documents reçus",
       "pending": "En attente",
-      "in_progress": "En cours",
+      "in_progress": "Traitement en cours",
       "missing_documents": "Documents manquants",
       "admission_approved": "Admission approuvée",
       "admission_rejected": "Admission rejetée",

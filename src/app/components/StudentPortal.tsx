@@ -151,7 +151,17 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const locale = useLocale();
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
-    const [view, setView] = useState<View>("dashboard");
+    const [view, setView] = useState<View>(() => {
+        if (typeof window !== "undefined") {
+            const saved = sessionStorage.getItem("student_view");
+            if (saved) return saved as View;
+        }
+        return "dashboard";
+    });
+    const handleChangeView = (v: View) => {
+        sessionStorage.setItem("student_view", v);
+        setView(v);
+    };
     const [payments, setPayments] = useState<Payment[]>([]);
     const [documents, setDocuments] = useState<Document[]>([]);
     const [dossier, setDossier] = useState<DossierBourse | null>(null);
@@ -463,7 +473,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             universityName={universityName}
             studentLevel={studentInfo?.niveau ?? ""}
             view={view}
-            onChangeView={(v) => setView(v)}
+            onChangeView={(v) => handleChangeView(v)}
             unreadCount={unreadCount}
             onLogout={onLogout}
             statusPill={statusPill}
@@ -504,7 +514,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     </div>
                                 </div>
                                 <Button
-                                    onClick={() => setView(nextAction.cta.view)}
+                                    onClick={() => handleChangeView(nextAction.cta.view)}
                                     className="mt-4 w-full rounded-2xl border border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.12)] text-white shadow-none hover:bg-[rgba(255,255,255,0.20)] dark:bg-[linear-gradient(135deg,rgba(220,38,38,0.35),rgba(185,28,28,0.25))] dark:text-white dark:hover:bg-[linear-gradient(135deg,rgba(220,38,38,0.45),rgba(185,28,28,0.32))] sm:w-auto sm:self-start"
                                 >
                                     {nextAction.cta.label}
@@ -516,7 +526,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <button
                                     type="button"
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
-                                    onClick={() => setView("payments")}
+                                    onClick={() => handleChangeView("payments")}
                                 >
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("payments.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">
@@ -531,7 +541,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <button
                                     type="button"
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
-                                    onClick={() => setView("documents")}
+                                    onClick={() => handleChangeView("documents")}
                                 >
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("documents.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">
@@ -546,7 +556,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <button
                                     type="button"
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5 sm:col-span-2"
-                                    onClick={() => setView("dossier")}
+                                    onClick={() => handleChangeView("dossier")}
                                 >
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("dossier.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">

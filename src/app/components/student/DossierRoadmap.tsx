@@ -667,7 +667,7 @@ export function DossierRoadmap({
     const alignRight = isRightEdge || (!isLeftEdge && (i === 0 || i === 3 || i === 6));
     const gap = isLeftEdge || isRightEdge ? 20 : 16;
     const xNudge = [0, 0, 0, 0, 70, -226, -45, 0][i] ?? 0;
-    const yNudge = [0, 0, 0, 0, -8, 12, -10, 42][i] ?? 0;
+    const yNudge = [0, 0, 0, -20, -8, 12, -10, 42][i] ?? 0;
 
     if (alignRight) {
       return {
