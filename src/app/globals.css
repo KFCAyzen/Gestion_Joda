@@ -148,37 +148,49 @@ body {
    background: #0f172a;
  }
 
-/* Custom scrollbar */
- ::-webkit-scrollbar {
-   width: 6px;
- }
+/* Custom scrollbar — admin content (light / dark) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #dc2626;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #ef4444;
+}
+/* Firefox — thin global */
+* {
+  scrollbar-width: thin;
+}
 
- ::-webkit-scrollbar-track {
-   background: #f1f5f9;
- }
+/* Student shell — toutes les zones overflow (rouge / nuit) */
+.student-shell ::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+.student-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.student-shell ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+}
+.student-shell ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.42);
+}
 
- ::-webkit-scrollbar-thumb {
-   background: #cbd5e1;
-   border-radius: 3px;
- }
-
- ::-webkit-scrollbar-thumb:hover {
-   background: #94a3b8;
- }
-
- .dark ::-webkit-scrollbar-track {
-   background: #1e293b;
- }
-
- .dark ::-webkit-scrollbar-thumb {
-   background: #475569;
- }
-
- .dark ::-webkit-scrollbar-thumb:hover {
-   background: #64748b;
- }
-
-/* Student sidebar — scrollbar ultra-fine thémée */
+/* Student sidebar — règle spécifique (override student-shell) */
 .student-sidebar::-webkit-scrollbar {
   width: 3px;
 }
@@ -188,15 +200,29 @@ body {
 .student-sidebar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 99px;
-  transition: background 0.2s;
 }
 .student-sidebar::-webkit-scrollbar-thumb:hover {
   background: rgba(220, 38, 38, 0.45);
 }
 /* Firefox */
 .student-sidebar {
-  scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* Modals paiements étudiants — hors student-shell DOM */
+.student-pay-modal-panel ::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+.student-pay-modal-panel ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.student-pay-modal-panel ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 99px;
+}
+.student-pay-modal-panel ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.42);
 }
 
 /* Tailwind Custom Components - LOCKED */
