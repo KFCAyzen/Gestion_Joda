@@ -125,6 +125,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
         const unreadIds = msgs.filter((m) => m.to_user_id === userId && !m.read).map((m) => m.id);
         if (unreadIds.length > 0) {
             await supabase.from("messages").update({ read: true }).in("id", unreadIds);
+            onUnreadChange?.(0);
         }
         setLoading(false);
     }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -304,13 +305,13 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                                 className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.06)] sm:max-w-[72%] sm:px-4 sm:py-3 sm:text-sm ${
                                                     isOwn
                                                         ? "rounded-br-md bg-red-600 text-white"
-                                                        : "rounded-bl-md border border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-fg)]"
+                                                        : "rounded-bl-md border border-white/20 bg-white text-gray-900"
                                                 }`}
                                             >
                                                 {msg.content}
                                                 <div
                                                     className={`mt-1 flex items-center gap-1 text-[10px] ${
-                                                        isOwn ? "justify-end text-white/70" : "text-[var(--student-fg-muted)] opacity-70"
+                                                        isOwn ? "justify-end text-white/70" : "text-gray-400"
                                                     }`}
                                                 >
                                                     <span>{fmtTime(msg.created_at)}</span>

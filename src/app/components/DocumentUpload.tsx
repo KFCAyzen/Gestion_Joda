@@ -460,9 +460,9 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                         className={[
                                             "rounded-full border text-[10px] font-semibold",
                                             uploaded.status === "valide"
-                                                ? "border-[rgba(220,38,38,0.28)] bg-black/35 text-[var(--student-neon-lime)]"
+                                                ? "border-[rgba(34,197,94,0.40)] bg-[rgba(34,197,94,0.12)] text-green-400"
                                                 : uploaded.status === "non_conforme"
-                                                  ? "border-[rgba(255,65,85,0.25)] bg-black/35 text-[var(--student-ring-move)]"
+                                                  ? "border-[rgba(249,115,22,0.40)] bg-[rgba(249,115,22,0.12)] text-orange-400"
                                                   : "border-white/12 bg-black/35 text-white/70",
                                         ].join(" ")}
                                     >

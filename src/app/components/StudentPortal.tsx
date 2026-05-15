@@ -89,13 +89,13 @@ const STATUS_COLORS: Record<string, string> = {
     paye: "border-[rgba(255,255,255,0.35)] bg-[rgba(255,255,255,0.15)] text-[var(--student-ring-move)]",
     attente: "border-[rgba(255,255,255,0.20)] bg-[rgba(255,255,255,0.08)] text-[var(--student-fg-muted)]",
     retard: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-move)]",
-    valide: "border-[rgba(255,255,255,0.35)] bg-[rgba(255,255,255,0.15)] text-[var(--student-ring-move)]",
+    valide: "border-[rgba(34,197,94,0.40)] bg-[rgba(34,197,94,0.15)] text-green-400",
     en_attente: "border-[rgba(255,255,255,0.20)] bg-[rgba(255,255,255,0.08)] text-[var(--student-fg-muted)]",
-    non_conforme: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-move)]",
+    non_conforme: "border-[rgba(249,115,22,0.40)] bg-[rgba(249,115,22,0.15)] text-orange-400",
     document_recu: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-exercise)]",
     en_cours: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-exercise)]",
-    admission_validee: "border-[rgba(255,255,255,0.35)] bg-[rgba(255,255,255,0.15)] text-[var(--student-ring-move)]",
-    admission_rejetee: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-move)]",
+    admission_validee: "border-[rgba(34,197,94,0.40)] bg-[rgba(34,197,94,0.15)] text-green-400",
+    admission_rejetee: "border-[rgba(249,115,22,0.40)] bg-[rgba(249,115,22,0.15)] text-orange-400",
     visa_en_cours: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-exercise)]",
     termine: "border-[rgba(255,255,255,0.18)] bg-[rgba(255,255,255,0.06)] text-[var(--student-fg-muted)]",
 };
@@ -105,14 +105,14 @@ const PAYMENTS_TAB_BADGE: Record<string, string> = {
     paye: "border-[rgba(255,255,255,0.38)] bg-[rgba(255,255,255,0.18)] text-[var(--student-ring-move)]",
     attente: "border-[rgba(255,255,255,0.20)] bg-[rgba(255,255,255,0.08)] text-[var(--student-fg-muted)]",
     retard: "border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.12)] text-[var(--student-ring-move)]",
-    valide: "border-[rgba(255,255,255,0.35)] bg-[rgba(255,255,255,0.15)] text-[var(--student-ring-move)]",
+    valide: "border-[rgba(34,197,94,0.40)] bg-[rgba(34,197,94,0.15)] text-green-400",
     en_attente: "border-[rgba(255,255,255,0.20)] bg-[rgba(255,255,255,0.08)] text-[var(--student-fg-muted)]",
-    non_conforme: "border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.12)] text-[var(--student-ring-move)]",
+    non_conforme: "border-[rgba(249,115,22,0.40)] bg-[rgba(249,115,22,0.15)] text-orange-400",
     en_validation: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-exercise)]",
     document_recu: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-exercise)]",
     en_cours: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-exercise)]",
-    admission_validee: "border-[rgba(255,255,255,0.35)] bg-[rgba(255,255,255,0.15)] text-[var(--student-ring-move)]",
-    admission_rejetee: "border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.12)] text-[var(--student-ring-move)]",
+    admission_validee: "border-[rgba(34,197,94,0.40)] bg-[rgba(34,197,94,0.15)] text-green-400",
+    admission_rejetee: "border-[rgba(249,115,22,0.40)] bg-[rgba(249,115,22,0.15)] text-orange-400",
     visa_en_cours: "border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.10)] text-[var(--student-ring-exercise)]",
     termine: "border-[rgba(255,255,255,0.18)] bg-[rgba(255,255,255,0.06)] text-[var(--student-fg-muted)]",
 };
@@ -229,13 +229,13 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 .eq("to_user_id", user.id)
                 .order("created_at", { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
             if (lastMsg) {
                 const { data: agentUser } = await supabase
                     .from("users")
                     .select("name")
                     .eq("id", lastMsg.from_user_id)
-                    .single();
+                    .maybeSingle();
                 if (agentUser?.name) setAgentName(agentUser.name);
                 setLastMessagePreview(
                     (lastMsg.content as string)?.slice(0, 40) + "…" || ""
@@ -743,6 +743,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     <StudentNotifications
                         user={user}
                         onBack={() => { setView("dashboard"); void load(); }}
+                        onUnreadChange={setUnreadCount}
                     />
                 )}
 

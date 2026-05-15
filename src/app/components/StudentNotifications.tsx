@@ -27,6 +27,7 @@ interface User {
 interface Props {
     user: User;
     onBack?: () => void;
+    onUnreadChange?: (n: number) => void;
 }
 
 const TYPE_CONFIG: Record<string, { labelKey: string; tone: "move" | "exercise" | "stand" | "neutral"; icon: string }> = {
@@ -43,7 +44,7 @@ function toneToText(tone: "move" | "exercise" | "stand" | "neutral") {
     return "text-white/70";
 }
 
-export default function StudentNotifications({ user, onBack }: Props) {
+export default function StudentNotifications({ user, onBack, onUnreadChange }: Props) {
     const t = useTranslations("studentNotifications");
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
@@ -68,7 +69,11 @@ export default function StudentNotifications({ user, onBack }: Props) {
 
     const markAsRead = async (id: string) => {
         await supabase.from("notifications").update({ read: true }).eq("id", id);
-        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+        setNotifications((prev) => {
+            const next = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+            onUnreadChange?.(next.filter((n) => !n.read).length);
+            return next;
+        });
     };
 
     const markAllAsRead = async () => {
@@ -82,6 +87,7 @@ export default function StudentNotifications({ user, onBack }: Props) {
             150
         );
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        onUnreadChange?.(0);
     };
 
     const filtered = filter === "all" ? notifications : notifications.filter((n) => n.type === filter);
