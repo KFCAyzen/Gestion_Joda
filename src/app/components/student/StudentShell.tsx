@@ -70,33 +70,18 @@ export function StudentShell({
         />
 
         {/* Main content */}
-        {isChatView ? (
-          /* Chat fills remaining space without extra padding */
-          <div className="flex-1 min-w-0">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={view}
-                {...pageMotion}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                className="h-full"
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        ) : (
-          <main className="flex-1 min-w-0 px-4 pb-28 pt-6 sm:px-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={view}
-                {...pageMotion}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
-          </main>
-        )}
+        <main className={`flex-1 min-w-0 ${isChatView ? "" : "px-4 pb-28 pt-6 sm:px-6"}`}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={view}
+              {...pageMotion}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className={isChatView ? "h-full" : undefined}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
 
       <BottomTabs

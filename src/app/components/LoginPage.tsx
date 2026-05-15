@@ -343,8 +343,8 @@ export default function LoginPage() {
 
                         {/* Panneau formulaire */}
                         <motion.div
-                            className="flex flex-1 flex-col justify-center overflow-y-auto px-6 py-8 text-gray-900 dark:text-gray-100 sm:p-8 lg:p-10"
-                            style={{ background: theme === "dark" ? "rgba(15,23,42,0.97)" : "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)" }}
+                            className="flex flex-1 flex-col justify-center overflow-y-auto px-6 py-8 text-gray-900 dark:text-gray-100 sm:p-8 lg:p-10 bg-white/[0.97] dark:bg-slate-900/[0.97]"
+                            style={{ backdropFilter: "blur(20px)" }}
                             initial={{ x: 60, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
