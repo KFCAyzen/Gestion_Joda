@@ -346,7 +346,7 @@ function AppShell({ children }: { children: ReactNode }) {
                 <div className="sidebar-orb sidebar-orb-top" />
                 <div className="sidebar-orb sidebar-orb-bottom" />
 
-                <div className="relative flex items-start gap-3 px-5 py-5 border-b border-white/50">
+                <div className="relative flex items-start gap-3 px-5 py-5 border-b border-white/15">
                     <div className="sidebar-brand-mark">
                         <img src="/Logo.png" alt="Joda Company Logo" className="h-9 w-auto object-contain" />
                     </div>
@@ -414,7 +414,7 @@ function AppShell({ children }: { children: ReactNode }) {
                     </div>
                 </nav>
 
-                <div className="border-t border-white/50 p-4">
+                <div className="border-t border-white/15 p-4">
                     <div className="sidebar-user-card">
                         <div className="flex items-center mb-4">
                             <div className="sidebar-user-avatar">
