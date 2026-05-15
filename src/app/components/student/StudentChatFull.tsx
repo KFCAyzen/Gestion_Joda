@@ -75,6 +75,17 @@ function isSystemMessage(msg: Message): boolean {
     return !!(msg.metadata as any)?.system;
 }
 
+function dedupMessages(msgs: Message[], userId: string): Message[] {
+    const seen = new Set<string>();
+    return msgs.filter((m) => {
+        if (m.to_user_id === userId) return true;
+        const key = `${m.content}-${m.created_at.substring(0, 16)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
 function avatarInitials(name: string): string {
     return name
         .split(" ")
@@ -102,17 +113,15 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
             .or(`to_user_id.eq.${userId},from_user_id.eq.${userId}`)
             .order("created_at", { ascending: true });
 
-        const msgs = (data as Message[]) ?? [];
+        const msgs = dedupMessages((data as Message[]) ?? [], userId);
         setMessages(msgs);
 
-        // Find agent user ID from received messages
         const received = msgs.find((m) => m.to_user_id === userId);
         if (received) setAgentUserId(received.from_user_id);
 
         const unread = msgs.filter((m) => m.to_user_id === userId && !m.read).length;
         onUnreadChange?.(unread);
 
-        // Mark received as read
         const unreadIds = msgs.filter((m) => m.to_user_id === userId && !m.read).map((m) => m.id);
         if (unreadIds.length > 0) {
             await supabase.from("messages").update({ read: true }).in("id", unreadIds);
@@ -126,7 +135,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Realtime subscription
+    // Realtime — écoute les nouveaux messages reçus et les ajoute sans écraser l'état local
     useEffect(() => {
         const channel = supabase
             .channel(`chat-${userId}`)
@@ -135,10 +144,16 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                 schema: "public",
                 table: "messages",
                 filter: `to_user_id=eq.${userId}`,
-            }, () => { void load(); })
+            }, (payload) => {
+                const newMsg = payload.new as Message;
+                setMessages((prev) => prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]);
+                if (!agentUserId) setAgentUserId(newMsg.from_user_id);
+                void supabase.from("messages").update({ read: true }).eq("id", newMsg.id);
+                onUnreadChange?.(0);
+            })
             .subscribe();
-        return () => { supabase.removeChannel(channel); };
-    }, [userId, load]); // eslint-disable-line react-hooks/exhaustive-deps
+        return () => { void supabase.removeChannel(channel); };
+    }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const send = async () => {
         if (!text.trim() || sending) return;
@@ -146,17 +161,28 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
         const content = text.trim();
         setText("");
 
+        const tempId = `temp-${Date.now()}`;
+        const optimistic: Message = {
+            id: tempId,
+            from_user_id: userId,
+            to_user_id: agentUserId ?? "",
+            subject: "Message",
+            content,
+            read: false,
+            created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, optimistic]);
+
         if (agentUserId) {
-            await supabase.from("messages").insert({
+            const { data } = await supabase.from("messages").insert({
                 from_user_id: userId,
                 to_user_id: agentUserId,
                 subject: "Réponse étudiant",
                 content,
                 read: false,
-                created_at: new Date().toISOString(),
-            });
+            }).select().single();
+            if (data) setMessages((prev) => prev.map((m) => m.id === tempId ? (data as Message) : m));
         } else {
-            // No agent identified yet — broadcast to all admins/agents via API
             await fetch("/api/student-send-message", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -164,7 +190,6 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
             });
         }
 
-        await load();
         setSending(false);
     };
 

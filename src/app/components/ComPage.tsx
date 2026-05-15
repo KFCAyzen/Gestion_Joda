@@ -79,6 +79,8 @@ export default function ComPage() {
   const [convInput, setConvInput] = useState("");
   const [convSending, setConvSending] = useState(false);
   const threadEndRef = useRef<HTMLDivElement>(null);
+  const activeStudentRef = useRef<ConvStudent | null>(null);
+  useEffect(() => { activeStudentRef.current = activeStudent; }, [activeStudent]);
 
   // ── SMS tab state ─────────────────────────────────────────────────────────
   const [smsStudents, setSmsStudents] = useState<SmsStudent[]>([]);
@@ -149,6 +151,42 @@ export default function ComPage() {
   };
 
   useEffect(() => { void loadCredit(); }, []);
+
+  // Realtime — écoute les messages entrants adressés à cet agent
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`agent-inbox-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `to_user_id=eq.${user.id}` },
+        async (payload) => {
+          const msg = payload.new as { from_user_id: string; content: string; created_at: string };
+
+          setConversations((prev) =>
+            prev.map((c) => {
+              if (c.user_id !== msg.from_user_id) return c;
+              const isOpen = activeStudentRef.current?.user_id === msg.from_user_id;
+              return { ...c, lastMessage: msg.content, lastAt: msg.created_at, unread: isOpen ? c.unread : c.unread + 1 };
+            })
+          );
+
+          const active = activeStudentRef.current;
+          if (active?.user_id === msg.from_user_id) {
+            try {
+              const res = await fetch(`/api/conversation/${active.id}`);
+              if (res.ok) {
+                const data = await res.json();
+                setThreadMessages(data.messages ?? []);
+              }
+            } catch { /* silent */ }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [user?.id, supabase]);
 
   // ── Conversations helpers ─────────────────────────────────────────────────
   const convFiltered = useMemo(() => {
