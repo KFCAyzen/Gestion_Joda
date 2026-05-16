@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { requireRole } from "@/app/lib/auth";
-import { getLang } from "@/app/lib/emailService";
+import { getLang, sendNewStudentAdminEmail } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const supabaseAdmin = createClient(
@@ -242,6 +242,25 @@ async function handleCreateUser(req: NextRequest) {
             ? `Hello ${name}, your JODA account has been created.\nUsername: ${username}\nPassword: ${password}\nLogin: https://portal-joda.company`
             : `Bonjour ${name}, votre compte JODA a été créé.\nIdentifiant: ${username}\nMot de passe: ${password}\nConnexion: https://portal-joda.company`;
         sendSmsToPhone(telephone, smsText).catch(console.error);
+    }
+
+    // Notifier les admins si c'est un compte étudiant
+    if (role === 'student') {
+        const { data: admins } = await supabaseAdmin
+            .from('users')
+            .select('contact_email, email')
+            .in('role', ['admin', 'super_admin']);
+
+        const adminEmails = (admins ?? [])
+            .map((u: { contact_email?: string; email?: string }) => u.contact_email || u.email)
+            .filter(Boolean) as string[];
+
+        sendNewStudentAdminEmail({
+            studentName: name,
+            studentUsername: username,
+            studentEmail: email,
+            adminEmails,
+        }).catch(console.error);
     }
 
     return NextResponse.json({ success: true, userId: data.user.id });

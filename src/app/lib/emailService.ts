@@ -613,3 +613,76 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     return false;
   }
 }
+
+// ── Nouveau compte étudiant → admins ──────────────────────────────────────────
+
+interface NewStudentAdminEmailData {
+  studentName: string;
+  studentUsername: string;
+  studentEmail: string;
+  adminEmails: string[];
+}
+
+export async function sendNewStudentAdminEmail(data: NewStudentAdminEmailData): Promise<boolean> {
+  if (data.adminEmails.length === 0) return false;
+  const year = new Date().getFullYear();
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.adminEmails,
+      subject: `👤 Nouveau compte étudiant — ${data.studentName}`,
+      html: `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader()}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 20px;font-size:15px;color:#111827;">Un nouveau compte étudiant vient d'être créé sur la plateforme :</p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
+    <tr><td style="padding:20px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;width:140px;">Nom</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.studentName}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Identifiant</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.studentUsername}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Email de contact</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.studentEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Créé le</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  <table cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://portal-joda.company" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          Voir le dossier →
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Nouveau étudiant notifié à ${data.adminEmails.length} admin(s)`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendNewStudentAdminEmail:', err);
+    return false;
+  }
+}
