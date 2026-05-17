@@ -239,6 +239,7 @@ interface PaymentResultEmailData {
   tranche: number;
   amount: number;
   isValid: boolean;
+  rejectionReason?: string;
   lang?: Lang;
 }
 
@@ -291,7 +292,12 @@ ${emailHeader(lang)}
         : 'Votre paiement a été validé par l\'équipe Joda Company. Vous pouvez consulter votre espace étudiant pour le suivi de votre dossier.'}</p>`
     : `<p style="font-size:14px;color:#6b7280;line-height:1.6;">${isEn
         ? 'Your payment could not be validated. Please contact your Joda Company advisor for more information or resubmit your proof of payment.'
-        : 'Votre paiement n\'a pas pu être validé. Veuillez contacter votre conseiller Joda Company pour plus d\'informations ou soumettre à nouveau votre justificatif.'}</p>`
+        : 'Votre paiement n\'a pas pu être validé. Veuillez contacter votre conseiller Joda Company pour plus d\'informations ou soumettre à nouveau votre justificatif.'}</p>
+      ${data.rejectionReason ? `
+      <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:14px 18px;margin:16px 0;border-radius:4px;">
+        <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;">${isEn ? 'Reason given' : 'Motif indiqué'}</p>
+        <p style="margin:0;font-size:13px;color:#7f1d1d;line-height:1.6;">${data.rejectionReason}</p>
+      </div>` : ''}`
   }
   <table cellpadding="0" cellspacing="0" style="margin-top:24px;">
     <tr>

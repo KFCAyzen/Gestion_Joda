@@ -652,6 +652,7 @@
       "types": {
         "document_manquant": "Missing document",
         "paiement_valide": "Payment validated",
+        "paiement_rejete": "Payment rejected",
         "retard_paiement": "Late payment",
         "mise_a_jour_dossier": "File update"
       },
@@ -690,6 +691,7 @@
     "types": {
       "document_manquant": "Missing document",
       "paiement_valide": "Payment validated",
+      "paiement_rejete": "Payment rejected",
       "retard_paiement": "Late payment",
       "mise_a_jour_dossier": "File update"
     },
@@ -727,6 +729,7 @@
     "types": {
       "document_manquant": "Missing document",
       "paiement_valide": "Payment validated",
+      "paiement_rejete": "Payment rejected",
       "retard_paiement": "Late payment",
       "mise_a_jour_dossier": "File update"
     }
@@ -1674,7 +1677,9 @@
       "dueDate": "Due date",
       "paymentDate": "Payment date",
       "status": "Status",
-      "createdAt": "Created on"
+      "createdAt": "Created on",
+      "rejectionReason": "Rejection reason",
+      "rejectedAt": "Rejected on"
     },
     "edit": {
       "title": "Edit payment",
@@ -1687,7 +1692,12 @@
       "approveTitle": "Approve this payment",
       "approveDescription": "The payment will be marked as paid and an accounting entry will be created automatically.",
       "rejectTitle": "Reject this payment",
-      "rejectDescription": "The payment will be moved back to late status."
+      "rejectDescription": "The payment will be moved back to late status. The student will be notified via message, notification and email."
+    },
+    "rejectModal": {
+      "reasonLabel": "Rejection reason",
+      "reasonPlaceholder": "E.g. unreadable proof, insufficient amount, non-compliant document…",
+      "reasonHint": "Optional — will be sent to the student in the notification, message and email."
     },
     "messages": {
       "submitSuccess": "Payment submitted for validation",

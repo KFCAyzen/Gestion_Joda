@@ -638,6 +638,7 @@
       "types": {
         "document_manquant": "Document manquant",
         "paiement_valide": "Paiement valide",
+        "paiement_rejete": "Paiement rejeté",
         "retard_paiement": "Retard de paiement",
         "mise_a_jour_dossier": "Mise à jour dossier"
       },
@@ -690,6 +691,7 @@
     "types": {
       "document_manquant": "Document manquant",
       "paiement_valide": "Paiement valide",
+      "paiement_rejete": "Paiement rejeté",
       "retard_paiement": "Retard de paiement",
       "mise_a_jour_dossier": "Mise à jour dossier"
     },
@@ -727,6 +729,7 @@
     "types": {
       "document_manquant": "Document manquant",
       "paiement_valide": "Paiement valide",
+      "paiement_rejete": "Paiement rejeté",
       "retard_paiement": "Retard de paiement",
       "mise_a_jour_dossier": "Mise à jour dossier"
     }
@@ -1674,7 +1677,9 @@
       "dueDate": "Date limite",
       "paymentDate": "Date paiement",
       "status": "Statut",
-      "createdAt": "Créé le"
+      "createdAt": "Créé le",
+      "rejectionReason": "Motif du rejet",
+      "rejectedAt": "Rejeté le"
     },
     "edit": {
       "title": "Modifier le paiement",
@@ -1687,7 +1692,12 @@
       "approveTitle": "Approuver ce paiement",
       "approveDescription": "Le paiement sera marqué comme payé et une entrée comptable sera créée automatiquement.",
       "rejectTitle": "Rejeter ce paiement",
-      "rejectDescription": "Le paiement sera remis en statut retard."
+      "rejectDescription": "Le paiement sera remis en statut retard. L'étudiant sera notifié par message, notification et email."
+    },
+    "rejectModal": {
+      "reasonLabel": "Motif du rejet",
+      "reasonPlaceholder": "Ex : justificatif illisible, montant insuffisant, preuve non conforme…",
+      "reasonHint": "Optionnel — sera transmis à l'étudiant dans la notification, le message et l'email."
     },
     "messages": {
       "submitSuccess": "Paiement soumis pour validation",

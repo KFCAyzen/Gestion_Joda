@@ -22,7 +22,7 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
   }
 
   try {
-    const { studentId, isValid, paymentType, tranche, amount } = await req.json();
+    const { studentId, isValid, paymentType, tranche, amount, rejectionReason } = await req.json();
 
     if (!studentId || typeof isValid !== "boolean") {
       return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
@@ -30,7 +30,7 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
 
     const { data: student } = await supabaseAdmin
       .from("students")
-      .select("nom, prenom, email, telephone, langue")
+      .select("nom, prenom, email, telephone, langue, user_id")
       .eq("id", studentId)
       .maybeSingle();
 
@@ -45,6 +45,54 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
     const formattedAmount = new Intl.NumberFormat("fr-FR").format(amount ?? 0);
     const instalment = isEn ? "Instalment" : "Tranche";
 
+    const notifTitle = isValid
+      ? (isEn ? "Payment validated" : "Paiement validé")
+      : (isEn ? "Payment rejected" : "Paiement rejeté");
+
+    const notifMessage = isValid
+      ? (isEn
+          ? `Your payment ${typeLabelLocale} - ${instalment} ${tranche} (${formattedAmount} FCFA) has been validated.`
+          : `Votre paiement ${typeLabelLocale} - Tranche ${tranche} (${formattedAmount} FCFA) a été validé.`)
+      : (isEn
+          ? `Your payment ${typeLabelLocale} - ${instalment} ${tranche} could not be validated.${rejectionReason ? ` Reason: ${rejectionReason}` : ""}`
+          : `Votre paiement ${typeLabelLocale} - Tranche ${tranche} n'a pas pu être validé.${rejectionReason ? ` Motif : ${rejectionReason}` : ""}`);
+
+    const inAppTasks: PromiseLike<unknown>[] = [];
+
+    if (student.user_id) {
+      inAppTasks.push(
+        supabaseAdmin.from("notifications").insert({
+          user_id: student.user_id,
+          type: isValid ? "paiement_valide" : "paiement_rejete",
+          titre: notifTitle,
+          message: notifMessage,
+          lu: false,
+        })
+      );
+
+      const msgSubject = isValid
+        ? (isEn ? `Payment validated — ${typeLabelLocale} ${instalment} ${tranche}` : `Paiement validé — ${typeLabelLocale} Tranche ${tranche}`)
+        : (isEn ? `Payment rejected — ${typeLabelLocale} ${instalment} ${tranche}` : `Paiement rejeté — ${typeLabelLocale} Tranche ${tranche}`);
+
+      const msgContent = isValid
+        ? (isEn
+            ? `Hello ${studentName},\n\nYour payment ${typeLabelLocale} - ${instalment} ${tranche} (${formattedAmount} FCFA) has been successfully validated by the Joda Company team.\n\nYou can view your updated file in your student space.`
+            : `Bonjour ${studentName},\n\nVotre paiement ${typeLabelLocale} - Tranche ${tranche} (${formattedAmount} FCFA) a bien été validé par l'équipe Joda Company.\n\nVous pouvez consulter votre dossier mis à jour dans votre espace étudiant.`)
+        : (isEn
+            ? `Hello ${studentName},\n\nUnfortunately, your payment ${typeLabelLocale} - ${instalment} ${tranche} (${formattedAmount} FCFA) could not be validated.${rejectionReason ? `\n\nReason: ${rejectionReason}` : ""}\n\nPlease contact your Joda Company advisor to resubmit your proof of payment.`
+            : `Bonjour ${studentName},\n\nVotre paiement ${typeLabelLocale} - Tranche ${tranche} (${formattedAmount} FCFA) n'a malheureusement pas pu être validé.${rejectionReason ? `\n\nMotif : ${rejectionReason}` : ""}\n\nVeuillez contacter votre conseiller Joda Company pour soumettre à nouveau votre justificatif.`);
+
+      inAppTasks.push(
+        supabaseAdmin.from("messages").insert({
+          from_user_id: session.user.id,
+          to_user_id: student.user_id,
+          subject: msgSubject,
+          content: msgContent,
+          lu: false,
+        })
+      );
+    }
+
     const results = await Promise.allSettled([
       student.email
         ? sendPaymentResultEmail({
@@ -54,6 +102,7 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
             tranche,
             amount: amount ?? 0,
             isValid,
+            rejectionReason: rejectionReason ?? undefined,
             lang,
           })
         : Promise.resolve(false),
@@ -70,6 +119,8 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
                 : `Bonjour ${studentName}, votre paiement ${typeLabelLocale} - Tranche ${tranche} n'a pas pu être validé. Contactez votre conseiller JODA.`
           )
         : Promise.resolve(false),
+
+      ...inAppTasks,
     ]);
 
     const emailOk = results[0].status === "fulfilled" && results[0].value;

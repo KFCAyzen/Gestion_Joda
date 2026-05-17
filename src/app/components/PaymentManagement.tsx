@@ -61,6 +61,8 @@ interface Payment {
     validated_at: string | null;
     created_at: string;
     initiated_by_student?: boolean;
+    rejection_reason?: string | null;
+    rejected_at?: string | null;
 }
 
 function formatPrice(amount: number, nationalite?: string | null): string {
@@ -94,6 +96,7 @@ export default function PaymentManagement() {
     const [saving, setSaving] = useState(false);
     const [isSubmittingId, setIsSubmittingId] = useState<string | null>(null);
     const [isPrinting, setIsPrinting] = useState(false);
+    const [rejectModal, setRejectModal] = useState<{ open: boolean; paymentId: string; reason: string }>({ open: false, paymentId: '', reason: '' });
 
     const studentMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
 
@@ -205,7 +208,7 @@ export default function PaymentManagement() {
     };
 
     // Staff: approve or reject a payment in validation (admin always, others for student-initiated)
-    const handleValidatePayment = async (paymentId: string, isValid: boolean) => {
+    const handleValidatePayment = async (paymentId: string, isValid: boolean, rejectionReason?: string) => {
         if (!user) return;
         const localPayment = payments.find(p => p.id === paymentId);
         const isAdminLike = user.role === "admin" || user.role === "super_admin";
@@ -231,6 +234,8 @@ export default function PaymentManagement() {
                 validated_by: user.id,
                 validated_at: nowIso,
                 date_paiement: isValid ? nowIso : null,
+                rejection_reason: isValid ? null : (rejectionReason ?? null),
+                rejected_at: isValid ? null : nowIso,
             }).eq('id', paymentId);
 
             // 3. Si validé, créer une entrée comptable automatiquement
@@ -273,7 +278,7 @@ export default function PaymentManagement() {
             showNotification(isValid ? t("messages.approveSuccess") : t("messages.rejectSuccess"), isValid ? "success" : "error");
             loadData();
 
-            // Notifier l'étudiant par email + SMS (fire-and-forget)
+            // Notifier l'étudiant par email + SMS + notif in-app + message direct (fire-and-forget)
             fetch('/api/notify-payment-result', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -283,6 +288,7 @@ export default function PaymentManagement() {
                     paymentType: payment.type,
                     tranche: payment.tranche,
                     amount: payment.montant,
+                    rejectionReason: rejectionReason ?? null,
                 }),
             }).catch(console.error);
         } catch (error) {
@@ -347,8 +353,18 @@ export default function PaymentManagement() {
     };
 
     const confirmReject = (paymentId: string) => {
-        setPendingValidateAction(() => async () => { await handleValidatePayment(paymentId, false); });
-        setConfirmDialog({ open: true, title: t("confirm.rejectTitle"), description: t("confirm.rejectDescription") });
+        setRejectModal({ open: true, paymentId, reason: '' });
+    };
+
+    const handleRejectWithReason = async () => {
+        if (!rejectModal.paymentId) return;
+        setIsValidating(true);
+        try {
+            await handleValidatePayment(rejectModal.paymentId, false, rejectModal.reason.trim() || undefined);
+        } finally {
+            setIsValidating(false);
+            setRejectModal({ open: false, paymentId: '', reason: '' });
+        }
     };
 
     const filteredPayments = payments.filter(payment => {
@@ -639,10 +655,22 @@ export default function PaymentManagement() {
                                 {getStatusLabel(detailPayment.status)}
                             </span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between border-b pb-2">
                             <span className="text-slate-500 dark:text-slate-400">{t("detail.createdAt")}</span>
                             <span className="font-medium">{new Date(detailPayment.created_at).toLocaleDateString(dateLocale)}</span>
                         </div>
+                        {detailPayment.rejection_reason && (
+                            <div className="flex justify-between border-b pb-2">
+                                <span className="text-slate-500 dark:text-slate-400">{t("detail.rejectionReason")}</span>
+                                <span className="font-medium text-red-600 text-right max-w-[60%]">{detailPayment.rejection_reason}</span>
+                            </div>
+                        )}
+                        {detailPayment.rejected_at && (
+                            <div className="flex justify-between">
+                                <span className="text-slate-500 dark:text-slate-400">{t("detail.rejectedAt")}</span>
+                                <span className="font-medium">{new Date(detailPayment.rejected_at).toLocaleDateString(dateLocale)}</span>
+                            </div>
+                        )}
                     </div>
                     <div className="mt-5 flex gap-2">
                         {detailPayment.status === "paye" && (
@@ -652,6 +680,43 @@ export default function PaymentManagement() {
                             </Button>
                         )}
                         <Button variant="outline" size="sm" onClick={() => setDetailPayment(null)}>{t("actions.close")}</Button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Modal rejet avec motif */}
+        {rejectModal.open && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-red-600">{t("confirm.rejectTitle")}</h3>
+                        <button onClick={() => setRejectModal({ open: false, paymentId: '', reason: '' })} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
+                    </div>
+                    <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">{t("confirm.rejectDescription")}</p>
+                    <div className="space-y-2">
+                        <Label>{t("rejectModal.reasonLabel")}</Label>
+                        <textarea
+                            className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 resize-none"
+                            rows={4}
+                            placeholder={t("rejectModal.reasonPlaceholder")}
+                            value={rejectModal.reason}
+                            onChange={e => setRejectModal(s => ({ ...s, reason: e.target.value }))}
+                        />
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("rejectModal.reasonHint")}</p>
+                    </div>
+                    <div className="mt-5 flex gap-2">
+                        <Button
+                            onClick={handleRejectWithReason}
+                            disabled={isValidating}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {isValidating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {t("actions.reject")}
+                        </Button>
+                        <Button variant="outline" onClick={() => setRejectModal({ open: false, paymentId: '', reason: '' })} disabled={isValidating}>
+                            {t("actions.cancel")}
+                        </Button>
                     </div>
                 </div>
             </div>
