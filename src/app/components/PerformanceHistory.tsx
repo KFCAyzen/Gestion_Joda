@@ -493,6 +493,8 @@ export default function PerformanceHistory() {
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
 
+    const isAdmin = ["admin", "super_admin", "supervisor"].includes(user?.role ?? "");
+
     const { data: allPaymentsRaw = [], isLoading: loadingPayments, isError } = usePayments();
     const { data: studentsRaw = [], isLoading: loadingStudents } = useStudents();
     const { data: usersRaw = [], isLoading: loadingUsers } = useUsers();
@@ -537,18 +539,15 @@ export default function PerformanceHistory() {
         enabled: isAdmin,
     });
 
-    // Admin-only queries don't block the non-admin loading path
-    const isLoading =
-        loadingPayments || loadingStudents ||
-        (isAdmin && (loadingUsers || loadingDossiers || loadingLogs || loadingDossierHistory));
-
     const [selectedCreator, setSelectedCreator] = useState<string>("all");
     const [viewMode, setViewMode] = useState<ViewMode>("by-agent");
     const [period, setPeriod] = useState<Period>("month");
     const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
 
-    const isAdmin = ["admin", "super_admin", "supervisor"].includes(user?.role ?? "");
-    // Derived before hooks so we can use it in `enabled` flags below
+    // Admin-only queries don't block the non-admin loading path
+    const isLoading =
+        loadingPayments || loadingStudents ||
+        (isAdmin && (loadingUsers || loadingDossiers || loadingLogs || loadingDossierHistory));
 
     // ── Lookup maps ─────────────────────────────────────────────────────────────
 
@@ -697,7 +696,7 @@ export default function PerformanceHistory() {
         usersAll
             .filter((u) => !STAFF_BASE_ROLES.has(u.role) && u.role !== "student")
             .forEach((u) => {
-                if (!agentMap[u.id] && Object.values(studentsById).some((s) => s.created_by === u.id)) {
+                if (!agentMap[u.id] && creatorIdSet.has(u.id)) {
                     agentMap[u.id] = makeEntry(u);
                 }
             });
@@ -791,7 +790,7 @@ export default function PerformanceHistory() {
             ...active.map((a, i) => ({ ...a, rank: i + 1 })),
             ...inactive.map((a, i) => ({ ...a, rank: active.length + i + 1 })),
         ];
-    }, [isAdmin, usersRaw, studentsById, payePayments, enValidationPayments, attentePayments, retardPayments, dossiersByAgent, activityByAgent, dossierActionsByAgent, validationDelayByAgent]);
+    }, [isAdmin, usersRaw, studentsById, creatorIdSet, payePayments, enValidationPayments, attentePayments, retardPayments, dossiersByAgent, activityByAgent, dossierActionsByAgent, validationDelayByAgent]);
 
     const maxTotal = useMemo(() => Math.max(...agentStats.map((a) => a.paye.total), 0), [agentStats]);
 
