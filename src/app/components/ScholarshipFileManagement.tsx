@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { CalendarDays, Clock3, School2, Sparkles, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { createClient } from "../lib/supabase/client";
+import { useQueryClient } from '@tanstack/react-query';
+import { useApplications, APPLICATIONS_KEY } from '../lib/hooks/use-applications';
+import { useStudents } from '../lib/hooks/use-students';
+import { useUniversities } from '../lib/hooks/use-universities';
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { getFriendlyErrorMessage } from "../lib/feedback";
@@ -45,11 +49,35 @@ export default function ScholarshipFileManagement() {
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
-    const [files, setFiles] = useState<ScholarshipFile[]>([]);
+    const queryClient = useQueryClient();
+    const { data: _appsData = [], isLoading } = useApplications();
+    const { data: _studentsData = [] } = useStudents();
+    const { data: _univData = [] } = useUniversities(false);
+
+    const files = useMemo<ScholarshipFile[]>(() => (_appsData as any[]).map((file: any) => {
+        const student = (_studentsData as any[]).find((s: any) => s.id === file.student_id);
+        const university = (_univData as any[]).find((u: any) => u.id === file.university_id);
+        return {
+            id: file.id,
+            student_id: file.student_id,
+            studentName: student ? `${student.prenom} ${student.nom}` : t("fallback.unknownStudent"),
+            university_id: file.university_id,
+            university: university?.nom || t("fallback.unknownUniversity"),
+            program: file.desired_program || t("fallback.noProgram"),
+            status: file.status || "en_attente",
+            desired_program: file.desired_program,
+            study_level: file.study_level,
+            language_level: file.language_level,
+            scholarship_type: file.scholarship_type,
+            notes_internes: file.notes_internes,
+            created_at: file.created_at,
+            updated_at: file.updated_at,
+        };
+    }), [_appsData, _studentsData, _univData, t]);
+
     const [selectedFile, setSelectedFile] = useState<ScholarshipFile | null>(null);
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [searchTerm, setSearchTerm] = useState("");
-    const [isLoading, setIsLoading] = useState(true);
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [isSavingNotes, setIsSavingNotes] = useState(false);
     const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
@@ -60,50 +88,6 @@ export default function ScholarshipFileManagement() {
     const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
 
     const canDelete = user?.role === "admin" || user?.role === "super_admin";
-
-    const loadData = async () => {
-        setIsLoading(true);
-        try {
-            const [filesRes, studentsRes, universitiesRes] = await Promise.all([
-                supabase.from("dossier_bourses").select("*").order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom, email"),
-                supabase.from("universities").select("id, nom"),
-            ]);
-
-            const filesData = (filesRes.data || []).map((file: any) => {
-                const student = (studentsRes.data || []).find((s: any) => s.id === file.student_id);
-                const university = (universitiesRes.data || []).find((u: any) => u.id === file.university_id);
-                return {
-                    id: file.id,
-                    student_id: file.student_id,
-                    studentName: student ? `${student.prenom} ${student.nom}` : t("fallback.unknownStudent"),
-                    university_id: file.university_id,
-                    university: university?.nom || t("fallback.unknownUniversity"),
-                    program: file.desired_program || t("fallback.noProgram"),
-                    status: file.status || "en_attente",
-                    desired_program: file.desired_program,
-                    study_level: file.study_level,
-                    language_level: file.language_level,
-                    scholarship_type: file.scholarship_type,
-                    notes_internes: file.notes_internes,
-                    created_at: file.created_at,
-                    updated_at: file.updated_at,
-                };
-            });
-
-            setFiles(filesData);
-        } catch (error) {
-            showNotification({
-                title: t("messages.loadTitle"),
-                message: getFriendlyErrorMessage(error, { fallback: t("messages.loadError") }),
-                type: "error",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => { loadData(); }, []);
 
     useEffect(() => {
         if (selectedFile) setNotes(selectedFile.notes_internes || "");
@@ -136,7 +120,7 @@ export default function ScholarshipFileManagement() {
             }
             const updated = { ...selectedFile, status: newStatus, updated_at: new Date().toISOString() };
             setSelectedFile(updated);
-            setFiles(prev => prev.map(f => f.id === selectedFile.id ? updated : f));
+            queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY });
             showNotification({ title: t("messages.statusUpdatedTitle"), message: t("messages.statusUpdated", { status: getStatusText(newStatus) }), type: "success" });
         } catch (error) {
             showNotification({
@@ -168,7 +152,7 @@ export default function ScholarshipFileManagement() {
             }
             const updated = { ...selectedFile, notes_internes: notes, updated_at: new Date().toISOString() };
             setSelectedFile(updated);
-            setFiles(prev => prev.map(f => f.id === selectedFile.id ? updated : f));
+            queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY });
             showNotification({ title: t("messages.notesSavedTitle"), message: t("messages.notesSaved"), type: "success" });
         } catch (error) {
             showNotification({
@@ -202,7 +186,7 @@ export default function ScholarshipFileManagement() {
                         );
                     }
                     showNotification({ title: t("messages.deleteSuccessTitle"), message: t("messages.deleteSuccess", { name: selectedFile.studentName }), type: "success" });
-                    setFiles(prev => prev.filter(f => f.id !== selectedFile.id));
+                    queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY });
                     closeFile();
                 } catch (error) {
                     showNotification({

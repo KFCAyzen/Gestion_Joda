@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
+import { useQueryClient } from '@tanstack/react-query';
+import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
+import { useStudents } from '../lib/hooks/use-students';
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
@@ -70,9 +73,11 @@ export default function CoursLangues() {
     const { showNotification } = useNotificationContext();
     const { getConfig } = usePaymentConfig();
 
-    const [payments, setPayments] = useState<CoursePayment[]>([]);
-    const [students, setStudents] = useState<Student[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: _allPayments = [], isLoading: loading } = usePayments();
+    const payments = (_allPayments as unknown as CoursePayment[]).filter(p => p.type === 'mandarin' || p.type === 'anglais');
+    const { data: _studentsData = [] } = useStudents();
+    const students = _studentsData as unknown as Student[];
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
@@ -82,26 +87,6 @@ export default function CoursLangues() {
         type: "mandarin",
         dateLimit: new Date(Date.now() + (getConfig("mandarin").deadline_offset_days) * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     });
-
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [paymentsRes, studentsRes] = await Promise.all([
-                supabase
-                    .from("payments")
-                    .select("*")
-                    .in("type", ["mandarin", "anglais"])
-                    .order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom, email, nationalite"),
-            ]);
-            setPayments(paymentsRes.data || []);
-            setStudents(studentsRes.data || []);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const getStudentName = (id: string) => {
         const s = students.find(s => s.id === id);
@@ -196,7 +181,7 @@ export default function CoursLangues() {
                 type: "mandarin",
                 dateLimit: new Date(Date.now() + (getConfig("mandarin").deadline_offset_days) * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
             });
-            await loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         } finally {
             setSubmitting(false);
         }
@@ -217,7 +202,7 @@ export default function CoursLangues() {
                 return;
             }
             showNotification(t("messages.paymentValidated"), "success");
-            await loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         } finally {
             setMarkingPaidId(null);
         }

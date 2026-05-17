@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
     ChevronLeft,
     ChevronRight,
@@ -13,6 +14,9 @@ import {
     AlertTriangle,
 } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
+import { useEntreesComptables, useSortiesComptables, ENTREES_KEY, SORTIES_KEY } from "../lib/hooks/use-accounting";
+import { useUsers } from "../lib/hooks/use-users";
+import { useStudents } from "../lib/hooks/use-students";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
@@ -141,14 +145,19 @@ export default function LivreComptable() {
     const supabase = createClient();
     const { user } = useAuth();
     const { showNotification } = useNotificationContext();
+    const queryClient = useQueryClient();
+
+    const { data: _entreesData = [], isLoading: loading } = useEntreesComptables();
+    const entrees = _entreesData as unknown as EntreeComptable[];
+    const { data: _sortiesData = [] } = useSortiesComptables();
+    const sorties = _sortiesData as unknown as SortieComptable[];
+    const { data: _usersData = [] } = useUsers();
+    const users = _usersData as unknown as AppUser[];
+    const { data: _studentsData = [] } = useStudents();
+    const students = _studentsData as unknown as Student[];
 
     const [viewDate, setViewDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>("jour");
-    const [entrees, setEntrees] = useState<EntreeComptable[]>([]);
-    const [sorties, setSorties] = useState<SortieComptable[]>([]);
-    const [users, setUsers] = useState<AppUser[]>([]);
-    const [students, setStudents] = useState<Student[]>([]);
-    const [loading, setLoading] = useState(true);
     const [catFilter, setCatFilter] = useState<string>("tout");
     const [page, setPage] = useState(1);
     const [showNewModal, setShowNewModal] = useState(false);
@@ -166,28 +175,6 @@ export default function LivreComptable() {
     const closeConfirm = () => setConfirmDialog((s) => ({ ...s, isOpen: false }));
 
     const isAdminLike = user?.role === "admin" || user?.role === "super_admin";
-
-    const loadData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const [eRes, sRes, uRes, stRes] = await Promise.all([
-                supabase.from("entrees_comptables").select("*").order("date", { ascending: false }),
-                supabase.from("sorties_comptables").select("*").order("date", { ascending: false }),
-                supabase.from("users").select("id, name"),
-                supabase.from("students").select("id, nom, prenom"),
-            ]);
-            setEntrees(eRes.data || []);
-            setSorties(sRes.data || []);
-            setUsers(uRes.data || []);
-            setStudents(stRes.data || []);
-        } catch (err) {
-            console.error("Erreur chargement livre:", err);
-        } finally {
-            setLoading(false);
-        }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    useEffect(() => { loadData(); }, [loadData]);
 
     const getUserName = useCallback(
         (id: string | null): string => {
@@ -347,7 +334,7 @@ export default function LivreComptable() {
             {}
         );
         showNotification("Sortie validée", "success");
-        loadData();
+        queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
     };
 
     const handleAdd = async () => {
@@ -393,7 +380,7 @@ export default function LivreComptable() {
             showNotification("Opération enregistrée", "success");
             setShowNewModal(false);
             setNewForm({ montant: "", description: "", type: "revenus_divers", categorie: "divers" });
-            loadData();
+            queryClient.invalidateQueries({ queryKey: newKind === "entree" ? ENTREES_KEY : SORTIES_KEY });
         } catch (err) {
             showNotification("Erreur lors de l'enregistrement", "error");
         } finally {

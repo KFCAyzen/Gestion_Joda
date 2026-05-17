@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
+import { useQueryClient } from '@tanstack/react-query';
+import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
+import { useStudents } from '../lib/hooks/use-students';
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
@@ -85,9 +88,12 @@ export default function PaymentManagement() {
     const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
     const [pendingValidateAction, setPendingValidateAction] = useState<(() => Promise<void>) | null>(null);
     const [isValidating, setIsValidating] = useState(false);
-    const [payments, setPayments] = useState<Payment[]>([]);
-    const [students, setStudents] = useState<Student[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: _paymentsData = [], isLoading: loading } = usePayments();
+    const payments = _paymentsData as unknown as Payment[];
+    const { data: _studentsData = [] } = useStudents();
+    const students = _studentsData as unknown as Student[];
+    const syncedRef = useRef(false);
     const [selectedStudent, setSelectedStudent] = useState<string | "">("");
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
@@ -116,34 +122,6 @@ export default function PaymentManagement() {
         [getConfig, getBourseConfig]
     );
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [paymentsRes, studentsRes] = await Promise.all([
-                supabase.from('payments').select('*').order('created_at', { ascending: false }),
-                supabase.from('students').select('id, nom, prenom, email, telephone, niveau, nationalite')
-            ]);
-
-            const studentsData = studentsRes.data || [];
-            if (paymentsRes.data) {
-                await syncPenalties(paymentsRes.data, studentsData);
-                // Reload after sync so the UI reflects updated statuses
-                const { data: refreshed } = await supabase
-                    .from('payments')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                setPayments(refreshed ?? paymentsRes.data);
-            }
-            setStudents(studentsData);
-        } catch (err) {
-            console.error('Erreur:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
     const getStudentName = (studentId: string) => {
         const student = students.find(s => s.id === studentId);
         return student ? `${student.nom} ${student.prenom}` : t("fallback.unknownStudent");
@@ -170,6 +148,15 @@ export default function PaymentManagement() {
             }).eq('id', payment.id)
         ));
     };
+
+    useEffect(() => {
+        if (payments.length > 0 && !syncedRef.current) {
+            syncedRef.current = true;
+            syncPenalties(payments, students).then(() => {
+                queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+            });
+        }
+    }, [payments, students]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleValidateConfirm = async () => {
         if (!pendingValidateAction) return;
@@ -198,7 +185,7 @@ export default function PaymentManagement() {
                 { payment_id: paymentId }
             );
             showNotification(t("messages.submitSuccess"), "success");
-            loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         } catch (error) {
             console.error("Erreur soumission:", error);
             showNotification(t("messages.submitError"), "error");
@@ -276,7 +263,7 @@ export default function PaymentManagement() {
                 );
             }
             showNotification(isValid ? t("messages.approveSuccess") : t("messages.rejectSuccess"), isValid ? "success" : "error");
-            loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
 
             // Notifier l'étudiant par email + SMS + notif in-app + message direct (fire-and-forget)
             fetch('/api/notify-payment-result', {
@@ -325,7 +312,7 @@ export default function PaymentManagement() {
             );
             showNotification(t("messages.updateSuccess"), "success");
             setEditingPayment(null);
-            loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         } catch (err) {
             showNotification(t("messages.updateError"), "error");
         } finally {

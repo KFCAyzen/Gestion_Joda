@@ -1727,14 +1727,60 @@
       "print": "Print",
       "downloadWord": "Download Word"
     },
-    "stats": {
-      "courses": "Collected courses",
-      "procedures": "Collected procedures",
-      "revenue": "Collected revenue"
+    "tabs": {
+      "byAgent": "By agent",
+      "daily": "Daily view"
+    },
+    "period": {
+      "week": "7 days",
+      "month": "30 days",
+      "quarter": "3 months",
+      "year": "This year",
+      "all": "All time"
     },
     "filters": {
       "title": "Filter by manager",
       "allManagers": "All managers"
+    },
+    "ranking": {
+      "title": "Agent ranking"
+    },
+    "agentCard": {
+      "students": "{count, plural, one {# student} other {# students}}",
+      "dossiers": "{count, plural, one {# file} other {# files}}",
+      "viewDetails": "View daily details",
+      "hideDetails": "Hide details",
+      "dailyBreakdown": "Daily breakdown",
+      "noData": "No agents with collected payments",
+      "noPayment": "No collections in this period",
+      "bourse": "Scholarship",
+      "mandarin": "Mandarin",
+      "anglais": "English",
+      "enValidation": "{count, plural, one {# to validate} other {# to validate}}",
+      "attente": "{count, plural, one {# pending} other {# pending}}",
+      "retard": "{count, plural, one {# overdue} other {# overdue}}",
+      "penalties": "Penalties:",
+      "score": "Performance index",
+      "scoreRevenue": "Revenue",
+      "scoreActivity": "Actions",
+      "scoreSpeed": "Speed",
+      "scoreDossier": "Files",
+      "avgValidation": "Avg. validation delay: {days} day(s)",
+      "role": {
+        "agent": "Agent",
+        "supervisor": "Supervisor",
+        "user": "Sales",
+        "admin": "Admin",
+        "super_admin": "Super Admin"
+      }
+    },
+    "stats": {
+      "courses": "Collected courses",
+      "procedures": "Collected procedures",
+      "revenue": "Revenue",
+      "enValidation": "To validate",
+      "overdue": "Overdue",
+      "penalties": "Collected penalties"
     },
     "list": {
       "titleAll": "Global performance",

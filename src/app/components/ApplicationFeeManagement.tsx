@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
+import { useQueryClient } from '@tanstack/react-query';
+import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
+import { useStudents } from '../lib/hooks/use-students';
 import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -55,9 +58,11 @@ export default function ApplicationFeeManagement() {
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
-    const [fees, setFees] = useState<ApplicationFee[]>([]);
-    const [students, setStudents] = useState<Student[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: _feesData = [], isLoading } = usePayments();
+    const fees = _feesData as unknown as ApplicationFee[];
+    const { data: _studentsData = [] } = useStudents();
+    const students = _studentsData as unknown as Student[];
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -73,26 +78,6 @@ export default function ApplicationFeeManagement() {
         date: new Date().toISOString().split("T")[0],
     });
 
-    const loadData = async () => {
-        setIsLoading(true);
-        try {
-            const [feesRes, studentsRes] = await Promise.all([
-                supabase.from("payments").select("*").order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom, email, telephone, niveau, filiere"),
-            ]);
-
-            setFees(feesRes.data || []);
-            setStudents(studentsRes.data || []);
-        } catch (error) {
-            console.warn("Data loading error:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadData();
-    }, []);
 
     const handleSaveFee = async () => {
         if (!formData.studentId || !formData.amount) {
@@ -171,7 +156,7 @@ export default function ApplicationFeeManagement() {
                 motif: "Inscription",
                 date: new Date().toISOString().split("T")[0],
             });
-            await loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         } catch {
             showNotification(t("messages.saveError"), "error");
         }
@@ -197,7 +182,7 @@ export default function ApplicationFeeManagement() {
             }
             showNotification(t("messages.updateSuccess"), "success");
             setEditingFee(null);
-            await loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         } catch { showNotification(t("messages.error"), "error"); }
         setSavingFee(false);
     };
@@ -334,7 +319,7 @@ export default function ApplicationFeeManagement() {
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle>{t("list.title", { count: filteredFees.length })}</CardTitle>
-                        <Button variant="outline" onClick={loadData}>{t("actions.refresh")}</Button>
+                        <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY })}>{t("actions.refresh")}</Button>
                     </div>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <SearchBar

@@ -1727,14 +1727,60 @@
       "print": "Imprimer",
       "downloadWord": "Télécharger Word"
     },
-    "stats": {
-      "courses": "Cours encaissés",
-      "procedures": "Procédures encaissées",
-      "revenue": "Chiffre d'affaires encaissé"
+    "tabs": {
+      "byAgent": "Par agent",
+      "daily": "Vue journalière"
+    },
+    "period": {
+      "week": "7 jours",
+      "month": "30 jours",
+      "quarter": "3 mois",
+      "year": "Cette année",
+      "all": "Tout"
     },
     "filters": {
       "title": "Filtrer par responsable",
       "allManagers": "Tous les responsables"
+    },
+    "ranking": {
+      "title": "Classement des agents"
+    },
+    "agentCard": {
+      "students": "{count, plural, one {# étudiant} other {# étudiants}}",
+      "dossiers": "{count, plural, one {# dossier} other {# dossiers}}",
+      "viewDetails": "Voir le détail journalier",
+      "hideDetails": "Masquer le détail",
+      "dailyBreakdown": "Détail journalier",
+      "noData": "Aucun agent avec des paiements encaissés",
+      "noPayment": "Aucun encaissement sur la période",
+      "bourse": "Bourse",
+      "mandarin": "Mandarin",
+      "anglais": "Anglais",
+      "enValidation": "{count, plural, one {# à valider} other {# à valider}}",
+      "attente": "{count, plural, one {# en attente} other {# en attente}}",
+      "retard": "{count, plural, one {# en retard} other {# en retard}}",
+      "penalties": "Pénalités :",
+      "score": "Indice de performance",
+      "scoreRevenue": "CA",
+      "scoreActivity": "Actions",
+      "scoreSpeed": "Vitesse",
+      "scoreDossier": "Dossiers",
+      "avgValidation": "Délai moyen de validation : {days} jour(s)",
+      "role": {
+        "agent": "Agent",
+        "supervisor": "Superviseur",
+        "user": "Commercial",
+        "admin": "Admin",
+        "super_admin": "Super Admin"
+      }
+    },
+    "stats": {
+      "courses": "Cours encaissés",
+      "procedures": "Procédures encaissées",
+      "revenue": "CA encaissé",
+      "enValidation": "À valider",
+      "overdue": "En retard",
+      "penalties": "Pénalités collectées"
     },
     "list": {
       "titleAll": "Performances globales",

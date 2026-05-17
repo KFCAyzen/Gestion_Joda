@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Filter, Plus, CheckCircle2, X, Printer } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
+import { useQueryClient } from '@tanstack/react-query';
+import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
+import { useStudents } from '../lib/hooks/use-students';
+import { useEntreesComptables, useSortiesComptables } from '../lib/hooks/use-accounting';
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { calculatePenalty } from "../utils/penaltyCalculator";
@@ -116,11 +120,22 @@ export default function PaymentsPage() {
     const { showNotification } = useNotificationContext();
     const { getConfig, getBourseConfig } = usePaymentConfig();
 
-    const [payments, setPayments] = useState<Payment[]>([]);
-    const [students, setStudents] = useState<Student[]>([]);
-    const [entrées, setEntrées] = useState<AccountingEntry[]>([]);
-    const [sorties, setSorties] = useState<AccountingEntry[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: _paymentsData = [], isLoading: loading } = usePayments();
+    const payments = _paymentsData as unknown as Payment[];
+    const { data: _studentsData = [] } = useStudents();
+    const students = _studentsData as unknown as Student[];
+    const { data: _entreesData = [] } = useEntreesComptables();
+    const { data: _sortiesData = [] } = useSortiesComptables();
+    const syncedRef = useRef(false);
+
+    const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+    const entrées = useMemo(() =>
+        (_entreesData as unknown as AccountingEntry[]).filter(e => (e.date || '').slice(0, 10) === todayStr),
+        [_entreesData, todayStr]);
+    const sorties = useMemo(() =>
+        (_sortiesData as unknown as AccountingEntry[]).filter(e => (e.date || '').slice(0, 10) === todayStr),
+        [_sortiesData, todayStr]);
     const [tab, setTab] = useState<Tab>("a_valider");
     const [encaisserForm, setEncaisserForm] = useState({
         student_id: "",
@@ -184,45 +199,14 @@ export default function PaymentsPage() {
         );
     };
 
-    const loadData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const todayStr = new Date().toISOString().slice(0, 10);
-            const [paymentsRes, studentsRes, entreesRes, sortiesRes] = await Promise.all([
-                supabase.from("payments").select("*").order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom, email, telephone, niveau, nationalite"),
-                supabase
-                    .from("entrees_comptables")
-                    .select("*")
-                    .gte("date", todayStr)
-                    .lt("date", new Date(Date.now() + 86400000).toISOString().slice(0, 10)),
-                supabase
-                    .from("sorties_comptables")
-                    .select("*")
-                    .gte("date", todayStr)
-                    .lt("date", new Date(Date.now() + 86400000).toISOString().slice(0, 10)),
-            ]);
-
-            const raw = paymentsRes.data || [];
-            const studentsData = studentsRes.data || [];
-            await syncPenalties(raw, studentsData);
-            const { data: refreshed } = await supabase
-                .from("payments")
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            setPayments(refreshed || raw);
-            setStudents(studentsData);
-            setEntrées(entreesRes.data || []);
-            setSorties(sortiesRes.data || []);
-        } catch (err) {
-            console.error("Erreur chargement:", err);
-        } finally {
-            setLoading(false);
+    useEffect(() => {
+        if (payments.length > 0 && !syncedRef.current) {
+            syncedRef.current = true;
+            syncPenalties(payments, students).then(() => {
+                queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+            });
         }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    useEffect(() => { loadData(); }, [loadData]);
+    }, [payments, students]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const isAdminLike = user?.role === "admin" || user?.role === "super_admin";
 
@@ -274,7 +258,7 @@ export default function PaymentsPage() {
             { montant: payment.montant, type: typeEntree }
         );
         showNotification("Paiement validé avec succès", "success");
-        loadData();
+        queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
     };
 
     const handleValidateAll = async () => {
@@ -311,7 +295,7 @@ export default function PaymentsPage() {
             showNotification("Paiement enregistré", "success");
             setShowRegisterModal(false);
             setNewPayment({ student_id: "", type: "bourse", tranche: "1", montant: "", date_limite: "" });
-            loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         } catch (err) {
             showNotification("Erreur lors de l'enregistrement", "error");
         } finally {
@@ -351,7 +335,7 @@ export default function PaymentsPage() {
             }
             showNotification("Encaissement enregistré — en attente de validation", "success");
             setEncaisserForm({ student_id: "", type: "bourse", tranche: "1", montant: "", date_paiement: new Date().toISOString().slice(0, 10) });
-            loadData();
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         } catch {
             showNotification("Erreur lors de l'enregistrement", "error");
         } finally {

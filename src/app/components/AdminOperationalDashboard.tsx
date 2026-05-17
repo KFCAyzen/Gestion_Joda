@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Search, AlertTriangle, FileText, CheckCircle, User, DollarSign, CreditCard, Clock, RefreshCw } from "lucide-react";
 import { Bar, BarChart, Cell, ResponsiveContainer } from "recharts";
-import { createClient } from "../lib/supabase/client";
+import { useApplications, APPLICATIONS_KEY } from "../lib/hooks/use-applications";
+import { usePayments, PAYMENTS_KEY } from "../lib/hooks/use-payments";
+import { useUniversities, UNIVERSITIES_KEY } from "../lib/hooks/use-universities";
 import { getActivityLogs, ActivityType, ACTIVITY_LABELS } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -221,138 +224,126 @@ function formatCompact(value: number): string {
 }
 
 export default function AdminOperationalDashboard() {
-    const supabase = createClient();
+    const queryClient = useQueryClient();
     const [view, setView] = useState<ViewMode>("aujourd'hui");
     const [logs, setLogs] = useState<ActivityLog[]>([]);
     const [recentLogs, setRecentLogs] = useState<ActivityLog[]>([]);
-    const [stats, setStats] = useState<DashboardStats>({
-        aTraiter: 0,
-        dossiersOuverts: 0,
-        dossiersOpenGrowth: 0,
-        encaisseeMois: 0,
-        encaisseGrowth: 0,
-        weeklyFlux: [],
-        topUniversities: [],
-    });
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLogsLoading, setIsLogsLoading] = useState(true);
+    const [refreshTick, setRefreshTick] = useState(0);
     const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
     const [searchQuery, setSearchQuery] = useState("");
     const [showSearch, setShowSearch] = useState(false);
 
-    const loadData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const { start, end } = getDateRangeForView(view);
+    const { data: _applicationsData = [], isLoading: appsLoading } = useApplications();
+    const { data: _paymentsData = [], isLoading: paymentsLoading } = usePayments();
+    const { data: _universitiesData = [] } = useUniversities(false);
 
-            const [logsData, recentData, dossiersRes, paymentsRes, universitiesRes] = await Promise.all([
-                getActivityLogs({
-                    startDate: start.toISOString(),
-                    endDate: end.toISOString(),
-                    limit: 100,
-                }),
-                getActivityLogs({ limit: 20 }),
-                supabase.from("dossier_bourses").select("id, status, created_at, university_id"),
-                supabase.from("payments").select("id, montant, status, created_at, date_paiement, type"),
-                supabase.from("universities").select("id, nom"),
-            ]);
-
-            setLogs(logsData as ActivityLog[]);
-            setRecentLogs(recentData as ActivityLog[]);
-
-            const dossiers = dossiersRes.data || [];
-            const payments = paymentsRes.data || [];
-            const universities = universitiesRes.data || [];
-
-            const aTraiterStatuses = ["document_manquant", "en_attente", "en_attente_universite"];
-            const aTraiter = dossiers.filter((d) => aTraiterStatuses.includes(d.status || "")).length;
-
-            const ouvertStatuses = ["document_recu", "en_attente", "en_cours", "document_manquant", "en_attente_universite", "visa_en_cours"];
-            const dossiersOuverts = dossiers.filter((d) => ouvertStatuses.includes(d.status || "")).length;
-
-            const now = new Date();
-            const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-            const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const lastMonthEnd = thisMonthStart;
-
-            const thisMonthPayments = payments
-                .filter((p) => {
-                    const date = new Date(p.date_paiement || p.created_at || "");
-                    return p.status === "paye" && date >= thisMonthStart;
-                })
-                .reduce((sum, p) => sum + (p.montant || 0), 0);
-
-            const lastMonthPayments = payments
-                .filter((p) => {
-                    const date = new Date(p.date_paiement || p.created_at || "");
-                    return p.status === "paye" && date >= lastMonthStart && date < lastMonthEnd;
-                })
-                .reduce((sum, p) => sum + (p.montant || 0), 0);
-
-            const encaisseGrowth =
-                lastMonthPayments === 0
-                    ? thisMonthPayments > 0 ? 100 : 0
-                    : Math.round(((thisMonthPayments - lastMonthPayments) / lastMonthPayments) * 100);
-
-            const weeklyFlux = Array.from({ length: 7 }, (_, i) => {
-                const date = new Date(now);
-                date.setDate(now.getDate() - (6 - i));
-                const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                const dayEnd = new Date(dayStart.getTime() + 86400000);
-                const count = dossiers.filter((d) => {
-                    const created = new Date(d.created_at || "");
-                    return created >= dayStart && created < dayEnd;
-                }).length;
-                const isToday = i === 6;
-                const dayLabels = ["D", "L", "M", "M", "J", "V", "S"];
-                return { day: dayLabels[date.getDay()], value: count, isToday };
-            });
-
-            const uniMap = new Map(universities.map((u) => [u.id, u.nom || "Inconnue"]));
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - 6);
-            const weekDossiers = dossiers.filter((d) => new Date(d.created_at || "") >= weekStart);
-            const uniCount = new Map<string, number>();
-            weekDossiers.forEach((d) => {
-                const name = uniMap.get(d.university_id || "") || "Autre";
-                uniCount.set(name, (uniCount.get(name) || 0) + 1);
-            });
-            const topUniversities = [...uniCount.entries()]
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .map(([name, count]) => ({ name, count, max: 0 }));
-            const maxUni = topUniversities[0]?.count || 1;
-            topUniversities.forEach((u) => (u.max = maxUni));
-
-            const lastMonthDossiers = dossiers.filter((d) => {
-                const date = new Date(d.created_at || "");
-                return date >= lastMonthStart && date < lastMonthEnd;
-            }).length;
-            const thisMonthDossiers = dossiers.filter((d) => {
-                const date = new Date(d.created_at || "");
-                return date >= thisMonthStart;
-            }).length;
-
-            setStats({
-                aTraiter,
-                dossiersOuverts,
-                dossiersOpenGrowth: thisMonthDossiers - lastMonthDossiers,
-                encaisseeMois: thisMonthPayments,
-                encaisseGrowth,
-                weeklyFlux,
-                topUniversities,
-            });
-
-            setLastRefresh(new Date());
-        } catch (error) {
-            console.error("Erreur chargement dashboard opérationnel:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [view]);
+    const isLoading = isLogsLoading || appsLoading || paymentsLoading;
 
     useEffect(() => {
-        loadData();
-    }, [loadData]);
+        setIsLogsLoading(true);
+        const { start, end } = getDateRangeForView(view);
+        Promise.all([
+            getActivityLogs({ startDate: start.toISOString(), endDate: end.toISOString(), limit: 100 }),
+            getActivityLogs({ limit: 20 }),
+        ])
+            .then(([logsData, recentData]) => {
+                setLogs(logsData as ActivityLog[]);
+                setRecentLogs(recentData as ActivityLog[]);
+                setLastRefresh(new Date());
+            })
+            .catch((err) => { console.error("Erreur chargement dashboard:", err); })
+            .finally(() => { setIsLogsLoading(false); });
+    }, [view, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const stats = useMemo<DashboardStats>(() => {
+        type DossierRow = { id: string; status: string | null; created_at: string; university_id: string | null };
+        type PaymentRow = { id: string; montant: number; status: string; created_at: string; date_paiement: string | null; type: string };
+        type UniversityRow = { id: string; nom: string };
+
+        const dossiers = _applicationsData as unknown as DossierRow[];
+        const payments = _paymentsData as unknown as PaymentRow[];
+        const universities = _universitiesData as unknown as UniversityRow[];
+
+        const aTraiterStatuses = ["document_manquant", "en_attente", "en_attente_universite"];
+        const aTraiter = dossiers.filter((d) => aTraiterStatuses.includes(d.status || "")).length;
+
+        const ouvertStatuses = ["document_recu", "en_attente", "en_cours", "document_manquant", "en_attente_universite", "visa_en_cours"];
+        const dossiersOuverts = dossiers.filter((d) => ouvertStatuses.includes(d.status || "")).length;
+
+        const now = new Date();
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = thisMonthStart;
+
+        const thisMonthPayments = payments
+            .filter((p) => {
+                const date = new Date(p.date_paiement || p.created_at || "");
+                return p.status === "paye" && date >= thisMonthStart;
+            })
+            .reduce((sum, p) => sum + (p.montant || 0), 0);
+
+        const lastMonthPayments = payments
+            .filter((p) => {
+                const date = new Date(p.date_paiement || p.created_at || "");
+                return p.status === "paye" && date >= lastMonthStart && date < lastMonthEnd;
+            })
+            .reduce((sum, p) => sum + (p.montant || 0), 0);
+
+        const encaisseGrowth =
+            lastMonthPayments === 0
+                ? thisMonthPayments > 0 ? 100 : 0
+                : Math.round(((thisMonthPayments - lastMonthPayments) / lastMonthPayments) * 100);
+
+        const weeklyFlux = Array.from({ length: 7 }, (_, i) => {
+            const date = new Date(now);
+            date.setDate(now.getDate() - (6 - i));
+            const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const dayEnd = new Date(dayStart.getTime() + 86400000);
+            const count = dossiers.filter((d) => {
+                const created = new Date(d.created_at || "");
+                return created >= dayStart && created < dayEnd;
+            }).length;
+            const isToday = i === 6;
+            const dayLabels = ["D", "L", "M", "M", "J", "V", "S"];
+            return { day: dayLabels[date.getDay()], value: count, isToday };
+        });
+
+        const uniMap = new Map(universities.map((u) => [u.id, u.nom || "Inconnue"]));
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - 6);
+        const weekDossiers = dossiers.filter((d) => new Date(d.created_at || "") >= weekStart);
+        const uniCount = new Map<string, number>();
+        weekDossiers.forEach((d) => {
+            const name = uniMap.get(d.university_id || "") || "Autre";
+            uniCount.set(name, (uniCount.get(name) || 0) + 1);
+        });
+        const topUniversities = [...uniCount.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([name, count]) => ({ name, count, max: 0 }));
+        const maxUni = topUniversities[0]?.count || 1;
+        topUniversities.forEach((u) => (u.max = maxUni));
+
+        const lastMonthDossiers = dossiers.filter((d) => {
+            const date = new Date(d.created_at || "");
+            return date >= lastMonthStart && date < lastMonthEnd;
+        }).length;
+        const thisMonthDossiers = dossiers.filter((d) => {
+            const date = new Date(d.created_at || "");
+            return date >= thisMonthStart;
+        }).length;
+
+        return {
+            aTraiter,
+            dossiersOuverts,
+            dossiersOpenGrowth: thisMonthDossiers - lastMonthDossiers,
+            encaisseeMois: thisMonthPayments,
+            encaisseGrowth,
+            weeklyFlux,
+            topUniversities,
+        };
+    }, [_applicationsData, _paymentsData, _universitiesData]);
 
     const { title, subtitle } = formatHeaderDate(view);
 
@@ -408,7 +399,14 @@ export default function AdminOperationalDashboard() {
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                     <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
                     {timeSince}
-                    <button onClick={loadData} className="ml-1 text-gray-400 hover:text-gray-600 dark:text-gray-400">
+                    <button
+                        onClick={() => {
+                            queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY });
+                            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+                            queryClient.invalidateQueries({ queryKey: UNIVERSITIES_KEY });
+                            setRefreshTick((t) => t + 1);
+                        }}
+                        className="ml-1 text-gray-400 hover:text-gray-600 dark:text-gray-400">
                         <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
                     </button>
                 </div>

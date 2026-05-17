@@ -8,7 +8,7 @@ const supabase = createClient();
 export const APPLICATIONS_KEY = ['applications'];
 
 const APPLICATION_LIST_SELECT =
-  'id, student_id, university_id, desired_program, study_level, language_level, scholarship_type, status, assigned_to, created_at';
+  'id, student_id, university_id, desired_program, study_level, language_level, scholarship_type, status, assigned_to, notes_internes, updated_at, created_at';
 
 export function useApplications(status?: string) {
   return useQuery({

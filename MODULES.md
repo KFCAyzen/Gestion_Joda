@@ -203,6 +203,11 @@
 ### Composant
 - `ScholarshipFileManagement.tsx`
 
+### Sources de données (TanStack Query)
+- `useApplications()` — dossiers (`notes_internes` et `updated_at` inclus dans le SELECT)
+- `useStudents()` — noms étudiants (fusion via `useMemo`)
+- `useUniversities(false)` — noms universités (fusion via `useMemo`)
+
 ### Table Supabase
 - `dossier_bourses` (avec jointures sur `students` et `universities`)
 
@@ -255,6 +260,12 @@
 ### Composants
 - `ApplicationFeeManagement.tsx` — Enregistrement des frais de candidature
 - `PaymentManagement.tsx` — Gestion et validation des paiements
+- `PaymentsPage.tsx` — Vue caisse du jour (à valider, encaissements, comptabilité journalière)
+
+### Sources de données (TanStack Query)
+- `usePayments()` + `useStudents()` dans `ApplicationFeeManagement`, `PaymentManagement`, `PaymentsPage`
+- `useEntreesComptables()` + `useSortiesComptables()` dans `PaymentsPage` (filtrées sur `todayStr` via `useMemo`)
+- Sync pénalités : exécutée une seule fois au montage via `syncedRef`, puis `invalidateQueries(PAYMENTS_KEY)`
 
 ### Table Supabase
 - `payments`
@@ -332,14 +343,18 @@
 ### Composant
 - `CoursLangues.tsx`
 
+### Sources de données (TanStack Query)
+- `usePayments()` — tous les paiements, filtrés client-side sur `type === 'mandarin' || type === 'anglais'`
+- `useStudents()` — liste des étudiants
+
 ### Tables Supabase
 - `payments` (type `mandarin` ou `anglais`)
 - `cours_langues` (inscriptions aux cours)
 
 ### Fonctionnalités
 - Inscription d'un étudiant à un cours (mandarin ou anglais)
-- Création automatique du premier paiement (tranche 1) selon la configuration des frais
-- Liste des paiements de cours avec statut
+- Création de 4 tranches de paiement à l'inscription (T1 Inscription 10K, T2 Livre 11K, T3 + T4 selon langue)
+- Liste des paiements de cours avec statut et colonne tranche
 - Validation d'un paiement de cours (admin)
 - Calcul et affichage des pénalités de retard
 - Suppression d'une inscription avec confirmation
@@ -348,7 +363,8 @@
 1. Sélection de l'étudiant et du type de cours
 2. Vérification qu'il n'est pas déjà inscrit (même type actif)
 3. Insertion dans `cours_langues`
-4. Création du paiement initial dans `payments` (tranche 1, `status = attente`)
+4. Création des 4 tranches de paiement dans `payments` (`status = attente`)
+5. `invalidateQueries(PAYMENTS_KEY)` pour rafraîchissement immédiat
 
 ---
 
@@ -433,9 +449,31 @@
 ### Composant
 - `PerformanceHistory.tsx`
 
-### Fonctionnalités
-- Historique des performances de l'équipe
-- Indicateurs de suivi
+### Sources de données (TanStack Query)
+- `usePayments()` — tous les paiements
+- `useStudents()` — liste des étudiants
+- `useUsers()` — liste des utilisateurs (agents/superviseurs)
+- `useQuery` custom sur `dossier_bourses`, `activity_logs`, `dossier_history`
+
+### Onglets
+| Onglet | Contenu |
+|---|---|
+| **Par agent** | Classement des agents avec score composite + podium |
+| **Vue journalière** | Historique quotidien (ancien comportement) |
+
+### Classement des agents (`AgentStats`)
+- Score composite 0-100 sur 4 axes normalisés par rapport au meilleur agent :
+  - `revenueScore` — CA encaissé (payé)
+  - `activityScore` — Nombre de logs d'activité
+  - `speedScore` — Délai moyen de validation des paiements
+  - `dossierScore` — Nombre de dossiers gérés
+- Affichage badge rôle (Agent / Superviseur / Commercial / Admin)
+- Statuts visibles : paiements encaissés (bourse / mandarin / anglais), à valider, en attente, en retard, pénalités
+- Cartes expandables : détail journalier au clic
+- Agents inactifs (score = 0, aucun paiement) affichés séparément
+
+### Filtres de période
+`7 jours` / `30 jours` / `3 mois` / `Cette année` / `Tout`
 
 ---
 
