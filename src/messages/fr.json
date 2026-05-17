@@ -145,11 +145,15 @@
     "errorDefault": "Impossible de se connecter. Vérifiez vos identifiants et réessayez.",
     "forgotPassword": "Mot de passe oublié ?",
     "forgotTitle": "Mot de passe oublié",
-    "forgotDescription": "Entrez votre email (staff) ou nom d'utilisateur (étudiant) pour recevoir un lien de réinitialisation.",
+    "forgotDescription": "Entrez votre email (staff) ou nom d'utilisateur (étudiant) pour recevoir vos identifiants temporaires.",
     "forgotInputPlaceholder": "email@exemple.com ou prenom.nom",
     "sendLink": "Envoyer le lien de réinitialisation",
+    "sendCredentials": "Envoyer mes identifiants",
+    "channelLabel": "Recevoir par",
     "sending": "Envoi en cours...",
     "cancel": "Annuler",
+    "credentialsSent": "Identifiants envoyés",
+    "credentialsSentMessage": "Si un compte existe, vous avez reçu votre identifiant et mot de passe temporaire. Connectez-vous puis changez votre mot de passe.",
     "emailSent": "Email envoyé",
     "emailSentMessage": "Si un compte existe, vous recevrez un lien de réinitialisation valable 24 heures.",
     "backToLogin": "Retour à la connexion",
@@ -1297,10 +1301,10 @@
     },
     "reset": {
       "title": "Réinitialiser le mot de passe",
-      "description": "Un email de réinitialisation sera envoyé à <strong>{name}</strong>.",
-      "hint": "L'utilisateur recevra un lien valable 24 h pour définir un nouveau mot de passe.",
+      "description": "Un mot de passe temporaire sera généré et envoyé à <strong>{name}</strong>.",
+      "hint": "L'utilisateur recevra son identifiant et mot de passe temporaire par email (et SMS si un numéro est enregistré). Il devra changer son mot de passe dès la première connexion.",
       "sending": "Envoi...",
-      "sendLink": "Envoyer le lien"
+      "sendLink": "Envoyer les identifiants"
     },
     "delete": {
       "title": "Confirmer la suppression",

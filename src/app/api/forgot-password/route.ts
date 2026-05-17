@@ -4,10 +4,12 @@ import { Resend } from "resend";
 import { z } from "zod";
 import { buildStudentAuthEmail } from "@/app/lib/student-auth";
 import { getLang, type Lang } from "@/app/lib/emailService";
+import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const forgotPasswordBodySchema = z.object({
     email: z.string().email().optional(),
     username: z.string().min(1).optional(),
+    channel: z.enum(["email", "sms"]).optional().default("email"),
 });
 
 const supabaseAdmin = createClient(
@@ -18,10 +20,23 @@ const supabaseAdmin = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
-function resetEmailHtml(name: string, resetLink: string, year: number, lang: Lang = 'fr') {
-    const isEn = lang === 'en';
-    const subtitle = isEn ? 'China Scholarship Management' : "Gestion des bourses d'études en Chine";
-    const rights = isEn ? 'All rights reserved' : 'Tous droits réservés';
+function generateTempPassword(): string {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let suffix = "";
+    for (let i = 0; i < 5; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+    return `Joda@${suffix}`;
+}
+
+function credentialsEmailHtml(
+    name: string,
+    username: string,
+    tempPassword: string,
+    year: number,
+    lang: Lang = "fr"
+) {
+    const isEn = lang === "en";
+    const subtitle = isEn ? "China Scholarship Management" : "Gestion des bourses d'études en Chine";
+    const rights = isEn ? "All rights reserved" : "Tous droits réservés";
     return `<!DOCTYPE html>
 <html lang="${lang}">
 <head><meta charset="UTF-8" /></head>
@@ -37,30 +52,40 @@ function resetEmailHtml(name: string, resetLink: string, year: number, lang: Lan
         </tr>
         <tr>
           <td style="padding:36px 40px;">
-            <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? 'Hello' : 'Bonjour'} <strong>${name}</strong>,</p>
+            <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? "Hello" : "Bonjour"} <strong>${name}</strong>,</p>
             <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.6;">
               ${isEn
-                ? 'You have requested a password reset. Click the button below to set a new one. This link is valid for <strong>24 hours</strong>.'
-                : 'Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour en définir un nouveau. Ce lien est valable <strong>24 heures</strong>.'}
+                ? "Your password has been reset. Use the temporary credentials below to log in, then change your password immediately."
+                : "Votre mot de passe a été réinitialisé. Utilisez les identifiants temporaires ci-dessous pour vous connecter, puis changez votre mot de passe immédiatement."}
             </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;">
+              <tr><td style="padding:20px 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#6b7280;width:160px;">${isEn ? "Username" : "Identifiant"}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${username}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? "Temporary password" : "Mot de passe temporaire"}</td>
+                    <td style="padding:6px 0;font-size:14px;color:#dc2626;font-weight:700;font-family:monospace,monospace;">${tempPassword}</td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>
             <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#dc2626;border-radius:8px;">
-                  <a href="${resetLink}"
+                  <a href="https://portal-joda.company/login"
                      style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
-                    ${isEn ? 'Reset my password →' : 'Réinitialiser mon mot de passe →'}
+                    ${isEn ? "Go to login →" : "Accéder à la connexion →"}
                   </a>
                 </td>
               </tr>
             </table>
-            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
-              <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">${isEn ? "If the button doesn't work, copy this link into your browser:" : 'Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :'}</p>
-              <p style="margin:0;font-size:11px;color:#9ca3af;word-break:break-all;">${resetLink}</p>
-            </div>
             <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
               ${isEn
-                ? "If you did not request this reset, ignore this email. Your password will remain unchanged."
-                : "Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe restera inchangé."}
+                ? "If you did not request this reset, contact your administrator immediately."
+                : "Si vous n'avez pas demandé cette réinitialisation, contactez immédiatement votre administrateur."}
             </p>
           </td>
         </tr>
@@ -77,38 +102,41 @@ function resetEmailHtml(name: string, resetLink: string, year: number, lang: Lan
 }
 
 export async function POST(req: NextRequest) {
-    // Always return 200 to prevent email enumeration
+    // Always return 200 to prevent account enumeration
     try {
         const parsed = forgotPasswordBodySchema.safeParse(await req.json());
-        const { email, username } = parsed.success ? parsed.data : {};
+        const { email, username, channel = "email" } = parsed.success ? parsed.data : {};
 
         if (!email && !username) {
             return NextResponse.json({ success: true });
         }
 
-        let authEmail: string;
-        let recipientEmail: string;
+        let userId: string;
+        let recipientEmail: string | null = null;
+        let recipientPhone: string | null = null;
         let recipientName = "Utilisateur";
-
-        let lang: Lang = 'fr';
+        let displayUsername: string;
+        let lang: Lang = "fr";
 
         if (username) {
-            // Student flow: username → auth email @students.joda.app + vrai email depuis users.email
-            authEmail = buildStudentAuthEmail(username);
+            displayUsername = username;
+            // Vérifier que l'email auth @students.joda.app existe bien
+            buildStudentAuthEmail(username);
 
             const { data: userRow } = await supabaseAdmin
                 .from("users")
-                .select("contact_email, name, id")
+                .select("id, contact_email, name, telephone")
                 .eq("username", username)
                 .eq("role", "student")
                 .maybeSingle();
 
-            if (!userRow?.contact_email) return NextResponse.json({ success: true });
+            if (!userRow) return NextResponse.json({ success: true });
 
+            userId = userRow.id;
             recipientEmail = userRow.contact_email;
+            recipientPhone = userRow.telephone;
             recipientName = userRow.name || username;
 
-            // Récupérer la langue préférée de l'étudiant
             const { data: studentRow } = await supabaseAdmin
                 .from("students")
                 .select("langue")
@@ -116,43 +144,55 @@ export async function POST(req: NextRequest) {
                 .maybeSingle();
             lang = getLang(studentRow?.langue);
         } else {
-            // Staff flow: email = auth email = recipient email (toujours en français)
-            authEmail = email!;
-            recipientEmail = email!;
+            displayUsername = email!;
 
             const { data: userRow } = await supabaseAdmin
                 .from("users")
-                .select("name")
+                .select("id, name, telephone")
                 .eq("email", email)
                 .maybeSingle();
 
-            recipientName = userRow?.name || "Utilisateur";
+            if (!userRow) return NextResponse.json({ success: true });
+
+            userId = userRow.id;
+            recipientEmail = email!;
+            recipientPhone = userRow.telephone;
+            recipientName = userRow.name || "Utilisateur";
         }
 
-        const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-            type: "recovery",
-            email: authEmail,
-            options: { redirectTo: "https://portal-joda.company/auth/callback" },
+        const tempPassword = generateTempPassword();
+
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+            password: tempPassword,
         });
 
-        if (error) {
-            console.error("[forgot-password] generateLink:", error.message);
+        if (updateError) {
+            console.error("[forgot-password] updateUser:", updateError.message);
             return NextResponse.json({ success: true });
         }
 
-        const resetLink = data.properties.action_link;
+        await supabaseAdmin.from("users").update({ must_change_password: true }).eq("id", userId);
 
-        const isEn = lang === 'en';
-        await resend.emails.send({
-            from: FROM_EMAIL,
-            to: [recipientEmail],
-            subject: isEn
-                ? "Password reset - Joda Company"
-                : "Réinitialisation de votre mot de passe - Joda Company",
-            html: resetEmailHtml(recipientName, resetLink, new Date().getFullYear(), lang),
-        });
+        const isEn = lang === "en";
+        const year = new Date().getFullYear();
 
-        console.log(`[forgot-password] Lien de reset envoyé à ${recipientEmail}`);
+        if (channel === "sms" && recipientPhone) {
+            const smsText = isEn
+                ? `JODA - Password reset\nUsername: ${displayUsername}\nTemp password: ${tempPassword}\nLogin: https://portal-joda.company`
+                : `JODA - Reinitialisation\nIdentifiant: ${displayUsername}\nMdp temp: ${tempPassword}\nConnexion: https://portal-joda.company`;
+            await sendSmsToPhone(recipientPhone, smsText);
+            console.log(`[forgot-password] Credentials sent via SMS to ${recipientPhone}`);
+        } else if (recipientEmail) {
+            await resend.emails.send({
+                from: FROM_EMAIL,
+                to: [recipientEmail],
+                subject: isEn
+                    ? "Your temporary password - Joda Company"
+                    : "Votre mot de passe temporaire - Joda Company",
+                html: credentialsEmailHtml(recipientName, displayUsername, tempPassword, year, lang),
+            });
+            console.log(`[forgot-password] Credentials sent via email to ${recipientEmail}`);
+        }
     } catch (err: any) {
         console.error("[forgot-password] error:", err?.message);
     }

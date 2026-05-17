@@ -39,6 +39,7 @@ export default function LoginPage() {
     const [forgotInput, setForgotInput] = useState("");
     const [forgotLoading, setForgotLoading] = useState(false);
     const [forgotSent, setForgotSent] = useState(false);
+    const [forgotChannel, setForgotChannel] = useState<"email" | "sms">("email");
     const [showLangMenu, setShowLangMenu] = useState(false);
     const langMenuRef = useRef<HTMLDivElement>(null);
 
@@ -119,20 +120,20 @@ export default function LoginPage() {
         setLoading(false);
     };
 
+    const forgotIsEmail = forgotInput.includes("@");
+
     const handleForgotPassword = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!forgotInput.trim()) return;
         setForgotLoading(true);
         try {
-            const isEmail = forgotInput.includes("@");
+            const body = forgotIsEmail
+                ? { email: forgotInput.trim() }
+                : { username: forgotInput.trim(), channel: forgotChannel };
             await fetch("/api/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(
-                    isEmail
-                        ? { email: forgotInput.trim() }
-                        : { username: forgotInput.trim() }
-                ),
+                body: JSON.stringify(body),
             });
         } catch {
             // Silently ignore — always show success to prevent enumeration
@@ -145,6 +146,7 @@ export default function LoginPage() {
         setShowForgotPassword(false);
         setForgotInput("");
         setForgotSent(false);
+        setForgotChannel("email");
     };
 
     const toggleTheme = () => {
@@ -492,9 +494,9 @@ export default function LoginPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
-                                        <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">{t("emailSent")}</h3>
+                                        <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">{t("credentialsSent")}</h3>
                                         <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                                            {t("emailSentMessage")}
+                                            {t("credentialsSentMessage")}
                                         </p>
                                         <button
                                             onClick={closeForgotPassword}
@@ -520,12 +522,50 @@ export default function LoginPage() {
                                             required
                                             className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
                                         />
+                                        {/* Sélecteur de canal — uniquement pour les étudiants (nom d'utilisateur) */}
+                                        {forgotInput.trim() && !forgotIsEmail && (
+                                            <div className="space-y-2">
+                                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                                    {t("channelLabel")}
+                                                </p>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setForgotChannel("email")}
+                                                        className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors ${
+                                                            forgotChannel === "email"
+                                                                ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-900/20 dark:border-red-400"
+                                                                : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                                        }`}
+                                                    >
+                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                        </svg>
+                                                        Email
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setForgotChannel("sms")}
+                                                        className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors ${
+                                                            forgotChannel === "sms"
+                                                                ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-900/20 dark:border-red-400"
+                                                                : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                                        }`}
+                                                    >
+                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                        </svg>
+                                                        SMS
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                         <button
                                             type="submit"
                                             disabled={forgotLoading}
                                             className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(220,38,38,0.3)] hover:bg-red-700 disabled:opacity-50 transition-colors"
                                         >
-                                            {forgotLoading ? t("sending") : t("sendLink")}
+                                            {forgotLoading ? t("sending") : t("sendCredentials")}
                                         </button>
                                         <button
                                             type="button"

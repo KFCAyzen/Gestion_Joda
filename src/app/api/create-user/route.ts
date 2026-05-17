@@ -129,23 +129,6 @@ async function handleCreateUser(req: NextRequest) {
         return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
 
-    // Générer un lien de définition de mot de passe
-    let setPasswordLink = 'https://portal-joda.company';
-    try {
-        const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
-            type: 'recovery',
-            email: supabaseEmail,
-            options: {
-                redirectTo: 'https://portal-joda.company/auth/callback',
-            },
-        });
-        if (linkData?.properties?.action_link) {
-            setPasswordLink = linkData.properties.action_link;
-        }
-    } catch {
-        // Non bloquant — l'utilisateur pourra demander un reset ultérieurement
-    }
-
     const lang = role === "student" ? getLang(langue) : "fr";
     const isEn = lang === "en";
 
@@ -164,8 +147,8 @@ async function handleCreateUser(req: NextRequest) {
             from: FROM_EMAIL,
             to: [email],
             subject: isEn
-                ? "Welcome to Joda Company — Activate your account"
-                : "Bienvenue sur Joda Company — Activez votre compte",
+                ? "Welcome to Joda Company — Your account credentials"
+                : "Bienvenue sur Joda Company — Vos identifiants de connexion",
             html: `
 <!DOCTYPE html>
 <html lang="${lang}">
@@ -185,19 +168,19 @@ async function handleCreateUser(req: NextRequest) {
             <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? "Hello" : "Bonjour"} <strong>${name}</strong>,</p>
             <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.6;">
               ${isEn
-                ? "Your account has been created on the Joda Company platform. Click the button below to set your password and access your space. This link is valid for 24 hours."
-                : "Votre compte a été créé sur la plateforme Joda Company. Cliquez sur le bouton ci-dessous pour définir votre mot de passe et accéder à votre espace. Ce lien est valable 24 heures."}
+                ? "Your account has been created on the Joda Company platform. Use the credentials below to log in, then change your password on first connection."
+                : "Votre compte a été créé sur la plateforme Joda Company. Utilisez les identifiants ci-dessous pour vous connecter, puis changez votre mot de passe dès la première connexion."}
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;">
               <tr><td style="padding:20px 24px;">
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="padding:6px 0;font-size:13px;color:#6b7280;width:140px;">${isEn ? "Username" : "Nom d'utilisateur"}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#6b7280;width:160px;">${isEn ? "Username" : "Identifiant"}</td>
                     <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${username}</td>
                   </tr>
                   <tr>
-                    <td style="padding:6px 0;font-size:13px;color:#6b7280;">Email</td>
-                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${email}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? "Temporary password" : "Mot de passe temporaire"}</td>
+                    <td style="padding:6px 0;font-size:14px;color:#dc2626;font-weight:700;font-family:monospace,monospace;">${password}</td>
                   </tr>
                   <tr>
                     <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? "Role" : "Rôle"}</td>
@@ -211,19 +194,13 @@ async function handleCreateUser(req: NextRequest) {
             <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#dc2626;border-radius:8px;">
-                  <a href="${setPasswordLink}"
+                  <a href="https://portal-joda.company/login"
                      style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
-                    ${isEn ? "Set my password →" : "Définir mon mot de passe →"}
+                    ${isEn ? "Go to login →" : "Accéder à la connexion →"}
                   </a>
                 </td>
               </tr>
             </table>
-            <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-              ${isEn
-                ? "If this button doesn't work, copy this link into your browser:"
-                : "Si ce bouton ne fonctionne pas, copiez ce lien dans votre navigateur :"}<br>
-              <span style="color:#6b7280;word-break:break-all;">${setPasswordLink}</span>
-            </p>
           </td>
         </tr>
         <tr>

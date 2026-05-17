@@ -3,11 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { z } from "zod";
 import { requireRole } from "@/app/lib/auth";
+import { sendSmsToPhone } from "@/app/lib/smsService";
 
-const resetPasswordBodySchema = z.object({
-    email: z.string().email().optional(),
-    userId: z.string().min(1).optional(),
-}).refine((d) => d.email || d.userId, { message: "email ou userId requis" });
+const resetPasswordBodySchema = z
+    .object({
+        email: z.string().email().optional(),
+        userId: z.string().min(1).optional(),
+    })
+    .refine((d) => d.email || d.userId, { message: "email ou userId requis" });
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,74 +20,15 @@ const supabaseAdmin = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
-async function handleResetPassword(req: NextRequest) {
-    try {
-        const parsed = resetPasswordBodySchema.safeParse(await req.json());
-        if (!parsed.success) {
-            return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
-        }
-        const { email, userId } = parsed.data;
+function generateTempPassword(): string {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let suffix = "";
+    for (let i = 0; i < 5; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+    return `Joda@${suffix}`;
+}
 
-        let authEmail: string;
-        let recipientEmail: string;
-        let recipientName = "Utilisateur";
-
-        if (userId) {
-            const { data: userRow } = await supabaseAdmin
-                .from("users")
-                .select("email, name, role, username")
-                .eq("id", userId)
-                .maybeSingle();
-
-            if (!userRow) {
-                return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
-            }
-
-            authEmail = userRow.email;
-            recipientName = userRow.name || userRow.username;
-
-            if (userRow.role === "student") {
-                // For students, real email is in students table
-                const { data: studentRow } = await supabaseAdmin
-                    .from("students")
-                    .select("email")
-                    .eq("created_by", userId)
-                    .maybeSingle();
-                recipientEmail = studentRow?.email || userRow.email;
-            } else {
-                recipientEmail = userRow.email;
-            }
-        } else if (email) {
-            authEmail = email;
-            recipientEmail = email;
-            const { data: userRow } = await supabaseAdmin
-                .from("users")
-                .select("name")
-                .eq("email", email)
-                .maybeSingle();
-            recipientName = userRow?.name || "Utilisateur";
-        } else {
-            return NextResponse.json({ error: "email ou userId requis" }, { status: 400 });
-        }
-
-        const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-            type: 'recovery',
-            email: authEmail,
-        });
-
-        if (error) {
-            console.error("[reset-password] error:", error.message);
-            return NextResponse.json({ error: error.message }, { status: 400 });
-        }
-
-        const resetLink = data.properties.action_link;
-
-        await resend.emails.send({
-            from: FROM_EMAIL,
-            to: [recipientEmail],
-            subject: "Réinitialisation de votre mot de passe - Joda Company",
-            html: `
-<!DOCTYPE html>
+function credentialsEmailHtml(name: string, username: string, tempPassword: string, year: number) {
+    return `<!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8" /></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -99,38 +43,133 @@ async function handleResetPassword(req: NextRequest) {
         </tr>
         <tr>
           <td style="padding:36px 40px;">
-            <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${recipientName}</strong>,</p>
+            <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${name}</strong>,</p>
             <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.6;">
-              Un administrateur a demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe. Ce lien est valable 24 heures.
+              Un administrateur a réinitialisé votre mot de passe. Utilisez les identifiants temporaires ci-dessous pour vous connecter, puis changez votre mot de passe immédiatement.
             </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;">
+              <tr><td style="padding:20px 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#6b7280;width:160px;">Identifiant</td>
+                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${username}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#6b7280;">Mot de passe temporaire</td>
+                    <td style="padding:6px 0;font-size:14px;color:#dc2626;font-weight:700;font-family:monospace,monospace;">${tempPassword}</td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>
             <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#dc2626;border-radius:8px;">
-                  <a href="${resetLink}"
+                  <a href="https://portal-joda.company/login"
                      style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
-                    Définir mon nouveau mot de passe →
+                    Accéder à la connexion →
                   </a>
                 </td>
               </tr>
             </table>
             <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-              Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe restera inchangé.
+              Si vous n'avez pas demandé cette réinitialisation, contactez immédiatement votre administrateur.
             </p>
           </td>
         </tr>
         <tr>
           <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} Joda Company — Tous droits réservés</p>
+            <p style="margin:0;font-size:12px;color:#9ca3af;">© ${year} Joda Company — Tous droits réservés</p>
           </td>
         </tr>
       </table>
     </td></tr>
   </table>
 </body>
-</html>`,
+</html>`;
+}
+
+async function handleResetPassword(req: NextRequest) {
+    try {
+        const parsed = resetPasswordBodySchema.safeParse(await req.json());
+        if (!parsed.success) {
+            return NextResponse.json(
+                { error: parsed.error.issues[0]?.message ?? "Paramètres invalides" },
+                { status: 400 }
+            );
+        }
+        const { email, userId } = parsed.data;
+
+        let authUserId: string;
+        let recipientEmail: string;
+        let recipientPhone: string | null = null;
+        let recipientName = "Utilisateur";
+        let displayUsername: string;
+
+        if (userId) {
+            const { data: userRow } = await supabaseAdmin
+                .from("users")
+                .select("id, email, contact_email, name, role, username, telephone")
+                .eq("id", userId)
+                .maybeSingle();
+
+            if (!userRow) {
+                return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
+            }
+
+            authUserId = userRow.id;
+            recipientName = userRow.name || userRow.username;
+            displayUsername = userRow.username;
+            recipientPhone = userRow.telephone;
+            // contact_email = vrai email (différent de @students.joda.app pour les étudiants)
+            recipientEmail = userRow.contact_email || userRow.email;
+        } else if (email) {
+            const { data: userRow } = await supabaseAdmin
+                .from("users")
+                .select("id, name, username, telephone")
+                .eq("email", email)
+                .maybeSingle();
+
+            if (!userRow) {
+                return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
+            }
+
+            authUserId = userRow.id;
+            recipientEmail = email;
+            recipientName = userRow.name || "Utilisateur";
+            displayUsername = userRow.username || email;
+            recipientPhone = userRow.telephone;
+        } else {
+            return NextResponse.json({ error: "email ou userId requis" }, { status: 400 });
+        }
+
+        const tempPassword = generateTempPassword();
+
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+            password: tempPassword,
         });
 
-        console.log(`[reset-password] Lien de reset envoyé à ${recipientEmail}`);
+        if (updateError) {
+            console.error("[reset-password] updateUser:", updateError.message);
+            return NextResponse.json({ error: updateError.message }, { status: 400 });
+        }
+
+        await supabaseAdmin.from("users").update({ must_change_password: true }).eq("id", authUserId);
+
+        const year = new Date().getFullYear();
+
+        await resend.emails.send({
+            from: FROM_EMAIL,
+            to: [recipientEmail],
+            subject: "Votre mot de passe temporaire - Joda Company",
+            html: credentialsEmailHtml(recipientName, displayUsername, tempPassword, year),
+        });
+
+        if (recipientPhone) {
+            const smsText = `JODA - Reinitialisation\nIdentifiant: ${displayUsername}\nMdp temp: ${tempPassword}\nConnexion: https://portal-joda.company`;
+            sendSmsToPhone(recipientPhone, smsText).catch(console.error);
+        }
+
+        console.log(`[reset-password] Credentials sent to ${recipientEmail}`);
         return NextResponse.json({ success: true });
     } catch (err: any) {
         console.error("[reset-password] Unexpected error:", err?.message || err);
@@ -138,4 +177,4 @@ async function handleResetPassword(req: NextRequest) {
     }
 }
 
-export const POST = requireRole(['admin', 'super_admin'], handleResetPassword);
+export const POST = requireRole(["admin", "super_admin"], handleResetPassword);

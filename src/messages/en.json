@@ -145,11 +145,15 @@
     "errorDefault": "Unable to connect. Check your credentials and try again.",
     "forgotPassword": "Forgot password?",
     "forgotTitle": "Forgot Password",
-    "forgotDescription": "Enter your email (staff) or username (student) to receive a reset link.",
+    "forgotDescription": "Enter your email (staff) or username (student) to receive your temporary credentials.",
     "forgotInputPlaceholder": "email@example.com or firstname.lastname",
     "sendLink": "Send Reset Link",
+    "sendCredentials": "Send my credentials",
+    "channelLabel": "Receive via",
     "sending": "Sending...",
     "cancel": "Cancel",
+    "credentialsSent": "Credentials sent",
+    "credentialsSentMessage": "If an account exists, you received your username and temporary password. Log in then change your password.",
     "emailSent": "Email sent",
     "emailSentMessage": "If an account exists, you will receive a reset link valid for 24 hours.",
     "backToLogin": "Back to Login",
@@ -1297,10 +1301,10 @@
     },
     "reset": {
       "title": "Reset password",
-      "description": "A reset email will be sent to <strong>{name}</strong>.",
-      "hint": "The user will receive a link valid for 24 hours to set a new password.",
+      "description": "A temporary password will be generated and sent to <strong>{name}</strong>.",
+      "hint": "The user will receive their username and temporary password by email (and SMS if a phone number is registered). They must change it on first login.",
       "sending": "Sending...",
-      "sendLink": "Send link"
+      "sendLink": "Send credentials"
     },
     "delete": {
       "title": "Confirm deletion",
