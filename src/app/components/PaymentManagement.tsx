@@ -11,6 +11,7 @@ import { logActivity } from "../utils/activityLogger";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import ProtectedRoute from "./ProtectedRoute";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
+import { isInternational } from "../types/payment-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,8 +63,10 @@ interface Payment {
     initiated_by_student?: boolean;
 }
 
-function formatPrice(amount: number): string {
-    return amount.toLocaleString("fr-FR") + " FCFAs";
+function formatPrice(amount: number, nationalite?: string | null): string {
+    return isInternational(nationalite)
+        ? amount.toLocaleString("en-US") + " $"
+        : amount.toLocaleString("fr-FR") + " FCFAs";
 }
 
 export default function PaymentManagement() {
@@ -380,6 +383,8 @@ export default function PaymentManagement() {
         }
     };
 
+    const getStudentNat = (studentId: string) => studentMap.get(studentId)?.nationalite;
+
     const isAdminLike = user?.role === "admin" || user?.role === "super_admin";
     const canValidate = isAdminLike;
     const canValidatePayment = (p: Payment) =>
@@ -468,15 +473,15 @@ export default function PaymentManagement() {
                                                 </TableCell>
                                                 <TableCell>{getTypeLabel(payment.type)}</TableCell>
                                                 <TableCell>
-                                                    <div>{formatPrice(payment.montant)}</div>
+                                                    <div>{formatPrice(payment.montant, getStudentNat(payment.student_id))}</div>
                                                     {penalty > 0 && (
                                                         <div className="text-xs text-red-600">
-                                                            + {formatPrice(penalty)} ({t("table.penalty").toLowerCase()})
+                                                            + {formatPrice(penalty, getStudentNat(payment.student_id))} ({t("table.penalty").toLowerCase()})
                                                         </div>
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-red-600">
-                                                    {penalty > 0 ? formatPrice(penalty) : "-"}
+                                                    {penalty > 0 ? formatPrice(penalty, getStudentNat(payment.student_id)) : "-"}
                                                 </TableCell>
                                                 <TableCell>
                                                     {payment.date_limite
@@ -608,11 +613,11 @@ export default function PaymentManagement() {
                         </div>
                         <div className="flex justify-between border-b pb-2">
                             <span className="text-slate-500 dark:text-slate-400">{t("detail.amount")}</span>
-                            <span className="font-medium text-emerald-600">{formatPrice(detailPayment.montant)}</span>
+                            <span className="font-medium text-emerald-600">{formatPrice(detailPayment.montant, getStudentNat(detailPayment.student_id))}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
                             <span className="text-slate-500 dark:text-slate-400">{t("detail.penalty")}</span>
-                            <span className="font-medium text-red-600">{calculatePenalty(detailPayment, resolvePenaltyConfig(detailPayment, studentMap)) > 0 ? formatPrice(calculatePenalty(detailPayment, resolvePenaltyConfig(detailPayment, studentMap))) : "-"}</span>
+                            <span className="font-medium text-red-600">{calculatePenalty(detailPayment, resolvePenaltyConfig(detailPayment, studentMap)) > 0 ? formatPrice(calculatePenalty(detailPayment, resolvePenaltyConfig(detailPayment, studentMap)), getStudentNat(detailPayment.student_id)) : "-"}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2">
                             <span className="text-slate-500 dark:text-slate-400">{t("detail.dueDate")}</span>

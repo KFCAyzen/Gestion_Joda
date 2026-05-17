@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Check, CreditCard, Loader2 } from "lucide-react";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
-import { getBourseServiceType, PaymentConfig } from "../types/payment-config";
+import { getBourseServiceType, PaymentConfig, isInternational } from "../types/payment-config";
 
 interface Payment {
     id: string;
@@ -177,8 +177,10 @@ function configToService(cfg: PaymentConfig, type: string): Service {
     };
 }
 
-function fmt(n: number) {
-    return n.toLocaleString("fr-FR") + " FCFA";
+function fmt(n: number, isIntl = false) {
+    return isIntl
+        ? n.toLocaleString("en-US") + " $"
+        : n.toLocaleString("fr-FR") + " FCFA";
 }
 
 
@@ -232,6 +234,9 @@ export default function PaymentOverview({
     const { getConfig, getBourseConfig } = usePaymentConfig();
     const t = useTranslations("paymentOverview");
     const locale = useLocale();
+    const isIntl = isInternational(nationalite);
+    const currency = isIntl ? "$" : "FCFA";
+    const numLocale = isIntl ? "en-US" : "fr-FR";
 
     const services = useMemo((): Service[] => {
         const list: Service[] = [];
@@ -287,9 +292,9 @@ export default function PaymentOverview({
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
                     <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-fg-muted)] sm:text-[10px]">{t("totalDue")}</p>
                     <p className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-[var(--student-fg)] sm:text-lg">
-                        {totalDu.toLocaleString("fr-FR")}
+                        {totalDu.toLocaleString(numLocale)}
                     </p>
-                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">FCFA</p>
+                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">{currency}</p>
                 </div>
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
                     <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-ring-exercise)] sm:text-[10px]">{t("paid")}</p>
@@ -297,9 +302,9 @@ export default function PaymentOverview({
                         className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-[var(--student-ring-exercise)] sm:text-lg"
                         style={{ textShadow: "var(--student-pay-glow-soft)" }}
                     >
-                        {totalPaye.toLocaleString("fr-FR")}
+                        {totalPaye.toLocaleString(numLocale)}
                     </p>
-                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">FCFA</p>
+                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">{currency}</p>
                 </div>
                 <div className="student-pay-surface-soft p-3 text-center sm:p-3.5">
                     <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[var(--student-fg-muted)] sm:text-[10px]">
@@ -309,9 +314,9 @@ export default function PaymentOverview({
                         className="mt-1.5 text-base font-semibold tabular-nums tracking-tight text-[var(--student-ring-move)] sm:text-lg"
                         style={{ textShadow: "var(--student-glow-move)" }}
                     >
-                        {reste.toLocaleString("fr-FR")}
+                        {reste.toLocaleString(numLocale)}
                     </p>
-                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">FCFA</p>
+                    <p className="text-[9px] text-[var(--student-fg-muted)] sm:text-[10px]">{currency}</p>
                 </div>
             </div>
 
@@ -319,7 +324,7 @@ export default function PaymentOverview({
                 <div className="student-pay-pill flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                     <span className="text-xs font-semibold text-[var(--student-fg-muted)]">{t("cumulatedPenalties")}</span>
                     <span className="text-sm font-semibold tabular-nums text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
-                        {fmt(totalPenalties)}
+                        {fmt(totalPenalties, isIntl)}
                     </span>
                 </div>
             )}
@@ -340,8 +345,8 @@ export default function PaymentOverview({
                     />
                 </div>
                 <div className="mt-1.5 flex justify-between text-[10px] text-[var(--student-fg-muted)]">
-                    <span>{t("paidAmount", { amount: totalPaye.toLocaleString(locale === "en" ? "en-US" : "fr-FR") })}</span>
-                    <span>{t("totalAmount", { amount: totalDu.toLocaleString(locale === "en" ? "en-US" : "fr-FR") })}</span>
+                    <span>{t("paidAmount", { amount: totalPaye.toLocaleString(numLocale) })}</span>
+                    <span>{t("totalAmount", { amount: totalDu.toLocaleString(numLocale) })}</span>
                 </div>
             </div>
 
@@ -374,7 +379,7 @@ export default function PaymentOverview({
                             <div className="shrink-0 text-right">
                                 <p className="text-sm font-semibold tabular-nums text-[var(--student-ring-exercise)]">{sPct}%</p>
                                 <p className="text-[10px] text-[var(--student-fg-muted)]">
-                                    {sPaid.toLocaleString("fr-FR")} / {service.total.toLocaleString("fr-FR")}
+                                    {sPaid.toLocaleString(numLocale)} / {service.total.toLocaleString(numLocale)} {currency}
                                 </p>
                             </div>
                         </div>
@@ -437,7 +442,7 @@ export default function PaymentOverview({
                                                             ) : null}
                                                         </div>
                                                         <p className="mt-2 text-lg font-semibold tabular-nums tracking-tight text-[var(--student-fg)]">
-                                                            {fmt(tranche.montant)}
+                                                            {fmt(tranche.montant, isIntl)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -490,7 +495,7 @@ export default function PaymentOverview({
                                             <div className="student-pay-pill flex items-center justify-between gap-2 px-3 py-2">
                                                 <span className="text-[10px] font-semibold text-[var(--student-fg-muted)]">{t("latePaymentPenalty")}</span>
                                                 <span className="text-xs font-semibold tabular-nums text-[var(--student-ring-move)] [text-shadow:var(--student-glow-move)]">
-                                                    +{fmt(state.penalty)}
+                                                    +{fmt(state.penalty, isIntl)}
                                                 </span>
                                             </div>
                                         ) : null}
