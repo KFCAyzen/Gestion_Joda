@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { z } from "zod";
 import { requireRole } from "@/app/lib/auth";
 import { getLang, sendNewStudentAdminEmail } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
+
+const createUserBodySchema = z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    username: z.string().min(2),
+    password: z.string().min(6),
+    role: z.enum(["student", "agent", "supervisor", "admin", "super_admin"]),
+    authEmail: z.string().email().optional().nullable(),
+    telephone: z.string().optional().nullable(),
+    langue: z.string().optional().nullable(),
+});
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,17 +54,11 @@ function getCreateUserErrorMessage(error: unknown) {
 
 async function handleCreateUser(req: NextRequest) {
     try {
-    const { name, email, username, password, role, authEmail, telephone, langue } = await req.json();
-
-    if (!email || !name || !password || !username || !role) {
-        return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
+    const parsed = createUserBodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
     }
-
-    // Valider que le rôle est valide
-    const validRoles = ['student', 'agent', 'supervisor', 'admin', 'super_admin'];
-    if (!validRoles.includes(role)) {
-        return NextResponse.json({ error: "Rôle invalide" }, { status: 400 });
-    }
+    const { name, email, username, password, role, authEmail, telephone, langue } = parsed.data;
 
     // Pour les étudiants, authEmail DOIT être fourni et se terminer par @students.joda.app
     const supabaseEmail = (role === 'student')

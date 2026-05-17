@@ -1,13 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+const exchangeTokenBodySchema = z.object({
+    access_token: z.string().min(1),
+    refresh_token: z.string().min(1),
+});
 
 export async function POST(request: NextRequest) {
     try {
-        const { access_token, refresh_token } = await request.json();
-        if (!access_token || !refresh_token) {
+        const parsed = exchangeTokenBodySchema.safeParse(await request.json());
+        if (!parsed.success) {
             return NextResponse.json({ redirect: "/login" });
         }
+        const { access_token, refresh_token } = parsed.data;
 
         const cookieStore = await cookies();
         const supabase = createServerClient(

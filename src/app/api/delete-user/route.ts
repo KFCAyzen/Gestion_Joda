@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { requireRole, AuthSession } from "@/app/lib/auth";
 
 const supabaseAdmin = createClient(
@@ -7,13 +8,15 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const deleteUserBodySchema = z.object({ userId: z.string().min(1) });
+
 async function handleDeleteUser(req: NextRequest, session: AuthSession) {
     try {
-        const { userId } = await req.json();
-
-        if (!userId) {
-            return NextResponse.json({ error: "userId manquant" }, { status: 400 });
+        const parsed = deleteUserBodySchema.safeParse(await req.json());
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
         }
+        const { userId } = parsed.data;
 
         // Vérifier le rôle de la cible pour éviter qu'un admin supprime un autre admin
         if (session.user.role === "admin") {

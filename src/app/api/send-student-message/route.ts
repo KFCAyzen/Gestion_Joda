@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { requireAuth, AuthSession } from "@/app/lib/auth";
 import { sendStudentMessageEmail, getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
@@ -9,16 +10,19 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const sendStudentMessageBodySchema = z.object({
+  studentIds: z.array(z.string()).min(1),
+  subject: z.string().min(1).max(200),
+  content: z.string().min(1),
+});
+
 async function handleSendStudentMessage(req: NextRequest, session: AuthSession) {
   try {
-    const { studentIds, subject, content } = await req.json();
-
-    if (!Array.isArray(studentIds) || studentIds.length === 0) {
-      return NextResponse.json({ error: "studentIds manquant" }, { status: 400 });
+    const parsed = sendStudentMessageBodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
     }
-    if (!subject || !content) {
-      return NextResponse.json({ error: "subject/content manquant" }, { status: 400 });
-    }
+    const { studentIds, subject, content } = parsed.data;
 
     const role = session.user.role;
     if (!["agent", "admin", "super_admin"].includes(role)) {

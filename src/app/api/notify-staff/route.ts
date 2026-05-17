@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { requireAuth, AuthSession } from "@/app/lib/auth";
 import { sendDocumentSubmissionEmail } from "@/app/lib/emailService";
 
@@ -8,12 +9,15 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const notifyStaffBodySchema = z.object({ studentId: z.string().min(1) });
+
 async function handleNotifyStaff(req: NextRequest, session: AuthSession) {
     try {
-        const { studentId } = await req.json();
-        if (!studentId) {
-            return NextResponse.json({ error: "studentId manquant" }, { status: 400 });
+        const parsed = notifyStaffBodySchema.safeParse(await req.json());
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
         }
+        const { studentId } = parsed.data;
 
         const { data: studentUser } = await supabaseAdmin
             .from("users")

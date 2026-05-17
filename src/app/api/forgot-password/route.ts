@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { z } from "zod";
 import { buildStudentAuthEmail } from "@/app/lib/student-auth";
 import { getLang, type Lang } from "@/app/lib/emailService";
+
+const forgotPasswordBodySchema = z.object({
+    email: z.string().email().optional(),
+    username: z.string().min(1).optional(),
+});
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,8 +79,8 @@ function resetEmailHtml(name: string, resetLink: string, year: number, lang: Lan
 export async function POST(req: NextRequest) {
     // Always return 200 to prevent email enumeration
     try {
-        const body = await req.json();
-        const { email, username } = body as { email?: string; username?: string };
+        const parsed = forgotPasswordBodySchema.safeParse(await req.json());
+        const { email, username } = parsed.success ? parsed.data : {};
 
         if (!email && !username) {
             return NextResponse.json({ success: true });

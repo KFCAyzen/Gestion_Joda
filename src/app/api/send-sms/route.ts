@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { requireAuth, AuthSession } from "@/app/lib/auth";
 
 const supabaseAdmin = createClient(
@@ -8,6 +9,11 @@ const supabaseAdmin = createClient(
 );
 
 const SMS_API_URL = "https://smsvas.com/bulk/public/index.php/api/v1/sendsms";
+
+const sendSmsBodySchema = z.object({
+  studentIds: z.array(z.string()).min(1),
+  message: z.string().min(1).max(500),
+});
 
 function normalizePhone(phone: string): string | null {
   const digits = phone.replace(/\D/g, "");
@@ -23,14 +29,11 @@ async function handleSendSms(req: NextRequest, session: AuthSession) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    const { studentIds, message } = await req.json();
-
-    if (!Array.isArray(studentIds) || studentIds.length === 0) {
-      return NextResponse.json({ error: "studentIds manquant" }, { status: 400 });
+    const parsed = sendSmsBodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
     }
-    if (!message?.trim()) {
-      return NextResponse.json({ error: "message manquant" }, { status: 400 });
-    }
+    const { studentIds, message } = parsed.data;
 
     const { data: students, error: studentsErr } = await supabaseAdmin
       .from("students")

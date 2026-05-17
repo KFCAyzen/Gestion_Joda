@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { z } from "zod";
 import { requireRole } from "@/app/lib/auth";
+
+const resetPasswordBodySchema = z.object({
+    email: z.string().email().optional(),
+    userId: z.string().min(1).optional(),
+}).refine((d) => d.email || d.userId, { message: "email ou userId requis" });
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,8 +19,11 @@ const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
 async function handleResetPassword(req: NextRequest) {
     try {
-        const body = await req.json();
-        const { email, userId } = body as { email?: string; userId?: string };
+        const parsed = resetPasswordBodySchema.safeParse(await req.json());
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
+        }
+        const { email, userId } = parsed.data;
 
         let authEmail: string;
         let recipientEmail: string;

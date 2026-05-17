@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { z } from "zod";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
-export async function POST(req: NextRequest) {
-    const { studentName, studentEmail, universityName, desiredProgram, studyLevel, scholarshipType } = await req.json();
+const sendApplicationBodySchema = z.object({
+    studentName: z.string().min(1),
+    studentEmail: z.string().email(),
+    universityName: z.string().optional().nullable(),
+    desiredProgram: z.string().optional().nullable(),
+    studyLevel: z.string().optional().nullable(),
+    scholarshipType: z.string().optional().nullable(),
+});
 
-    if (!studentEmail || !studentName) {
-        return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
+export async function POST(req: NextRequest) {
+    const parsed = sendApplicationBodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
     }
+    const { studentName, studentEmail, universityName, desiredProgram, studyLevel, scholarshipType } = parsed.data;
 
     const documents = [
         "Passeport valide (copie)",

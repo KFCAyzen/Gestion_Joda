@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { z } from "zod";
 import { sendPaymentDeclarationEmail, getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 import { DEFAULT_PAYMENT_CONFIGS, getBourseServiceType } from "@/app/types/payment-config";
+
+const declarePaymentBodySchema = z.object({
+    payment_id: z.string().nullable().optional(),
+    type: z.enum(["bourse", "mandarin", "anglais", "inscription", "autre"]),
+    tranche_num: z.number().int().min(1),
+    montant_declare: z.number().positive(),
+    montant_tranche: z.number().positive().optional().nullable(),
+    proof_url: z.string().url().optional().nullable(),
+    is_avance: z.boolean(),
+});
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,19 +42,11 @@ export async function POST(req: NextRequest) {
 
         if (!student) return NextResponse.json({ error: "Aucun dossier étudiant trouvé" }, { status: 404 });
 
-        const {
-            payment_id,
-            type,
-            tranche_num,
-            montant_declare,
-            montant_tranche,
-            proof_url,
-            is_avance,
-        } = await req.json();
-
-        if (!type || !tranche_num || !montant_declare) {
-            return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
+        const parsed = declarePaymentBodySchema.safeParse(await req.json());
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
         }
+        const { payment_id, type, tranche_num, montant_declare, montant_tranche, proof_url, is_avance } = parsed.data;
 
         let paymentId: string;
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { requireAuth, AuthSession } from "@/app/lib/auth";
 import { sendPaymentResultEmail, getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
@@ -8,6 +9,15 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+const notifyPaymentResultBodySchema = z.object({
+  studentId: z.string().min(1),
+  isValid: z.boolean(),
+  paymentType: z.enum(["bourse", "mandarin", "anglais", "inscription", "autre"]),
+  tranche: z.number().int().min(1).optional(),
+  amount: z.number().nonnegative().optional().nullable(),
+  rejectionReason: z.string().optional().nullable(),
+});
 
 const PAYMENT_TYPE_LABELS: Record<string, Record<"fr" | "en", string>> = {
   bourse:   { fr: "Procédure Bourse",   en: "Scholarship Procedure" },
@@ -22,11 +32,11 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
   }
 
   try {
-    const { studentId, isValid, paymentType, tranche, amount, rejectionReason } = await req.json();
-
-    if (!studentId || typeof isValid !== "boolean") {
-      return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
+    const parsed = notifyPaymentResultBodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
     }
+    const { studentId, isValid, paymentType, tranche, amount, rejectionReason } = parsed.data;
 
     const { data: student } = await supabaseAdmin
       .from("students")
@@ -99,7 +109,7 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
             studentName,
             studentEmail: student.email,
             paymentType,
-            tranche,
+            tranche: tranche ?? 0,
             amount: amount ?? 0,
             isValid,
             rejectionReason: rejectionReason ?? undefined,

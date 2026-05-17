@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { z } from "zod";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
-export async function POST(req: NextRequest) {
-    const { name, email, username, password, role } = await req.json();
+const sendWelcomeBodySchema = z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    username: z.string().optional().nullable(),
+    password: z.string().min(1),
+    role: z.string().optional(),
+});
 
-    if (!email || !name || !password) {
-        return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
+export async function POST(req: NextRequest) {
+    const parsed = sendWelcomeBodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
     }
+    const { name, email, username, password, role } = parsed.data;
 
     const roleLabels: Record<string, string> = {
         student: "Étudiant",
@@ -71,7 +80,7 @@ export async function POST(req: NextRequest) {
                     <tr>
                       <td style="padding:6px 0;font-size:13px;color:#6b7280;">Rôle</td>
                       <td style="padding:6px 0;">
-                        <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">${roleLabels[role] || role}</span>
+                        <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">${role ? (roleLabels[role] || role) : ""}</span>
                       </td>
                     </tr>
                   </table>
