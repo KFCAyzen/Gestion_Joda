@@ -356,39 +356,64 @@ export default function StudentManagement() {
         setActiveTab("form");
     };
 
-    // Crée les tranches manquantes selon le service souscrit — sans toucher aux paiements existants
+    // Synchronise les paiements selon le service souscrit :
+    // - supprime les paiements en attente/retard pour les types devenus hors-service
+    // - crée les paiements manquants pour les types nouvellement requis
+    // - ne touche jamais aux paiements payés, en_validation ou archivés
     const syncPaymentsForStudent = async (studentId: string, choix: string, langue: string, niveau: string, nationalite?: string | null) => {
+        // 1. Types attendus selon le nouveau service
+        const expectedTypes = new Set<string>();
+        if (choix === "procedure_seule" || choix === "procedure_cours") {
+            expectedTypes.add("bourse");
+        }
+        const langueKey = langue?.toLowerCase().includes("mandarin") ? "mandarin"
+            : langue?.toLowerCase().includes("anglais") ? "anglais"
+            : null;
+        if (!isInternational(nationalite) && langueKey && (choix === "cours_seuls" || choix === "procedure_cours")) {
+            expectedTypes.add(langueKey);
+        }
+
+        // 2. Paiements existants avec leur statut
         const { data: existing } = await supabase
             .from("payments")
-            .select("type")
+            .select("type, status")
             .eq("student_id", studentId);
+        const existingPayments = existing ?? [];
+        const allExistingTypes = new Set(existingPayments.map((p: { type: string }) => p.type));
 
-        const existingTypes = new Set((existing ?? []).map((p: { type: string }) => p.type));
+        // 3. Supprimer les paiements en attente/retard pour les types hors-service
+        const typesToRemove = [...allExistingTypes].filter(t => !expectedTypes.has(t));
+        if (typesToRemove.length > 0) {
+            await supabase
+                .from("payments")
+                .delete()
+                .eq("student_id", studentId)
+                .in("type", typesToRemove)
+                .in("status", ["attente", "retard"]);
+        }
 
+        // 4. Ajouter les paiements manquants pour les types nouvellement requis
         const toInsert: {
             student_id: string; type: string; tranche: number;
-            montant: number; status: string; penalites: number;
+            montant: number; status: string; penalites: number; date_limite?: string;
         }[] = [];
 
-        if ((choix === "procedure_seule" || choix === "procedure_cours") && !existingTypes.has("bourse")) {
+        if (expectedTypes.has("bourse") && !allExistingTypes.has("bourse")) {
             const bourseCfg = getBourseConfig(niveau, nationalite);
+            const dateLimite = new Date(Date.now() + bourseCfg.deadline_offset_days * 24 * 60 * 60 * 1000)
+                .toISOString().split("T")[0];
             bourseCfg.tranches.forEach(tr =>
-                toInsert.push({ student_id: studentId, type: "bourse", tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0 })
+                toInsert.push({ student_id: studentId, type: "bourse", tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0, date_limite: dateLimite })
             );
         }
 
-        // Les étrangers ne s'inscrivent pas aux cours de langues
-        if (!isInternational(nationalite)) {
-            const langueKey = langue?.toLowerCase().includes("mandarin") ? "mandarin"
-                : langue?.toLowerCase().includes("anglais") ? "anglais"
-                : null;
-
-            if ((choix === "cours_seuls" || choix === "procedure_cours") && langueKey && !existingTypes.has(langueKey)) {
-                const coursCfg = getConfig(langueKey as "mandarin" | "anglais");
-                coursCfg.tranches.forEach(tr =>
-                    toInsert.push({ student_id: studentId, type: langueKey, tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0 })
-                );
-            }
+        if (langueKey && expectedTypes.has(langueKey) && !allExistingTypes.has(langueKey)) {
+            const coursCfg = getConfig(langueKey as "mandarin" | "anglais");
+            const dateLimite = new Date(Date.now() + coursCfg.deadline_offset_days * 24 * 60 * 60 * 1000)
+                .toISOString().split("T")[0];
+            coursCfg.tranches.forEach(tr =>
+                toInsert.push({ student_id: studentId, type: langueKey, tranche: tr.tranche, montant: tr.montant, status: "attente", penalites: 0, date_limite: dateLimite })
+            );
         }
 
         if (toInsert.length > 0) {
@@ -814,7 +839,7 @@ export default function StudentManagement() {
                                             <Badge variant="outline">{getGenderLabel(selectedStudent.sexe)}</Badge>
                                         </div>
                                     </div>
-                                    <Button variant="outline" size="sm" className="border-0 text-white hover:bg-slate-700" onClick={() => setSelectedStudent(null)}>✕</Button>
+                                    <Button variant="outline" size="sm" className="border-0 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-white dark:hover:bg-slate-700" onClick={() => setSelectedStudent(null)}>✕</Button>
                                 </div>
 
                                 {/* Corps défilable */}
@@ -863,23 +888,25 @@ export default function StudentManagement() {
                                         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                                             {t("detail.payments")}
                                         </p>
-                                        <PaymentOverview
-                                            choix={selectedStudent.choix}
-                                            langue={selectedStudent.langue || ""}
-                                            niveau={selectedStudent.niveau || ""}
-                                            nationalite={selectedStudent.nationalite}
-                                            payments={selectedStudentPayments}
-                                            onDownloadReceipt={(p) =>
-                                                downloadReceipt(p, {
-                                                    nom: selectedStudent.nom,
-                                                    prenom: selectedStudent.prenom,
-                                                    email: selectedStudent.email,
-                                                    telephone: selectedStudent.telephone,
-                                                    niveau: selectedStudent.niveau,
-                                                    filiere: selectedStudent.filiere,
-                                                })
-                                            }
-                                        />
+                                        <div className="admin-payment-wrapper">
+                                            <PaymentOverview
+                                                choix={selectedStudent.choix}
+                                                langue={selectedStudent.langue || ""}
+                                                niveau={selectedStudent.niveau || ""}
+                                                nationalite={selectedStudent.nationalite}
+                                                payments={selectedStudentPayments}
+                                                onDownloadReceipt={(p) =>
+                                                    downloadReceipt(p, {
+                                                        nom: selectedStudent.nom,
+                                                        prenom: selectedStudent.prenom,
+                                                        email: selectedStudent.email,
+                                                        telephone: selectedStudent.telephone,
+                                                        niveau: selectedStudent.niveau,
+                                                        filiere: selectedStudent.filiere,
+                                                    })
+                                                }
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* Documents */}

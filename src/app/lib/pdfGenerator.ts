@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 
 // ─── Company info ────────────────────────────────────────────────────────────
 const COMPANY = {
-  name:    'ODA COMPANY',
+  name:    'JODA COMPANY',
   tagline: "Gestion des bourses d'études en Chine",
   phone:   '+237 6 59 19 92 16',
   website: 'joda-company.com',
