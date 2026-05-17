@@ -7,7 +7,7 @@ const supabase = createClient();
 
 export const UNIVERSITIES_KEY = ['universities'];
 
-const UNIVERSITY_LIST_SELECT = 'id, nom, pays, ville, programme, niveau_etude, active, created_at';
+const UNIVERSITY_LIST_SELECT = 'id, nom, pays, ville, programme, niveau_etude, criteres_admission, active, created_at';
 
 export function useUniversities(activeOnly = true) {
   return useQuery({

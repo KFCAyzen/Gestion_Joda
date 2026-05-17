@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
+import { useUniversities, UNIVERSITIES_KEY } from "../lib/hooks/use-universities";
 import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,8 +49,9 @@ export default function UniversityManagement() {
     const { user } = useAuth();
     const t = useTranslations("universityManagement");
     const supabase = createClient();
-    const [universities, setUniversities] = useState<University[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: _univData = [], isLoading: loading } = useUniversities(false);
+    const universities = _univData as unknown as University[];
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isSeeding, setIsSeeding] = useState(false);
@@ -74,21 +77,7 @@ export default function UniversityManagement() {
         active: true,
     });
 
-    const loadUniversities = async () => {
-        setLoading(true);
-        try {
-            const { data } = await supabase.from("universities").select("*").order("nom", { ascending: true });
-            if (data) setUniversities(data);
-        } catch (err) {
-            console.error("Erreur:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadUniversities();
-    }, []);
+    const invalidateUniversities = () => queryClient.invalidateQueries({ queryKey: UNIVERSITIES_KEY });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -109,7 +98,7 @@ export default function UniversityManagement() {
                             { university_id: editingUni.id, nom: formData.nom }
                         );
                     }
-                    loadUniversities();
+                    invalidateUniversities();
                 }
             } else {
                 const { data: inserted, error } = await supabase.from("universities").insert(formData).select().single();
@@ -122,7 +111,7 @@ export default function UniversityManagement() {
                             { university_id: inserted.id, nom: formData.nom, pays: formData.pays }
                         );
                     }
-                    loadUniversities();
+                    invalidateUniversities();
                 }
             }
             resetForm();
@@ -147,7 +136,7 @@ export default function UniversityManagement() {
                         { university_id: id }
                     );
                 }
-                loadUniversities();
+                invalidateUniversities();
             }
         } catch (err) {
             console.error("Erreur:", err);
@@ -161,7 +150,7 @@ export default function UniversityManagement() {
         setIsSeeding(true);
         try {
             const { error } = await supabase.from("universities").upsert(predefinedUniversities);
-            if (!error) loadUniversities();
+            if (!error) invalidateUniversities();
         } catch (err) {
             console.error("Erreur:", err);
         } finally {
@@ -173,7 +162,7 @@ export default function UniversityManagement() {
         setTogglingId(id);
         try {
             await supabase.from("universities").update({ active: !active }).eq("id", id);
-            loadUniversities();
+            invalidateUniversities();
         } catch (err) {
             console.error("Erreur:", err);
         } finally {

@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
+import { useApplications, APPLICATIONS_KEY } from "../lib/hooks/use-applications";
+import { useStudents } from "../lib/hooks/use-students";
+import { useUniversities } from "../lib/hooks/use-universities";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
 import ConfirmDialog from "./ConfirmDialog";
@@ -60,17 +64,20 @@ export default function ApplicationManagement() {
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
+    const queryClient = useQueryClient();
     const { showNotification } = useNotificationContext();
+    const { data: _appsData = [], isLoading } = useApplications();
+    const applications = _appsData as unknown as ScholarshipApplication[];
+    const { data: _studentsData = [] } = useStudents();
+    const students = _studentsData as unknown as Student[];
+    const { data: _univData = [] } = useUniversities(true);
+    const universities = _univData as unknown as University[];
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean; title: string; description: string; onConfirm: () => void;
     }>({ open: false, title: '', description: '', onConfirm: () => {} });
     const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
     const [showForm, setShowForm] = useState(false);
     const [editingApplication, setEditingApplication] = useState<ScholarshipApplication | null>(null);
-    const [applications, setApplications] = useState<ScholarshipApplication[]>([]);
-    const [students, setStudents] = useState<Student[]>([]);
-    const [universities, setUniversities] = useState<University[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -99,25 +106,7 @@ export default function ApplicationManagement() {
         setFormData(defaultFormData);
     };
 
-    const loadData = async () => {
-        setIsLoading(true);
-        try {
-            const [applicationsRes, studentsRes, universitiesRes] = await Promise.all([
-                supabase.from("dossier_bourses").select("*").order("created_at", { ascending: false }),
-                supabase.from("students").select("id, nom, prenom, email"),
-                supabase.from("universities").select("id, nom, active").eq("active", true),
-            ]);
-
-            setApplications(applicationsRes.data || []);
-            setStudents(studentsRes.data || []);
-            setUniversities(universitiesRes.data || []);
-            setCurrentPage(1); // Reset page on reload
-        } catch (error) {
-            console.warn("Erreur chargement données:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const invalidateApps = () => queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY });
 
     // Pagination
     const filteredApplications = useMemo(() => {
@@ -149,9 +138,6 @@ export default function ApplicationManagement() {
         setCurrentPage(1);
     }, [searchTerm, statusFilter, universityFilter]);
 
-    useEffect(() => {
-        loadData();
-    }, []);
 
     const handleSaveApplication = async () => {
         if (!formData.studentId || !formData.universityId || !formData.desiredProgram) {
@@ -191,7 +177,7 @@ export default function ApplicationManagement() {
                 setShowForm(false);
                 setEditingApplication(null);
                 resetForm();
-                await loadData();
+                invalidateApps();
                 return;
             }
 
@@ -262,7 +248,7 @@ export default function ApplicationManagement() {
                 setShowForm(false);
                 setEditingApplication(null);
                 resetForm();
-                await loadData();
+                invalidateApps();
             } else if (error) {
                 showNotification(t("messages.saveError"), "error");
             }
@@ -309,7 +295,7 @@ export default function ApplicationManagement() {
             showNotification(t("messages.deleteSuccess"), "success");
             closeConfirm();
             setPendingDeleteId(null);
-            await loadData();
+            invalidateApps();
         } catch (error) {
             console.error("Erreur suppression:", error);
             showNotification(t("messages.deleteError"), "error");
@@ -330,7 +316,7 @@ export default function ApplicationManagement() {
                     { application_id: applicationId, new_status: newStatus }
                 );
             }
-            await loadData();
+            invalidateApps();
         } finally {
             setUpdatingStatusId(null);
         }
@@ -534,7 +520,7 @@ export default function ApplicationManagement() {
                 <CardHeader>
                     <div className="flex items-center justify-between mb-4">
                         <CardTitle>{t("list.title", { count: filteredApplications.length })}</CardTitle>
-                        <Button variant="outline" onClick={loadData}>{t("actions.refresh")}</Button>
+                        <Button variant="outline" onClick={invalidateApps}>{t("actions.refresh")}</Button>
                     </div>
                     
                     {/* Barre de recherche et filtres */}
