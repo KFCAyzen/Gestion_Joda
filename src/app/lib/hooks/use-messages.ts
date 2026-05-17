@@ -52,6 +52,7 @@ export function useStudentInbox(userId: string) {
       return (data as ChatMessage[]) ?? [];
     },
     enabled: !!userId,
+    staleTime: 30 * 1000,
   });
 }
 
@@ -69,6 +70,7 @@ export function useStudentChat(userId: string) {
       return dedupMessages((data as ChatMessage[]) ?? [], userId);
     },
     enabled: !!userId,
+    staleTime: 30 * 1000,
   });
 }
 

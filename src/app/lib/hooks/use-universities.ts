@@ -7,23 +7,26 @@ const supabase = createClient();
 
 export const UNIVERSITIES_KEY = ['universities'];
 
+const UNIVERSITY_LIST_SELECT = 'id, nom, pays, ville, programme, niveau_etude, active, created_at';
+
 export function useUniversities(activeOnly = true) {
   return useQuery({
     queryKey: [...UNIVERSITIES_KEY, activeOnly],
     queryFn: async () => {
       let query = supabase
         .from('universities')
-        .select('*')
+        .select(UNIVERSITY_LIST_SELECT)
         .order('nom', { ascending: true });
-      
+
       if (activeOnly) {
         query = query.eq('active', true);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
       return data as University[];
     },
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -36,17 +39,18 @@ export function useUniversity(id: string) {
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error) throw error;
       return data as University;
     },
     enabled: !!id,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
 export function useCreateUniversity() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateUniversity) => {
       const parsed = createUniversitySchema.parse(data);
@@ -55,7 +59,7 @@ export function useCreateUniversity() {
         .insert(parsed)
         .select()
         .single();
-      
+
       if (error) throw error;
       return university as University;
     },
@@ -67,7 +71,7 @@ export function useCreateUniversity() {
 
 export function useUpdateUniversity() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateUniversity }) => {
       const parsed = updateUniversitySchema.parse(data);
@@ -77,7 +81,7 @@ export function useUpdateUniversity() {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return university as University;
     },
@@ -90,7 +94,7 @@ export function useUpdateUniversity() {
 
 export function useDeleteUniversity() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('universities').delete().eq('id', id);
@@ -110,5 +114,6 @@ export function useUniversitiesStats() {
       const active = await supabase.from('universities').select('*', { count: 'exact', head: true }).eq('active', true);
       return { total: total.count || 0, active: active.count || 0 };
     },
+    staleTime: 5 * 60 * 1000,
   });
 }

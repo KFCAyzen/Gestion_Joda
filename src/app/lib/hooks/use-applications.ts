@@ -7,23 +7,27 @@ const supabase = createClient();
 
 export const APPLICATIONS_KEY = ['applications'];
 
+const APPLICATION_LIST_SELECT =
+  'id, student_id, university_id, desired_program, study_level, language_level, scholarship_type, status, assigned_to, created_at';
+
 export function useApplications(status?: string) {
   return useQuery({
     queryKey: [...APPLICATIONS_KEY, status],
     queryFn: async () => {
       let query = supabase
         .from('dossier_bourses')
-        .select('*')
+        .select(APPLICATION_LIST_SELECT)
         .order('created_at', { ascending: false });
-      
+
       if (status && status !== 'all') {
         query = query.eq('status', status);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
       return data as Application[];
     },
+    staleTime: 60 * 1000,
   });
 }
 
@@ -36,17 +40,18 @@ export function useApplication(id: string) {
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error) throw error;
       return data as Application;
     },
     enabled: !!id,
+    staleTime: 60 * 1000,
   });
 }
 
 export function useCreateApplication() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateApplication) => {
       const parsed = createApplicationSchema.parse(data);
@@ -55,7 +60,7 @@ export function useCreateApplication() {
         .insert(parsed)
         .select()
         .single();
-      
+
       if (error) throw error;
       return application as Application;
     },
@@ -67,7 +72,7 @@ export function useCreateApplication() {
 
 export function useUpdateApplication() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateApplication }) => {
       const parsed = updateApplicationSchema.parse(data);
@@ -77,7 +82,7 @@ export function useUpdateApplication() {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return application as Application;
     },
@@ -90,7 +95,7 @@ export function useUpdateApplication() {
 
 export function useUpdateApplicationStatus() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { data, error } = await supabase
@@ -99,7 +104,7 @@ export function useUpdateApplicationStatus() {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return data as Application;
     },
@@ -111,7 +116,7 @@ export function useUpdateApplicationStatus() {
 
 export function useDeleteApplication() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('dossier_bourses').delete().eq('id', id);
@@ -130,8 +135,12 @@ export function useApplicationsStats() {
       const total = await supabase.from('dossier_bourses').select('*', { count: 'exact', head: true });
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayCount = await supabase.from('dossier_bourses').select('*', { count: 'exact', head: true }).gte('created_at', today.toISOString());
+      const todayCount = await supabase
+        .from('dossier_bourses')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', today.toISOString());
       return { total: total.count || 0, today: todayCount.count || 0 };
     },
+    staleTime: 60 * 1000,
   });
 }

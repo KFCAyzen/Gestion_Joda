@@ -7,13 +7,15 @@ const supabase = createClient();
 
 export const NOTIFICATIONS_KEY = ['notifications'];
 
+const NOTIF_SELECT = 'id, user_id, type, titre, message, read, created_at';
+
 export function useNotifications(userId?: string) {
   return useQuery({
     queryKey: [...NOTIFICATIONS_KEY, userId ?? 'all'],
     queryFn: async () => {
       let query = supabase
         .from('notifications')
-        .select('*')
+        .select(NOTIF_SELECT)
         .order('created_at', { ascending: false });
 
       if (userId) query = query.eq('user_id', userId);
@@ -22,6 +24,7 @@ export function useNotifications(userId?: string) {
       if (error) throw error;
       return data as Notification[];
     },
+    staleTime: 30 * 1000,
   });
 }
 
@@ -38,6 +41,7 @@ export function useUnreadCount(userId: string) {
       return count ?? 0;
     },
     enabled: !!userId,
+    staleTime: 30 * 1000,
   });
 }
 

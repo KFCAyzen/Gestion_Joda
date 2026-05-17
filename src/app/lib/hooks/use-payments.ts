@@ -24,6 +24,7 @@ export function usePayments(filters?: { studentId?: string; status?: string; typ
       if (error) throw error;
       return data as Payment[];
     },
+    staleTime: 30 * 1000,
   });
 }
 
@@ -40,6 +41,7 @@ export function usePayment(id: string) {
       return data as Payment;
     },
     enabled: !!id,
+    staleTime: 30 * 1000,
   });
 }
 

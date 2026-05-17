@@ -7,18 +7,21 @@ const supabase = createClient();
 
 export const USERS_KEY = ['users'];
 
+const USER_SELECT = 'id, email, username, name, role, telephone, must_change_password, is_active, created_at';
+
 export function useUsers() {
   return useQuery({
     queryKey: USERS_KEY,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(USER_SELECT)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data as User[];
     },
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -28,20 +31,21 @@ export function useUser(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(USER_SELECT)
         .eq('id', id)
         .single();
-      
+
       if (error) throw error;
       return data as User;
     },
     enabled: !!id,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
 export function useCreateUser() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: CreateUser) => {
       const parsed = createUserSchema.parse(data);
@@ -50,7 +54,7 @@ export function useCreateUser() {
         .insert(parsed)
         .select()
         .single();
-      
+
       if (error) throw error;
       return user as User;
     },
@@ -62,7 +66,7 @@ export function useCreateUser() {
 
 export function useUpdateUser() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateUser }) => {
       const parsed = updateUserSchema.parse(data);
@@ -72,7 +76,7 @@ export function useUpdateUser() {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return user as User;
     },
@@ -85,7 +89,7 @@ export function useUpdateUser() {
 
 export function useDeleteUser() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('users').delete().eq('id', id);

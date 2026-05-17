@@ -44,6 +44,7 @@ export function useStudentProfile(userId: string) {
       return data as StudentProfile;
     },
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -57,6 +58,7 @@ export function useStudentPayments() {
       const data = await res.json();
       return Array.isArray(data) ? (data as Payment[]) : [];
     },
+    staleTime: 30 * 1000,
   });
 }
 
@@ -67,7 +69,7 @@ export function useStudentDossier(studentId: string | null) {
     queryFn: async (): Promise<Application | null> => {
       const { data, error } = await supabase
         .from('dossier_bourses')
-        .select('*')
+        .select('id, student_id, university_id, desired_program, study_level, language_level, scholarship_type, status, assigned_to, created_at')
         .eq('student_id', studentId!)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -76,6 +78,7 @@ export function useStudentDossier(studentId: string | null) {
       return (data as Application) ?? null;
     },
     enabled: !!studentId,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -93,6 +96,7 @@ export function useStudentUniversity(universityId: string | null | undefined) {
       return data?.nom ?? null;
     },
     enabled: !!universityId,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -123,6 +127,7 @@ export function useStudentLastMessage(userId: string) {
       };
     },
     enabled: !!userId,
+    staleTime: 30 * 1000,
   });
 }
 
