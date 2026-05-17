@@ -518,7 +518,8 @@ export default function PerformanceHistory() {
             if (error) throw error;
             return (data ?? []) as ActivityLogRow[];
         },
-        staleTime: 60_000,
+        staleTime: 2 * 60_000,
+        enabled: isAdmin,
     });
 
     const { data: dossierHistoryRaw = [], isLoading: loadingDossierHistory } = useQuery({
@@ -532,10 +533,14 @@ export default function PerformanceHistory() {
             if (error) throw error;
             return (data ?? []) as DossierHistoryRow[];
         },
-        staleTime: 60_000,
+        staleTime: 2 * 60_000,
+        enabled: isAdmin,
     });
 
-    const isLoading = loadingPayments || loadingStudents || loadingUsers || loadingDossiers || loadingLogs || loadingDossierHistory;
+    // Admin-only queries don't block the non-admin loading path
+    const isLoading =
+        loadingPayments || loadingStudents ||
+        (isAdmin && (loadingUsers || loadingDossiers || loadingLogs || loadingDossierHistory));
 
     const [selectedCreator, setSelectedCreator] = useState<string>("all");
     const [viewMode, setViewMode] = useState<ViewMode>("by-agent");
@@ -543,6 +548,7 @@ export default function PerformanceHistory() {
     const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
 
     const isAdmin = ["admin", "super_admin", "supervisor"].includes(user?.role ?? "");
+    // Derived before hooks so we can use it in `enabled` flags below
 
     // ── Lookup maps ─────────────────────────────────────────────────────────────
 
@@ -575,16 +581,23 @@ export default function PerformanceHistory() {
     const attentePayments = useMemo(() => allPayments.filter((p) => p.status === "attente"), [allPayments]);
     const retardPayments = useMemo(() => allPayments.filter((p) => p.status === "retard"), [allPayments]);
 
+    // ── Set of user IDs that have created at least one student ─────────────────
+
+    const creatorIdSet = useMemo(
+        () => new Set(Object.values(studentsById).map((s) => s.created_by).filter(Boolean) as string[]),
+        [studentsById],
+    );
+
     // ── Creator options for daily-view filter ───────────────────────────────────
 
     const creatorOptions = useMemo<FilterOption[]>(() => {
         if (!isAdmin) return [];
         const usersAll = usersRaw as unknown as UserRow[];
         return usersAll
-            .filter((u) => u.role !== "student" && Object.values(studentsById).some((s) => s.created_by === u.id))
+            .filter((u) => u.role !== "student" && creatorIdSet.has(u.id))
             .map((u) => ({ value: u.id, label: u.name || u.username || u.id }))
             .sort((a, b) => a.label.localeCompare(b.label, "fr"));
-    }, [usersRaw, studentsById, isAdmin]);
+    }, [usersRaw, creatorIdSet, isAdmin]);
 
     // ── Global KPI totals ───────────────────────────────────────────────────────
 
