@@ -80,6 +80,7 @@ const emptyFormData = {
     diplome_acquis: "",
     choix: "procedure_seule",
     nationalite: "",
+    profil: "local" as "local" | "international",
 };
 
 export default function StudentManagement() {
@@ -362,6 +363,7 @@ export default function StudentManagement() {
             diplome_acquis: student.diplome_acquis,
             choix: student.choix,
             nationalite: student.nationalite ?? "",
+            profil: isInternational(student.nationalite) ? "international" : "local",
         });
         setActiveTab("form");
     };
@@ -476,12 +478,12 @@ export default function StudentManagement() {
         setFeedback("", "");
         setIsSubmitting(true);
 
-        const { phoneCountryCode, ...rawFormData } = formData;
+        const { phoneCountryCode, profil, ...rawFormData } = formData;
         const studentData = {
             ...rawFormData,
             telephone: normalizePhoneNumber(phoneCountryCode, formData.telephone),
             age: parseInt(formData.age, 10) || 0,
-            nationalite: rawFormData.nationalite?.trim() || null,
+            nationalite: profil === "local" ? "Camerounais" : (rawFormData.nationalite?.trim() || null),
         };
 
         if (studentData.age <= 0) {
@@ -1157,25 +1159,41 @@ export default function StudentManagement() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="nationalite">Nationalité</Label>
-                                            <Input
-                                                id="nationalite"
-                                                value={formData.nationalite}
-                                                onChange={(e) => {
-                                                    const nat = e.target.value;
-                                                    const intl = isInternational(nat);
+                                        <div className="space-y-2 sm:col-span-2">
+                                            <Label>Profil</Label>
+                                            <Select
+                                                value={formData.profil}
+                                                onValueChange={(v) => {
+                                                    const intl = v === "international";
                                                     setFormData({
                                                         ...formData,
-                                                        nationalite: nat,
-                                                        // forcer procedure_seule pour les étrangers
+                                                        profil: v as "local" | "international",
                                                         choix: intl ? "procedure_seule" : formData.choix,
                                                         langue: intl ? "" : formData.langue,
+                                                        nationalite: intl ? formData.nationalite : "",
                                                     });
                                                 }}
-                                                placeholder="Ex : Camerounais, Sénégalais…"
-                                            />
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="local">Local</SelectItem>
+                                                    <SelectItem value="international">International</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
+                                        {formData.profil === "international" && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="nationalite">Nationalité</Label>
+                                                <Input
+                                                    id="nationalite"
+                                                    value={formData.nationalite}
+                                                    onChange={(e) => setFormData({ ...formData, nationalite: e.target.value })}
+                                                    placeholder="Ex : Sénégalais, Gabonais…"
+                                                />
+                                            </div>
+                                        )}
                                         <div className="space-y-2">
                                             <Label htmlFor="niveau">{t("form.level")}</Label>
                                             <Input
@@ -1203,7 +1221,7 @@ export default function StudentManagement() {
                                                 onChange={(e) => setFormData({ ...formData, diplome_acquis: e.target.value })}
                                             />
                                         </div>
-                                        {!isInternational(formData.nationalite) && (
+                                        {formData.profil === "local" && (
                                             <div className="space-y-2">
                                                 <Label htmlFor="langue">{t("form.language")}</Label>
                                                 <Input
@@ -1215,9 +1233,9 @@ export default function StudentManagement() {
                                         )}
                                         <div className="space-y-2 sm:col-span-2">
                                             <Label htmlFor="choix">{t("form.choice")}</Label>
-                                            {isInternational(formData.nationalite) ? (
+                                            {formData.profil === "international" ? (
                                                 <div className="flex h-9 items-center rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm text-slate-500 dark:text-slate-400">
-                                                    {t("form.procedure_seule")} — étudiant étranger
+                                                    {t("form.procedure_seule")} — étudiant international
                                                 </div>
                                             ) : (
                                                 <Select
