@@ -1,21 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, Mic, MoreVertical, Paperclip, Send } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/app/lib/supabase/client";
-import type { StudentView } from "./types";
-
-interface Message {
-    id: string;
-    from_user_id: string;
-    to_user_id: string;
-    subject: string;
-    content: string;
-    read: boolean;
-    created_at: string;
-    metadata?: Record<string, unknown>;
-}
+import { useQueryClient } from "@tanstack/react-query";
+import {
+    useStudentChat,
+    useSendChatMessage,
+    useMarkMessagesRead,
+    STUDENT_CHAT_KEY,
+    type ChatMessage,
+} from "@/app/lib/hooks/use-messages";
 
 interface DossierInfo {
     status: string;
@@ -57,8 +53,8 @@ function fmtDateSep(iso: string): string {
     return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" }).toUpperCase();
 }
 
-function groupByDay(messages: Message[]) {
-    const groups: { label: string; messages: Message[] }[] = [];
+function groupByDay(messages: ChatMessage[]) {
+    const groups: { label: string; messages: ChatMessage[] }[] = [];
     let lastDay = "";
     messages.forEach((msg) => {
         const day = new Date(msg.created_at).toDateString();
@@ -71,19 +67,8 @@ function groupByDay(messages: Message[]) {
     return groups;
 }
 
-function isSystemMessage(msg: Message): boolean {
-    return !!(msg.metadata as any)?.system;
-}
-
-function dedupMessages(msgs: Message[], userId: string): Message[] {
-    const seen = new Set<string>();
-    return msgs.filter((m) => {
-        if (m.to_user_id === userId) return true;
-        const key = `${m.content}-${m.created_at.substring(0, 16)}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
+function isSystemMessage(msg: ChatMessage): boolean {
+    return !!(msg.metadata as Record<string, unknown>)?.system;
 }
 
 function avatarInitials(name: string): string {
@@ -96,47 +81,35 @@ function avatarInitials(name: string): string {
 
 export function StudentChatFull({ userId, agentName, onBack, dossier, nextPayment, onUnreadChange }: Props) {
     const supabase = createClient();
+    const queryClient = useQueryClient();
     const t = useTranslations("student.portal.chat");
     const locale = useLocale();
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [agentUserId, setAgentUserId] = useState<string | null>(null);
     const [text, setText] = useState("");
-    const [sending, setSending] = useState(false);
-    const [loading, setLoading] = useState(true);
     const bottomRef = useRef<HTMLDivElement>(null);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        const { data } = await supabase
-            .from("messages")
-            .select("id, from_user_id, to_user_id, subject, content, read, created_at, metadata")
-            .or(`to_user_id.eq.${userId},from_user_id.eq.${userId}`)
-            .order("created_at", { ascending: true });
+    // ── TanStack Query ────────────────────────────────────────────────────────
+    const { data: messages = [], isLoading: loading } = useStudentChat(userId);
+    const sendChatMessage = useSendChatMessage(userId);
+    const markMessagesRead = useMarkMessagesRead();
 
-        const msgs = dedupMessages((data as Message[]) ?? [], userId);
-        setMessages(msgs);
+    // agentUserId dérivé du premier message reçu
+    const agentUserId = messages.find((m) => m.to_user_id === userId)?.from_user_id ?? null;
 
-        const received = msgs.find((m) => m.to_user_id === userId);
-        if (received) setAgentUserId(received.from_user_id);
+    // Marque les messages non lus comme lus dès qu'ils apparaissent
+    useEffect(() => {
+        const unreadIds = messages
+            .filter((m) => m.to_user_id === userId && !m.read)
+            .map((m) => m.id);
+        if (unreadIds.length > 0) markMessagesRead.mutate(unreadIds);
+        onUnreadChange?.(unreadIds.length > 0 ? 0 : 0);
+    }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
-        const unread = msgs.filter((m) => m.to_user_id === userId && !m.read).length;
-        onUnreadChange?.(unread);
-
-        const unreadIds = msgs.filter((m) => m.to_user_id === userId && !m.read).map((m) => m.id);
-        if (unreadIds.length > 0) {
-            await supabase.from("messages").update({ read: true }).in("id", unreadIds);
-            onUnreadChange?.(0);
-        }
-        setLoading(false);
-    }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    useEffect(() => { void load(); }, [load]);
-
+    // Scroll automatique vers le bas
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Realtime — écoute les nouveaux messages reçus et les ajoute sans écraser l'état local
+    // Real-time : nouveaux messages reçus
     useEffect(() => {
         const channel = supabase
             .channel(`chat-${userId}`)
@@ -146,52 +119,27 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                 table: "messages",
                 filter: `to_user_id=eq.${userId}`,
             }, (payload) => {
-                const newMsg = payload.new as Message;
-                setMessages((prev) => prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg]);
-                if (!agentUserId) setAgentUserId(newMsg.from_user_id);
+                const newMsg = payload.new as ChatMessage;
+                queryClient.setQueryData<ChatMessage[]>([...STUDENT_CHAT_KEY, userId], (old) => {
+                    if (!old) return [newMsg];
+                    if (old.some((m) => m.id === newMsg.id)) return old;
+                    return [...old, newMsg];
+                });
+                // Marque immédiatement comme lu côté serveur
                 void supabase.from("messages").update({ read: true }).eq("id", newMsg.id);
                 onUnreadChange?.(0);
             })
             .subscribe();
         return () => { void supabase.removeChannel(channel); };
-    }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [userId, queryClient, supabase, onUnreadChange]);
+
+    // ── Envoi ─────────────────────────────────────────────────────────────────
 
     const send = async () => {
-        if (!text.trim() || sending) return;
-        setSending(true);
         const content = text.trim();
+        if (!content || sendChatMessage.isPending) return;
         setText("");
-
-        const tempId = `temp-${Date.now()}`;
-        const optimistic: Message = {
-            id: tempId,
-            from_user_id: userId,
-            to_user_id: agentUserId ?? "",
-            subject: "Message",
-            content,
-            read: false,
-            created_at: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, optimistic]);
-
-        if (agentUserId) {
-            const { data } = await supabase.from("messages").insert({
-                from_user_id: userId,
-                to_user_id: agentUserId,
-                subject: "Réponse étudiant",
-                content,
-                read: false,
-            }).select().single();
-            if (data) setMessages((prev) => prev.map((m) => m.id === tempId ? (data as Message) : m));
-        } else {
-            await fetch("/api/student-send-message", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ subject: "Message étudiant", content }),
-            });
-        }
-
-        setSending(false);
+        await sendChatMessage.mutateAsync({ content, agentUserId });
     };
 
     const handleKey = (e: React.KeyboardEvent) => {
@@ -201,26 +149,29 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
         }
     };
 
-    const groups = groupByDay(messages);
+    // ── Labels dossier ────────────────────────────────────────────────────────
 
     const dossierStatusLabel: Record<string, string> = {
-        document_recu: t("statusLabels.document_recu"),
-        en_attente: t("statusLabels.en_attente"),
-        en_cours: t("statusLabels.en_cours"),
-        document_manquant: t("statusLabels.document_manquant"),
-        admission_validee: t("statusLabels.admission_validee"),
-        admission_rejetee: t("statusLabels.admission_rejetee"),
-        en_attente_universite: t("statusLabels.en_attente_universite"),
-        visa_en_cours: t("statusLabels.visa_en_cours"),
-        termine: t("statusLabels.termine"),
+        document_recu:          t("statusLabels.document_recu"),
+        en_attente:             t("statusLabels.en_attente"),
+        en_cours:               t("statusLabels.en_cours"),
+        document_manquant:      t("statusLabels.document_manquant"),
+        admission_validee:      t("statusLabels.admission_validee"),
+        admission_rejetee:      t("statusLabels.admission_rejetee"),
+        en_attente_universite:  t("statusLabels.en_attente_universite"),
+        visa_en_cours:          t("statusLabels.visa_en_cours"),
+        termine:                t("statusLabels.termine"),
     };
 
+    const groups = groupByDay(messages);
+
+    // ── Rendu ─────────────────────────────────────────────────────────────────
+
     return (
-        /* Full layout: on md+ = 3 columns, on mobile = single column */
         <div className="flex h-[calc(100dvh-4rem)] overflow-hidden md:h-[calc(100vh-4rem)]">
             {/* CENTER — Chat */}
             <div className="flex flex-1 flex-col overflow-hidden">
-                {/* Chat header */}
+                {/* Header */}
                 <div className="flex items-center gap-2.5 border-b border-[var(--student-border)] bg-[var(--student-surface-2)] px-3 py-2.5 backdrop-blur-xl sm:gap-3 sm:px-4 sm:py-3">
                     <button
                         onClick={onBack}
@@ -268,7 +219,6 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                     ) : (
                         groups.map((group) => (
                             <div key={group.label}>
-                                {/* Date separator */}
                                 <div className="my-4 flex items-center justify-center">
                                     <span className="rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] px-3 py-1 text-[10px] font-semibold tracking-widest text-[var(--student-fg-muted)] opacity-80">
                                         {group.label}
@@ -276,7 +226,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                 </div>
 
                                 {group.messages.map((msg) => {
-                                    const isOwn = msg.from_user_id === userId;
+                                    const isOwn   = msg.from_user_id === userId;
                                     const isSystem = isSystemMessage(msg);
 
                                     if (isSystem) {
@@ -301,19 +251,13 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                             ) : (
                                                 <div className="w-7 shrink-0" aria-hidden />
                                             )}
-                                            <div
-                                                className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.06)] sm:max-w-[72%] sm:px-4 sm:py-3 sm:text-sm ${
-                                                    isOwn
-                                                        ? "rounded-br-md bg-red-600 text-white"
-                                                        : "rounded-bl-md border border-white/20 bg-white text-gray-900"
-                                                }`}
-                                            >
+                                            <div className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.06)] sm:max-w-[72%] sm:px-4 sm:py-3 sm:text-sm ${
+                                                isOwn
+                                                    ? "rounded-br-md bg-red-600 text-white"
+                                                    : "rounded-bl-md border border-white/20 bg-white text-gray-900"
+                                            }`}>
                                                 {msg.content}
-                                                <div
-                                                    className={`mt-1 flex items-center gap-1 text-[10px] ${
-                                                        isOwn ? "justify-end text-white/70" : "text-gray-400"
-                                                    }`}
-                                                >
+                                                <div className={`mt-1 flex items-center gap-1 text-[10px] ${isOwn ? "justify-end text-white/70" : "text-gray-400"}`}>
                                                     <span>{fmtTime(msg.created_at)}</span>
                                                     {isOwn && <span aria-hidden>✓✓</span>}
                                                 </div>
@@ -327,7 +271,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                     <div ref={bottomRef} />
                 </div>
 
-                {/* Compose bar */}
+                {/* Barre de saisie */}
                 <div className="border-t border-[var(--student-border)] bg-[var(--student-surface-2)] px-2.5 pt-2 pb-[calc(env(safe-area-inset-bottom)+5.75rem)] backdrop-blur-xl md:px-4 md:py-3 md:pb-3">
                     <div className="flex items-center gap-1 rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] py-1 pl-1 pr-1 shadow-[0_2px_12px_rgba(0,0,0,0.08)] sm:gap-1.5">
                         <button
@@ -358,7 +302,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                         )}
                         <button
                             onClick={() => void send()}
-                            disabled={!text.trim() || sending}
+                            disabled={!text.trim() || sendChatMessage.isPending}
                             aria-label={t("send")}
                             className="flex h-10 w-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.45)] transition-all hover:bg-red-700 active:scale-95 disabled:opacity-40 disabled:shadow-none disabled:active:scale-100 sm:h-9 sm:w-auto sm:px-4"
                         >
@@ -369,7 +313,7 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                 </div>
             </div>
 
-            {/* RIGHT — Context panel (desktop only) */}
+            {/* RIGHT — Panneau contexte (desktop uniquement) */}
             {dossier && (
                 <aside className="hidden w-60 shrink-0 flex-col border-l border-[var(--student-border)] overflow-y-auto xl:flex">
                     <div className="border-b border-[var(--student-border)] px-4 py-4">
@@ -382,8 +326,6 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                         {dossier.program && (
                             <p className="text-[12px] text-[var(--student-fg-muted)]">{dossier.program}</p>
                         )}
-
-                        {/* Documents progress */}
                         {dossier.docsTotal > 0 && (
                             <div className="mt-3">
                                 <div className="flex items-center justify-between text-[11px]">
@@ -395,16 +337,13 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/25 dark:bg-[var(--student-border)]">
                                     <div
                                         className="h-1.5 rounded-full bg-[#f59e0b]"
-                                        style={{
-                                            width: `${Math.round((dossier.docsOk / dossier.docsTotal) * 100)}%`,
-                                        }}
+                                        style={{ width: `${Math.round((dossier.docsOk / dossier.docsTotal) * 100)}%` }}
                                     />
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Next step */}
                     {dossier.nextStep && (
                         <div className="border-b border-white/8 px-4 py-4">
                             <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)] opacity-60">
@@ -419,7 +358,6 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                         </div>
                     )}
 
-                    {/* Next payment */}
                     {nextPayment && (
                         <div className="px-4 py-4">
                             <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--student-fg-muted)] opacity-60">

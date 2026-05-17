@@ -1,23 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { createClient } from "../lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { executeBatch } from "../utils/dbOperations";
+import {
+    useNotifications,
+    useMarkNotificationAsRead,
+    useMarkAllNotificationsAsRead,
+} from "../lib/hooks/use-notifications";
 import { SectionHeader } from "./student/SectionHeader";
 import { EmptyState } from "./student/EmptyState";
-
-interface Notification {
-    id: string;
-    user_id: string;
-    type: string;
-    titre: string;
-    message: string;
-    read: boolean;
-    created_at: string;
-}
 
 interface User {
     id: string;
@@ -48,50 +41,22 @@ export default function StudentNotifications({ user, onBack, onUnreadChange }: P
     const t = useTranslations("studentNotifications");
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
-    const supabase = createClient();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<string>("all");
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        try {
-            const { data } = await supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-            if (data) setNotifications(data);
-        } finally {
-            setLoading(false);
-        }
-    }, [user.id]);
+    // ── TanStack Query ────────────────────────────────────────────────────────
+    const { data: notifications = [], isLoading: loading, refetch } = useNotifications(user.id);
+    const markOneRead = useMarkNotificationAsRead();
+    const markAllRead = useMarkAllNotificationsAsRead();
 
-    useEffect(() => {
-        load();
-    }, [load]);
-
-    const markAsRead = async (id: string) => {
-        await supabase.from("notifications").update({ read: true }).eq("id", id);
-        setNotifications((prev) => {
-            const next = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
-            onUnreadChange?.(next.filter((n) => !n.read).length);
-            return next;
-        });
-    };
-
-    const markAllAsRead = async () => {
-        const unread = notifications.filter((n) => !n.read);
-        await executeBatch(
-            unread,
-            async (n) => {
-                await supabase.from("notifications").update({ read: true }).eq("id", n.id);
-            },
-            3,
-            150
-        );
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        onUnreadChange?.(0);
-    };
-
-    const filtered = filter === "all" ? notifications : notifications.filter((n) => n.type === filter);
     const unreadCount = notifications.filter((n) => !n.read).length;
+
+    // Informe le parent dès que le compteur change
+    useEffect(() => {
+        onUnreadChange?.(unreadCount);
+    }, [unreadCount, onUnreadChange]);
+
+    // ── Données dérivées ──────────────────────────────────────────────────────
+    const filtered = filter === "all" ? notifications : notifications.filter((n) => n.type === filter);
 
     const filterBtns: { key: string; label: string }[] = [
         { key: "all", label: t("filters.all", { count: notifications.length }) },
@@ -111,7 +76,12 @@ export default function StudentNotifications({ user, onBack, onUnreadChange }: P
                 right={
                     <div className="flex flex-wrap gap-2">
                         {onBack ? (
-                            <Button variant="outline" size="sm" className="student-chip rounded-2xl border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white" onClick={onBack}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="student-chip rounded-2xl border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+                                onClick={onBack}
+                            >
                                 {t("actions.back")}
                             </Button>
                         ) : null}
@@ -119,12 +89,17 @@ export default function StudentNotifications({ user, onBack, onUnreadChange }: P
                             variant="outline"
                             size="sm"
                             className="student-chip rounded-2xl border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
-                            onClick={markAllAsRead}
-                            disabled={unreadCount === 0}
+                            onClick={() => markAllRead.mutate(user.id)}
+                            disabled={unreadCount === 0 || markAllRead.isPending}
                         >
                             {t("actions.markAllRead")}
                         </Button>
-                        <Button variant="outline" size="sm" className="student-chip rounded-2xl border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white" onClick={load}>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="student-chip rounded-2xl border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+                            onClick={() => refetch()}
+                        >
                             {t("actions.refresh")}
                         </Button>
                     </div>
@@ -154,7 +129,7 @@ export default function StudentNotifications({ user, onBack, onUnreadChange }: P
                         <div className="py-12 text-center text-[var(--student-fg-muted)]">{t("loading")}</div>
                     ) : filtered.length === 0 ? (
                         <div className="p-4">
-                            <EmptyState title={t("empty")} description="Quand l’équipe valide un paiement ou un document, tu reçois une notification ici." />
+                            <EmptyState title={t("empty")} description="Quand l'équipe valide un paiement ou un document, tu reçois une notification ici." />
                         </div>
                     ) : (
                         <div className="divide-y divide-[var(--student-border)]">
@@ -164,7 +139,7 @@ export default function StudentNotifications({ user, onBack, onUnreadChange }: P
                                 return (
                                     <div
                                         key={notif.id}
-                                        onClick={() => !notif.read && markAsRead(notif.id)}
+                                        onClick={() => !notif.read && markOneRead.mutate(notif.id)}
                                         className={[
                                             "flex cursor-pointer gap-3 p-4 transition-colors hover:bg-[var(--student-surface-2)]",
                                             !notif.read ? "bg-[var(--student-surface-2)]" : "",
