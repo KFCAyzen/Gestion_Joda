@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { sendPaymentDeclarationEmail, getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
+import { DEFAULT_PAYMENT_CONFIGS, getBourseServiceType } from "@/app/types/payment-config";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
 
         const { data: student } = await supabaseAdmin
             .from("students")
-            .select("id")
+            .select("id, niveau, nationalite")
             .or(`created_by.eq.${user.id},user_id.eq.${user.id}`)
             .single();
 
@@ -83,6 +84,14 @@ export async function POST(req: NextRequest) {
                 paymentId = found.id;
             } else {
                 // Créer le paiement à la volée
+                const serviceType = type === "bourse"
+                    ? getBourseServiceType(student.niveau, student.nationalite)
+                    : (type as "mandarin" | "anglais");
+                const cfg = DEFAULT_PAYMENT_CONFIGS[serviceType];
+                const deadlineDays = cfg?.deadline_offset_days ?? 30;
+                const dateLimite = new Date(Date.now() + deadlineDays * 24 * 60 * 60 * 1000)
+                    .toISOString().split("T")[0];
+
                 const { data: created, error: createErr } = await supabaseAdmin
                     .from("payments")
                     .insert({
@@ -92,6 +101,7 @@ export async function POST(req: NextRequest) {
                         montant: montant_tranche ?? montant_declare,
                         status: "attente",
                         penalites: 0,
+                        date_limite: dateLimite,
                     })
                     .select("id")
                     .single();

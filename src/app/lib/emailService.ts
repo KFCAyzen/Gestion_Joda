@@ -628,7 +628,7 @@ export async function sendNewStudentAdminEmail(data: NewStudentAdminEmailData): 
   const year = new Date().getFullYear();
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.adminEmails,
       subject: `👤 Nouveau compte étudiant — ${data.studentName}`,
