@@ -481,7 +481,7 @@ export default function PaymentsPage() {
                                         <select
                                             value={encaisserForm.student_id}
                                             onChange={(e) => setEncaisserForm((f) => ({ ...f, student_id: e.target.value }))}
-                                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400 dark:text-white"
+                                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400 cursor-pointer dark:[color-scheme:dark]"
                                         >
                                             <option value="">Choisir un étudiant…</option>
                                             {students.map((s) => (
@@ -495,7 +495,7 @@ export default function PaymentsPage() {
                                             <select
                                                 value={encaisserForm.type}
                                                 onChange={(e) => setEncaisserForm((f) => ({ ...f, type: e.target.value }))}
-                                                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400 dark:text-white"
+                                                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400 cursor-pointer dark:[color-scheme:dark]"
                                             >
                                                 <option value="bourse">Bourse</option>
                                                 <option value="mandarin">Mandarin</option>
@@ -507,7 +507,7 @@ export default function PaymentsPage() {
                                             <select
                                                 value={encaisserForm.tranche}
                                                 onChange={(e) => setEncaisserForm((f) => ({ ...f, tranche: e.target.value }))}
-                                                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400 dark:text-white"
+                                                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400 cursor-pointer dark:[color-scheme:dark]"
                                             >
                                                 <option value="1">T1</option>
                                                 <option value="2">T2</option>
@@ -836,7 +836,7 @@ export default function PaymentsPage() {
                                     onChange={(e) =>
                                         setNewPayment((p) => ({ ...p, student_id: e.target.value }))
                                     }
-                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400 cursor-pointer dark:[color-scheme:dark]"
                                 >
                                     <option value="">Choisir un étudiant…</option>
                                     {students.map((s) => (
@@ -857,7 +857,7 @@ export default function PaymentsPage() {
                                         onChange={(e) =>
                                             setNewPayment((p) => ({ ...p, type: e.target.value }))
                                         }
-                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400 cursor-pointer dark:[color-scheme:dark]"
                                     >
                                         <option value="bourse">Bourse</option>
                                         <option value="mandarin">Mandarin</option>
@@ -873,7 +873,7 @@ export default function PaymentsPage() {
                                         onChange={(e) =>
                                             setNewPayment((p) => ({ ...p, tranche: e.target.value }))
                                         }
-                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400 cursor-pointer dark:[color-scheme:dark]"
                                     >
                                         <option value="1">T1</option>
                                         <option value="2">T2</option>
@@ -894,7 +894,7 @@ export default function PaymentsPage() {
                                     onChange={(e) =>
                                         setNewPayment((p) => ({ ...p, montant: e.target.value }))
                                     }
-                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400 cursor-pointer dark:[color-scheme:dark]"
                                 />
                             </div>
 
@@ -908,7 +908,7 @@ export default function PaymentsPage() {
                                     onChange={(e) =>
                                         setNewPayment((p) => ({ ...p, date_limite: e.target.value }))
                                     }
-                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400 cursor-pointer dark:[color-scheme:dark]"
                                 />
                             </div>
                         </div>

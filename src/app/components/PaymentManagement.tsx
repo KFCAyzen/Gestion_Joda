@@ -31,7 +31,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle2, Edit, Eye, FileText, Printer, Send, XCircle } from "lucide-react";
+import { CheckCircle2, Edit, Eye, FileText, Loader2, Printer, Send, XCircle } from "lucide-react";
 import DropdownMenu from "./shared/DropdownMenu";
 
 interface Student {
@@ -75,9 +75,11 @@ export default function PaymentManagement() {
     const { showNotification } = useNotificationContext();
     const { getConfig, getBourseConfig } = usePaymentConfig();
     const [confirmDialog, setConfirmDialog] = useState<{
-        open: boolean; title: string; description: string; onConfirm: () => void;
-    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+        open: boolean; title: string; description: string;
+    }>({ open: false, title: '', description: '' });
     const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
+    const [pendingValidateAction, setPendingValidateAction] = useState<(() => Promise<void>) | null>(null);
+    const [isValidating, setIsValidating] = useState(false);
     const [payments, setPayments] = useState<Payment[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
@@ -87,6 +89,8 @@ export default function PaymentManagement() {
     const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
     const [editForm, setEditForm] = useState({ montant: "", date_limite: "", type: "", tranche: "" });
     const [saving, setSaving] = useState(false);
+    const [isSubmittingId, setIsSubmittingId] = useState<string | null>(null);
+    const [isPrinting, setIsPrinting] = useState(false);
 
     const studentMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
 
@@ -158,9 +162,22 @@ export default function PaymentManagement() {
         ));
     };
 
+    const handleValidateConfirm = async () => {
+        if (!pendingValidateAction) return;
+        setIsValidating(true);
+        try {
+            await pendingValidateAction();
+        } finally {
+            setIsValidating(false);
+            closeConfirm();
+            setPendingValidateAction(null);
+        }
+    };
+
     // Agent: submit a payment for admin review
     const handleSubmitForValidation = async (paymentId: string) => {
-        if (!user) return;
+        if (!user || isSubmittingId) return;
+        setIsSubmittingId(paymentId);
         try {
             await supabase.from('payments').update({
                 status: 'en_validation',
@@ -176,6 +193,8 @@ export default function PaymentManagement() {
         } catch (error) {
             console.error("Erreur soumission:", error);
             showNotification(t("messages.submitError"), "error");
+        } finally {
+            setIsSubmittingId(null);
         }
     };
 
@@ -302,31 +321,28 @@ export default function PaymentManagement() {
         }
     };
 
-    const handlePrintReceipt = (payment: Payment) => {
+    const handlePrintReceipt = async (payment: Payment) => {
         const student = students.find(s => s.id === payment.student_id);
         if (!student) return;
-        void downloadReceipt(
-            { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: payment.validated_by, validated_at: payment.validated_at },
-            { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "" }
-        );
+        setIsPrinting(true);
+        try {
+            await downloadReceipt(
+                { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: payment.validated_by, validated_at: payment.validated_at },
+                { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "" }
+            );
+        } finally {
+            setIsPrinting(false);
+        }
     };
 
     const confirmApprove = (paymentId: string) => {
-        setConfirmDialog({
-            open: true,
-            title: t("confirm.approveTitle"),
-            description: t("confirm.approveDescription"),
-            onConfirm: async () => { closeConfirm(); await handleValidatePayment(paymentId, true); },
-        });
+        setPendingValidateAction(() => async () => { await handleValidatePayment(paymentId, true); });
+        setConfirmDialog({ open: true, title: t("confirm.approveTitle"), description: t("confirm.approveDescription") });
     };
 
     const confirmReject = (paymentId: string) => {
-        setConfirmDialog({
-            open: true,
-            title: t("confirm.rejectTitle"),
-            description: t("confirm.rejectDescription"),
-            onConfirm: async () => { closeConfirm(); await handleValidatePayment(paymentId, false); },
-        });
+        setPendingValidateAction(() => async () => { await handleValidatePayment(paymentId, false); });
+        setConfirmDialog({ open: true, title: t("confirm.rejectTitle"), description: t("confirm.rejectDescription") });
     };
 
     const filteredPayments = payments.filter(payment => {
@@ -386,7 +402,7 @@ export default function PaymentManagement() {
                                 <select
                                     value={selectedStudent}
                                     onChange={(e) => setSelectedStudent(e.target.value)}
-                                    className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 cursor-pointer"
+                                    className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 cursor-pointer dark:[color-scheme:dark]"
                                 >
                                     <option value="">{t("filters.allStudents")}</option>
                                     {students.map(student => (
@@ -493,8 +509,9 @@ export default function PaymentManagement() {
                                                                 ? [
                                                                       {
                                                                           label: t("actions.printReceipt"),
-                                                                          icon: <Printer className="h-4 w-4" />,
+                                                                          icon: isPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />,
                                                                           onClick: () => handlePrintReceipt(payment),
+                                                                          disabled: isPrinting,
                                                                       },
                                                                   ]
                                                                 : []),
@@ -502,8 +519,9 @@ export default function PaymentManagement() {
                                                                 ? [
                                                                       {
                                                                           label: t("actions.submit"),
-                                                                          icon: <Send className="h-4 w-4" />,
+                                                                          icon: isSubmittingId === payment.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />,
                                                                           onClick: () => handleSubmitForValidation(payment.id),
+                                                                          disabled: !!isSubmittingId,
                                                                       },
                                                                   ]
                                                                 : []),
@@ -560,10 +578,11 @@ export default function PaymentManagement() {
         <ConfirmDialog
             isOpen={confirmDialog.open}
             onClose={closeConfirm}
-            onConfirm={confirmDialog.onConfirm}
+            onConfirm={handleValidateConfirm}
             title={confirmDialog.title}
             description={confirmDialog.description}
             confirmLabel={t("actions.confirm")}
+            isLoading={isValidating}
         />
 
         {/* Modal détails paiement */}
@@ -616,7 +635,8 @@ export default function PaymentManagement() {
                     </div>
                     <div className="mt-5 flex gap-2">
                         {detailPayment.status === "paye" && (
-                            <Button size="sm" onClick={() => handlePrintReceipt(detailPayment)} className="bg-emerald-600 hover:bg-emerald-700">
+                            <Button size="sm" onClick={() => handlePrintReceipt(detailPayment)} disabled={isPrinting} className="bg-emerald-600 hover:bg-emerald-700">
+                                {isPrinting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {t("actions.printReceiptShort")}
                             </Button>
                         )}

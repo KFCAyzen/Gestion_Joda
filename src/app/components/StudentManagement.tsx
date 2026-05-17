@@ -45,7 +45,7 @@ import DocumentManagement from "./DocumentManagement";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import { DropdownMenu } from "./shared";
 import PhoneInput from "./shared/PhoneInput";
-import { Eye, Edit, Printer, Trash2 } from "lucide-react";
+import { Eye, Edit, Printer, Trash2, Loader2 } from "lucide-react";
 import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhoneNumber, splitPhoneNumber } from "../lib/phone";
 
 interface Student {
@@ -93,6 +93,9 @@ export default function StudentManagement() {
     const [localUser, setLocalUser] = useState<{ id: string; role: string } | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isPrinting, setIsPrinting] = useState(false);
     const [activeTab, setActiveTab] = useState<"list" | "form">("list");
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -122,6 +125,8 @@ export default function StudentManagement() {
     };
 
     const printStudentCard = async (s: Student) => {
+        setIsPrinting(true);
+        try {
         const createdAt = new Date(s.created_at).toLocaleDateString(dateLocale);
         const logoSrc = await fetchLogoBase64();
         const logoTag = logoSrc
@@ -225,6 +230,9 @@ export default function StudentManagement() {
         win.document.close();
         win.focus();
         setTimeout(() => { win.print(); }, 400);
+        } finally {
+            setIsPrinting(false);
+        }
     };
 
     useEffect(() => {
@@ -424,6 +432,7 @@ export default function StudentManagement() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFeedback("", "");
+        setIsSubmitting(true);
 
         const { phoneCountryCode, ...rawFormData } = formData;
         const studentData = {
@@ -437,6 +446,7 @@ export default function StudentManagement() {
             const message = t("messages.ageInvalid");
             setFeedback(message, "");
             showNotification({ title: t("messages.ageInvalidTitle"), message, type: "warning" });
+            setIsSubmitting(false);
             return;
         }
 
@@ -577,6 +587,8 @@ export default function StudentManagement() {
         } catch (err) {
             console.error("Erreur:", err);
             setSubmitError(t("messages.submitError"));
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -584,7 +596,7 @@ export default function StudentManagement() {
         if (!studentToDelete) {
             return;
         }
-
+        setIsDeleting(true);
         try {
             const { error } = await supabase.from("students").delete().eq("id", studentToDelete.id);
 
@@ -620,6 +632,8 @@ export default function StudentManagement() {
         } catch (err) {
             console.error("Erreur:", err);
             setSubmitError(t("messages.deleteError"));
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -926,9 +940,12 @@ export default function StudentManagement() {
                                     <Button
                                         variant="outline"
                                         className="dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                                        disabled={isPrinting}
                                         onClick={() => void printStudentCard(selectedStudent)}
                                     >
-                                        <Printer className="mr-2 h-4 w-4" />
+                                        {isPrinting
+                                            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            : <Printer className="mr-2 h-4 w-4" />}
                                         {t("actions.printCard") || "Imprimer fiche"}
                                     </Button>
                                     {canEdit && (
@@ -1116,10 +1133,11 @@ export default function StudentManagement() {
                                         </div>
                                     </div>
                                     <div className="flex justify-end gap-2 pt-4">
-                                        <Button type="button" variant="outline" onClick={resetForm}>
+                                        <Button type="button" variant="outline" disabled={isSubmitting} onClick={resetForm}>
                                             {t("actions.cancel")}
                                         </Button>
-                                        <Button type="submit">
+                                        <Button type="submit" disabled={isSubmitting}>
+                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             {editingStudent ? t("actions.save") : t("actions.add")}
                                         </Button>
                                     </div>
@@ -1150,10 +1168,11 @@ export default function StudentManagement() {
                                 {t("delete.message", { name: `${studentToDelete.prenom} ${studentToDelete.nom}` })}
                             </p>
                             <div className="mt-6 flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setStudentToDelete(null)}>
+                                <Button variant="outline" disabled={isDeleting} onClick={() => setStudentToDelete(null)}>
                                     {t("delete.cancel")}
                                 </Button>
-                                <Button variant="destructive" onClick={handleDelete}>
+                                <Button variant="destructive" disabled={isDeleting} onClick={handleDelete}>
+                                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {t("delete.confirm")}
                                 </Button>
                             </div>

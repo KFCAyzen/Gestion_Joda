@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Permission, DEFAULT_ROLE_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from "../types/permissions";
-import { Check, KeyRound, Power, PowerOff, Shield, Trash2, X } from "lucide-react";
+import { Check, KeyRound, Loader2, Power, PowerOff, Shield, Trash2, X } from "lucide-react";
 import DropdownMenu from "./shared/DropdownMenu";
 import PhoneInput from "./shared/PhoneInput";
 import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhoneNumber } from "../lib/phone";
@@ -76,6 +76,10 @@ export default function UserManagement() {
     const [userToDelete, setUserToDelete] = useState<string | null>(null);
     const [userToReset, setUserToReset] = useState<DbUser | null>(null);
     const [resetLoading, setResetLoading] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
+    const [togglingPermKey, setTogglingPermKey] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<DbUser | null>(null);
     const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
     const [loadingPermissions, setLoadingPermissions] = useState(false);
@@ -88,11 +92,13 @@ export default function UserManagement() {
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
         setFeedback("", "");
+        setIsCreating(true);
 
         if (!formData.role) {
             const message = t("messages.roleRequired");
             setFeedback(message, "");
             showNotification({ title: t("messages.roleRequiredTitle"), message, type: "warning" });
+            setIsCreating(false);
             return;
         }
 
@@ -100,6 +106,7 @@ export default function UserManagement() {
             const message = t("messages.passwordTooShort");
             setFeedback(message, "");
             showNotification({ title: t("messages.passwordTooShortTitle"), message, type: "warning" });
+            setIsCreating(false);
             return;
         }
 
@@ -156,6 +163,8 @@ export default function UserManagement() {
             });
             setFeedback(message, "");
             showNotification({ title: t("messages.createTitle"), message, type: "error" });
+        } finally {
+            setIsCreating(false);
         }
     };
 
@@ -196,6 +205,7 @@ export default function UserManagement() {
     };
 
     const handleDeleteUser = async (userId: string) => {
+        setIsDeleting(true);
         try {
             const res = await fetch("/api/delete-user", {
                 method: "DELETE",
@@ -234,13 +244,15 @@ export default function UserManagement() {
             });
             setFeedback(message, "");
             showNotification({ title: t("messages.deleteTitle"), message, type: "error" });
+        } finally {
+            setIsDeleting(false);
+            setUserToDelete(null);
         }
-        setUserToDelete(null);
     };
 
     const handleToggleUserActive = async (targetUser: DbUser) => {
         if (!currentUser || targetUser.id === currentUser.id) return;
-
+        setTogglingId(targetUser.id);
         const nextActive = targetUser.is_active === false;
         try {
             const supabase = createClient();
@@ -280,6 +292,8 @@ export default function UserManagement() {
             });
             setFeedback(message, "");
             showNotification({ title: t("messages.accountStatusTitle"), message, type: "error" });
+        } finally {
+            setTogglingId(null);
         }
     };
 
@@ -310,6 +324,8 @@ export default function UserManagement() {
     };
 
     const togglePermission = async (userId: string, permission: Permission, currentlyGranted: boolean) => {
+        const key = `${userId}-${permission}`;
+        setTogglingPermKey(key);
         try {
             const supabase = createClient();
 
@@ -362,6 +378,8 @@ export default function UserManagement() {
             });
             setFeedback(message, "");
             showNotification({ title: t("messages.permissionsUpdateTitle"), message, type: "error" });
+        } finally {
+            setTogglingPermKey(null);
         }
     };
 
@@ -484,14 +502,13 @@ export default function UserManagement() {
                                                             ...((currentUser?.role === "admin" || currentUser?.role === "super_admin") && entry.id !== currentUser?.id
                                                                 ? [
                                                                       {
-                                                                          label: entry.is_active === false ? t("actions.activateAccount") : t("actions.deactivateAccount"),
-                                                                          icon:
-                                                                              entry.is_active === false ? (
-                                                                                  <Power className="h-4 w-4" />
-                                                                              ) : (
-                                                                                  <PowerOff className="h-4 w-4" />
-                                                                              ),
-                                                                          onClick: () => void handleToggleUserActive(entry),
+                                                                          label: togglingId === entry.id
+                                                                              ? t("actions.updating")
+                                                                              : (entry.is_active === false ? t("actions.activateAccount") : t("actions.deactivateAccount")),
+                                                                          icon: togglingId === entry.id
+                                                                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                                                                              : (entry.is_active === false ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />),
+                                                                          onClick: () => { if (!togglingId) void handleToggleUserActive(entry); },
                                                                           variant: entry.is_active === false ? "default" as const : "danger" as const,
                                                                       },
                                                                   ]
@@ -550,6 +567,7 @@ export default function UserManagement() {
                                                                     <div className="flex items-center gap-3">
                                                                         <Checkbox
                                                                             checked={granted}
+                                                                            disabled={togglingPermKey === `${selectedUser.id}-${perm}`}
                                                                             onCheckedChange={() =>
                                                                                 void togglePermission(selectedUser.id, perm as Permission, granted)
                                                                             }
@@ -679,7 +697,8 @@ export default function UserManagement() {
                                                 {t("create.passwordHint")}
                                             </p>
                                         </div>
-                                        <Button type="submit" className="w-full">
+                                        <Button type="submit" disabled={isCreating} className="w-full">
+                                            {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             {t("create.submit")}
                                         </Button>
                                     </form>
@@ -726,10 +745,11 @@ export default function UserManagement() {
                             <h3 className="mb-4 text-lg font-semibold">{t("delete.title")}</h3>
                             <p className="mb-4">{t("delete.description")}</p>
                             <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setUserToDelete(null)}>
+                                <Button variant="outline" disabled={isDeleting} onClick={() => setUserToDelete(null)}>
                                     {t("actions.cancel")}
                                 </Button>
-                                <Button variant="destructive" onClick={() => void handleDeleteUser(userToDelete)}>
+                                <Button variant="destructive" disabled={isDeleting} onClick={() => void handleDeleteUser(userToDelete)}>
+                                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {t("actions.delete")}
                                 </Button>
                             </div>

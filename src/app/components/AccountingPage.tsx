@@ -26,7 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search, Eye, Edit } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search, Eye, Edit, Loader2 } from "lucide-react";
 import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
@@ -113,9 +113,19 @@ export default function AccountingPage() {
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const [confirmDialog, setConfirmDialog] = useState<{
-        open: boolean; title: string; description: string; onConfirm: () => void;
-    }>({ open: false, title: '', description: '', onConfirm: () => {} });
+        open: boolean; title: string; description: string;
+    }>({ open: false, title: '', description: '' });
+    const [pendingDeleteAction, setPendingDeleteAction] = useState<(() => Promise<void>) | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [validatingId, setValidatingId] = useState<string | null>(null);
     const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
+    const handleDeleteConfirm = async () => {
+        if (!pendingDeleteAction) return;
+        setIsDeleting(true);
+        try { await pendingDeleteAction(); closeConfirm(); setPendingDeleteAction(null); }
+        catch { /* errors handled inside action */ }
+        finally { setIsDeleting(false); }
+    };
     const [entrees, setEntrees] = useState<EntreeComptable[]>([]);
     const [sorties, setSorties] = useState<SortieComptable[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -297,6 +307,7 @@ export default function AccountingPage() {
 
     const handleValidateSortie = async (id: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
+        setValidatingId(id);
         const sortie = sorties.find((s) => s.id === id);
         try {
             await supabase.from("sorties_comptables").update({
@@ -314,6 +325,8 @@ export default function AccountingPage() {
         } catch (err) {
             console.error("Expense validation error:", err);
             showNotification(t("messages.validationError"), "error");
+        } finally {
+            setValidatingId(null);
         }
     };
 
@@ -466,98 +479,75 @@ export default function AccountingPage() {
         setSubmitting(false);
     };
 
+    const openDeleteConfirm = (title: string, description: string, action: () => Promise<void>) => {
+        setPendingDeleteAction(() => action);
+        setConfirmDialog({ open: true, title, description });
+    };
+
     const handleDeleteCategory = (id: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
-        setConfirmDialog({
-            open: true,
-            title: t("confirm.deleteCategoryTitle"),
-            description: t("confirm.deleteCategoryDescription"),
-            onConfirm: async () => {
-                closeConfirm();
-                try {
-                    await supabase.from("custom_categories").delete().eq("id", id);
-                    await load();
-                    showNotification(t("messages.categoryDeleted"), "success");
-                } catch (err) {
-                    console.error("Category delete error:", err);
-                    showNotification(t("messages.deleteError"), "error");
-                }
-            },
-        });
+        openDeleteConfirm(
+            t("confirm.deleteCategoryTitle"),
+            t("confirm.deleteCategoryDescription"),
+            async () => {
+                await supabase.from("custom_categories").delete().eq("id", id);
+                await load();
+                showNotification(t("messages.categoryDeleted"), "success");
+            }
+        );
     };
 
     const handleDeleteBudget = (id: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
-        setConfirmDialog({
-            open: true,
-            title: t("confirm.deleteBudgetTitle"),
-            description: t("confirm.deleteBudgetDescription"),
-            onConfirm: async () => {
-                closeConfirm();
-                try {
-                    await supabase.from("budgets").delete().eq("id", id);
-                    await load();
-                    showNotification(t("messages.budgetDeleted"), "success");
-                } catch (err) {
-                    console.error("Budget delete error:", err);
-                    showNotification(t("messages.deleteError"), "error");
-                }
-            },
-        });
+        openDeleteConfirm(
+            t("confirm.deleteBudgetTitle"),
+            t("confirm.deleteBudgetDescription"),
+            async () => {
+                await supabase.from("budgets").delete().eq("id", id);
+                await load();
+                showNotification(t("messages.budgetDeleted"), "success");
+            }
+        );
     };
 
     const handleDeleteEntree = (id: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
-        setConfirmDialog({
-            open: true,
-            title: t("confirm.deleteEntryTitle"),
-            description: t("confirm.deleteEntryDescription"),
-            onConfirm: async () => {
-                closeConfirm();
-                const entry = entrees.find((e) => e.id === id);
-                try {
-                    await supabase.from("entrees_comptables").delete().eq("id", id);
-                    await logActivity(
-                        user.id, user.name, user.role,
-                        "accounting_entry", "entrees_comptables", id,
-                        `Entrée comptable supprimée — ${entry?.description ?? id}`,
-                        { montant: entry?.montant ?? null }
-                    );
-                    await load();
-                    showNotification(t("messages.entryDeleted"), "success");
-                } catch (err) {
-                    console.error("Entry delete error:", err);
-                    showNotification(t("messages.deleteError"), "error");
-                }
-            },
-        });
+        const entry = entrees.find((e) => e.id === id);
+        openDeleteConfirm(
+            t("confirm.deleteEntryTitle"),
+            t("confirm.deleteEntryDescription"),
+            async () => {
+                await supabase.from("entrees_comptables").delete().eq("id", id);
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "accounting_entry", "entrees_comptables", id,
+                    `Entrée comptable supprimée — ${entry?.description ?? id}`,
+                    { montant: entry?.montant ?? null }
+                );
+                await load();
+                showNotification(t("messages.entryDeleted"), "success");
+            }
+        );
     };
 
     const handleDeleteSortie = (id: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
-        setConfirmDialog({
-            open: true,
-            title: t("confirm.deleteExpenseTitle"),
-            description: t("confirm.deleteExpenseDescription"),
-            onConfirm: async () => {
-                closeConfirm();
-                const sortie = sorties.find((s) => s.id === id);
-                try {
-                    await supabase.from("sorties_comptables").delete().eq("id", id);
-                    await logActivity(
-                        user.id, user.name, user.role,
-                        "accounting_expense", "sorties_comptables", id,
-                        `Sortie comptable supprimée — ${sortie?.description ?? id}`,
-                        { montant: sortie?.montant ?? null }
-                    );
-                    await load();
-                    showNotification(t("messages.expenseDeleted"), "success");
-                } catch (err) {
-                    console.error("Expense delete error:", err);
-                    showNotification(t("messages.deleteError"), "error");
-                }
-            },
-        });
+        openDeleteConfirm(
+            t("confirm.deleteExpenseTitle"),
+            t("confirm.deleteExpenseDescription"),
+            async () => {
+                const sortie2 = sorties.find((s) => s.id === id);
+                await supabase.from("sorties_comptables").delete().eq("id", id);
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "accounting_expense", "sorties_comptables", id,
+                    `Sortie comptable supprimée — ${sortie2?.description ?? id}`,
+                    { montant: sortie2?.montant ?? null }
+                );
+                await load();
+                showNotification(t("messages.expenseDeleted"), "success");
+            }
+        );
     };
 
     const openEditEntree = (e: EntreeComptable) => {
@@ -1242,7 +1232,8 @@ export default function AccountingPage() {
                                                             {s.validated_by ? (
                                                                 <Badge className="bg-emerald-100 text-emerald-700 dark:text-emerald-300">{t("status.validated")}</Badge>
                                                             ) : isAdmin ? (
-                                                                <Button variant="outline" size="sm" onClick={() => handleValidateSortie(s.id)}>
+                                                                <Button variant="outline" size="sm" disabled={validatingId === s.id} onClick={() => handleValidateSortie(s.id)}>
+                                                                    {validatingId === s.id && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
                                                                     {t("actions.validate")}
                                                                 </Button>
                                                             ) : (
@@ -1481,10 +1472,11 @@ export default function AccountingPage() {
         <ConfirmDialog
             isOpen={confirmDialog.open}
             onClose={closeConfirm}
-            onConfirm={confirmDialog.onConfirm}
+            onConfirm={handleDeleteConfirm}
             title={confirmDialog.title}
             description={confirmDialog.description}
             confirmLabel={t("actions.delete")}
+            isLoading={isDeleting}
         />
 
         {/* Entry details modal. */}

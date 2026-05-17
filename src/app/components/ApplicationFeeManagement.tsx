@@ -273,7 +273,7 @@ export default function ApplicationFeeManagement() {
                                 <select
                                     value={formData.studentId || ""}
                                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                                    className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 cursor-pointer"
+                                    className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 cursor-pointer dark:[color-scheme:dark]"
                                 >
                                     <option value="" disabled>{t("form.studentPlaceholder")}</option>
                                     {students.map((student) => (

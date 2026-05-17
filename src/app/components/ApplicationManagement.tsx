@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Loader2 } from "lucide-react";
 import DropdownMenu from "./shared/DropdownMenu";
 
 interface Student {
@@ -71,6 +71,10 @@ export default function ApplicationManagement() {
     const [students, setStudents] = useState<Student[]>([]);
     const [universities, setUniversities] = useState<University[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+    const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -154,7 +158,7 @@ export default function ApplicationManagement() {
             showNotification(t("messages.requiredFields"), "error");
             return;
         }
-
+        setIsSubmitting(true);
         try {
             if (editingApplication) {
                 // Mode modification
@@ -264,6 +268,8 @@ export default function ApplicationManagement() {
             }
         } catch (error) {
             showNotification(t("messages.saveError"), "error");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -282,44 +288,52 @@ export default function ApplicationManagement() {
     };
 
     const deleteApplication = (applicationId: string) => {
-        setConfirmDialog({
-            open: true,
-            title: t("delete.title"),
-            description: t("delete.description"),
-            onConfirm: async () => {
-                closeConfirm();
-                try {
-                    const { error } = await supabase.from("dossier_bourses").delete().eq("id", applicationId);
-                    if (error) throw error;
-                    if (user) {
-                        await logActivity(
-                            user.id, user.name, user.role,
-                            "application_delete", "dossier_bourses", applicationId,
-                            `Candidature supprimée — ID: ${applicationId}`,
-                            { application_id: applicationId }
-                        );
-                    }
-                    showNotification(t("messages.deleteSuccess"), "success");
-                    await loadData();
-                } catch (error) {
-                    console.error("Erreur suppression:", error);
-                    showNotification(t("messages.deleteError"), "error");
-                }
-            },
-        });
+        setPendingDeleteId(applicationId);
+        setConfirmDialog({ open: true, title: t("delete.title"), description: t("delete.description"), onConfirm: () => {} });
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!pendingDeleteId) return;
+        setIsDeleting(true);
+        try {
+            const { error } = await supabase.from("dossier_bourses").delete().eq("id", pendingDeleteId);
+            if (error) throw error;
+            if (user) {
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "application_delete", "dossier_bourses", pendingDeleteId,
+                    `Candidature supprimée — ID: ${pendingDeleteId}`,
+                    { application_id: pendingDeleteId }
+                );
+            }
+            showNotification(t("messages.deleteSuccess"), "success");
+            closeConfirm();
+            setPendingDeleteId(null);
+            await loadData();
+        } catch (error) {
+            console.error("Erreur suppression:", error);
+            showNotification(t("messages.deleteError"), "error");
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
-        await supabase.from("dossier_bourses").update({ status: newStatus }).eq("id", applicationId);
-        if (user) {
-            await logActivity(
-                user.id, user.name, user.role,
-                "dossier_status_change", "dossier_bourses", applicationId,
-                `Statut dossier mis à jour → ${newStatus}`,
-                { application_id: applicationId, new_status: newStatus }
-            );
+        setUpdatingStatusId(applicationId);
+        try {
+            await supabase.from("dossier_bourses").update({ status: newStatus }).eq("id", applicationId);
+            if (user) {
+                await logActivity(
+                    user.id, user.name, user.role,
+                    "dossier_status_change", "dossier_bourses", applicationId,
+                    `Statut dossier mis à jour → ${newStatus}`,
+                    { application_id: applicationId, new_status: newStatus }
+                );
+            }
+            await loadData();
+        } finally {
+            setUpdatingStatusId(null);
         }
-        loadData();
     };
 
     const getStatusColor = (status: string) => {
@@ -500,10 +514,11 @@ export default function ApplicationManagement() {
                         </div>
 
                         <div className="mt-6 flex gap-3">
-                            <Button onClick={handleSaveApplication} style={{ backgroundColor: "#dc2626" }}>
+                            <Button disabled={isSubmitting} onClick={handleSaveApplication} style={{ backgroundColor: "#dc2626" }}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {editingApplication ? t("actions.edit") : t("actions.save")}
                             </Button>
-                            <Button variant="outline" onClick={() => {
+                            <Button variant="outline" disabled={isSubmitting} onClick={() => {
                                 setShowForm(false);
                                 setEditingApplication(null);
                                 resetForm();
@@ -617,7 +632,7 @@ export default function ApplicationManagement() {
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            <Select value={application.status} onValueChange={(v) => updateApplicationStatus(application.id, v || application.status)}>
+                                            <Select disabled={updatingStatusId === application.id} value={application.status} onValueChange={(v) => updateApplicationStatus(application.id, v || application.status)}>
                                                 <SelectTrigger className="w-[180px] text-xs font-medium"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="document_recu">{t("status.documentReceived")}</SelectItem>
@@ -669,10 +684,11 @@ export default function ApplicationManagement() {
         <ConfirmDialog
             isOpen={confirmDialog.open}
             onClose={closeConfirm}
-            onConfirm={confirmDialog.onConfirm}
+            onConfirm={handleDeleteConfirm}
             title={confirmDialog.title}
             description={confirmDialog.description}
             confirmLabel={t("actions.delete")}
+            isLoading={isDeleting}
         />
         </div>
         </ProtectedRoute>

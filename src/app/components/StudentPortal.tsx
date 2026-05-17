@@ -189,7 +189,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const [paymentMode, setPaymentMode] = useState<"complet" | "avance">("complet");
     const [montantAvance, setMontantAvance] = useState<string>("");
     const [declaring, setDeclaring] = useState(false);
-    const [proofDataUrl, setProofDataUrl] = useState<string | null>(null);
+    const [proofFile, setProofFile] = useState<File | null>(null);
     const proofInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -303,7 +303,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     };
 
     const openDeclareModal = (payment: { id?: string; date_limite?: string | null } | null, info: { type: string; tranche: number; montant: number }) => {
-        setProofDataUrl(null);
+        setProofFile(null);
         setPaymentMode("complet");
         setMontantAvance(info.montant.toString());
         setDeclareModal({
@@ -317,11 +317,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     };
 
     const handleProofFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => setProofDataUrl(reader.result as string);
-        reader.readAsDataURL(file);
+        const file = e.target.files?.[0] ?? null;
+        setProofFile(file);
     };
 
     const handleDeclarePayment = async () => {
@@ -331,6 +328,24 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             : Math.max(1, parseInt(montantAvance) || 0);
         setDeclaring(true);
         try {
+            let proofUrl: string | undefined;
+            if (proofFile && studentId) {
+                const ext = proofFile.name.split(".").pop() ?? "bin";
+                const path = `payment-proofs/${studentId}/${Date.now()}.${ext}`;
+                const { error: storageError } = await supabase.storage
+                    .from("student-documents")
+                    .upload(path, proofFile, { upsert: true });
+                if (storageError) {
+                    showNotification(t("messages.uploadError") || "Erreur lors de l'envoi de la preuve", "error");
+                    setDeclaring(false);
+                    return;
+                }
+                const { data: { publicUrl } } = supabase.storage
+                    .from("student-documents")
+                    .getPublicUrl(path);
+                proofUrl = publicUrl;
+            }
+
             const res = await fetch("/api/declare-payment", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -340,13 +355,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     tranche_num: declareModal.trancheNum,
                     montant_declare: montantDeclare,
                     montant_tranche: declareModal.montantTranche,
-                    proof_url: proofDataUrl ?? undefined,
+                    proof_url: proofUrl,
                     is_avance: paymentMode === "avance",
                 }),
             });
             if (res.ok) {
                 showNotification(t("messages.paymentDeclared"), "success");
                 setDeclareModal(null);
+                setProofFile(null);
                 void load();
             } else {
                 const data = await res.json();
@@ -787,10 +803,19 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 {getPaymentTypeLabel(declareModal.type)} — {declareModal.label}
                             </p>
                         </div>
-                        <button onClick={() => setDeclareModal(null)} className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]">
+                        <button onClick={() => { setDeclareModal(null); setProofFile(null); }} className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]">
                             <X className="h-5 w-5" />
                         </button>
                     </div>
+
+                    {/* Input file hors du div scrollable pour éviter les blocages iOS Safari */}
+                    <input
+                        ref={proofInputRef}
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={handleProofFile}
+                        className="hidden"
+                    />
 
                     <div className="mb-4 max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
                         {/* Montant attendu */}
@@ -842,26 +867,20 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         {/* Preuve */}
                         <div className="space-y-1.5">
                             <p className="text-xs font-medium text-[var(--student-fg-muted)]">{t("payments.proofUpload")}</p>
-                            <input
-                                ref={proofInputRef}
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                onChange={handleProofFile}
-                                className="hidden"
-                            />
-                            {proofDataUrl ? (
+                            {proofFile ? (
                                 <div className="flex items-center gap-2 rounded-2xl border border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] px-3 py-2">
-                                    <Upload className="h-4 w-4 text-[var(--student-neon-lime)]" />
-                                    <span className="flex-1 text-xs text-[var(--student-fg)]">{t("payments.fileAttached")}</span>
+                                    <Upload className="h-4 w-4 shrink-0 text-[var(--student-neon-lime)]" />
+                                    <span className="flex-1 truncate text-xs text-[var(--student-fg)]">{proofFile.name}</span>
                                     <button
-                                        onClick={() => { setProofDataUrl(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
-                                        className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]"
+                                        onClick={() => { setProofFile(null); if (proofInputRef.current) proofInputRef.current.value = ""; }}
+                                        className="student-focus-ring shrink-0 text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
                             ) : (
                                 <button
+                                    type="button"
                                     onClick={() => proofInputRef.current?.click()}
                                     className="student-focus-ring flex w-full items-center gap-2 rounded-2xl border border-dashed border-[rgba(220,38,38,0.22)] px-3 py-2.5 text-xs text-[var(--student-fg-muted)] transition-colors hover:border-[rgba(220,38,38,0.38)] hover:text-[var(--student-ring-move)]"
                                 >
@@ -877,7 +896,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     </p>
 
                     <div className="flex gap-3">
-                        <Button variant="outline" className="student-chip flex-1 rounded-2xl border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]" onClick={() => setDeclareModal(null)} disabled={declaring}>
+                        <Button variant="outline" className="student-chip flex-1 rounded-2xl border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]" onClick={() => { setDeclareModal(null); setProofFile(null); }} disabled={declaring}>
                             {t("payments.cancel")}
                         </Button>
                         <Button

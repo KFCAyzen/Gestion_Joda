@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 interface ConfirmDialogProps {
     isOpen: boolean;
@@ -14,6 +14,7 @@ interface ConfirmDialogProps {
     confirmLabel?: string;
     cancelLabel?: string;
     variant?: "default" | "destructive";
+    isLoading?: boolean;
 }
 
 export default function ConfirmDialog({
@@ -25,6 +26,7 @@ export default function ConfirmDialog({
     confirmLabel,
     cancelLabel,
     variant = "destructive",
+    isLoading = false,
 }: ConfirmDialogProps) {
     const t = useTranslations("confirmDialog");
     const resolvedConfirm = confirmLabel ?? t("confirm");
@@ -55,10 +57,11 @@ export default function ConfirmDialog({
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
                     <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{description}</p>
                     <div className="mt-6 flex justify-end gap-2">
-                        <Button variant="outline" onClick={onClose}>
+                        <Button variant="outline" disabled={isLoading} onClick={onClose}>
                             {resolvedCancel}
                         </Button>
-                        <Button variant={variant} onClick={onConfirm}>
+                        <Button variant={variant} disabled={isLoading} onClick={onConfirm}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {resolvedConfirm}
                         </Button>
                     </div>

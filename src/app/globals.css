@@ -57,21 +57,21 @@
   --student-shadow-2: 0 18px 54px rgba(0, 0, 0, 0.16);
   --student-radius: 1.75rem;
 
-  /* Joda rings — light */
-  --student-ring-move: #ef4444;
-  --student-ring-exercise: #fca5a5;
-  --student-ring-stand: #dc2626;
-  --student-glow-move: 0 0 0.75rem rgba(239, 68, 68, 0.50);
-  --student-glow-exercise: 0 0 0.75rem rgba(252, 165, 165, 0.38);
-  --student-glow-stand: 0 0 0.75rem rgba(220, 38, 38, 0.42);
+  /* Joda rings — light (surfaces rouge foncé → accents blancs/clairs pour le contraste) */
+  --student-ring-move: #ffffff;
+  --student-ring-exercise: #ffd4d4;
+  --student-ring-stand: #fecaca;
+  --student-glow-move: 0 0 0.75rem rgba(255, 255, 255, 0.50);
+  --student-glow-exercise: 0 0 0.75rem rgba(255, 212, 212, 0.38);
+  --student-glow-stand: 0 0 0.75rem rgba(254, 202, 202, 0.42);
 
-  /* Joda CTA accent — light */
-  --student-neon-lime: #ef4444;
-  --student-neon-lime-mid: #dc2626;
-  --student-neon-mid: #dc2626;
-  --student-neon-ink: #ffffff;
-  --student-pay-glow: 0 0 28px rgba(239, 68, 68, 0.50);
-  --student-pay-glow-soft: 0 0 14px rgba(239, 68, 68, 0.32);
+  /* Joda CTA accent — light (bouton blanc sur fond rouge) */
+  --student-neon-lime: #ffffff;
+  --student-neon-lime-mid: #ffd4d4;
+  --student-neon-mid: #fecaca;
+  --student-neon-ink: #991b1b;
+  --student-pay-glow: 0 0 28px rgba(255, 255, 255, 0.30);
+  --student-pay-glow-soft: 0 0 14px rgba(255, 255, 255, 0.20);
 }
 
 * {

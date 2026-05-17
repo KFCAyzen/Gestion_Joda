@@ -19,6 +19,13 @@ import { logActivity } from "../utils/activityLogger";
 import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
 import ConfirmDialog from "./ConfirmDialog";
 import ProtectedRoute from "./ProtectedRoute";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface EntreeComptable {
     id: string;
@@ -462,32 +469,34 @@ export default function LivreComptable() {
                                     <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                                 </button>
                             </div>
-                            <select
-                                value={viewMode}
-                                onChange={(e) => { setViewMode(e.target.value as ViewMode); setPage(1); }}
-                                className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-slate-800 outline-none hover:bg-gray-50 dark:hover:bg-gray-700 dark:[color-scheme:dark]"
-                            >
-                                <option value="jour">Jour</option>
-                                <option value="semaine">Semaine</option>
-                                <option value="mois">Mois</option>
-                                <option value="trimestre">Trimestre</option>
-                                <option value="semestre">Semestre</option>
-                                <option value="annee">Année</option>
-                            </select>
+                            <Select value={viewMode} onValueChange={(v) => { setViewMode(v as ViewMode); setPage(1); }}>
+                                <SelectTrigger className="h-auto rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="jour">Jour</SelectItem>
+                                    <SelectItem value="semaine">Semaine</SelectItem>
+                                    <SelectItem value="mois">Mois</SelectItem>
+                                    <SelectItem value="trimestre">Trimestre</SelectItem>
+                                    <SelectItem value="semestre">Semestre</SelectItem>
+                                    <SelectItem value="annee">Année</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="flex items-center gap-2">
-                            <select
-                                value={catFilter}
-                                onChange={(e) => { setCatFilter(e.target.value); setPage(1); }}
-                                className="rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-slate-800 outline-none hover:bg-gray-50 dark:hover:bg-gray-700 dark:[color-scheme:dark]"
-                            >
-                                <option value="tout">Catégorie</option>
-                                <option value="entree">Entrées uniquement</option>
-                                <option value="sortie">Sorties uniquement</option>
-                                {allCats.map((c) => (
-                                    <option key={c} value={c}>{catLabel(c)}</option>
-                                ))}
-                            </select>
+                            <Select value={catFilter} onValueChange={(v) => { setCatFilter(v ?? "tout"); setPage(1); }}>
+                                <SelectTrigger className="h-auto rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <SelectValue placeholder="Catégorie" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="tout">Catégorie</SelectItem>
+                                    <SelectItem value="entree">Entrées uniquement</SelectItem>
+                                    <SelectItem value="sortie">Sorties uniquement</SelectItem>
+                                    {allCats.map((c) => (
+                                        <SelectItem key={c} value={c}>{catLabel(c)}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             <button
                                 onClick={printReport}
                                 className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -789,30 +798,32 @@ export default function LivreComptable() {
                                     <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
                                         Type
                                     </label>
-                                    <select
-                                        value={newForm.type}
-                                        onChange={(e) => setNewForm((f) => ({ ...f, type: e.target.value }))}
-                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-800 outline-none focus:border-gray-400 dark:[color-scheme:dark]"
-                                    >
-                                        {TYPES_ENTREES.map((t) => (
-                                            <option key={t} value={t}>{catLabel(t)}</option>
-                                        ))}
-                                    </select>
+                                    <Select value={newForm.type} onValueChange={(v) => setNewForm((f) => ({ ...f, type: v ?? f.type }))}>
+                                        <SelectTrigger className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {TYPES_ENTREES.map((t) => (
+                                                <SelectItem key={t} value={t}>{catLabel(t)}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             ) : (
                                 <div>
                                     <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
                                         Catégorie
                                     </label>
-                                    <select
-                                        value={newForm.categorie}
-                                        onChange={(e) => setNewForm((f) => ({ ...f, categorie: e.target.value }))}
-                                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-800 outline-none focus:border-gray-400 dark:[color-scheme:dark]"
-                                    >
-                                        {CATEGORIES_SORTIES.map((c) => (
-                                            <option key={c} value={c}>{catLabel(c)}</option>
-                                        ))}
-                                    </select>
+                                    <Select value={newForm.categorie} onValueChange={(v) => setNewForm((f) => ({ ...f, categorie: v ?? f.categorie }))}>
+                                        <SelectTrigger className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {CATEGORIES_SORTIES.map((c) => (
+                                                <SelectItem key={c} value={c}>{catLabel(c)}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             )}
                         </div>

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { SearchBar, FilterSelect, DropdownMenu, PageHeader, LoadingState, EmptyState, StatusBadge, FormField } from "./shared";
 import ConfirmDialog from "./ConfirmDialog";
-import { Building2, Edit, Trash2, Power } from "lucide-react";
+import { Building2, Edit, Trash2, Power, Loader2 } from "lucide-react";
 
 interface University {
     id: string;
@@ -49,6 +49,10 @@ export default function UniversityManagement() {
     const supabase = createClient();
     const [universities, setUniversities] = useState<University[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isSeeding, setIsSeeding] = useState(false);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"list" | "form">("list");
     const [editingUni, setEditingUni] = useState<University | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -88,7 +92,7 @@ export default function UniversityManagement() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
+        setIsSubmitting(true);
         try {
             if (editingUni) {
                 const { error } = await supabase
@@ -124,10 +128,13 @@ export default function UniversityManagement() {
             resetForm();
         } catch (err) {
             console.error("Erreur:", err);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleDelete = async (id: string) => {
+        setIsDeleting(true);
         try {
             const uniToDelete = universities.find(u => u.id === id);
             const { error } = await supabase.from("universities").delete().eq("id", id);
@@ -144,24 +151,33 @@ export default function UniversityManagement() {
             }
         } catch (err) {
             console.error("Erreur:", err);
+        } finally {
+            setIsDeleting(false);
+            closeConfirm();
         }
     };
 
     const handleSeed = async () => {
+        setIsSeeding(true);
         try {
             const { error } = await supabase.from("universities").upsert(predefinedUniversities);
             if (!error) loadUniversities();
         } catch (err) {
             console.error("Erreur:", err);
+        } finally {
+            setIsSeeding(false);
         }
     };
 
     const handleToggle = async (id: string, active: boolean) => {
+        setTogglingId(id);
         try {
             await supabase.from("universities").update({ active: !active }).eq("id", id);
             loadUniversities();
         } catch (err) {
             console.error("Erreur:", err);
+        } finally {
+            setTogglingId(null);
         }
     };
 
@@ -213,7 +229,8 @@ export default function UniversityManagement() {
                     secondaryAction={canEdit && universities.length === 0 ? {
                         label: t("actions.addPredefined"),
                         onClick: handleSeed,
-                        variant: "outline"
+                        variant: "outline",
+                        isLoading: isSeeding,
                     } : undefined}
                 />
 
@@ -308,9 +325,13 @@ export default function UniversityManagement() {
                                                                     },
                                                                 },
                                                                 {
-                                                                    label: u.active ? t("actions.deactivate") : t("actions.activate"),
-                                                                    icon: <Power className="h-4 w-4" />,
-                                                                    onClick: () => handleToggle(u.id, u.active),
+                                                                    label: togglingId === u.id
+                                                                        ? (u.active ? t("actions.deactivating") : t("actions.activating"))
+                                                                        : (u.active ? t("actions.deactivate") : t("actions.activate")),
+                                                                    icon: togglingId === u.id
+                                                                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                                                                        : <Power className="h-4 w-4" />,
+                                                                    onClick: () => { if (!togglingId) handleToggle(u.id, u.active); },
                                                                 },
                                                                 ...(canDelete ? [{
                                                                     label: t("actions.delete"),
@@ -397,8 +418,11 @@ export default function UniversityManagement() {
                                     </div>
                                 </div>
                                 <div className="flex justify-end gap-2 pt-4">
-                                    <Button type="button" variant="outline" onClick={resetForm}>{t("actions.cancel")}</Button>
-                                    <Button type="submit">{editingUni ? t("actions.save") : t("actions.add")}</Button>
+                                    <Button type="button" variant="outline" disabled={isSubmitting} onClick={resetForm}>{t("actions.cancel")}</Button>
+                                    <Button type="submit" disabled={isSubmitting}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {editingUni ? t("actions.save") : t("actions.add")}
+                                    </Button>
                                 </div>
                             </form>
                         </CardContent>
@@ -412,6 +436,7 @@ export default function UniversityManagement() {
             title={confirmDialog.title}
             description={confirmDialog.description}
             confirmLabel={t("actions.delete")}
+            isLoading={isDeleting}
         />
         </ProtectedRoute>
     );

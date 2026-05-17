@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { executeBatch } from "../utils/dbOperations";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
+import { Loader2 } from "lucide-react";
 
 type FilterType =
     | "all"
@@ -69,9 +70,12 @@ export default function NotificationsPage() {
     }, [user]);
 
     const [autoNotifStatus, setAutoNotifStatus] = useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
 
     const generateAutoNotifications = useCallback(async () => {
         if (user?.role !== "admin" && user?.role !== "super_admin") return;
+        setIsGenerating(true);
         setAutoNotifStatus(t("status.generating"));
         try {
             const { data: payments, error: paymentsError } = await supabase
@@ -125,6 +129,8 @@ export default function NotificationsPage() {
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : t("status.unknownError");
             setAutoNotifStatus(t("status.error", { error: msg }));
+        } finally {
+            setIsGenerating(false);
         }
     }, [user, load, t, dateLocale, supabase]);
 
@@ -141,15 +147,20 @@ export default function NotificationsPage() {
 
     const markAllAsRead = async () => {
         const unread = notifications.filter((n) => !n.read);
-        await executeBatch(
-            unread,
-            async (n) => {
-                await supabase.from("notifications").update({ read: true }).eq("id", n.id);
-            },
-            3,
-            150
-        );
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setIsMarkingAllRead(true);
+        try {
+            await executeBatch(
+                unread,
+                async (n) => {
+                    await supabase.from("notifications").update({ read: true }).eq("id", n.id);
+                },
+                3,
+                150
+            );
+            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        } finally {
+            setIsMarkingAllRead(false);
+        }
     };
 
     const filtered = notifications.filter((n) => {
@@ -197,7 +208,8 @@ export default function NotificationsPage() {
                 <div className="flex flex-wrap gap-2">
                     {(user?.role === "admin" || user?.role === "super_admin") && (
                         <div className="flex flex-col items-start gap-1">
-                            <Button variant="outline" onClick={generateAutoNotifications} className="border-orange-200 bg-orange-50 text-orange-700">
+                            <Button variant="outline" onClick={generateAutoNotifications} disabled={isGenerating} className="border-orange-200 bg-orange-50 text-orange-700">
+                                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {t("actions.checkLate")}
                             </Button>
                             {autoNotifStatus && (
@@ -205,7 +217,8 @@ export default function NotificationsPage() {
                             )}
                         </div>
                     )}
-                    <Button variant="outline" onClick={markAllAsRead} disabled={unreadCount === 0} className="border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300">
+                    <Button variant="outline" onClick={markAllAsRead} disabled={unreadCount === 0 || isMarkingAllRead} className="border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300">
+                        {isMarkingAllRead && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {t("actions.markAllRead")}
                     </Button>
                     <Button variant="outline" onClick={load}>{t("actions.refresh")}</Button>

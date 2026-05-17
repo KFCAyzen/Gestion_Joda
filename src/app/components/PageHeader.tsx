@@ -1,21 +1,22 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+
+interface ActionDef {
+    label: string;
+    onClick: () => void;
+    variant?: "default" | "outline" | "destructive";
+    disabled?: boolean;
+    isLoading?: boolean;
+}
 
 interface PageHeaderProps {
     eyebrow?: string;
     title: string;
     description?: string;
-    action?: {
-        label: string;
-        onClick: () => void;
-        variant?: "default" | "outline" | "destructive";
-    };
-    secondaryAction?: {
-        label: string;
-        onClick: () => void;
-        variant?: "default" | "outline" | "destructive";
-    };
+    action?: ActionDef;
+    secondaryAction?: ActionDef;
 }
 
 export default function PageHeader({ eyebrow, title, description, action, secondaryAction }: PageHeaderProps) {
@@ -33,12 +34,22 @@ export default function PageHeader({ eyebrow, title, description, action, second
             {(action || secondaryAction) && (
                 <div className="flex gap-2">
                     {secondaryAction && (
-                        <Button variant={secondaryAction.variant || "outline"} onClick={secondaryAction.onClick}>
+                        <Button
+                            variant={secondaryAction.variant || "outline"}
+                            disabled={secondaryAction.disabled || secondaryAction.isLoading}
+                            onClick={secondaryAction.onClick}
+                        >
+                            {secondaryAction.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {secondaryAction.label}
                         </Button>
                     )}
                     {action && (
-                        <Button variant={action.variant || "default"} onClick={action.onClick}>
+                        <Button
+                            variant={action.variant || "default"}
+                            disabled={action.disabled || action.isLoading}
+                            onClick={action.onClick}
+                        >
+                            {action.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {action.label}
                         </Button>
                     )}

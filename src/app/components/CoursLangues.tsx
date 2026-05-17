@@ -30,6 +30,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Loader2 } from "lucide-react";
 
 
 
@@ -74,6 +75,7 @@ export default function CoursLangues() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         studentId: "",
@@ -201,19 +203,24 @@ export default function CoursLangues() {
     };
 
     const handleMarkPaid = async (paymentId: string) => {
-        if (!user || (user.role !== "admin" && user.role !== "super_admin" && user.role !== "agent")) return;
-        const { error } = await supabase.from("payments").update({
-            status: "paye",
-            date_paiement: new Date().toISOString(),
-            validated_by: user.id,
-            validated_at: new Date().toISOString(),
-        }).eq("id", paymentId);
-        if (error) {
-            showNotification(t("messages.validationError"), "error");
-            return;
+        if (!user || (user.role !== "admin" && user.role !== "super_admin" && user.role !== "agent") || markingPaidId) return;
+        setMarkingPaidId(paymentId);
+        try {
+            const { error } = await supabase.from("payments").update({
+                status: "paye",
+                date_paiement: new Date().toISOString(),
+                validated_by: user.id,
+                validated_at: new Date().toISOString(),
+            }).eq("id", paymentId);
+            if (error) {
+                showNotification(t("messages.validationError"), "error");
+                return;
+            }
+            showNotification(t("messages.paymentValidated"), "success");
+            await loadData();
+        } finally {
+            setMarkingPaidId(null);
         }
-        showNotification(t("messages.paymentValidated"), "success");
-        await loadData();
     };
 
     // Count enrollments (distinct student+type pairs) not individual tranches
@@ -405,8 +412,10 @@ export default function CoursLangues() {
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
+                                                            disabled={!!markingPaidId}
                                                             onClick={() => handleMarkPaid(payment.id)}
                                                         >
+                                                            {markingPaidId === payment.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                                             {t("actions.markPaid")}
                                                         </Button>
                                                     )}
