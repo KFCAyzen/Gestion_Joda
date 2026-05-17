@@ -8,6 +8,7 @@ import { useApplications, APPLICATIONS_KEY } from "../lib/hooks/use-applications
 import { usePayments, PAYMENTS_KEY } from "../lib/hooks/use-payments";
 import { useUniversities, UNIVERSITIES_KEY } from "../lib/hooks/use-universities";
 import { getActivityLogs, ActivityType, ACTIVITY_LABELS } from "../utils/activityLogger";
+import { useTheme } from "../context/ThemeContext";
 import ProtectedRoute from "./ProtectedRoute";
 
 interface ActivityLog {
@@ -224,6 +225,7 @@ function formatCompact(value: number): string {
 }
 
 export default function AdminOperationalDashboard() {
+    const { actualTheme } = useTheme();
     const queryClient = useQueryClient();
     const [view, setView] = useState<ViewMode>("aujourd'hui");
     const [logs, setLogs] = useState<ActivityLog[]>([]);
@@ -521,11 +523,11 @@ export default function AdminOperationalDashboard() {
                         <div className="h-16">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={stats.weeklyFlux} barCategoryGap="20%">
-                                    <Bar dataKey="value" radius={[2, 2, 0, 0]}>
+                                    <Bar dataKey="value" radius={[2, 2, 0, 0]} minPointSize={3}>
                                         {stats.weeklyFlux.map((entry, index) => (
                                             <Cell
                                                 key={index}
-                                                fill={entry.isToday ? "#ef4444" : "#d1d5db"}
+                                                fill={entry.isToday ? "#ef4444" : actualTheme === "dark" ? "#d1d5db" : "#9ca3af"}
                                             />
                                         ))}
                                     </Bar>
