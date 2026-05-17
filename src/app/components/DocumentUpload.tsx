@@ -103,6 +103,7 @@ interface DocStatus {
     status: string;
     url: string;
     uploaded_at: string;
+    rejection_reason?: string | null;
 }
 
 interface Props {
@@ -483,6 +484,13 @@ export default function DocumentUpload({ studentId, onDocumentUploaded }: Props)
                                 </div>
                             ) : (
                                 <div className="mt-2 min-h-[1.25rem]" aria-hidden />
+                            )}
+
+                            {uploaded?.status === "non_conforme" && uploaded.rejection_reason && (
+                                <p className="mt-1.5 text-left text-[10px] leading-relaxed text-orange-400/90">
+                                    <span className="font-semibold">{t("rejectionReason")}</span>{" "}
+                                    {uploaded.rejection_reason}
+                                </p>
                             )}
 
                             <input

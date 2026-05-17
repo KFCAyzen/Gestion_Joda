@@ -488,7 +488,22 @@
       "totalPayments": "Total payments",
       "uploadedDocuments": "Uploaded documents",
       "fileStatus": "File status",
-      "seeDetails": "See details →"
+      "seeDetails": "See details →",
+      "nextAction": {
+        "overdueCount": "{count} overdue payment(s)",
+        "newMessage": "New message",
+        "unreadMessage": "You have an unread message",
+        "viewMessaging": "View messaging",
+        "urgentDeadline": "Upcoming deadline",
+        "urgentDeadlineDetail": "{type} — in {days} day(s)",
+        "nextDeadline": "Next deadline",
+        "nextDeadlineDetail": "{type} — {date}",
+        "docsToComplete": "Documents to complete",
+        "docsToCompleteDetail": "{count} document(s) to verify / resend",
+        "allUpToDate": "All up to date",
+        "noUrgentAction": "No urgent action at the moment.",
+        "viewDossier": "View my file"
+      }
     },
     "payments": {
       "title": "Payment Management",
@@ -574,17 +589,24 @@
     "messages": {
       "paymentDeclared": "Payment declared - awaiting validation",
       "paymentError": "Error during declaration",
-      "networkError": "Network error"
+      "networkError": "Network error",
+      "uploadError": "Error uploading proof"
     },
     "paymentTypes": {
       "scholarship": "Scholarship",
+      "bourse": "Scholarship Procedure",
       "mandarin": "Mandarin Course",
-      "english": "English Course"
+      "english": "English Course",
+      "anglais": "English Course"
     },
     "paymentStatus": {
       "paid": "Paid",
       "pending": "Pending",
-      "late": "Late"
+      "late": "Late",
+      "paye": "Paid",
+      "en_attente": "Pending",
+      "retard": "Late",
+      "en_validation": "In validation"
     },
     "documentStatus": {
       "valid": "Valid",
@@ -1584,7 +1606,9 @@
       "validateQuestion": "Are you sure you want to validate this document?",
       "rejectQuestion": "Are you sure you want to reject this document?",
       "reasonLabel": "Rejection reason *",
-      "reasonPlaceholder": "Explain why this document is rejected..."
+      "reasonPlaceholder": "Explain why this document is rejected...",
+      "rejectValidatedTitle": "Cancel validation",
+      "rejectValidatedQuestion": "Warning: this document has already been validated. By rejecting it, the student will be able to upload a new file."
     }
   },
   "paymentManagement": {
@@ -1947,6 +1971,7 @@
       "pending": "Pending"
     },
     "view": "View",
+    "rejectionReason": "Rejection reason:",
     "locked": "Locked",
     "replace": "Replace",
     "upload": "Upload",
@@ -1962,6 +1987,7 @@
   },
   "paymentOverview": {
     "noService": "No service configured for this profile.",
+    "declarePayment": "Declare this payment",
     "totalDue": "Total due",
     "paid": "Paid",
     "remaining": "Remaining",

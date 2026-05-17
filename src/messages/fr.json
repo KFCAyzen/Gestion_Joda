@@ -488,7 +488,22 @@
       "totalPayments": "Total paiements",
       "uploadedDocuments": "Documents uploadés",
       "fileStatus": "Statut dossier",
-      "seeDetails": "Voir les détails →"
+      "seeDetails": "Voir les détails →",
+      "nextAction": {
+        "overdueCount": "{count} paiement(s) en retard",
+        "newMessage": "Nouveau message",
+        "unreadMessage": "Vous avez un message non lu",
+        "viewMessaging": "Voir la messagerie",
+        "urgentDeadline": "Échéance imminente",
+        "urgentDeadlineDetail": "{type} — dans {days} jour(s)",
+        "nextDeadline": "Prochaine échéance",
+        "nextDeadlineDetail": "{type} — {date}",
+        "docsToComplete": "Documents à compléter",
+        "docsToCompleteDetail": "{count} document(s) à vérifier / renvoyer",
+        "allUpToDate": "Tout est à jour",
+        "noUrgentAction": "Aucune action urgente pour le moment.",
+        "viewDossier": "Voir mon dossier"
+      }
     },
     "payments": {
       "title": "Évolution des paiements",
@@ -574,17 +589,24 @@
     "messages": {
       "paymentDeclared": "Paiement déclaré - en attente de validation",
       "paymentError": "Erreur lors de la déclaration",
-      "networkError": "Erreur réseau"
+      "networkError": "Erreur réseau",
+      "uploadError": "Erreur lors de l'envoi de la preuve"
     },
     "paymentTypes": {
       "scholarship": "Bourse",
+      "bourse": "Procédure bourse",
       "mandarin": "Cours de Mandarin",
-      "english": "Cours d'Anglais"
+      "english": "Cours d'Anglais",
+      "anglais": "Cours d'Anglais"
     },
     "paymentStatus": {
       "paid": "Payé",
       "pending": "En attente",
-      "late": "En retard"
+      "late": "En retard",
+      "paye": "Payé",
+      "en_attente": "En attente",
+      "retard": "En retard",
+      "en_validation": "En validation"
     },
     "documentStatus": {
       "valid": "Valide",
@@ -1584,7 +1606,9 @@
       "validateQuestion": "Êtes-vous sûr de vouloir valider ce document ?",
       "rejectQuestion": "Êtes-vous sûr de vouloir rejeter ce document ?",
       "reasonLabel": "Motif du rejet *",
-      "reasonPlaceholder": "Expliquez pourquoi ce document est rejeté..."
+      "reasonPlaceholder": "Expliquez pourquoi ce document est rejeté...",
+      "rejectValidatedTitle": "Annuler la validation",
+      "rejectValidatedQuestion": "Attention : ce document a déjà été validé. En le rejetant, l'étudiant pourra uploader un nouveau fichier."
     }
   },
   "paymentManagement": {
@@ -1947,6 +1971,7 @@
       "pending": "En attente"
     },
     "view": "Voir",
+    "rejectionReason": "Motif de rejet :",
     "locked": "Verrouillé",
     "replace": "Remplacer",
     "upload": "Uploader",
@@ -1962,6 +1987,7 @@
   },
   "paymentOverview": {
     "noService": "Aucun service configuré pour ce profil.",
+    "declarePayment": "Déclarer ce paiement",
     "totalDue": "Total dû",
     "paid": "Payé",
     "remaining": "Reste",

@@ -254,19 +254,27 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
                                                         icon: <Eye className="h-4 w-4" />,
                                                         onClick: () => window.open(document.url, "_blank", "noopener,noreferrer"),
                                                     },
-                                                    ...(user?.role !== "student" && document.status === "en_attente"
+                                                    ...(user?.role !== "student"
                                                         ? [
-                                                              {
-                                                                  label: t("actions.validate"),
-                                                                  icon: <CheckCircle2 className="h-4 w-4" />,
-                                                                  onClick: () => setValidationModal({ document, status: "valide" }),
-                                                              },
-                                                              {
-                                                                  label: t("actions.reject"),
-                                                                  icon: <XCircle className="h-4 w-4" />,
-                                                                  onClick: () => setValidationModal({ document, status: "non_conforme" }),
-                                                                  variant: "danger" as const,
-                                                              },
+                                                              ...(document.status === "en_attente"
+                                                                  ? [
+                                                                        {
+                                                                            label: t("actions.validate"),
+                                                                            icon: <CheckCircle2 className="h-4 w-4" />,
+                                                                            onClick: () => setValidationModal({ document, status: "valide" }),
+                                                                        },
+                                                                    ]
+                                                                  : []),
+                                                              ...(document.status === "en_attente" || document.status === "valide"
+                                                                  ? [
+                                                                        {
+                                                                            label: t("actions.reject"),
+                                                                            icon: <XCircle className="h-4 w-4" />,
+                                                                            onClick: () => setValidationModal({ document, status: "non_conforme" }),
+                                                                            variant: "danger" as const,
+                                                                        },
+                                                                    ]
+                                                                  : []),
                                                           ]
                                                         : []),
                                                 ]}
@@ -298,12 +306,20 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
                     >
                         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                {validationModal.status === 'valide' ? t("modal.validateTitle") : t("modal.rejectTitle")}
+                                {validationModal.status === 'valide'
+                                    ? t("modal.validateTitle")
+                                    : validationModal.document.status === 'valide'
+                                      ? t("modal.rejectValidatedTitle")
+                                      : t("modal.rejectTitle")}
                             </h3>
                         </div>
                         <div className="p-6">
                             <p className="text-gray-600 dark:text-gray-400 mb-4">
-                                {validationModal.status === 'valide' ? t("modal.validateQuestion") : t("modal.rejectQuestion")}
+                                {validationModal.status === 'valide'
+                                    ? t("modal.validateQuestion")
+                                    : validationModal.document.status === 'valide'
+                                      ? t("modal.rejectValidatedQuestion")
+                                      : t("modal.rejectQuestion")}
                             </p>
                             {validationModal.status === 'non_conforme' && (
                                 <div className="space-y-2">
