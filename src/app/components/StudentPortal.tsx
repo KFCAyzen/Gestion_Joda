@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CreditCard, Upload, X, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CreditCard, Upload, X, ArrowRight, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNotificationContext } from "../context/NotificationContext";
 import StudentNotifications from "./StudentNotifications";
 import { StudentMessaging } from "./student/StudentMessaging";
@@ -24,6 +25,25 @@ import { Skeleton } from "./student/Skeleton";
 import { ActivityRings } from "./student/ActivityRings";
 import { DossierRoadmap } from "./student/DossierRoadmap";
 
+// ── Zustand store (état UI)
+import { useStudentPortalStore } from "../lib/stores/student-portal.store";
+
+// ── TanStack Query hooks (état serveur)
+import {
+    useStudentProfile,
+    useStudentPayments,
+    useStudentDossier,
+    useStudentUniversity,
+    useStudentLastMessage,
+    useDeclarePayment,
+    STUDENT_DOSSIER_KEY,
+} from "../lib/hooks/use-student-portal";
+import { useDocuments } from "../lib/hooks/use-documents";
+import { useUnreadCount } from "../lib/hooks/use-notifications";
+import type { Payment } from "../lib/schemas/payment.schema";
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+
 interface User {
     id: string;
     name: string;
@@ -36,35 +56,7 @@ interface StudentPortalProps {
     onLogout: () => void;
 }
 
-interface Payment {
-    id: string;
-    student_id: string;
-    type: string;
-    tranche: number | null;
-    montant: number;
-    status: string;
-    date_limite: string;
-    date_paiement: string | null;
-    created_at: string;
-}
-
-interface Document {
-    id: string;
-    student_id: string;
-    type: string;
-    status: string;
-    url: string;
-    uploaded_at: string;
-}
-
-interface DossierBourse {
-    id: string;
-    student_id: string;
-    status: string;
-    notes_internes: string;
-    university_id: string;
-    created_at: string;
-}
+// ── Constantes UI ─────────────────────────────────────────────────────────────
 
 function formatMontant(n: number) {
     return `${n.toLocaleString("fr-FR")} FCFA`;
@@ -100,7 +92,6 @@ const STATUS_COLORS: Record<string, string> = {
     termine: "border-[rgba(255,255,255,0.18)] bg-[rgba(255,255,255,0.06)] text-[var(--student-fg-muted)]",
 };
 
-/** Badges onglet Paiements */
 const PAYMENTS_TAB_BADGE: Record<string, string> = {
     paye: "border-[rgba(255,255,255,0.38)] bg-[rgba(255,255,255,0.18)] text-[var(--student-ring-move)]",
     attente: "border-[rgba(255,255,255,0.20)] bg-[rgba(255,255,255,0.08)] text-[var(--student-fg-muted)]",
@@ -117,7 +108,6 @@ const PAYMENTS_TAB_BADGE: Record<string, string> = {
     termine: "border-[rgba(255,255,255,0.18)] bg-[rgba(255,255,255,0.06)] text-[var(--student-fg-muted)]",
 };
 
-/** Index dans la roadmap horizontale (0–7), un cran par statut métier */
 const DOSSIER_ROADMAP_INDEX: Record<string, number> = {
     document_manquant: 0,
     en_attente: 1,
@@ -132,271 +122,146 @@ const DOSSIER_ROADMAP_INDEX: Record<string, number> = {
 
 const DOSSIER_ROADMAP_LAST_IDX = 7;
 
-const DOSSIER_LABELS: Record<string, string> = {
-    document_recu: "Documents reçus",
-    en_attente: "En attente",
-    en_cours: "En cours",
-    document_manquant: "En attente de documents",
-    admission_validee: "Admission validée",
-    admission_rejetee: "Admission rejetée",
-    en_attente_universite: "En attente université",
-    visa_en_cours: "Visa en cours",
-    termine: "Terminé",
-};
-
 type View = StudentView;
+
+// ── Composant ─────────────────────────────────────────────────────────────────
 
 export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const t = useTranslations("student");
     const locale = useLocale();
     const supabase = createClient();
+    const queryClient = useQueryClient();
     const { showNotification } = useNotificationContext();
-    const [view, setView] = useState<View>(() => {
-        if (typeof window !== "undefined") {
-            const saved = sessionStorage.getItem("student_view");
-            if (saved) return saved as View;
-        }
-        return "dashboard";
-    });
-    const handleChangeView = (v: View) => {
-        sessionStorage.setItem("student_view", v);
-        setView(v);
-    };
-    const [payments, setPayments] = useState<Payment[]>([]);
-    const [documents, setDocuments] = useState<Document[]>([]);
-    const [dossier, setDossier] = useState<DossierBourse | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [studentId, setStudentId] = useState<string | null>(null);
-    const [studentChoix, setStudentChoix] = useState<string>("");
-    const [studentLangue, setStudentLangue] = useState<string>("");
-    const [studentNationalite, setStudentNationalite] = useState<string | null>(null);
-    const [studentInfo, setStudentInfo] = useState<ReceiptStudent | null>(null);
-    const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
+
+    // ── Zustand : état UI ──────────────────────────────────────────────────────
+    const {
+        view, setView, initView,
+        declareModal, openDeclareModal, closeDeclareModal,
+        paymentMode, setPaymentMode,
+        montantAvance, setMontantAvance,
+        proofFile, setProofFile,
+        detailPayment, setDetailPayment,
+        unreadMessages, setUnreadMessages,
+    } = useStudentPortalStore();
+
+    // Synchroniser la vue depuis sessionStorage au premier rendu
+    useEffect(() => { initView(); }, [initView]);
+
+    // ── TanStack Query : données serveur ───────────────────────────────────────
+    const { data: studentProfile, isLoading: profileLoading } = useStudentProfile(user.id);
+    const studentId = studentProfile?.id ?? null;
+
+    const { data: payments = [] } = useStudentPayments();
+    const { data: rawDocuments = [] } = useDocuments(studentId ?? undefined);
+    const { data: dossier = null } = useStudentDossier(studentId);
+    const { data: universityName = null } = useStudentUniversity(dossier?.university_id);
+    const { data: lastMessageData } = useStudentLastMessage(user.id);
+    const { data: unreadCount = 0 } = useUnreadCount(user.id);
+
+    const agentName = lastMessageData?.agentName ?? "Votre agent";
+    const lastMessagePreview = lastMessageData?.preview ?? "";
+
+    // ── Mutations ──────────────────────────────────────────────────────────────
+    const declarePaymentMutation = useDeclarePayment();
+
+    // ── État UI local (éphémère, non partagé) ─────────────────────────────────
     const [showPasswordChange, setShowPasswordChange] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [unreadMessages, setUnreadMessages] = useState(0);
-    const [universityName, setUniversityName] = useState<string | null>(null);
-    const [agentName, setAgentName] = useState<string>("Votre agent");
-    const [lastMessagePreview, setLastMessagePreview] = useState<string>("");
-    const [declareModal, setDeclareModal] = useState<{
-        paymentId: string | null;
-        type: string;
-        trancheNum: number;
-        montantTranche: number;
-        label: string;
-        dateLimite: string | null;
-    } | null>(null);
-    const [paymentMode, setPaymentMode] = useState<"complet" | "avance">("complet");
-    const [montantAvance, setMontantAvance] = useState<string>("");
-    const [declaring, setDeclaring] = useState(false);
-    const [proofFile, setProofFile] = useState<File | null>(null);
     const proofInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (user.mustChangePassword) setShowPasswordChange(true);
     }, [user.mustChangePassword]);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        try {
-            // Récupérer l'ID étudiant depuis la table students via created_by
-            const { data: studentData } = await supabase
-                .from("students")
-                .select("id, choix, langue, nom, prenom, email, telephone, niveau, filiere, nationalite")
-                .eq("created_by", user.id)
-                .single();
-
-            const sid = studentData?.id;
-            if (!sid) { setLoading(false); return; }
-            setStudentId(sid);
-            setStudentChoix(studentData?.choix ?? "");
-            setStudentLangue(studentData?.langue ?? "");
-            setStudentNationalite(studentData?.nationalite ?? null);
-            setStudentInfo({
-                nom: studentData?.nom ?? "",
-                prenom: studentData?.prenom ?? "",
-                email: studentData?.email ?? "",
-                telephone: studentData?.telephone ?? "",
-                niveau: studentData?.niveau ?? "",
-                filiere: studentData?.filiere ?? "",
-                langue: studentData?.langue ?? "",
-            });
-
-            // Load last received message to find agent name
-            const { data: lastMsg } = await supabase
-                .from("messages")
-                .select("from_user_id, content, created_at, metadata")
-                .eq("to_user_id", user.id)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .maybeSingle();
-            if (lastMsg) {
-                const { data: agentUser } = await supabase
-                    .from("users")
-                    .select("name")
-                    .eq("id", lastMsg.from_user_id)
-                    .maybeSingle();
-                if (agentUser?.name) setAgentName(agentUser.name);
-                setLastMessagePreview(
-                    (lastMsg.content as string)?.slice(0, 40) + "…" || ""
-                );
-            }
-
-            const [paysRes, docs, dossiers, unreadRes] = await Promise.all([
-                fetch("/api/student-payments", { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []),
-                supabase.from("documents").select("*").eq("student_id", sid).order("created_at", { ascending: false }),
-                supabase.from("dossier_bourses").select("*").eq("student_id", sid).order("created_at", { ascending: false }).limit(1),
-                supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("read", false),
-            ]);
-            setPayments(Array.isArray(paysRes) ? paysRes : []);
-            setDocuments(docs.data || []);
-            setUnreadCount(unreadRes.count ?? 0);
-            const dossierData = dossiers.data?.[0] ?? null;
-            setDossier(dossierData);
-            if (dossierData?.university_id) {
-                const { data: uniData } = await supabase.from("universities").select("nom").eq("id", dossierData.university_id).single();
-                setUniversityName(uniData?.nom ?? null);
-            }
-        } finally {
-            setLoading(false);
-        }
-    }, [user.id]);
-
-    useEffect(() => {
-        load();
-    }, [load]);
-
-    // Abonnement temps réel : met à jour le dossier quand le staff change son statut
+    // ── Temps réel : invalidation du cache dossier ─────────────────────────────
     useEffect(() => {
         if (!studentId) return;
         const channel = supabase
             .channel(`dossier-rt-${studentId}`)
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'dossier_bourses',
+            .on("postgres_changes", {
+                event: "UPDATE",
+                schema: "public",
+                table: "dossier_bourses",
                 filter: `student_id=eq.${studentId}`,
-            }, async () => {
-                const { data } = await supabase
-                    .from("dossier_bourses").select("*")
-                    .eq("student_id", studentId)
-                    .order("created_at", { ascending: false }).limit(1);
-                const d = data?.[0] ?? null;
-                setDossier(d);
-                if (d?.university_id) {
-                    const { data: uniData } = await supabase
-                        .from("universities").select("nom")
-                        .eq("id", d.university_id).single();
-                    setUniversityName(uniData?.nom ?? null);
-                }
+            }, () => {
+                queryClient.invalidateQueries({ queryKey: [...STUDENT_DOSSIER_KEY, studentId] });
             })
             .subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [studentId]);
+    }, [studentId, queryClient, supabase]);
 
-    const getPaymentStatusLabel = (status: string) => {
-        return t(`paymentStatus.${status}`, { fallback: status });
-    };
+    // ── Données dérivées ──────────────────────────────────────────────────────
 
-    const getDocumentStatusLabel = (status: string) => {
-        return t(`documentStatus.${status}`, { fallback: status });
-    };
+    const studentInfo: ReceiptStudent | null = studentProfile
+        ? {
+              nom: studentProfile.nom,
+              prenom: studentProfile.prenom,
+              email: studentProfile.email,
+              telephone: studentProfile.telephone ?? "",
+              niveau: studentProfile.niveau,
+              filiere: studentProfile.filiere,
+              langue: studentProfile.langue,
+          }
+        : null;
 
-    const openDeclareModal = (payment: { id?: string; date_limite?: string | null } | null, info: { type: string; tranche: number; montant: number }) => {
-        setProofFile(null);
-        setPaymentMode("complet");
-        setMontantAvance(info.montant.toString());
-        setDeclareModal({
+    // Documents : le hook retourne les documents du schéma (sans uploaded_at)
+    const documents = rawDocuments;
+
+    const getPaymentTypeLabel = (type: string) =>
+        t(`paymentTypes.${type}`, { fallback: type });
+
+    const getPaymentStatusLabel = (status: string) =>
+        t(`paymentStatus.${status}`, { fallback: status });
+
+    // ── Handlers ──────────────────────────────────────────────────────────────
+
+    const handleOpenDeclareModal = (
+        payment: { id?: string; date_limite?: string | null } | null,
+        info: { type: string; tranche: number; montant: number; label?: string }
+    ) => {
+        openDeclareModal({
             paymentId: payment?.id ?? null,
             type: info.type,
             trancheNum: info.tranche,
             montantTranche: info.montant,
-            label: info.tranche ? t("payments.installment", { installment: info.tranche }) : getPaymentTypeLabel(info.type),
+            label: info.label ?? (info.tranche ? t("payments.installment", { installment: info.tranche }) : getPaymentTypeLabel(info.type)),
             dateLimite: payment?.date_limite ?? null,
         });
     };
 
     const handleProofFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0] ?? null;
-        setProofFile(file);
+        setProofFile(e.target.files?.[0] ?? null);
     };
 
     const handleDeclarePayment = async () => {
         if (!declareModal) return;
-        const montantDeclare = paymentMode === "complet"
-            ? declareModal.montantTranche
-            : Math.max(1, parseInt(montantAvance) || 0);
-        setDeclaring(true);
-        try {
-            let proofUrl: string | undefined;
-            if (proofFile && studentId) {
-                const ext = proofFile.name.split(".").pop() ?? "bin";
-                const path = `payment-proofs/${studentId}/${Date.now()}.${ext}`;
-                const { error: storageError } = await supabase.storage
-                    .from("student-documents")
-                    .upload(path, proofFile, { upsert: true });
-                if (storageError) {
-                    showNotification(t("messages.uploadError") || "Erreur lors de l'envoi de la preuve", "error");
-                    setDeclaring(false);
-                    return;
-                }
-                const { data: { publicUrl } } = supabase.storage
-                    .from("student-documents")
-                    .getPublicUrl(path);
-                proofUrl = publicUrl;
-            }
+        const montantDeclare =
+            paymentMode === "complet"
+                ? declareModal.montantTranche
+                : Math.max(1, parseInt(montantAvance) || 0);
 
-            const res = await fetch("/api/declare-payment", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    payment_id: declareModal.paymentId,
-                    type: declareModal.type,
-                    tranche_num: declareModal.trancheNum,
-                    montant_declare: montantDeclare,
-                    montant_tranche: declareModal.montantTranche,
-                    proof_url: proofUrl,
-                    is_avance: paymentMode === "avance",
-                }),
+        try {
+            await declarePaymentMutation.mutateAsync({
+                studentId,
+                proofFile,
+                payment_id: declareModal.paymentId,
+                type: declareModal.type,
+                tranche_num: declareModal.trancheNum,
+                montant_declare: montantDeclare,
+                montant_tranche: declareModal.montantTranche,
+                is_avance: paymentMode === "avance",
             });
-            if (res.ok) {
-                showNotification(t("messages.paymentDeclared"), "success");
-                setDeclareModal(null);
-                setProofFile(null);
-                void load();
-            } else {
-                const data = await res.json();
-                showNotification(data.error ?? t("messages.paymentError"), "error");
-            }
-        } catch {
-            showNotification(t("messages.networkError"), "error");
-        } finally {
-            setDeclaring(false);
+            showNotification(t("messages.paymentDeclared"), "success");
+            closeDeclareModal();
+            if (proofInputRef.current) proofInputRef.current.value = "";
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : t("messages.paymentError");
+            showNotification(msg, "error");
         }
     };
 
-    const getPaymentTypeLabel = (type: string) => {
-        return t(`paymentTypes.${type}`, { fallback: type });
-    };
+    // ── Calculs dashboard ──────────────────────────────────────────────────────
 
-    const dossierRoadmapSteps = useMemo(() => {
-        if (!dossier) return [] as { key: string; label: string }[];
-        return [
-            { key: "document_manquant", label: t("status.missing_documents") },
-            { key: "en_attente", label: t("status.pending") },
-            { key: "document_recu", label: t("status.document_received") },
-            { key: "en_cours", label: t("status.in_progress") },
-            { key: "en_attente_universite", label: t("status.waiting_university") },
-            { key: "admission", label: t("dossier.roadmapAdmission") },
-            { key: "visa_en_cours", label: t("status.visa_processing") },
-            { key: "termine", label: t("status.completed") },
-        ];
-    }, [dossier, t]);
-
-    const dossierStepIdx = dossier ? (DOSSIER_ROADMAP_INDEX[dossier.status] ?? 0) : 0;
-    const dossierIsRejected = dossier?.status === "admission_rejetee";
-
-    if (loading) {
+    if (profileLoading) {
         return (
             <div className="student-shell min-h-screen">
                 <div className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
@@ -419,40 +284,46 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         : null;
 
     const fileStatusLabel = t("dashboard.fileStatus", { fallback: "Statut dossier" });
-
-    const statusPill = dossierStatusLabel
-        ? `${fileStatusLabel}: ${dossierStatusLabel}`
-        : null;
+    const statusPill = dossierStatusLabel ? `${fileStatusLabel}: ${dossierStatusLabel}` : null;
 
     const now = new Date();
     const unpaid = payments.filter((p) => p.status !== "paye");
     const overdue = unpaid.filter((p) => {
         if (!p.date_limite) return p.status === "retard";
-        const due = new Date(p.date_limite);
-        return due.getTime() < now.getTime();
+        return new Date(p.date_limite).getTime() < now.getTime();
     });
     const nextDue = unpaid
         .filter((p) => p.date_limite)
-        .map((p) => ({ payment: p, due: new Date(p.date_limite as string) }))
+        .map((p) => ({ payment: p, due: new Date(p.date_limite!) }))
         .sort((a, b) => a.due.getTime() - b.due.getTime())[0]?.payment ?? null;
 
-    const pendingDocs = documents.filter((d) => ["en_attente", "non_conforme"].includes(d.status));
-    const docsOk = documents.filter((d) => ["valide"].includes(d.status)).length;
-    const docsProgressPct = documents.length > 0 ? Math.min(200, Math.round((docsOk / documents.length) * 100)) : 0;
+    const pendingDocs = documents.filter((d) =>
+        ["en_attente", "non_conforme"].includes(d.status)
+    );
+    const docsOk = documents.filter((d) => d.status === "valide").length;
+    const docsProgressPct =
+        documents.length > 0
+            ? Math.min(200, Math.round((docsOk / documents.length) * 100))
+            : 0;
 
     const paidCount = payments.filter((p) => p.status === "paye").length;
-    const paymentsProgressPct = payments.length > 0 ? Math.min(200, Math.round((paidCount / payments.length) * 100)) : 0;
+    const paymentsProgressPct =
+        payments.length > 0
+            ? Math.min(200, Math.round((paidCount / payments.length) * 100))
+            : 0;
 
-    const dossierStepPct = (() => {
-        if (!dossier?.status) return 0;
-        const idx = DOSSIER_ROADMAP_INDEX[dossier.status] ?? 0;
-        return Math.round((idx / DOSSIER_ROADMAP_LAST_IDX) * 100);
-    })();
+    const dossierStepIdx = dossier ? (DOSSIER_ROADMAP_INDEX[dossier.status] ?? 0) : 0;
+    const dossierIsRejected = dossier?.status === "admission_rejetee";
 
-    // Ring interne : urgence prochaine échéance (100% = serein, 0% = en retard)
+    const dossierStepPct = dossier?.status
+        ? Math.round(((DOSSIER_ROADMAP_INDEX[dossier.status] ?? 0) / DOSSIER_ROADMAP_LAST_IDX) * 100)
+        : 0;
+
     const deadlineUrgencyPct = (() => {
         if (!nextDue?.date_limite) return overdue.length > 0 ? 0 : 100;
-        const daysLeft = Math.ceil((new Date(nextDue.date_limite).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const daysLeft = Math.ceil(
+            (new Date(nextDue.date_limite).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
         if (daysLeft <= 0) return 0;
         return Math.min(100, Math.round((daysLeft / 30) * 100));
     })();
@@ -461,23 +332,40 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         ? Math.ceil((new Date(nextDue.date_limite).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
         : null;
 
-    const nextAction = overdue.length > 0
-        ? { tone: "danger" as const, title: t("dashboard.followPayments"), detail: `${overdue.length} paiement(s) en retard`, cta: { label: t("portal.nav.payments"), view: "payments" as View } }
-        : unreadMessages > 0
-          ? { tone: "warn" as const, title: "Nouveau message", detail: lastMessagePreview || "Vous avez un message non lu", cta: { label: "Voir la messagerie", view: "messaging" as View } }
-          : daysUntilNextDue !== null && daysUntilNextDue <= 7
-            ? { tone: "danger" as const, title: "Échéance imminente", detail: `${getPaymentTypeLabel(nextDue!.type)} — dans ${daysUntilNextDue} jour(s)`, cta: { label: t("payments.makePayment"), view: "payments" as View } }
-            : nextDue
-              ? { tone: "warn" as const, title: "Prochaine échéance", detail: `${getPaymentTypeLabel(nextDue.type)} — ${nextDue.date_limite ? new Date(nextDue.date_limite).toLocaleDateString(locale) : ""}`, cta: { label: t("payments.makePayment"), view: "payments" as View } }
-              : pendingDocs.length > 0
-                ? { tone: "warn" as const, title: "Documents à compléter", detail: `${pendingDocs.length} document(s) à vérifier / renvoyer`, cta: { label: t("portal.nav.documents"), view: "documents" as View } }
-                : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
+    const nextAction =
+        overdue.length > 0
+            ? { tone: "danger" as const, title: t("dashboard.followPayments"), detail: `${overdue.length} paiement(s) en retard`, cta: { label: t("portal.nav.payments"), view: "payments" as View } }
+            : unreadMessages > 0
+              ? { tone: "warn" as const, title: "Nouveau message", detail: lastMessagePreview || "Vous avez un message non lu", cta: { label: "Voir la messagerie", view: "messaging" as View } }
+              : daysUntilNextDue !== null && daysUntilNextDue <= 7
+                ? { tone: "danger" as const, title: "Échéance imminente", detail: `${getPaymentTypeLabel(nextDue!.type)} — dans ${daysUntilNextDue} jour(s)`, cta: { label: t("payments.makePayment"), view: "payments" as View } }
+                : nextDue
+                  ? { tone: "warn" as const, title: "Prochaine échéance", detail: `${getPaymentTypeLabel(nextDue.type)} — ${nextDue.date_limite ? new Date(nextDue.date_limite).toLocaleDateString(locale) : ""}`, cta: { label: t("payments.makePayment"), view: "payments" as View } }
+                  : pendingDocs.length > 0
+                    ? { tone: "warn" as const, title: "Documents à compléter", detail: `${pendingDocs.length} document(s) à vérifier / renvoyer`, cta: { label: t("portal.nav.documents"), view: "documents" as View } }
+                    : { tone: "ok" as const, title: "Tout est à jour", detail: "Aucune action urgente pour le moment.", cta: { label: "Voir mon dossier", view: "dossier" as View } };
 
-    const toneStyles = nextAction.tone === "danger"
-        ? { icon: <AlertTriangle className="h-5 w-5 text-[#f97316]" />, bg: "border-[rgba(255,255,255,0.25)] bg-[rgba(0,0,0,0.20)] text-[#f97316]", ring: "ring-[rgba(255,165,0,0.35)]" }
-        : nextAction.tone === "warn"
-          ? { icon: <AlertTriangle className="h-5 w-5 text-[#f59e0b]" />, bg: "border-[rgba(255,255,255,0.20)] bg-[rgba(0,0,0,0.18)] text-[#f59e0b]", ring: "ring-[rgba(255,200,0,0.25)]" }
-          : { icon: <CheckCircle2 className="h-5 w-5 text-[#4ade80]" />, bg: "border-[rgba(255,255,255,0.20)] bg-[rgba(0,0,0,0.18)] text-[#4ade80]", ring: "ring-[rgba(74,222,128,0.30)]" };
+    const toneStyles =
+        nextAction.tone === "danger"
+            ? { icon: <AlertTriangle className="h-5 w-5 text-[#f97316]" />, bg: "border-[rgba(255,255,255,0.25)] bg-[rgba(0,0,0,0.20)] text-[#f97316]", ring: "ring-[rgba(255,165,0,0.35)]" }
+            : nextAction.tone === "warn"
+              ? { icon: <AlertTriangle className="h-5 w-5 text-[#f59e0b]" />, bg: "border-[rgba(255,255,255,0.20)] bg-[rgba(0,0,0,0.18)] text-[#f59e0b]", ring: "ring-[rgba(255,200,0,0.25)]" }
+              : { icon: <CheckCircle2 className="h-5 w-5 text-[#4ade80]" />, bg: "border-[rgba(255,255,255,0.20)] bg-[rgba(0,0,0,0.18)] text-[#4ade80]", ring: "ring-[rgba(74,222,128,0.30)]" };
+
+    const dossierRoadmapSteps = dossier
+        ? [
+              { key: "document_manquant", label: t("status.missing_documents") },
+              { key: "en_attente", label: t("status.pending") },
+              { key: "document_recu", label: t("status.document_received") },
+              { key: "en_cours", label: t("status.in_progress") },
+              { key: "en_attente_universite", label: t("status.waiting_university") },
+              { key: "admission", label: t("dossier.roadmapAdmission") },
+              { key: "visa_en_cours", label: t("status.visa_processing") },
+              { key: "termine", label: t("status.completed") },
+          ]
+        : [];
+
+    // ── Rendu ─────────────────────────────────────────────────────────────────
 
     return (
         <>
@@ -489,7 +377,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
             universityName={universityName}
             studentLevel={studentInfo?.niveau ?? ""}
             view={view}
-            onChangeView={(v) => handleChangeView(v)}
+            onChangeView={setView}
             unreadCount={unreadCount}
             onLogout={onLogout}
             statusPill={statusPill}
@@ -503,6 +391,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 },
             ]}
         >
+            {/* ── Dashboard ── */}
             {view === "dashboard" && (
                 <div className="space-y-6">
                     <div className="student-surface grid gap-5 p-5 sm:p-6 md:grid-cols-[220px,1fr] md:items-center">
@@ -530,7 +419,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                     </div>
                                 </div>
                                 <Button
-                                    onClick={() => handleChangeView(nextAction.cta.view)}
+                                    onClick={() => setView(nextAction.cta.view)}
                                     className="mt-4 w-full rounded-2xl border border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.12)] text-white shadow-none hover:bg-[rgba(255,255,255,0.20)] dark:bg-[linear-gradient(135deg,rgba(220,38,38,0.35),rgba(185,28,28,0.25))] dark:text-white dark:hover:bg-[linear-gradient(135deg,rgba(220,38,38,0.45),rgba(185,28,28,0.32))] sm:w-auto sm:self-start"
                                 >
                                     {nextAction.cta.label}
@@ -542,7 +431,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <button
                                     type="button"
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
-                                    onClick={() => handleChangeView("payments")}
+                                    onClick={() => setView("payments")}
                                 >
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("payments.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">
@@ -557,7 +446,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <button
                                     type="button"
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5"
-                                    onClick={() => handleChangeView("documents")}
+                                    onClick={() => setView("documents")}
                                 >
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("documents.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">
@@ -572,7 +461,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 <button
                                     type="button"
                                     className="student-surface-soft student-focus-ring rounded-3xl p-4 text-left transition-transform duration-200 hover:-translate-y-0.5 sm:col-span-2"
-                                    onClick={() => handleChangeView("dossier")}
+                                    onClick={() => setView("dossier")}
                                 >
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--student-fg-muted)]">{t("dossier.title")}</p>
                                     <div className="mt-3 flex items-baseline justify-between gap-3">
@@ -589,88 +478,94 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                 </div>
             )}
 
+            {/* ── Paiements ── */}
             {view === "payments" && (
-                    <div className="student-payments-scope space-y-6">
-                        <SectionHeader
-                            className="student-pay-surface"
-                            accentEyebrow
-                            eyebrow="Finance"
-                            title={t("payments.title")}
-                            subtitle={t("payments.description")}
-                        />
+                <div className="student-payments-scope space-y-6">
+                    <SectionHeader
+                        className="student-pay-surface"
+                        accentEyebrow
+                        eyebrow="Finance"
+                        title={t("payments.title")}
+                        subtitle={t("payments.description")}
+                    />
+                    <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
+                        <CardContent className="p-0 pt-6">
+                            <PaymentOverview
+                                choix={studentProfile?.choix ?? ""}
+                                langue={studentProfile?.langue ?? ""}
+                                niveau={studentProfile?.niveau ?? ""}
+                                nationalite={studentProfile?.nationalite ?? null}
+                                payments={payments.map(p => ({ ...p, tranche: p.tranche ?? null, date_limite: p.date_limite ?? null, date_paiement: p.date_paiement ?? null }))}
+                                onDownloadReceipt={studentInfo
+                                    ? (p) => downloadReceipt(p, studentInfo)
+                                    : undefined}
+                                onDeclarePayment={(p, info) =>
+                                    handleOpenDeclareModal(p, { ...info, label: info.label })
+                                }
+                            />
+                        </CardContent>
+                    </Card>
+
+                    {payments.length > 0 && (
                         <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
-                            <CardContent className="p-0 pt-6">
-                                <PaymentOverview
-                                    choix={studentChoix}
-                                    langue={studentLangue}
-                                    niveau={studentInfo?.niveau ?? ""}
-                                    nationalite={studentNationalite}
-                                    payments={payments}
-                                    onDownloadReceipt={studentInfo
-                                        ? (p) => downloadReceipt(p, studentInfo)
-                                        : undefined}
-                                    onDeclarePayment={(p, info) => openDeclareModal(p, info)}
-                                />
+                            <CardHeader>
+                                <CardTitle className="text-base font-semibold tracking-tight text-[var(--student-fg)]">{t("payments.paymentHistory")}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    {payments.map((payment) => (
+                                        <div
+                                            key={payment.id}
+                                            className="student-pay-surface-soft flex w-full flex-col gap-3 rounded-3xl p-3"
+                                        >
+                                            <button
+                                                className="flex w-full items-center justify-between gap-3 text-left"
+                                                onClick={() => setDetailPayment(payment)}
+                                            >
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-medium text-[var(--student-fg)]">{getPaymentTypeLabel(payment.type)}</p>
+                                                    {payment.tranche && (
+                                                        <p className="text-xs text-[var(--student-fg-muted)]">{t("payments.installment", { installment: payment.tranche })}</p>
+                                                    )}
+                                                    <p className="text-xs text-[var(--student-fg-muted)]">
+                                                        {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString(locale) : "-"}
+                                                    </p>
+                                                </div>
+                                                <div className="shrink-0 text-right">
+                                                    <p className="text-sm font-semibold text-[var(--student-fg)]">{formatMontant(payment.montant)}</p>
+                                                    <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[payment.status] ?? STATUS_COLORS[payment.status]}`}>
+                                                        {getPaymentStatusLabel(payment.status)}
+                                                    </Badge>
+                                                </div>
+                                            </button>
+                                            {payment.status !== "paye" && payment.status !== "en_validation" && (
+                                                <button
+                                                    onClick={() => handleOpenDeclareModal(payment, {
+                                                        type: payment.type,
+                                                        tranche: payment.tranche ?? 1,
+                                                        montant: payment.montant,
+                                                    })}
+                                                    className="student-focus-ring flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(220,38,38,0.35)] bg-[var(--student-neon-lime)] py-2.5 text-xs font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] transition-[transform,filter] hover:brightness-110 active:scale-[0.99]"
+                                                >
+                                                    <CreditCard className="h-3.5 w-3.5" />
+                                                    {t("payments.makePayment")}
+                                                </button>
+                                            )}
+                                            {payment.status === "en_validation" && (
+                                                <span className="rounded-2xl border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] py-2 text-center text-xs font-semibold text-[var(--student-ring-stand)]">
+                                                    {t("payments.waitingValidation")}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </CardContent>
                         </Card>
+                    )}
+                </div>
+            )}
 
-                        {payments.length > 0 && (
-                            <Card className="student-pay-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
-                                <CardHeader>
-                                    <CardTitle className="text-base font-semibold tracking-tight text-[var(--student-fg)]">{t("payments.paymentHistory")}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                        {payments.map((payment) => (
-                                            <div
-                                                key={payment.id}
-                                                className="student-pay-surface-soft flex w-full flex-col gap-3 rounded-3xl p-3"
-                                            >
-                                                <button
-                                                    className="flex w-full items-center justify-between gap-3 text-left"
-                                                    onClick={() => setDetailPayment(payment)}
-                                                >
-                                                    <div className="min-w-0">
-                                                        <p className="truncate text-sm font-medium text-[var(--student-fg)]">{getPaymentTypeLabel(payment.type)}</p>
-                                                        {payment.tranche && (
-                                                            <p className="text-xs text-[var(--student-fg-muted)]">{t("payments.installment", { installment: payment.tranche })}</p>
-                                                        )}
-                                                        <p className="text-xs text-[var(--student-fg-muted)]">
-                                                            {payment.date_limite ? new Date(payment.date_limite).toLocaleDateString(locale) : "-"}
-                                                        </p>
-                                                    </div>
-                                                    <div className="shrink-0 text-right">
-                                                        <p className="text-sm font-semibold text-[var(--student-fg)]">{formatMontant(payment.montant)}</p>
-                                                        <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[payment.status] ?? STATUS_COLORS[payment.status]}`}>{getPaymentStatusLabel(payment.status)}</Badge>
-                                                    </div>
-                                                </button>
-                                                {payment.status !== "paye" && payment.status !== "en_validation" && (
-                                                    <button
-                                                        onClick={() => openDeclareModal(payment, {
-                                                            type: payment.type,
-                                                            tranche: payment.tranche ?? 1,
-                                                            montant: payment.montant,
-                                                        })}
-                                                        className="student-focus-ring flex w-full items-center justify-center gap-2 rounded-2xl border border-[rgba(220,38,38,0.35)] bg-[var(--student-neon-lime)] py-2.5 text-xs font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] transition-[transform,filter] hover:brightness-110 active:scale-[0.99]"
-                                                    >
-                                                        <CreditCard className="h-3.5 w-3.5" />
-                                                        {t("payments.makePayment")}
-                                                    </button>
-                                                )}
-                                                {payment.status === "en_validation" && (
-                                                    <span className="rounded-2xl border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] py-2 text-center text-xs font-semibold text-[var(--student-ring-stand)]">
-                                                        {t("payments.waitingValidation")}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-                )}
-
+            {/* ── Documents ── */}
             {view === "documents" && (
                 <div className="student-payments-scope space-y-6">
                     <SectionHeader
@@ -680,119 +575,129 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         title={t("documents.title")}
                         subtitle="Ajoute des fichiers propres et lisibles: PDF ou image. Nous te notifierons dès validation."
                     />
-                    <DocumentUpload studentId={studentId} onDocumentUploaded={load} />
+                    <DocumentUpload studentId={studentId} onDocumentUploaded={() => {
+                        queryClient.invalidateQueries({ queryKey: ['documents', studentId ?? 'all'] });
+                    }} />
                 </div>
             )}
 
+            {/* ── Dossier ── */}
             {view === "dossier" && (
-                    <div className="space-y-6">
-                        <SectionHeader
-                            eyebrow={t("dossier.title")}
-                            title={t("dossier.subtitle")}
-                            subtitle={t("dossier.description")}
-                        />
-                        {dossier ? (
-                            <>
-                                <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
-                                    <div className="space-y-6">
-                                        <Card className="student-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
-                                            <CardHeader>
-                                                <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="space-y-4">
+                <div className="space-y-6">
+                    <SectionHeader
+                        eyebrow={t("dossier.title")}
+                        title={t("dossier.subtitle")}
+                        subtitle={t("dossier.description")}
+                    />
+                    {dossier ? (
+                        <>
+                            <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+                                <div className="space-y-6">
+                                    <Card className="student-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
+                                        <CardHeader>
+                                            <CardTitle className="text-base">{t("dossier.infoTab")}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="flex items-center justify-between border-b border-[var(--student-border)] pb-3">
+                                                <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.currentStep")}</span>
+                                                <Badge className={`rounded-full border ${STATUS_COLORS[dossier.status]}`}>
+                                                    {t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })}
+                                                </Badge>
+                                            </div>
+                                            {universityName && (
                                                 <div className="flex items-center justify-between border-b border-[var(--student-border)] pb-3">
-                                                    <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.currentStep")}</span>
-                                                    <Badge className={`rounded-full border ${STATUS_COLORS[dossier.status]}`}>
-                                                        {t(`status.${mapDossierStatusToI18nKey(dossier.status)}`, { fallback: dossier.status })}
-                                                    </Badge>
+                                                    <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.university")}</span>
+                                                    <span className="text-sm font-medium text-[var(--student-fg)]">{universityName}</span>
                                                 </div>
-                                                {universityName && (
-                                                    <div className="flex items-center justify-between border-b border-[var(--student-border)] pb-3">
-                                                        <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.university")}</span>
-                                                        <span className="text-sm font-medium text-[var(--student-fg)]">{universityName}</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.applicationDate")}</span>
-                                                    <span className="text-sm font-medium text-[var(--student-fg)]">
-                                                        {new Date(dossier.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
-                                                    </span>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-
-                                        {dossier.notes_internes ? (
-                                            <Card className="student-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
-                                                <CardHeader>
-                                                    <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <p className="text-sm leading-relaxed text-[var(--student-fg-muted)]">{dossier.notes_internes}</p>
-                                                </CardContent>
-                                            </Card>
-                                        ) : null}
-                                    </div>
-
-                                    <Card className="student-surface flex h-full min-h-[32rem] w-full min-w-0 flex-col gap-0 rounded-[2rem] border-0 p-0 shadow-none bg-transparent ring-0">
-                                        <CardContent className="flex min-h-0 min-w-0 w-full flex-1 flex-col p-0">
-                                            <DossierRoadmap
-                                                className="min-h-0"
-                                                title={t("dossier.steps")}
-                                                steps={dossierRoadmapSteps}
-                                                currentIdx={dossierStepIdx}
-                                                isRejected={dossierIsRejected}
-                                            />
+                                            )}
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-[var(--student-fg-muted)]">{t("dossier.applicationDate")}</span>
+                                                <span className="text-sm font-medium text-[var(--student-fg)]">
+                                                    {new Date(dossier.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
+                                                </span>
+                                            </div>
                                         </CardContent>
                                     </Card>
+
+                                    {dossier.notes_internes ? (
+                                        <Card className="student-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">
+                                            <CardHeader>
+                                                <CardTitle className="text-base">{t("dossier.teamMessage")}</CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p className="text-sm leading-relaxed text-[var(--student-fg-muted)]">{dossier.notes_internes}</p>
+                                            </CardContent>
+                                        </Card>
+                                    ) : null}
                                 </div>
-                            </>
-                        ) : (
-                            <EmptyState
-                                title={t("dossier.noFile")}
-                                description="Dès qu’un agent crée ton dossier, tu verras ici les étapes, les retours et la prochaine action."
-                            />
-                        )}
-                    </div>
-                )}
 
+                                <Card className="student-surface flex h-full min-h-[32rem] w-full min-w-0 flex-col gap-0 rounded-[2rem] border-0 p-0 shadow-none bg-transparent ring-0">
+                                    <CardContent className="flex min-h-0 min-w-0 w-full flex-1 flex-col p-0">
+                                        <DossierRoadmap
+                                            className="min-h-0"
+                                            title={t("dossier.steps")}
+                                            steps={dossierRoadmapSteps}
+                                            currentIdx={dossierStepIdx}
+                                            isRejected={dossierIsRejected}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </>
+                    ) : (
+                        <EmptyState
+                            title={t("dossier.noFile")}
+                            description="Dès qu'un agent crée ton dossier, tu verras ici les étapes, les retours et la prochaine action."
+                        />
+                    )}
+                </div>
+            )}
+
+            {/* ── Notifications ── */}
             {view === "notifications" && (
-                    <StudentNotifications
-                        user={user}
-                        onBack={() => { setView("dashboard"); void load(); }}
-                        onUnreadChange={setUnreadCount}
-                    />
-                )}
+                <StudentNotifications
+                    user={user}
+                    onBack={() => {
+                        setView("dashboard");
+                        queryClient.invalidateQueries({ queryKey: ['notifications', 'unread', user.id] });
+                    }}
+                    onUnreadChange={(count) =>
+                        queryClient.setQueryData(['notifications', 'unread', user.id], count)
+                    }
+                />
+            )}
 
+            {/* ── Messagerie ── */}
             {view === "messaging" && (
-                    <StudentChatFull
-                        userId={user.id}
-                        agentName={agentName}
-                        onBack={() => setView("dashboard")}
-                        dossier={dossier ? {
-                            status: dossier.status,
-                            university: universityName,
-                            program: studentInfo ? `${studentInfo.niveau} — ${studentInfo.filiere}` : null,
-                            docsOk: documents.filter((d) => d.status === "valide").length,
-                            docsTotal: documents.length,
-                            nextStep: dossierStatusLabel,
-                            nextStepAt: dossier.created_at
-                                ? `Dossier soumis il y a ${Math.max(0, Math.floor((Date.now() - new Date(dossier.created_at).getTime()) / 60000))} min`
-                                : null,
-                        } : null}
-                        nextPayment={nextDue ? {
-                            label: `${nextDue.type === "bourse" ? "Bourse" : nextDue.type === "mandarin" ? "Cours mandarin" : "Cours anglais"} T${nextDue.tranche ?? ""}`,
-                            montant: nextDue.montant,
-                            dateLimite: nextDue.date_limite ?? null,
-                            daysLeft: nextDue.date_limite
-                                ? Math.max(0, Math.ceil((new Date(nextDue.date_limite).getTime() - Date.now()) / 86400000))
-                                : null,
-                        } : null}
-                        onUnreadChange={setUnreadMessages}
-                    />
-                )}
+                <StudentChatFull
+                    userId={user.id}
+                    agentName={agentName}
+                    onBack={() => setView("dashboard")}
+                    dossier={dossier ? {
+                        status: dossier.status,
+                        university: universityName,
+                        program: studentInfo ? `${studentInfo.niveau} — ${studentInfo.filiere}` : null,
+                        docsOk: documents.filter((d) => d.status === "valide").length,
+                        docsTotal: documents.length,
+                        nextStep: dossierStatusLabel,
+                        nextStepAt: dossier.created_at
+                            ? `Dossier soumis il y a ${Math.max(0, Math.floor((Date.now() - new Date(dossier.created_at).getTime()) / 60000))} min`
+                            : null,
+                    } : null}
+                    nextPayment={nextDue ? {
+                        label: `${nextDue.type === "bourse" ? "Bourse" : nextDue.type === "mandarin" ? "Cours mandarin" : "Cours anglais"} T${nextDue.tranche ?? ""}`,
+                        montant: nextDue.montant,
+                        dateLimite: nextDue.date_limite ?? null,
+                        daysLeft: nextDue.date_limite
+                            ? Math.max(0, Math.ceil((new Date(nextDue.date_limite).getTime() - Date.now()) / 86400000))
+                            : null,
+                    } : null}
+                    onUnreadChange={setUnreadMessages}
+                />
+            )}
         </StudentShell>
 
-        {/* Modal paiement étudiant */}
+        {/* ── Modal déclaration paiement ── */}
         {declareModal && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
                 <div className="student-pay-modal-panel w-full max-w-sm rounded-t-3xl p-6 sm:rounded-3xl">
@@ -803,12 +708,15 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 {getPaymentTypeLabel(declareModal.type)} — {declareModal.label}
                             </p>
                         </div>
-                        <button onClick={() => { setDeclareModal(null); setProofFile(null); }} className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]">
+                        <button
+                            onClick={() => { closeDeclareModal(); if (proofInputRef.current) proofInputRef.current.value = ""; }}
+                            className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)]"
+                        >
                             <X className="h-5 w-5" />
                         </button>
                     </div>
 
-                    {/* Input file hors du div scrollable pour éviter les blocages iOS Safari */}
+                    {/* Input file hors du div scrollable — évite le blocage iOS Safari */}
                     <input
                         ref={proofInputRef}
                         type="file"
@@ -824,11 +732,11 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             <span className="font-semibold text-[var(--student-fg)]">{formatMontant(declareModal.montantTranche)}</span>
                         </div>
 
-                        {/* Mode de paiement */}
+                        {/* Mode paiement */}
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setPaymentMode("complet")}
-                                    className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "complet"
                                         ? "border-[rgba(220,38,38,0.35)] bg-[rgba(220,38,38,0.12)] text-[var(--student-neon-lime)]"
                                         : "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)] hover:bg-[rgba(220,38,38,0.08)]"
@@ -838,7 +746,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             </button>
                             <button
                                 onClick={() => setPaymentMode("avance")}
-                                    className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                                className={`student-focus-ring rounded-xl border py-2.5 text-xs font-semibold transition-all ${
                                     paymentMode === "avance"
                                         ? "border-[rgba(220,38,38,0.35)] bg-[rgba(220,38,38,0.12)] text-[var(--student-neon-lime)]"
                                         : "border-[rgba(220,38,38,0.14)] bg-[rgba(220,38,38,0.04)] text-[var(--student-fg-muted)] hover:bg-[rgba(220,38,38,0.08)]"
@@ -864,7 +772,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             </div>
                         )}
 
-                        {/* Preuve */}
+                        {/* Preuve de paiement */}
                         <div className="space-y-1.5">
                             <p className="text-xs font-medium text-[var(--student-fg-muted)]">{t("payments.proofUpload")}</p>
                             {proofFile ? (
@@ -896,22 +804,29 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     </p>
 
                     <div className="flex gap-3">
-                        <Button variant="outline" className="student-chip flex-1 rounded-2xl border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]" onClick={() => { setDeclareModal(null); setProofFile(null); }} disabled={declaring}>
+                        <Button
+                            variant="outline"
+                            className="student-chip flex-1 rounded-2xl border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]"
+                            onClick={() => { closeDeclareModal(); if (proofInputRef.current) proofInputRef.current.value = ""; }}
+                            disabled={declarePaymentMutation.isPending}
+                        >
                             {t("payments.cancel")}
                         </Button>
                         <Button
                             className="flex-1 rounded-2xl border border-[rgba(220,38,38,0.40)] bg-[var(--student-neon-lime)] font-semibold text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] hover:brightness-110 disabled:opacity-60"
                             onClick={handleDeclarePayment}
-                            disabled={declaring}
+                            disabled={declarePaymentMutation.isPending}
                         >
-                            {declaring ? t("payments.sending") : t("payments.confirm")}
+                            {declarePaymentMutation.isPending
+                                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("payments.sending")}</>
+                                : t("payments.confirm")}
                         </Button>
                     </div>
                 </div>
             </div>
         )}
 
-        {/* Modal détails paiement étudiant */}
+        {/* ── Modal détail paiement ── */}
         {detailPayment && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
                 <div className="student-pay-modal-panel w-full max-w-sm rounded-t-3xl p-6 sm:rounded-3xl">
@@ -920,13 +835,28 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         <button onClick={() => setDetailPayment(null)} className="student-focus-ring text-[var(--student-fg-muted)] hover:text-[var(--student-fg)] text-xl">&times;</button>
                     </div>
                     <div className="max-h-[60vh] space-y-3 overflow-auto text-sm sm:max-h-none">
-                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2"><span className="text-[var(--student-fg-muted)]">{t("payments.type")}</span><span className="font-medium text-[var(--student-fg)] capitalize">{getPaymentTypeLabel(detailPayment.type)}</span></div>
-                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2"><span className="text-[var(--student-fg-muted)]">{t("payments.amount")}</span><span className="font-semibold text-[var(--student-fg)]">{formatMontant(detailPayment.montant)}</span></div>
-                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2"><span className="text-[var(--student-fg-muted)]">{t("payments.status")}</span>
-                            <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[detailPayment.status] ?? STATUS_COLORS[detailPayment.status]}`}>{getPaymentStatusLabel(detailPayment.status)}</Badge>
+                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2">
+                            <span className="text-[var(--student-fg-muted)]">{t("payments.type")}</span>
+                            <span className="font-medium text-[var(--student-fg)] capitalize">{getPaymentTypeLabel(detailPayment.type)}</span>
                         </div>
-                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2"><span className="text-[var(--student-fg-muted)]">{t("payments.dueDate")}</span><span className="font-medium text-[var(--student-fg)]">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(locale) : "—"}</span></div>
-                        <div className="flex justify-between"><span className="text-[var(--student-fg-muted)]">{t("payments.paymentDate")}</span><span className="font-medium text-[var(--student-fg)]">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(locale) : "—"}</span></div>
+                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2">
+                            <span className="text-[var(--student-fg-muted)]">{t("payments.amount")}</span>
+                            <span className="font-semibold text-[var(--student-fg)]">{formatMontant(detailPayment.montant)}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2">
+                            <span className="text-[var(--student-fg-muted)]">{t("payments.status")}</span>
+                            <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[detailPayment.status] ?? STATUS_COLORS[detailPayment.status]}`}>
+                                {getPaymentStatusLabel(detailPayment.status)}
+                            </Badge>
+                        </div>
+                        <div className="flex justify-between border-b border-[rgba(220,38,38,0.10)] dark:border-white/10 pb-2">
+                            <span className="text-[var(--student-fg-muted)]">{t("payments.dueDate")}</span>
+                            <span className="font-medium text-[var(--student-fg)]">{detailPayment.date_limite ? new Date(detailPayment.date_limite).toLocaleDateString(locale) : "—"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-[var(--student-fg-muted)]">{t("payments.paymentDate")}</span>
+                            <span className="font-medium text-[var(--student-fg)]">{detailPayment.date_paiement ? new Date(detailPayment.date_paiement).toLocaleDateString(locale) : "—"}</span>
+                        </div>
                     </div>
                     <div className="mt-5 flex gap-2">
                         {detailPayment.status === "paye" && studentInfo && (
@@ -937,7 +867,12 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 {t("payments.downloadReceipt")}
                             </button>
                         )}
-                        <button onClick={() => setDetailPayment(null)} className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] px-3 py-2 text-xs font-semibold text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]">{t("common.close")}</button>
+                        <button
+                            onClick={() => setDetailPayment(null)}
+                            className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.05)] px-3 py-2 text-xs font-semibold text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]"
+                        >
+                            {t("common.close")}
+                        </button>
                     </div>
                 </div>
             </div>

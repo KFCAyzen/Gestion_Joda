@@ -478,7 +478,7 @@ export default function PaymentOverview({
                                                         type="button"
                                                         onClick={declarePayload}
                                                         className="student-focus-ring relative flex h-[3.25rem] w-[3.25rem] shrink-0 items-center justify-center rounded-full bg-[var(--student-neon-lime)] text-[var(--student-neon-ink)] shadow-[var(--student-pay-glow)] transition-transform hover:scale-[1.04] active:scale-[0.97]"
-                                                        aria-label="Effectuer ce paiement"
+                                                        aria-label={t("declarePayment")}
                                                     >
                                                         <CreditCard className="h-6 w-6 opacity-95" aria-hidden />
                                                     </button>

@@ -7,3 +7,4 @@ export * from './use-notifications';
 export * from './use-payment-config';
 export * from './use-accounting';
 export * from './use-documents';
+export * from './use-student-portal';
