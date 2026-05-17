@@ -76,7 +76,7 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
           type: isValid ? "paiement_valide" : "paiement_rejete",
           titre: notifTitle,
           message: notifMessage,
-          lu: false,
+          read: false,
         })
       );
 
@@ -98,7 +98,7 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
           to_user_id: student.user_id,
           subject: msgSubject,
           content: msgContent,
-          lu: false,
+          read: false,
         })
       );
     }
