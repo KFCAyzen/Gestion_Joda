@@ -6,7 +6,7 @@ export interface PaymentConfigTranche {
 
 export interface PaymentConfig {
     id?: string;
-    service_type: 'bourse_bachelor' | 'bourse_master' | 'bourse_bachelor_intl' | 'bourse_master_intl' | 'mandarin' | 'anglais';
+    service_type: 'bourse_bachelor' | 'bourse_master' | 'bourse_bachelor_intl' | 'bourse_master_intl' | 'mandarin' | 'anglais' | 'language_program_intl' | 'partial_scholarship_intl' | 'full_scholarship_intl';
     label: string;
     tranches: PaymentConfigTranche[];
     grace_days: number;
@@ -46,26 +46,22 @@ export const DEFAULT_PAYMENT_CONFIGS: Record<ServiceType, PaymentConfig> = {
     },
     bourse_bachelor_intl: {
         service_type: 'bourse_bachelor_intl',
-        label: 'Procédure Bourse — Bachelor (International)',
+        label: 'Opening Fee — Bachelor',
         tranches: [
-            { tranche: 1, label: 'Ouverture de dossier', montant: 150000 },
-            { tranche: 2, label: 'Caution', montant: 500000 },
-            { tranche: 3, label: 'Visa', montant: 1000000 },
+            { tranche: 1, label: 'Opening Fee', montant: 150 },
         ],
         grace_days: 3,
-        daily_penalty: 10000,
+        daily_penalty: 5,
         deadline_offset_days: 30,
     },
     bourse_master_intl: {
         service_type: 'bourse_master_intl',
-        label: 'Procédure Bourse — Master (International)',
+        label: 'Opening Fee — Master',
         tranches: [
-            { tranche: 1, label: 'Ouverture de dossier', montant: 150000 },
-            { tranche: 2, label: 'Caution', montant: 500000 },
-            { tranche: 3, label: 'Visa', montant: 1300000 },
+            { tranche: 1, label: 'Opening Fee', montant: 150 },
         ],
         grace_days: 3,
-        daily_penalty: 10000,
+        daily_penalty: 5,
         deadline_offset_days: 30,
     },
     mandarin: {
@@ -93,6 +89,36 @@ export const DEFAULT_PAYMENT_CONFIGS: Record<ServiceType, PaymentConfig> = {
         grace_days: 15,
         daily_penalty: 1000,
         deadline_offset_days: 15,
+    },
+    language_program_intl: {
+        service_type: 'language_program_intl',
+        label: 'Language Program',
+        tranches: [
+            { tranche: 1, label: 'Language Program Fee', montant: 749 },
+        ],
+        grace_days: 7,
+        daily_penalty: 10,
+        deadline_offset_days: 30,
+    },
+    partial_scholarship_intl: {
+        service_type: 'partial_scholarship_intl',
+        label: 'Partial Scholarship',
+        tranches: [
+            { tranche: 1, label: 'Partial Scholarship Fee', montant: 1100 },
+        ],
+        grace_days: 7,
+        daily_penalty: 10,
+        deadline_offset_days: 30,
+    },
+    full_scholarship_intl: {
+        service_type: 'full_scholarship_intl',
+        label: 'Full Scholarship',
+        tranches: [
+            { tranche: 1, label: 'Full Scholarship Fee', montant: 1499 },
+        ],
+        grace_days: 7,
+        daily_penalty: 10,
+        deadline_offset_days: 30,
     },
 };
 

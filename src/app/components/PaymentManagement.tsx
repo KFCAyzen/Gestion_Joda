@@ -97,10 +97,13 @@ export default function PaymentManagement() {
 
     const studentMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
 
+    const INTL_PROGRAM_TYPES = ["language_program_intl", "partial_scholarship_intl", "full_scholarship_intl"] as const;
+
     const resolvePenaltyConfig = useCallback(
         (payment: Payment, sMap: Map<string, Student>) => {
-            if (payment.type === "mandarin" || payment.type === "anglais") {
-                const cfg = getConfig(payment.type);
+            const isKnownType = ["mandarin", "anglais", ...INTL_PROGRAM_TYPES].includes(payment.type as never);
+            if (isKnownType) {
+                const cfg = getConfig(payment.type as "mandarin" | "anglais" | "language_program_intl" | "partial_scholarship_intl" | "full_scholarship_intl");
                 return { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty };
             }
             const student = sMap.get(payment.student_id);
@@ -379,6 +382,9 @@ export default function PaymentManagement() {
             case "bourse": return t("types.scholarship");
             case "mandarin": return t("types.mandarin");
             case "anglais": return t("types.english");
+            case "language_program_intl": return "Language Program";
+            case "partial_scholarship_intl": return "Partial Scholarship";
+            case "full_scholarship_intl": return "Full Scholarship";
             default: return type;
         }
     };

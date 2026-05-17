@@ -102,6 +102,8 @@ export default function StudentManagement() {
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
     const [createdAccount, setCreatedAccount] = useState<{ username: string; password: string } | null>(null);
     const [selectedStudentPayments, setSelectedStudentPayments] = useState<any[]>([]);
+    const [programForm, setProgramForm] = useState<{ type: "language_program_intl" | "partial_scholarship_intl" | "full_scholarship_intl"; date_limite: string }>({ type: "language_program_intl", date_limite: "" });
+    const [isAssigningProgram, setIsAssigningProgram] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [operationMessage, setOperationMessage] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
@@ -390,7 +392,9 @@ export default function StudentManagement() {
         const allExistingTypes = new Set(existingPayments.map((p: { type: string }) => p.type));
 
         // 3. Supprimer les paiements en attente/retard pour les types hors-service
-        const typesToRemove = [...allExistingTypes].filter(t => !expectedTypes.has(t));
+        // Les types de programme international ne sont jamais supprimés automatiquement
+        const INTL_PROGRAM_TYPES = ["language_program_intl", "partial_scholarship_intl", "full_scholarship_intl"];
+        const typesToRemove = [...allExistingTypes].filter(t => !expectedTypes.has(t) && !INTL_PROGRAM_TYPES.includes(t));
         if (typesToRemove.length > 0) {
             await supabase
                 .from("payments")
@@ -426,6 +430,44 @@ export default function StudentManagement() {
 
         if (toInsert.length > 0) {
             await supabase.from("payments").insert(toInsert);
+        }
+    };
+
+    const INTL_PROGRAM_TYPES = ["language_program_intl", "partial_scholarship_intl", "full_scholarship_intl"] as const;
+
+    const handleAssignProgram = async () => {
+        if (!selectedStudent || !programForm.date_limite || isAssigningProgram) return;
+        setIsAssigningProgram(true);
+        try {
+            // Supprimer le programme précédent non payé
+            await supabase
+                .from("payments")
+                .delete()
+                .eq("student_id", selectedStudent.id)
+                .in("type", [...INTL_PROGRAM_TYPES])
+                .in("status", ["attente", "retard"]);
+
+            const cfg = getConfig(programForm.type);
+            await supabase.from("payments").insert({
+                student_id: selectedStudent.id,
+                type: programForm.type,
+                tranche: 1,
+                montant: cfg.tranches[0].montant,
+                status: "attente",
+                penalites: 0,
+                date_limite: programForm.date_limite,
+            });
+
+            // Rafraîchir les paiements affichés
+            const { data } = await supabase
+                .from("payments")
+                .select("*")
+                .eq("student_id", selectedStudent.id);
+            setSelectedStudentPayments(data || []);
+        } catch (err) {
+            console.error("Erreur attribution programme:", err);
+        } finally {
+            setIsAssigningProgram(false);
         }
     };
 
@@ -896,6 +938,68 @@ export default function StudentManagement() {
                                         <p className="text-xs uppercase tracking-wider text-slate-400">{t("detail.createdAt")}</p>
                                         <p className="mt-2 text-sm text-slate-900 dark:text-slate-100">{new Date(selectedStudent.created_at).toLocaleString(dateLocale)}</p>
                                     </div>
+
+                                    {/* Programme international */}
+                                    {isInternational(selectedStudent.nationalite) && (selectedStudent.choix === "procedure_seule" || selectedStudent.choix === "procedure_cours") && (
+                                        <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 p-4">
+                                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
+                                                Programme International
+                                            </p>
+                                            {(() => {
+                                                const currentProgram = selectedStudentPayments.find(p => (INTL_PROGRAM_TYPES as readonly string[]).includes(p.type));
+                                                return currentProgram ? (
+                                                    <div className="mb-3 rounded-lg bg-blue-100 dark:bg-blue-900/40 px-3 py-2 text-sm flex flex-wrap items-center gap-x-1">
+                                                        <span className="text-slate-500 dark:text-slate-400">Programme actuel :</span>
+                                                        <span className="font-medium text-slate-900 dark:text-slate-100">
+                                                            {currentProgram.type === "language_program_intl" ? "Language Program" : currentProgram.type === "partial_scholarship_intl" ? "Partial Scholarship" : "Full Scholarship"}
+                                                        </span>
+                                                        <span className="text-slate-500 dark:text-slate-400">
+                                                            — {currentProgram.montant.toLocaleString("en-US")} $ · Échéance {new Date(currentProgram.date_limite).toLocaleDateString()}
+                                                        </span>
+                                                        {currentProgram.status === "paye" && (
+                                                            <span className="inline-flex rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:text-green-300">Payé</span>
+                                                        )}
+                                                    </div>
+                                                ) : null;
+                                            })()}
+                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                                                <div className="flex-1">
+                                                    <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">Programme</label>
+                                                    <Select
+                                                        value={programForm.type}
+                                                        onValueChange={(v) => setProgramForm(f => ({ ...f, type: v as typeof f.type }))}
+                                                    >
+                                                        <SelectTrigger className="h-9 w-full">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="language_program_intl">Language Program — $749</SelectItem>
+                                                            <SelectItem value="partial_scholarship_intl">Partial Scholarship — $1 100</SelectItem>
+                                                            <SelectItem value="full_scholarship_intl">Full Scholarship — $1 499</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">Échéance</label>
+                                                    <Input
+                                                        type="date"
+                                                        value={programForm.date_limite}
+                                                        onChange={(e) => setProgramForm(f => ({ ...f, date_limite: e.target.value }))}
+                                                        className="h-9"
+                                                    />
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={handleAssignProgram}
+                                                    disabled={!programForm.date_limite || isAssigningProgram}
+                                                    className="h-9"
+                                                >
+                                                    {isAssigningProgram && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Assigner
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Échéancier paiements */}
                                     <div>

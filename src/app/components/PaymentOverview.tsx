@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Check, CreditCard, Loader2 } from "lucide-react";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
-import { getBourseServiceType, PaymentConfig, isInternational } from "../types/payment-config";
+import { getBourseServiceType, PaymentConfig, isInternational, ServiceType } from "../types/payment-config";
 
 interface Payment {
     id: string;
@@ -238,6 +238,8 @@ export default function PaymentOverview({
     const currency = isIntl ? "$" : "FCFA";
     const numLocale = isIntl ? "en-US" : "fr-FR";
 
+    const INTL_PROGRAM_TYPES: ServiceType[] = ["language_program_intl", "partial_scholarship_intl", "full_scholarship_intl"];
+
     const services = useMemo((): Service[] => {
         const list: Service[] = [];
         const lc = langue.toLowerCase();
@@ -257,6 +259,11 @@ export default function PaymentOverview({
         if (payments.some(p => p.type === "anglais") && !list.some(s => s.type === "anglais"))
             list.push(configToService(getConfig("anglais"), "anglais"));
 
+        for (const type of INTL_PROGRAM_TYPES) {
+            if (payments.some(p => p.type === type) && !list.some(s => s.type === type))
+                list.push(configToService(getConfig(type), type));
+        }
+
         return list;
     }, [choix, langue, niveau, nationalite, payments, getConfig, getBourseConfig]);
 
@@ -264,9 +271,9 @@ export default function PaymentOverview({
 
     const totalPenalties = useMemo(() => {
         return payments.filter((p) => p.status !== "paye").reduce((sum, p) => {
-            const isLangue = p.type === "mandarin" || p.type === "anglais";
-            const cfg = isLangue
-                ? getConfig(p.type as "mandarin" | "anglais")
+            const isKnownType = ["mandarin", "anglais", ...INTL_PROGRAM_TYPES].includes(p.type);
+            const cfg = isKnownType
+                ? getConfig(p.type as ServiceType)
                 : getBourseConfig(niveau, nationalite);
             return sum + calculatePenalty(p, { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty });
         }, 0);
@@ -352,9 +359,9 @@ export default function PaymentOverview({
 
             {/* Échéancier par service */}
             {services.map((service) => {
-                const isLangue = service.type === "mandarin" || service.type === "anglais";
-                const serviceCfg = isLangue
-                    ? getConfig(service.type as "mandarin" | "anglais")
+                const isKnownType = ["mandarin", "anglais", ...INTL_PROGRAM_TYPES].includes(service.type);
+                const serviceCfg = isKnownType
+                    ? getConfig(service.type as ServiceType)
                     : getBourseConfig(niveau, nationalite);
                 const penaltyConfig = { grace_days: serviceCfg.grace_days, daily_penalty: serviceCfg.daily_penalty };
 
