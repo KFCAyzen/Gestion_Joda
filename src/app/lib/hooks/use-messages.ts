@@ -139,11 +139,16 @@ export function useSendChatMessage(userId: string) {
     mutationFn: async ({
       content,
       agentUserId,
+      faqId,
+      locale,
     }: {
       content: string;
       agentUserId: string | null;
+      faqId?: string;
+      locale?: string;
     }): Promise<ChatMessage | null> => {
-      if (agentUserId) {
+      // Si FAQ : toujours passer par l'API route pour déclencher la réponse ciblée
+      if (!faqId && agentUserId) {
         const { data, error } = await supabase
           .from('messages')
           .insert({
@@ -161,7 +166,12 @@ export function useSendChatMessage(userId: string) {
       const res = await fetch('/api/student-send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: 'Message étudiant', content }),
+        body: JSON.stringify({
+          subject: faqId ? 'Question étudiant' : 'Message étudiant',
+          content,
+          faq_id: faqId ?? null,
+          locale: locale ?? 'fr',
+        }),
       });
       if (!res.ok) throw new Error('Erreur envoi message');
       return null;

@@ -16,7 +16,8 @@
     "storage": "Storage",
     "fees": "Fees",
     "feeConfig": "Fee Config.",
-    "com": "Communication"
+    "com": "Communication",
+    "newsletter": "Newsletter"
   },
   "layout": {
     "workspace": "Joda Workspace",
@@ -33,6 +34,7 @@
       "operations": "Operations",
       "ressources": "Resources",
       "finance": "Finance",
+      "communication": "Communication",
       "administration": "Administration",
       "systeme": "System"
     },
@@ -58,7 +60,8 @@
       "storage": "Storage and database monitoring",
       "activityLogs": "Agent sensitive activity logs",
       "feeConfig": "Installment, penalty and deadline configuration",
-      "com": "Student communication"
+      "com": "Student communication",
+      "newsletter": "Email campaigns and automated re-engagement"
     }
   },
   "common": {
@@ -450,6 +453,7 @@
         "nextPayment": "Upcoming deadline",
         "dueOn": "Due on {date}",
         "daysLeft": "{count} days",
+        "autoReplyBadge": "Automated reply",
         "statusLabels": {
           "document_recu": "Documents received",
           "en_attente": "Pending",
@@ -472,7 +476,8 @@
         "send": "Send",
         "sending": "Sending…",
         "sent": "Message sent!",
-        "sendError": "Failed to send message."
+        "sendError": "Failed to send message.",
+        "autoReplyBadge": "Automated reply"
       }
     },
     "dashboard": {

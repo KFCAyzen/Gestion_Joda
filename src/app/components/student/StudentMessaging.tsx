@@ -14,7 +14,7 @@ import {
 import { SectionHeader } from "./SectionHeader";
 import { EmptyState } from "./EmptyState";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, Mail, MailOpen, SendHorizonal } from "lucide-react";
+import { Bot, ChevronLeft, Mail, MailOpen, SendHorizonal } from "lucide-react";
 
 interface Props {
     userId: string;
@@ -189,7 +189,9 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
                             >
                                 <div className="flex items-start gap-3">
                                     <span className="mt-0.5 shrink-0 text-[var(--student-fg-muted)]">
-                                        {msg.read ? (
+                                        {!!(msg.metadata as Record<string, unknown>)?.is_auto_reply ? (
+                                            <Bot className="h-4 w-4 text-slate-400" />
+                                        ) : msg.read ? (
                                             <MailOpen className="h-4 w-4" />
                                         ) : (
                                             <Mail className="h-4 w-4 text-[var(--student-ring-stand)]" />
@@ -197,14 +199,21 @@ export function StudentMessaging({ userId, onBack, onUnreadChange }: Props) {
                                     </span>
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-baseline justify-between gap-2">
-                                            <p className={cn(
-                                                "truncate text-sm",
-                                                msg.read
-                                                    ? "font-normal text-[var(--student-fg-muted)]"
-                                                    : "font-semibold text-[var(--student-fg)]",
-                                            )}>
-                                                {msg.subject}
-                                            </p>
+                                            <div className="flex min-w-0 items-center gap-1.5">
+                                                <p className={cn(
+                                                    "truncate text-sm",
+                                                    msg.read
+                                                        ? "font-normal text-[var(--student-fg-muted)]"
+                                                        : "font-semibold text-[var(--student-fg)]",
+                                                )}>
+                                                    {msg.subject}
+                                                </p>
+                                                {!!(msg.metadata as Record<string, unknown>)?.is_auto_reply && (
+                                                    <span className="shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 dark:text-slate-500">
+                                                        {t("autoReplyBadge")}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span className="shrink-0 text-[10px] text-[var(--student-fg-muted)] opacity-60">
                                                 {formatDate(msg.created_at)}
                                             </span>

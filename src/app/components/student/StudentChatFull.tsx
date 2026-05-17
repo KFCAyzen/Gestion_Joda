@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, Mic, MoreVertical, Paperclip, Send } from "lucide-react";
+import { Bot, ChevronDown, ChevronLeft, ChevronUp, Mic, MoreVertical, Paperclip, Send } from "lucide-react";
+import { FAQ_ITEMS, type FaqItem } from "@/app/lib/faq-data";
 import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/app/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -71,6 +72,10 @@ function isSystemMessage(msg: ChatMessage): boolean {
     return !!(msg.metadata as Record<string, unknown>)?.system;
 }
 
+function isAutoReply(msg: ChatMessage): boolean {
+    return !!(msg.metadata as Record<string, unknown>)?.is_auto_reply;
+}
+
 function avatarInitials(name: string): string {
     return name
         .split(" ")
@@ -85,6 +90,8 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
     const t = useTranslations("student.portal.chat");
     const locale = useLocale();
     const [text, setText] = useState("");
+    const [showAllFaq, setShowAllFaq] = useState(false);
+    const [usedFaqIds, setUsedFaqIds] = useState<Set<string>>(new Set());
     const bottomRef = useRef<HTMLDivElement>(null);
 
     // ── TanStack Query ────────────────────────────────────────────────────────
@@ -147,6 +154,14 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
             e.preventDefault();
             void send();
         }
+    };
+
+    const sendFaq = async (item: FaqItem) => {
+        if (sendChatMessage.isPending) return;
+        const question = locale === "en" ? item.questionEN : item.questionFR;
+        setUsedFaqIds((prev) => new Set(prev).add(item.id));
+        setShowAllFaq(false);
+        await sendChatMessage.mutateAsync({ content: question, agentUserId: null, faqId: item.id, locale });
     };
 
     // ── Labels dossier ────────────────────────────────────────────────────────
@@ -226,8 +241,9 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                 </div>
 
                                 {group.messages.map((msg) => {
-                                    const isOwn   = msg.from_user_id === userId;
+                                    const isOwn    = msg.from_user_id === userId;
                                     const isSystem = isSystemMessage(msg);
+                                    const autoReply = isAutoReply(msg);
 
                                     if (isSystem) {
                                         return (
@@ -235,6 +251,28 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                                                 <span className="rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] px-4 py-1.5 text-[11px] text-[var(--student-fg-muted)]">
                                                     {msg.content}
                                                 </span>
+                                            </div>
+                                        );
+                                    }
+
+                                    if (autoReply) {
+                                        return (
+                                            <div key={msg.id} className="mb-3 flex items-end gap-2">
+                                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+                                                    <Bot className="h-4 w-4" />
+                                                </div>
+                                                <div className="max-w-[78%] sm:max-w-[72%]">
+                                                    <div className="rounded-2xl rounded-bl-md border border-[var(--student-border)] bg-[var(--student-surface)] px-3.5 py-2.5 text-[14px] leading-relaxed text-[var(--student-fg-muted)] sm:px-4 sm:py-3 sm:text-sm">
+                                                        {msg.content}
+                                                        <div className="mt-1 text-[10px] text-[var(--student-fg-muted)] opacity-60">
+                                                            {fmtTime(msg.created_at)}
+                                                        </div>
+                                                    </div>
+                                                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400 dark:text-slate-500">
+                                                        <Bot className="h-2.5 w-2.5" />
+                                                        {t("autoReplyBadge")}
+                                                    </span>
+                                                </div>
                                             </div>
                                         );
                                     }
@@ -269,6 +307,76 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
                         ))
                     )}
                     <div ref={bottomRef} />
+                </div>
+
+                {/* Suggestions FAQ */}
+                <div className="border-t border-[var(--student-border)] bg-[var(--student-surface-2)] px-3 pt-2.5 pb-1 md:px-4">
+                    {showAllFaq ? (
+                        <div className="mb-2">
+                            <div className="mb-2 flex items-center justify-between">
+                                <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--student-fg-muted)] opacity-60">
+                                    Questions fréquentes
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAllFaq(false)}
+                                    className="flex items-center gap-0.5 text-[11px] text-[var(--student-fg-muted)] opacity-60 hover:opacity-100"
+                                >
+                                    Réduire <ChevronUp className="h-3 w-3" />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                                {FAQ_ITEMS.map((item) => {
+                                    const used = usedFaqIds.has(item.id);
+                                    const label = locale === "en" ? item.labelEN : item.labelFR;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            disabled={used || sendChatMessage.isPending}
+                                            onClick={() => void sendFaq(item)}
+                                            className={`rounded-xl border px-3 py-2 text-left text-[12px] leading-snug transition-colors ${
+                                                used
+                                                    ? "border-[var(--student-border)] text-[var(--student-fg-muted)] opacity-40"
+                                                    : "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-fg)] hover:border-[var(--student-ring-stand)] hover:text-[var(--student-ring-stand)]"
+                                            }`}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+                            {FAQ_ITEMS.slice(0, 4).map((item) => {
+                                const used = usedFaqIds.has(item.id);
+                                const label = locale === "en" ? item.labelEN : item.labelFR;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        disabled={used || sendChatMessage.isPending}
+                                        onClick={() => void sendFaq(item)}
+                                        className={`shrink-0 rounded-full border px-3 py-1 text-[12px] whitespace-nowrap transition-colors ${
+                                            used
+                                                ? "border-[var(--student-border)] text-[var(--student-fg-muted)] opacity-40"
+                                                : "border-[var(--student-border)] bg-[var(--student-surface)] text-[var(--student-fg)] hover:border-[var(--student-ring-stand)] hover:text-[var(--student-ring-stand)]"
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                            <button
+                                type="button"
+                                onClick={() => setShowAllFaq(true)}
+                                className="shrink-0 flex items-center gap-0.5 rounded-full border border-[var(--student-border)] bg-[var(--student-surface)] px-3 py-1 text-[12px] text-[var(--student-fg-muted)] whitespace-nowrap hover:border-[var(--student-ring-stand)] hover:text-[var(--student-ring-stand)]"
+                            >
+                                +4 <ChevronDown className="h-3 w-3" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Barre de saisie */}

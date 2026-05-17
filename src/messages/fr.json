@@ -16,7 +16,8 @@
     "storage": "Stockage",
     "fees": "Frais",
     "feeConfig": "Config. Frais",
-    "com": "Communication"
+    "com": "Communication",
+    "newsletter": "Newsletter"
   },
   "layout": {
     "workspace": "Workspace Joda",
@@ -33,6 +34,7 @@
       "operations": "Opérations",
       "ressources": "Ressources",
       "finance": "Finance",
+      "communication": "Communication",
       "administration": "Administration",
       "systeme": "Système"
     },
@@ -58,7 +60,8 @@
       "storage": "Monitoring du stockage et de la base de données",
       "activityLogs": "Logs des activités sensibles des agents",
       "feeConfig": "Configuration des tranches, pénalités et délais",
-      "com": "Communication avec les étudiants"
+      "com": "Communication avec les étudiants",
+      "newsletter": "Campagnes email et relances automatiques"
     }
   },
   "common": {
@@ -450,6 +453,7 @@
         "nextPayment": "Échéance proche",
         "dueOn": "Dû le {date}",
         "daysLeft": "{count} jours",
+        "autoReplyBadge": "Réponse automatique",
         "statusLabels": {
           "document_recu": "Documents reçus",
           "en_attente": "En attente",
@@ -472,7 +476,8 @@
         "send": "Envoyer",
         "sending": "Envoi…",
         "sent": "Message envoyé !",
-        "sendError": "Erreur lors de l'envoi."
+        "sendError": "Erreur lors de l'envoi.",
+        "autoReplyBadge": "Réponse automatique"
       }
     },
     "dashboard": {
