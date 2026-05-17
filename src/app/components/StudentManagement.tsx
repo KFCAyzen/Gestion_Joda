@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "../lib/supabase/client";
+import { useStudents, STUDENTS_KEY } from "../lib/hooks/use-students";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
@@ -91,9 +93,10 @@ export default function StudentManagement() {
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
+    const queryClient = useQueryClient();
+    const { data: _studentsData = [], isLoading: loading } = useStudents();
+    const students = _studentsData as unknown as Student[];
     const [localUser, setLocalUser] = useState<{ id: string; role: string } | null>(null);
-    const [students, setStudents] = useState<Student[]>([]);
-    const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
@@ -258,38 +261,6 @@ export default function StudentManagement() {
     }, []);
 
     const currentUser = user || localUser;
-
-    const loadStudents = async () => {
-        setLoading(true);
-        try {
-            let query = supabase.from("students").select("*").order("created_at", { ascending: false });
-
-            if (currentUser?.role === "student" && currentUser?.id) {
-                query = query.eq("created_by", currentUser.id);
-            }
-
-            const { data, error } = await query;
-            if (error) {
-                throw error;
-            }
-            if (data) {
-                setStudents(data);
-            }
-        } catch (err) {
-            console.error("Erreur:", err);
-            const message = getFriendlyErrorMessage(err, {
-                fallback: t("messages.loadError"),
-            });
-            setFeedback(message, "");
-            showNotification({ title: t("messages.loadTitle"), message, type: "error" });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadStudents();
-    }, [currentUser?.role]);
 
     useEffect(() => {
         if (!selectedStudent) {
@@ -544,7 +515,7 @@ export default function StudentManagement() {
                 // Synchroniser les paiements manquants selon le nouveau choix/langue
                 await syncPaymentsForStudent(editingStudent.id, formData.choix, formData.langue, formData.niveau, formData.nationalite);
 
-                await loadStudents();
+                queryClient.invalidateQueries({ queryKey: STUDENTS_KEY });
                 setActiveTab("list");
                 return;
             }
@@ -627,7 +598,7 @@ export default function StudentManagement() {
             }
             setFormData(emptyFormData);
             setActiveTab("list");
-            await loadStudents();
+            queryClient.invalidateQueries({ queryKey: STUDENTS_KEY });
         } catch (err) {
             console.error("Erreur:", err);
             setSubmitError(t("messages.submitError"));
@@ -672,7 +643,7 @@ export default function StudentManagement() {
                     { student_id: studentToDelete.id }
                 );
             }
-            await loadStudents();
+            queryClient.invalidateQueries({ queryKey: STUDENTS_KEY });
         } catch (err) {
             console.error("Erreur:", err);
             setSubmitError(t("messages.deleteError"));
