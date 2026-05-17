@@ -19,6 +19,7 @@ import {
     LogOut,
     Menu,
     MessageSquareText,
+    Newspaper,
     Settings2,
     ShieldUser,
     TrendingUp,
@@ -46,6 +47,7 @@ type RouteId =
     | "dossiers"
     | "cours_langues"
     | "com"
+    | "newsletter"
     | "users"
     | "performance"
     | "notifications"
@@ -63,6 +65,7 @@ const ROUTES: Record<RouteId, string> = {
     dossiers: "/dossiers",
     cours_langues: "/cours-langues",
     com: "/communication",
+    newsletter: "/newsletter",
     users: "/utilisateurs",
     performance: "/performances",
     notifications: "/notifications",
@@ -81,6 +84,7 @@ const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
     dossiers: "Suivi des dossiers de bourse",
     cours_langues: "Cours de Mandarin et d'Anglais pour étudiants",
     com: "Messagerie vers les étudiants",
+    newsletter: "Campagnes email et relances automatiques",
     users: "Administration des comptes utilisateurs",
     performance: "Indicateurs et performances de l'équipe",
     notifications: "Centre de notifications et alertes",
@@ -95,60 +99,6 @@ type MenuSection = { id: string; label: string; roles?: UserRole[]; items: MenuI
 
 const iconCls = "w-4 h-4 flex-shrink-0";
 
-const menuSections: MenuSection[] = [
-    {
-        id: "pilotage",
-        label: "Pilotage",
-        items: [
-            { id: "home", label: "Dashboard", icon: <LayoutDashboard className={iconCls} /> },
-            { id: "performance", label: "Performances", icon: <TrendingUp className={iconCls} /> },
-        ],
-    },
-    {
-        id: "operations",
-        label: "Opérations",
-        items: [
-            { id: "reservations", label: "Candidatures", icon: <FileClock className={iconCls} /> },
-            { id: "clients", label: "Étudiants", icon: <GraduationCap className={iconCls} /> },
-            { id: "dossiers", label: "Dossiers", icon: <FileArchive className={iconCls} /> },
-        ],
-    },
-    {
-        id: "ressources",
-        label: "Ressources",
-        items: [
-            { id: "chambres", label: "Universités", icon: <Building2 className={iconCls} /> },
-            { id: "facturation", label: "Frais", icon: <WalletCards className={iconCls} /> },
-            { id: "cours_langues", label: "Cours de langues", icon: <BookOpen className={iconCls} /> },
-        ],
-    },
-    {
-        id: "finance",
-        label: "Finance",
-        roles: ["agent", "admin", "super_admin"] as UserRole[],
-        items: [
-            { id: "comptabilite", label: "Comptabilité", icon: <HandCoins className={iconCls} /> },
-        ],
-    },
-    {
-        id: "administration",
-        label: "Administration",
-        roles: ["admin", "super_admin"] as UserRole[],
-        items: [
-            { id: "users", label: "Utilisateurs", icon: <Users className={iconCls} /> },
-            { id: "activity_logs", label: "Logs Activités", icon: <FileClock className={iconCls} /> },
-            { id: "fee_config", label: "Config. Frais", icon: <Settings2 className={iconCls} /> },
-        ],
-    },
-    {
-        id: "systeme",
-        label: "Système",
-        roles: ["super_admin"] as UserRole[],
-        items: [
-            { id: "storage", label: "Stockage", icon: <Database className={iconCls} /> },
-        ],
-    },
-];
 
 function AppShell({ children }: { children: ReactNode }) {
     const router = useRouter();
@@ -174,7 +124,15 @@ function AppShell({ children }: { children: ReactNode }) {
                 { id: "reservations", label: tNav('applications'), icon: <FileClock className={iconCls} /> },
                 { id: "clients", label: tNav('students'), icon: <GraduationCap className={iconCls} /> },
                 { id: "dossiers", label: tNav('scholarshipFiles'), icon: <FileArchive className={iconCls} /> },
+            ],
+        },
+        {
+            id: "communication",
+            label: t('sections.communication'),
+            roles: ["agent", "supervisor", "admin", "super_admin"] as UserRole[],
+            items: [
                 { id: "com", label: tNav('com'), icon: <MessageSquareText className={iconCls} /> },
+                { id: "newsletter", label: tNav('newsletter'), icon: <Newspaper className={iconCls} /> },
             ],
         },
         {
@@ -223,6 +181,7 @@ function AppShell({ children }: { children: ReactNode }) {
         dossiers: t('descriptions.scholarshipFiles'),
         cours_langues: t('descriptions.languageCourses'),
         com: t('descriptions.com'),
+        newsletter: t('descriptions.newsletter'),
         users: t('descriptions.users'),
         performance: t('descriptions.performance'),
         notifications: t('descriptions.notifications'),

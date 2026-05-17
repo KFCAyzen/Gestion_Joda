@@ -620,6 +620,147 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   }
 }
 
+// ── Newsletter → student ───────────────────────────────────────────────────────
+
+interface NewsletterEmailData {
+  studentName: string;
+  studentEmail: string;
+  subject: string;
+  message: string;
+  lang?: Lang;
+}
+
+export async function sendNewsletterEmail(data: NewsletterEmailData): Promise<boolean> {
+  const lang = data.lang ?? 'fr';
+  const isEn = lang === 'en';
+  const year = new Date().getFullYear();
+
+  try {
+    await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: [data.studentEmail],
+      subject: data.subject,
+      html: `<!DOCTYPE html>
+<html lang="${lang}"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader(lang)}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? 'Hello' : 'Bonjour'} <strong>${data.studentName}</strong>,</p>
+  <div style="margin:24px 0;font-size:14px;color:#374151;line-height:1.8;">
+    ${data.message.replace(/\n/g, '<br>')}
+  </div>
+  <table cellpadding="0" cellspacing="0" style="margin-top:28px;">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://gestion-joda.vercel.app/etudiant"
+           style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          ${isEn ? 'My student space →' : 'Mon espace étudiant →'}
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+<tr>
+  <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 40px;text-align:center;">
+    <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;">
+      ${isEn
+        ? 'You received this email because you are a Joda Company student.'
+        : 'Vous recevez cet email en tant qu\'étudiant Joda Company.'}
+    </p>
+    <p style="margin:0;font-size:12px;color:#9ca3af;">© ${year} Joda Company — ${isEn ? 'All rights reserved' : 'Tous droits réservés'}</p>
+  </td>
+</tr>
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Newsletter envoyée à ${data.studentEmail}`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendNewsletterEmail:', err);
+    return false;
+  }
+}
+
+// ── Dossier inactif → student (cron automatisation) ───────────────────────────
+
+interface DossierInactiveEmailData {
+  studentName: string;
+  studentEmail: string;
+  dossierStatus: string;
+  inactiveDays: number;
+  lang?: Lang;
+}
+
+export async function sendDossierInactiveEmail(data: DossierInactiveEmailData): Promise<boolean> {
+  const lang = data.lang ?? 'fr';
+  const isEn = lang === 'en';
+  const year = new Date().getFullYear();
+
+  const statusLabels: Record<string, Record<Lang, string>> = {
+    en_attente:       { fr: 'En attente',        en: 'Pending' },
+    en_cours:         { fr: 'En cours',           en: 'In progress' },
+    document_manquant:{ fr: 'Document manquant',  en: 'Missing document' },
+  };
+  const statusLabel = statusLabels[data.dossierStatus]?.[lang] ?? data.dossierStatus;
+
+  try {
+    await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: [data.studentEmail],
+      subject: isEn
+        ? `Your scholarship file — ${data.inactiveDays} days without update`
+        : `Votre dossier de bourse — ${data.inactiveDays} jours sans mise à jour`,
+      html: `<!DOCTYPE html>
+<html lang="${lang}"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader(lang)}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? 'Hello' : 'Bonjour'} <strong>${data.studentName}</strong>,</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+    ${isEn
+      ? `We noticed that your scholarship file has had no update for <strong>${data.inactiveDays} days</strong>. Current status: <strong>${statusLabel}</strong>.`
+      : `Nous avons remarqué que votre dossier de bourse n'a pas été mis à jour depuis <strong>${data.inactiveDays} jours</strong>. Statut actuel : <strong>${statusLabel}</strong>.`}
+  </p>
+  <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+    <p style="margin:0;font-size:13px;color:#713f12;line-height:1.6;">
+      ${isEn
+        ? '💡 If you have questions or need help with your file, contact your Joda Company advisor via your student space.'
+        : '💡 Si vous avez des questions ou besoin d\'aide sur votre dossier, contactez votre conseiller Joda Company via votre espace étudiant.'}
+    </p>
+  </div>
+  <table cellpadding="0" cellspacing="0" style="margin-top:20px;">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://gestion-joda.vercel.app/etudiant"
+           style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          ${isEn ? 'Check my file →' : 'Voir mon dossier →'}
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year, lang)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Relance dossier inactif envoyée à ${data.studentEmail} (${data.inactiveDays}j)`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendDossierInactiveEmail:', err);
+    return false;
+  }
+}
+
 // ── Nouveau compte étudiant → admins ──────────────────────────────────────────
 
 interface NewStudentAdminEmailData {
