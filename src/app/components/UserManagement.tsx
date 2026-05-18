@@ -255,15 +255,18 @@ export default function UserManagement() {
         setTogglingId(targetUser.id);
         const nextActive = targetUser.is_active === false;
         try {
-            const supabase = createClient();
-            const { error: updateError } = await supabase
-                .from("users")
-                .update({ is_active: nextActive, updated_at: new Date().toISOString() })
-                .eq("id", targetUser.id);
+            const res = await fetch("/api/activate-user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: targetUser.id, activate: nextActive }),
+            });
 
-            if (updateError) {
-                throw updateError;
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({}));
+                throw new Error(json.error ?? "Erreur lors de la mise à jour du statut");
             }
+
+            const json = await res.json();
 
             await logActivity(
                 currentUser.id,
@@ -273,7 +276,11 @@ export default function UserManagement() {
                 "users",
                 targetUser.id,
                 `Compte ${nextActive ? "activé" : "désactivé"} — ${targetUser.name}`,
-                { target_user_id: targetUser.id, is_active: nextActive },
+                {
+                    target_user_id: targetUser.id,
+                    is_active: nextActive,
+                    ...(json.workflow ? { workflow: json.workflow } : {}),
+                },
             );
 
             const message = nextActive

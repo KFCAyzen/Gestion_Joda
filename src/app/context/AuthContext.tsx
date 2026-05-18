@@ -201,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         }
                         return {
                             success: false,
-                            message: "Ce compte est désactivé. Contactez un administrateur pour rétablir l'accès.",
+                            message: "Ce compte n'est pas encore actif. Si vous venez de vous inscrire, votre compte est en attente de validation par l'équipe Joda Company. Sinon, contactez un administrateur.",
                         };
                     }
 

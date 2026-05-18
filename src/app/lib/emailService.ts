@@ -761,6 +761,275 @@ ${emailFooter(year, lang)}
   }
 }
 
+// ── Inscription auto-soumise → étudiant (confirmation) ───────────────────────
+
+interface RegistrationConfirmationEmailData {
+  studentName: string;
+  studentEmail: string;
+  username: string;
+  lang?: Lang;
+}
+
+export async function sendRegistrationConfirmationEmail(data: RegistrationConfirmationEmailData): Promise<boolean> {
+  const lang = data.lang ?? 'fr';
+  const isEn = lang === 'en';
+  const year = new Date().getFullYear();
+
+  try {
+    await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: [data.studentEmail],
+      subject: isEn
+        ? '✅ Registration received — Joda Company'
+        : '✅ Inscription reçue — Joda Company',
+      html: `<!DOCTYPE html>
+<html lang="${lang}"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader(lang)}
+<tr><td style="padding:36px 40px;">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:#f0fdf4;border-radius:50%;margin-bottom:12px;">
+      <span style="font-size:28px;">✅</span>
+    </div>
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#111827;">
+      ${isEn ? 'Registration received!' : 'Inscription reçue !'}
+    </h2>
+  </div>
+  <p style="margin:0 0 8px;font-size:15px;color:#111827;">${isEn ? 'Hello' : 'Bonjour'} <strong>${data.studentName}</strong>,</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+    ${isEn
+      ? 'Your registration has been received by the Joda Company team. Your account will be reviewed and activated shortly.'
+      : 'Votre inscription a bien été reçue par l\'équipe Joda Company. Votre compte va être examiné et activé prochainement.'}
+  </p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
+    <tr><td style="padding:20px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;width:160px;">${isEn ? 'Your username' : 'Votre identifiant'}</td>
+          <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:700;font-family:monospace;">${data.username}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? 'Status' : 'Statut'}</td>
+          <td style="padding:6px 0;">
+            <span style="background:#fef9c3;color:#854d0e;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">
+              ${isEn ? '⏳ Pending activation' : '⏳ En attente d\'activation'}
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+    <p style="margin:0;font-size:13px;color:#1e40af;line-height:1.6;">
+      💡 ${isEn
+        ? 'Once your account is activated, you will receive another email. You can then sign in with your username and the password you chose during registration.'
+        : 'Une fois votre compte activé, vous recevrez un autre email. Vous pourrez alors vous connecter avec votre identifiant et le mot de passe choisi lors de l\'inscription.'}
+    </p>
+  </div>
+</td></tr>
+${emailFooter(year, lang)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Confirmation inscription envoyée à ${data.studentEmail}`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendRegistrationConfirmationEmail:', err);
+    return false;
+  }
+}
+
+// ── Inscription en attente → admins ───────────────────────────────────────────
+
+interface RegistrationPendingAdminEmailData {
+  studentName: string;
+  studentUsername: string;
+  studentEmail: string;
+  niveau: string;
+  filiere: string;
+  choix: string;
+  adminEmails: string[];
+}
+
+export async function sendRegistrationPendingAdminEmail(data: RegistrationPendingAdminEmailData): Promise<boolean> {
+  if (data.adminEmails.length === 0) return false;
+  const year = new Date().getFullYear();
+
+  const choixLabels: Record<string, string> = {
+    procedure_seule: 'Procédure bourse seule',
+    cours_seuls: 'Cours de langue seuls',
+    procedure_cours: 'Procédure + Cours de langue',
+  };
+
+  try {
+    await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: data.adminEmails,
+      subject: `🆕 Nouvelle inscription en attente — ${data.studentName}`,
+      html: `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader()}
+<tr><td style="padding:36px 40px;">
+  <div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:12px 16px;margin-bottom:24px;">
+    <p style="margin:0;font-size:13px;color:#713f12;font-weight:600;">⏳ Un nouvel étudiant s'est inscrit et attend l'activation de son compte.</p>
+  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
+    <tr><td style="padding:20px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;width:160px;">Nom complet</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.studentName}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Identifiant</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;font-family:monospace;">${data.studentUsername}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Email de contact</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.studentEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Niveau</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.niveau}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Filière</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.filiere}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Service souhaité</td>
+          <td style="padding:6px 0;">
+            <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">
+              ${choixLabels[data.choix] ?? data.choix}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">Inscrit le</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  <p style="font-size:13px;color:#6b7280;margin:0 0 20px;line-height:1.6;">
+    Rendez-vous dans la section <strong>Utilisateurs</strong> de la plateforme pour activer ce compte.
+  </p>
+  <table cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://portal-joda.company/utilisateurs" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          Activer le compte →
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Inscription en attente notifiée à ${data.adminEmails.length} admin(s)`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendRegistrationPendingAdminEmail:', err);
+    return false;
+  }
+}
+
+// ── Compte activé → étudiant ───────────────────────────────────────────────────
+
+interface AccountActivatedEmailData {
+  studentName: string;
+  studentEmail: string;
+  username: string;
+  lang?: Lang;
+}
+
+export async function sendAccountActivatedEmail(data: AccountActivatedEmailData): Promise<boolean> {
+  const lang = data.lang ?? 'fr';
+  const isEn = lang === 'en';
+  const year = new Date().getFullYear();
+
+  try {
+    await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: [data.studentEmail],
+      subject: isEn
+        ? '🎉 Your account has been activated — Joda Company'
+        : '🎉 Votre compte a été activé — Joda Company',
+      html: `<!DOCTYPE html>
+<html lang="${lang}"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader(lang)}
+<tr><td style="padding:36px 40px;">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:#f0fdf4;border-radius:50%;margin-bottom:12px;">
+      <span style="font-size:28px;">🎉</span>
+    </div>
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#111827;">
+      ${isEn ? 'Account activated!' : 'Compte activé !'}
+    </h2>
+  </div>
+  <p style="margin:0 0 8px;font-size:15px;color:#111827;">${isEn ? 'Hello' : 'Bonjour'} <strong>${data.studentName}</strong>,</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+    ${isEn
+      ? 'Great news! Your account has been activated. You can now sign in to your student portal using your credentials.'
+      : 'Bonne nouvelle ! Votre compte a été activé. Vous pouvez maintenant vous connecter à votre espace étudiant avec vos identifiants.'}
+  </p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;">
+    <tr><td style="padding:20px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;width:160px;">${isEn ? 'Username' : 'Identifiant'}</td>
+          <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:700;font-family:monospace;">${data.username}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? 'Password' : 'Mot de passe'}</td>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">
+            ${isEn ? 'The password you chose during registration' : 'Le mot de passe choisi lors de votre inscription'}
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="https://portal-joda.company/login" style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          ${isEn ? 'Sign in now →' : 'Me connecter maintenant →'}
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year, lang)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    console.log(`[Email] Compte activé notifié à ${data.studentEmail}`);
+    return true;
+  } catch (err) {
+    console.error('[Email] Erreur sendAccountActivatedEmail:', err);
+    return false;
+  }
+}
+
 // ── Nouveau compte étudiant → admins ──────────────────────────────────────────
 
 interface NewStudentAdminEmailData {

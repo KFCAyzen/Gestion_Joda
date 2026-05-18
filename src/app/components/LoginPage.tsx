@@ -450,7 +450,7 @@ export default function LoginPage() {
                                 </motion.form>
 
                                 <motion.div
-                                    className="mt-6 text-center"
+                                    className="mt-6 flex flex-col items-center gap-3"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.6 }}
@@ -462,6 +462,17 @@ export default function LoginPage() {
                                     >
                                         {t("forgotPassword")}
                                     </button>
+                                    <div className="flex items-center gap-2 w-full">
+                                        <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                                        <span className="text-xs text-gray-400">ou</span>
+                                        <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                                    </div>
+                                    <a
+                                        href={`/${locale}/register`}
+                                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 py-3 text-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-red-300 transition-colors"
+                                    >
+                                        {t("registerLink")}
+                                    </a>
                                 </motion.div>
                             </motion.div>
                         </motion.div>

@@ -164,7 +164,8 @@
     "lightMode": "Light mode",
     "changeLanguage": "Change language",
     "french": "French",
-    "english": "English"
+    "english": "English",
+    "registerLink": "First time? Create an account"
   },
   "dashboard": {
     "executiveTag": "Executive Dashboard",
@@ -2078,6 +2079,127 @@
       "daysLeft": "D-{days} — Due on {date}",
       "gracePeriod": "Grace period — {remaining} days left (of {total})",
       "daysLate": "{days} day{plural} late"
+    }
+  },
+  "register": {
+    "pageTitle": "Student Registration",
+    "pageSubtitle": "Create your application in a few steps",
+    "backToLogin": "Already registered? Sign in",
+    "steps": {
+      "personal": "Personal Info",
+      "academic": "Academic Info",
+      "passport": "Passport",
+      "documents": "Documents",
+      "account": "Account",
+      "review": "Review"
+    },
+    "personal": {
+      "title": "Personal Information",
+      "subtitle": "Fill in your identity details",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Contact email",
+      "emailPlaceholder": "your@email.com",
+      "phone": "Phone number",
+      "phonePlaceholder": "+237 6XX XXX XXX",
+      "age": "Age",
+      "gender": "Gender",
+      "male": "Male (M)",
+      "female": "Female (F)",
+      "nationality": "Nationality",
+      "nationalityPlaceholder": "E.g. Cameroonian"
+    },
+    "academic": {
+      "title": "Academic Information",
+      "subtitle": "Specify your background and goals",
+      "level": "Study level",
+      "levelPlaceholder": "E.g. Bachelor, Master, PhD",
+      "field": "Field of study",
+      "fieldPlaceholder": "E.g. Computer Science, Medicine, Business",
+      "diploma": "Diploma obtained",
+      "diplomaPlaceholder": "E.g. Baccalaureate, Bachelor's Degree",
+      "language": "Preferred language",
+      "languageFr": "French",
+      "languageEn": "English",
+      "service": "Desired service",
+      "serviceProcedure": "Scholarship procedure only",
+      "serviceCours": "Language course only",
+      "serviceBoth": "Procedure + Language course"
+    },
+    "passport": {
+      "title": "Passport Information",
+      "subtitle": "Enter your valid passport details",
+      "number": "Passport number",
+      "numberPlaceholder": "E.g. AB1234567",
+      "expiration": "Expiration date",
+      "warning": "Your passport must be valid for at least 6 months after your planned entry date to China."
+    },
+    "documents": {
+      "title": "Documents (optional)",
+      "subtitle": "You can upload your documents now or later from your student portal.",
+      "optionalBadge": "Optional",
+      "skipInfo": "This step is optional. You can submit documents after your account is activated.",
+      "docPasseport": "Passport (scan)",
+      "docCasier": "Criminal record",
+      "docPhoto": "ID photo",
+      "docReleve": "Grade transcript",
+      "docDiplome": "High school diploma",
+      "selectFile": "Choose a file",
+      "changeFile": "Change",
+      "fileSelected": "File selected",
+      "formats": "PDF, JPG, PNG — max 10 MB"
+    },
+    "account": {
+      "title": "Account Creation",
+      "subtitle": "Your username is automatically generated from your name",
+      "username": "Username (auto-generated)",
+      "usernameInfo": "You will use this username to sign in",
+      "password": "Password",
+      "passwordPlaceholder": "Minimum 8 characters",
+      "confirmPassword": "Confirm password",
+      "confirmPlaceholder": "Repeat your password",
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "strength": {
+        "weak": "Weak",
+        "medium": "Medium",
+        "strong": "Strong"
+      }
+    },
+    "review": {
+      "title": "Review",
+      "subtitle": "Check your information before submitting",
+      "sectionPersonal": "Personal Information",
+      "sectionAcademic": "Academic Information",
+      "sectionPassport": "Passport",
+      "sectionDocuments": "Documents",
+      "sectionAccount": "Account",
+      "docsCount": "{count} document(s) selected",
+      "noDoc": "No document",
+      "submit": "Submit my registration",
+      "submitting": "Submitting...",
+      "editStep": "Edit"
+    },
+    "success": {
+      "title": "Registration submitted!",
+      "subtitle": "Your application has been received by the Joda Company team.",
+      "username": "Your username",
+      "info": "Your account is pending activation by the administrators. You will receive a confirmation email once your account is activated.",
+      "backToLogin": "Back to login"
+    },
+    "errors": {
+      "emailExists": "An account already exists with this email.",
+      "usernameExists": "An account already exists with this username.",
+      "generic": "An error occurred. Please try again.",
+      "required": "This field is required",
+      "emailInvalid": "Invalid email",
+      "ageInvalid": "Invalid age (between 15 and 60)",
+      "passportExpired": "The expiration date must be in the future"
+    },
+    "nav": {
+      "next": "Next",
+      "back": "Back",
+      "step": "Step {current} of {total}"
     }
   }
 }

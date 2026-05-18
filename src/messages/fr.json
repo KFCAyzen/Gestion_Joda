@@ -164,7 +164,8 @@
     "lightMode": "Mode clair",
     "changeLanguage": "Changer de langue",
     "french": "Français",
-    "english": "English"
+    "english": "English",
+    "registerLink": "Première inscription ? Créer un compte"
   },
   "dashboard": {
     "executiveTag": "Executive Dashboard",
@@ -2078,6 +2079,127 @@
       "daysLeft": "J-{days} — Échéance le {date}",
       "gracePeriod": "Période de grâce — {remaining} j restants (sur {total} j)",
       "daysLate": "{days} jour{plural} de retard"
+    }
+  },
+  "register": {
+    "pageTitle": "Inscription étudiant",
+    "pageSubtitle": "Créez votre dossier d'inscription en quelques étapes",
+    "backToLogin": "Déjà inscrit ? Se connecter",
+    "steps": {
+      "personal": "Infos personnelles",
+      "academic": "Infos académiques",
+      "passport": "Passeport",
+      "documents": "Documents",
+      "account": "Compte",
+      "review": "Récapitulatif"
+    },
+    "personal": {
+      "title": "Informations personnelles",
+      "subtitle": "Renseignez vos informations d'identité",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Email de contact",
+      "emailPlaceholder": "votre@email.com",
+      "phone": "Téléphone",
+      "phonePlaceholder": "+237 6XX XXX XXX",
+      "age": "Âge",
+      "gender": "Sexe",
+      "male": "Homme (M)",
+      "female": "Femme (F)",
+      "nationality": "Nationalité",
+      "nationalityPlaceholder": "Ex : Camerounaise"
+    },
+    "academic": {
+      "title": "Informations académiques",
+      "subtitle": "Précisez votre parcours et vos objectifs",
+      "level": "Niveau d'études",
+      "levelPlaceholder": "Ex : Licence, Master, Doctorat",
+      "field": "Filière",
+      "fieldPlaceholder": "Ex : Informatique, Médecine, Commerce",
+      "diploma": "Diplôme acquis",
+      "diplomaPlaceholder": "Ex : Baccalauréat, Licence",
+      "language": "Langue préférée",
+      "languageFr": "Français",
+      "languageEn": "Anglais",
+      "service": "Service souhaité",
+      "serviceProcedure": "Procédure bourse seule",
+      "serviceCours": "Cours de langue seuls",
+      "serviceBoth": "Procédure + Cours de langue"
+    },
+    "passport": {
+      "title": "Informations passeport",
+      "subtitle": "Renseignez les données de votre passeport en cours de validité",
+      "number": "Numéro de passeport",
+      "numberPlaceholder": "Ex : AB1234567",
+      "expiration": "Date d'expiration",
+      "warning": "Votre passeport doit être valide au moins 6 mois après la date prévue d'entrée en Chine."
+    },
+    "documents": {
+      "title": "Documents (optionnel)",
+      "subtitle": "Vous pouvez uploader vos documents maintenant ou plus tard depuis votre espace étudiant.",
+      "optionalBadge": "Facultatif",
+      "skipInfo": "Cette étape est optionnelle. Vous pourrez soumettre vos documents après validation de votre compte.",
+      "docPasseport": "Passeport (scan)",
+      "docCasier": "Casier judiciaire",
+      "docPhoto": "Carte photo",
+      "docReleve": "Relevé de bac",
+      "docDiplome": "Diplôme de bac",
+      "selectFile": "Choisir un fichier",
+      "changeFile": "Changer",
+      "fileSelected": "Fichier sélectionné",
+      "formats": "PDF, JPG, PNG — max 10 Mo"
+    },
+    "account": {
+      "title": "Création du compte",
+      "subtitle": "Votre identifiant est généré automatiquement depuis votre nom",
+      "username": "Identifiant (généré automatiquement)",
+      "usernameInfo": "Vous utiliserez cet identifiant pour vous connecter",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Minimum 8 caractères",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmPlaceholder": "Répétez votre mot de passe",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit faire au moins 8 caractères",
+      "strength": {
+        "weak": "Faible",
+        "medium": "Moyen",
+        "strong": "Fort"
+      }
+    },
+    "review": {
+      "title": "Récapitulatif",
+      "subtitle": "Vérifiez vos informations avant de soumettre",
+      "sectionPersonal": "Informations personnelles",
+      "sectionAcademic": "Informations académiques",
+      "sectionPassport": "Passeport",
+      "sectionDocuments": "Documents",
+      "sectionAccount": "Compte",
+      "docsCount": "{count} document(s) sélectionné(s)",
+      "noDoc": "Aucun document",
+      "submit": "Soumettre mon inscription",
+      "submitting": "Envoi en cours...",
+      "editStep": "Modifier"
+    },
+    "success": {
+      "title": "Inscription soumise !",
+      "subtitle": "Votre dossier a bien été reçu par l'équipe Joda Company.",
+      "username": "Votre identifiant",
+      "info": "Votre compte est en attente d'activation par les administrateurs. Vous recevrez un email de confirmation une fois votre compte activé.",
+      "backToLogin": "Retour à la connexion"
+    },
+    "errors": {
+      "emailExists": "Un compte existe déjà avec cet email.",
+      "usernameExists": "Un compte existe déjà avec cet identifiant. Votre nom a généré un doublon.",
+      "generic": "Une erreur est survenue. Veuillez réessayer.",
+      "required": "Ce champ est obligatoire",
+      "emailInvalid": "Email invalide",
+      "ageInvalid": "Âge invalide (entre 15 et 60 ans)",
+      "passportExpired": "La date d'expiration doit être dans le futur"
+    },
+    "nav": {
+      "next": "Suivant",
+      "back": "Retour",
+      "step": "Étape {current} sur {total}"
     }
   }
 }
