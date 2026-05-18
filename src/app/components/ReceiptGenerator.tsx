@@ -160,11 +160,10 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                         <td style="vertical-align:middle;width:56px;padding-right:14px;">${logoTag}</td>
                         <td style="vertical-align:middle;">
                           <div class="company-name">JODA COMPANY</div>
-                          <div class="company-tagline">Gestion des bourses d'études en Chine</div>
+                          <div class="company-tagline">Entreprise de conseil et assistance voyage — Bourse d'étude en Chine</div>
                           <div class="company-info">
-                            Agence de Voyage — Bourses d'Études en Chine<br>
-                            BP : 7352 Yaoundé, N° Cont : P116012206442N<br>
-                            Tel : (+237) 674 94 44 17 / 699 01 56 81 &nbsp;|&nbsp; Email : jodacompany@yahoo.com
+                            BP 2525 Douala Makepe entrée Marie Lumière<br>
+                            Email : contact@joda-company.com
                           </div>
                         </td>
                       </tr>
@@ -196,16 +195,16 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                         <span class="info-label">Niveau d'étude :</span>
                         <span class="info-value">${sanitizeForHtml(student.niveau)}</span>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Filière souhaitée :</span>
-                        <span class="info-value">${sanitizeForHtml(student.filiere)}</span>
-                    </div>
                 </div>
                 
                 <div class="payment-info">
                     <div class="info-title">DÉTAILS DU PAIEMENT</div>
                     <div class="info-row">
-                        <span class="info-label">Type de paiement :</span>
+                        <span class="info-label">Objet :</span>
+                        <span class="info-value">Assistance visa (pour les Camerounais)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Prestation :</span>
                         <span class="info-value">${getPaymentTypeLabel(payment.type)}</span>
                     </div>
                     <div class="info-row">
@@ -214,11 +213,19 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                     </div>
                     <div class="info-row">
                         <span class="info-label">Mode de paiement :</span>
-                        <span class="info-value">Virement bancaire / Espèces</span>
+                        <span class="info-value">Droit Bancaire / Cache</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Validé par :</span>
                         <span class="info-value">${payment.validatedBy || 'En attente de validation'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Avance :</span>
+                        <span class="info-value">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Reste :</span>
+                        <span class="info-value">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                     </div>
                 </div>
                 

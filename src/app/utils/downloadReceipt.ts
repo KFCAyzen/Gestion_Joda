@@ -109,8 +109,8 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
           <td class="logo-cell">${logoTag}</td>
           <td class="company-cell">
             <div class="company-name">JODA COMPANY</div>
-            <div class="company-sub">Agence de Voyage — Bourses d'Études en Chine<br>Travel Agency — Scholarships for Studies in China</div>
-            <div class="company-info">BP 7352 Yaoundé &nbsp;|&nbsp; Tél : (+237) 674 94 44 17 / 699 01 56 81 &nbsp;|&nbsp; jodacompany@yahoo.com</div>
+            <div class="company-sub">Entreprise de conseil et assistance voyage — Bourse d'étude en Chine</div>
+            <div class="company-info">BP 2525 Douala Makepe entrée Marie Lumière &nbsp;|&nbsp; contact@joda-company.com</div>
           </td>
           <td class="copy-cell">
             <div class="copy-badge">${copy}</div>
@@ -134,14 +134,16 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
             <div class="field"><span class="lbl">Nom / Name :</span> <span class="val">${studentName}</span></div>
             <div class="field"><span class="lbl">Tél :</span> <span class="val">${sanitizeForHtml(student.telephone)}</span></div>
             <div class="field"><span class="lbl">Niveau / Level :</span> <span class="val">${sanitizeForHtml(student.niveau)}</span></div>
-            <div class="field"><span class="lbl">Filière / Field :</span> <span class="val">${sanitizeForHtml(student.filiere)}</span></div>
           </td>
           <!-- Colonne droite : infos paiement -->
           <td class="col-right">
             <div class="section-label">PAIEMENT / PAYMENT</div>
-            <div class="field"><span class="lbl">Objet / Purpose :</span> <span class="val">${typeLabelFr}<br><em>${typeLabelEn}</em></span></div>
+            <div class="field"><span class="lbl">Objet :</span> <span class="val">Assistance visa (pour les Camerounais)</span></div>
+            <div class="field"><span class="lbl">Prestation :</span> <span class="val">${typeLabelFr}</span></div>
             <div class="field"><span class="lbl">Date :</span> <span class="val">${dateStr}</span></div>
-            <div class="field"><span class="lbl">Mode / Method :</span> <span class="val">Espèces / Cash</span></div>
+            <div class="field"><span class="lbl">Mode :</span> <span class="val">Droit Bancaire / Cache</span></div>
+            <div class="field"><span class="lbl">Avance :</span> <span class="val">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+            <div class="field"><span class="lbl">Reste :</span> <span class="val">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
           </td>
         </tr>
       </table>
