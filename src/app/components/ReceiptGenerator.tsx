@@ -201,7 +201,7 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                     <div class="info-title">DÉTAILS DU PAIEMENT</div>
                     <div class="info-row">
                         <span class="info-label">Objet :</span>
-                        <span class="info-value">Assistance visa (pour les Camerounais)</span>
+                        <span class="info-value">Assistance visa</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Prestation :</span>
@@ -213,7 +213,7 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                     </div>
                     <div class="info-row">
                         <span class="info-label">Mode de paiement :</span>
-                        <span class="info-value">Droit Bancaire / Cache</span>
+                        <span class="info-value">Droit Bancaire / Cash</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Validé par :</span>
