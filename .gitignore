@@ -46,3 +46,7 @@ tests/.artifacts/
 tests/.auth/
 test-results/
 playwright-report/
+
+# Electron desktop — artefacts de build
+dist-electron/
+release/

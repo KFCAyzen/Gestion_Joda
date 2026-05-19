@@ -1,0 +1,66 @@
+appId: com.jodacompany.desktop
+productName: Joda Company
+copyright: Copyright © 2026 Joda Company
+
+# Phase 1 : pas de dépendances natives à compiler (better-sqlite3 viendra en Phase 2,
+# alors il faudra installer Visual Studio Build Tools ou désactiver @electron/rebuild).
+npmRebuild: false
+
+# Le code source compilé d'Electron + les ressources embarquées.
+directories:
+  output: release
+  buildResources: electron/icons
+
+# Fichiers inclus dans l'app (resources/app.asar).
+# Le build standalone Next.js est en extraResources (cf. plus bas), pas dans l'asar :
+# l'app.asar ne contient que le main Electron + package.json minimal.
+files:
+  - "dist-electron/**/*"
+  - "package.json"
+  - "!node_modules/**/*"        # exclu : standalone Next.js a son propre node_modules
+  - "!**/{.DS_Store,.git,.gitignore,.gitattributes}"
+  - "!**/{appveyor.yml,.travis.yml,circle.yml}"
+  - "!**/{npm-debug.log,yarn.lock,.yarn-integrity}"
+  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp}"
+
+# Mode asar : bundle JS en un seul fichier. Plus rapide à charger, plus dur à modifier.
+asar: true
+
+# Le build Next.js standalone est trop volumineux pour `files`, on le déclare en `extraResources`.
+# Il sera disponible dans `process.resourcesPath` à l'exécution.
+extraResources:
+  - from: ".next/standalone"
+    to: "app/.next/standalone"
+    filter: ["**/*"]
+  - from: ".next/static"
+    to: "app/.next/standalone/.next/static"
+    filter: ["**/*"]
+  - from: "public"
+    to: "app/.next/standalone/public"
+    filter: ["**/*"]
+
+# Plate-forme Windows.
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: electron/icons/icon.ico
+  artifactName: "${productName}-Setup-${version}.${ext}"
+
+# Installeur NSIS.
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Joda Company
+  installerIcon: electron/icons/icon.ico
+  uninstallerIcon: electron/icons/icon.ico
+  installerHeader: electron/icons/icon.ico
+  license: LICENSE.txt
+  warningsAsErrors: false
+
+# Pas de publication auto (pas d'auto-update pour l'instant).
+publish: null

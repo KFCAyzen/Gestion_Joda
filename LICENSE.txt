@@ -1,0 +1,43 @@
+LICENCE D'UTILISATION — Joda Company Desktop
+
+Copyright © 2026 Joda Company. Tous droits réservés.
+
+Ce logiciel est propriété de Joda Company. Il est mis à disposition des
+utilisateurs autorisés de Joda Company pour l'usage interne de gestion
+des bourses d'études en Chine.
+
+1. AUTORISATION D'USAGE
+
+   L'utilisation de ce logiciel est strictement réservée au personnel
+   autorisé de Joda Company et à ses partenaires officiels.
+
+2. RESTRICTIONS
+
+   Sans l'autorisation écrite préalable de Joda Company, vous ne pouvez
+   pas :
+   - Distribuer, vendre, louer, prêter ou transférer ce logiciel à des
+     tiers
+   - Modifier, décompiler ou faire de l'ingénierie inverse sur ce
+     logiciel
+   - Utiliser ce logiciel à des fins commerciales en dehors du cadre
+     défini par Joda Company
+
+3. DONNÉES UTILISATEUR
+
+   Les données traitées par ce logiciel (étudiants, candidatures,
+   paiements, dossiers) sont confidentielles et soumises aux obligations
+   légales en matière de protection des données personnelles. Toute
+   divulgation non autorisée peut entraîner des poursuites.
+
+4. GARANTIE
+
+   Ce logiciel est fourni « tel quel » sans aucune garantie expresse ou
+   implicite. Joda Company ne peut être tenue responsable des dommages
+   résultant de son utilisation.
+
+5. ACCEPTATION
+
+   En installant ou en utilisant ce logiciel, vous acceptez les termes
+   de cette licence.
+
+Pour toute question : contact@joda.company
