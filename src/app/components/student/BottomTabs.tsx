@@ -46,6 +46,7 @@ export function BottomTabs({
               key={id}
               type="button"
               onClick={() => onChange(id)}
+              data-testid={`portal-tab-${id}`}
               className={[
                 "relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-all duration-200",
                 "student-focus-ring",

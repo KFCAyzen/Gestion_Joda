@@ -20,6 +20,30 @@ const supabaseAdmin = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
+// Rate-limit en mémoire : un même userId ne peut réinitialiser son mdp qu'une fois
+// toutes les RESET_COOLDOWN_MS millisecondes. Évite qu'un attaquant connaissant
+// l'email d'un admin puisse spam-réinitialiser son mdp et le déconnecter en boucle.
+// TODO multi-instance : déplacer vers une colonne `last_password_reset_at` en DB.
+const RESET_COOLDOWN_MS = 5 * 60 * 1000;
+const lastResetByUser = new Map<string, number>();
+
+function isOnCooldown(userId: string): boolean {
+    const last = lastResetByUser.get(userId);
+    if (!last) return false;
+    return Date.now() - last < RESET_COOLDOWN_MS;
+}
+
+function markReset(userId: string): void {
+    lastResetByUser.set(userId, Date.now());
+    // Garbage-collect : on garde au plus 5000 entrées.
+    if (lastResetByUser.size > 5000) {
+        const cutoff = Date.now() - RESET_COOLDOWN_MS;
+        for (const [k, v] of lastResetByUser) {
+            if (v < cutoff) lastResetByUser.delete(k);
+        }
+    }
+}
+
 function generateTempPassword(): string {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let suffix = "";
@@ -160,6 +184,14 @@ export async function POST(req: NextRequest) {
             recipientName = userRow.name || "Utilisateur";
         }
 
+        // Rate-limit : si l'utilisateur a déjà reset son mdp dans les 5 dernières minutes,
+        // on retourne 200 silencieusement (toujours pour éviter l'énumération) sans changer
+        // le mdp. Protège contre les attaques de déni-de-service par spam-reset.
+        if (isOnCooldown(userId)) {
+            console.warn(`[forgot-password] cooldown actif pour user ${userId}, requête ignorée`);
+            return NextResponse.json({ success: true });
+        }
+
         const tempPassword = generateTempPassword();
 
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
@@ -171,6 +203,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
+        markReset(userId);
         await supabaseAdmin.from("users").update({ must_change_password: true }).eq("id", userId);
 
         const isEn = lang === "en";

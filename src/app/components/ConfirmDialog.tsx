@@ -41,6 +41,7 @@ export default function ConfirmDialog({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                data-testid="confirm-dialog"
             >
                 <motion.div
                     style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
@@ -54,13 +55,13 @@ export default function ConfirmDialog({
                             <AlertTriangle className="h-6 w-6 text-red-600" />
                         </div>
                     )}
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100" data-testid="confirm-title">{title}</h3>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400" data-testid="confirm-description">{description}</p>
                     <div className="mt-6 flex justify-end gap-2">
-                        <Button variant="outline" disabled={isLoading} onClick={onClose}>
+                        <Button variant="outline" disabled={isLoading} onClick={onClose} data-testid="confirm-cancel">
                             {resolvedCancel}
                         </Button>
-                        <Button variant={variant} disabled={isLoading} onClick={onConfirm}>
+                        <Button variant={variant} disabled={isLoading} onClick={onConfirm} data-testid="confirm-yes">
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {resolvedConfirm}
                         </Button>

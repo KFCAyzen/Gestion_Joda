@@ -220,6 +220,7 @@ export default function LoginPage() {
                         onClick={toggleTheme}
                         className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg transition-colors hover:bg-gray-100 dark:bg-gray-800/90 dark:hover:bg-gray-700"
                         aria-label={getThemeLabel()}
+                        data-testid="theme-toggle"
                         whileHover={{ scale: 1.1 }}
                         whileTap={buttonTap}
                     >
@@ -242,6 +243,7 @@ export default function LoginPage() {
                             aria-label={t("changeLanguage")}
                             aria-haspopup="true"
                             aria-expanded={showLangMenu}
+                            data-testid="lang-switcher"
                             whileHover={{ scale: 1.05 }}
                             whileTap={buttonTap}
                         >
@@ -270,6 +272,7 @@ export default function LoginPage() {
                                         <button
                                             key={loc}
                                             onClick={() => switchLocale(loc)}
+                                            data-testid={`lang-option-${loc}`}
                                             className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 ${
                                                 locale === loc ? "text-red-600 bg-red-50 dark:bg-red-900/20" : "text-gray-700 dark:text-gray-300"
                                             }`}
@@ -384,6 +387,7 @@ export default function LoginPage() {
                                             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none transition focus:border-red-400 focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30"
                                             required
                                             autoComplete="username"
+                                            data-testid="login-identifier"
                                             whileFocus={{ scale: 1.01 }}
                                             initial={{ opacity: 0, x: -20 }}
                                             animate={{ opacity: 1, x: 0 }}
@@ -403,6 +407,7 @@ export default function LoginPage() {
                                                 placeholder={t("passwordPlaceholder")}
                                                 required
                                                 autoComplete="current-password"
+                                                data-testid="login-password"
                                             />
                                             <motion.button
                                                 type="button"
@@ -433,6 +438,7 @@ export default function LoginPage() {
                                         type="submit"
                                         disabled={loading}
                                         className="w-full rounded-xl bg-red-600 px-4 py-4 text-base font-semibold text-white shadow-[0_16px_32px_rgba(220,38,38,0.35)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        data-testid="login-submit"
                                         animate={{ opacity: 1, y: 0 }}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={buttonTap}
@@ -459,6 +465,7 @@ export default function LoginPage() {
                                         type="button"
                                         onClick={() => { setShowForgotPassword(true); setForgotInput(""); setForgotSent(false); }}
                                         className="text-sm text-gray-400 hover:text-red-600 transition-colors"
+                                        data-testid="login-forgot-btn"
                                     >
                                         {t("forgotPassword")}
                                     </button>
@@ -532,6 +539,7 @@ export default function LoginPage() {
                                             placeholder={t("forgotInputPlaceholder")}
                                             required
                                             className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+                                            data-testid="forgot-input"
                                         />
                                         {/* Sélecteur de canal — uniquement pour les étudiants (nom d'utilisateur) */}
                                         {forgotInput.trim() && !forgotIsEmail && (
@@ -575,6 +583,7 @@ export default function LoginPage() {
                                             type="submit"
                                             disabled={forgotLoading}
                                             className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(220,38,38,0.3)] hover:bg-red-700 disabled:opacity-50 transition-colors"
+                                            data-testid="forgot-submit"
                                         >
                                             {forgotLoading ? t("sending") : t("sendCredentials")}
                                         </button>
@@ -582,6 +591,7 @@ export default function LoginPage() {
                                             type="button"
                                             onClick={closeForgotPassword}
                                             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50 transition-colors"
+                                            data-testid="forgot-cancel"
                                         >
                                             {t("cancel")}
                                         </button>

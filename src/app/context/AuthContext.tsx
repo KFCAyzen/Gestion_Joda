@@ -242,7 +242,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
-            await supabase.auth.signOut();
+            // scope: 'local' ne tue que la session du navigateur courant. Sans ce flag,
+            // un signOut() invalide toutes les sessions actives du user (autres
+            // onglets, autres appareils) — ce qui est trop agressif pour un logout
+            // utilisateur volontaire.
+            await supabase.auth.signOut({ scope: "local" });
             setUser(null);
             if (typeof window !== "undefined") {
                 localStorage.removeItem("currentUser");

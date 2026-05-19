@@ -39,3 +39,10 @@ next-env.d.ts
 
 # Chat logs (may contain secrets)
 q-dev-chat-*.md
+
+# Playwright E2E tests — artefacts générés, NE PAS committer
+tests/.report/
+tests/.artifacts/
+tests/.auth/
+test-results/
+playwright-report/

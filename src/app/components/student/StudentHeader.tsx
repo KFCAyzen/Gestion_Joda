@@ -131,6 +131,7 @@ export function StudentHeader({
             onClick={() => setTheme(actualTheme === "light" ? "dark" : "light")}
             className={iconBtn}
             aria-label="Changer le thème"
+            data-testid="portal-theme-toggle"
           >
             {actualTheme === "light" ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
           </button>
@@ -139,10 +140,14 @@ export function StudentHeader({
             onClick={onNotifications}
             className={`${iconBtn} relative`}
             aria-label="Ouvrir les notifications"
+            data-testid="portal-bell"
           >
             <Bell className="h-[18px] w-[18px]" />
             {unreadCount > 0 && (
-              <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--student-ring-move)] px-0.5 text-[9px] font-bold text-white">
+              <span
+                className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--student-ring-move)] px-0.5 text-[9px] font-bold text-white"
+                data-testid="portal-bell-badge"
+              >
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
@@ -173,6 +178,7 @@ export function StudentHeader({
                 variant="destructive"
                 className="cursor-pointer gap-2 rounded-lg px-2 py-2 text-white focus:bg-white/12 focus:text-white dark:text-white dark:focus:bg-white/10 dark:focus:text-white data-[variant=destructive]:text-white/80 data-[variant=destructive]:focus:bg-white/15 data-[variant=destructive]:focus:text-white"
                 onClick={onLogout}
+                data-testid="portal-logout"
               >
                 <LogOut className="size-4 opacity-80" />
                 {tPortal("logout")}

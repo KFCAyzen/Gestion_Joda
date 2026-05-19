@@ -336,6 +336,7 @@ function AppShell({ children }: { children: ReactNode }) {
                                                 [section.id]: !prev[section.id],
                                             }))
                                         }
+                                        data-testid={`sidebar-section-${section.id}`}
                                         className={`w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold uppercase tracking-widest transition-colors duration-200 ${
                                             hasActive
                                                 ? "text-white rounded-r-lg border-l-[3px] border-white/80 bg-black/12"
@@ -354,6 +355,7 @@ function AppShell({ children }: { children: ReactNode }) {
                                                 <button
                                                     key={item.id}
                                                     onClick={() => navigateTo(item.id)}
+                                                    data-testid={`nav-${item.id}`}
                                                     className={`sidebar-item-button ${
                                                         item.id === activeRouteId
                                                             ? "sidebar-item-active"
@@ -412,6 +414,7 @@ function AppShell({ children }: { children: ReactNode }) {
                             <button
                                 onClick={() => void handleLogout()}
                                 className="sidebar-user-action !text-rose-200 hover:!text-white"
+                                data-testid="btn-logout"
                             >
                                 <LogOut className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
                                 {t('logout')}
@@ -435,11 +438,15 @@ function AppShell({ children }: { children: ReactNode }) {
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg mr-4"
+                                data-testid="mobile-menu-toggle"
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
                             <div>
-                                <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight sm:text-2xl">
+                                <h1
+                                    className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight sm:text-2xl"
+                                    data-testid="page-title"
+                                >
                                     {activeItem?.label ?? "Dashboard"}
                                 </h1>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -453,10 +460,14 @@ function AppShell({ children }: { children: ReactNode }) {
                             <button
                                 onClick={() => navigateTo("notifications")}
                                 className="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                data-testid="btn-notifications"
                             >
                                 <Bell className="w-5 h-5" />
                                 {unreadCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-[10px] font-bold text-white shadow-[0_4px_12px_rgba(239,68,68,0.4)]">
+                                    <span
+                                        className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-[10px] font-bold text-white shadow-[0_4px_12px_rgba(239,68,68,0.4)]"
+                                        data-testid="notif-badge"
+                                    >
                                         {unreadCount > 99 ? "99+" : unreadCount}
                                     </span>
                                 )}
