@@ -67,11 +67,12 @@
 3. `supabase.auth.signInWithPassword(authEmail, password)`
 4. Récupération du profil → redirection vers `StudentPortal`
 
-**Mot de passe oublié (étudiant)**
-1. Saisie du username sur la page de login
-2. `POST /api/forgot-password` → génère un lien de réinitialisation Supabase
-3. Envoi email HTML avec le lien (expiration 1h)
-4. Redirection vers la page de reset
+**Mot de passe oublié (staff ou étudiant)**
+1. Saisie de l'email (staff) ou du username (étudiant) sur la page de login
+2. `POST /api/forgot-password` → génère un mot de passe temporaire `Joda@XXXXX` et le persiste
+3. Envoi email HTML (staff/étudiant) ou SMS (étudiant) avec l'identifiant + mdp temporaire
+4. Mise à jour `must_change_password = true` → le user devra changer son mdp au prochain login
+5. **Rate-limit anti-DoS** : 1 réinitialisation max par utilisateur toutes les 5 minutes (in-memory, retourne 200 silencieusement si cooldown actif pour empêcher l'énumération)
 
 **Changement de mot de passe obligatoire**
 1. Détection de `must_change_password = true` après login
@@ -83,7 +84,7 @@
 7. Accès débloqué
 
 **Déconnexion**
-1. `supabase.auth.signOut()`
+1. `supabase.auth.signOut({ scope: 'local' })` — ne tue **que la session du navigateur courant** (les autres onglets / appareils restent connectés). Les `signOut()` automatiques en cas de profil invalide ou compte désactivé restent en `scope: 'global'` par sécurité.
 2. Suppression `localStorage.currentUser`
 3. Retour à `LoginPage`
 
@@ -621,7 +622,7 @@
 | `/api/create-user` | POST | Crée compte Auth + `users` + email/SMS bienvenue | Service Role Key |
 | `/api/delete-user` | DELETE | Supprime compte Auth + `users` | Service Role Key |
 | `/api/reset-password` | POST | Réinitialise le mot de passe d'un utilisateur | Service Role Key |
-| `/api/forgot-password` | POST | Génère lien de réinitialisation pour étudiant | Public |
+| `/api/forgot-password` | POST | Génère un mdp temporaire (envoi email/SMS). Rate-limit 5 min par user. Toujours 200 (anti-énumération) | Public |
 | `/api/clear-password-flag` | POST | Efface `must_change_password` après changement | `requireAuth` |
 | `/api/send-welcome` | POST | Envoie email de bienvenue | Service Role Key |
 | `/api/send-application` | POST | Envoie email de demande de documents | Service Role Key |
@@ -694,7 +695,103 @@
 
 ---
 
-## Comptes de test
+## 20. TESTS E2E (PLAYWRIGHT)
+
+### Fichiers et structure
+```
+tests/
+├── e2e/                         # 22 fichiers .spec.ts (un par module métier)
+│   ├── 01-auth.spec.ts          # Authentification + i18n + thème
+│   ├── 02-etudiants.spec.ts     # Gestion étudiants
+│   ├── ...                      # 03-22 : un par module
+│   └── 22-cron.spec.ts          # Endpoints cron
+├── fixtures/
+│   └── authenticated.ts         # Fixtures `adminPage`, `agentPage`, `studentPage`, … (storageState)
+├── helpers/
+│   ├── auth-utils.ts            # `loginAs(page, role)`, `logout(page)`
+│   ├── seed.ts                  # ensureTestAccounts/Student/University + cleanup
+│   ├── sidebar-nav.ts           # `clickSidebarNav` (ouvre la section parente si repliée)
+│   └── supabase-admin.ts        # Client service-role + helpers `tagEmail`, `tagStudentUsername`
+├── global-setup.ts              # Seed comptes, warmup routes, sauvegarde storageState/rôle
+├── global-teardown.ts           # Cleanup données préfixées `e2e_` (skippé si E2E_KEEP_DATA=1)
+├── run-all-tests.ps1            # Runner PowerShell séquentiel module par module
+├── README.md                    # Guide d'utilisation et bonnes pratiques
+├── RAPPORT_EXECUTION.md         # Historique des runs et métriques
+└── TESTIDS.md                   # Référence des `data-testid` ajoutés à l'app
+```
+
+### Lancement
+
+```powershell
+npm run test:all                        # Tous les modules (sequentiel)
+.\tests\run-all-tests.ps1 -Module 7     # Un seul module
+.\tests\run-all-tests.ps1 -Headed       # Voir le navigateur
+.\tests\run-all-tests.ps1 -KeepData     # Ne pas nettoyer la DB après
+.\tests\run-all-tests.ps1 -OpenReport   # Ouvrir le rapport HTML à la fin
+
+npm run test:e2e                        # Lance Playwright directement
+npm run test:e2e:headed                 # Mode UI
+npm run test:e2e:report                 # Affiche le dernier rapport HTML
+```
+
+### Architecture & optimisations
+
+- **Mode build** : `playwright.config.ts` lance `npm run start` (Next.js prod build) au lieu de `npm run dev` — élimine les recompilations Turbopack à chaud (override avec `E2E_DEV=1`).
+- **storageState** : `global-setup.ts` fait **5 logins UI au démarrage** (super_admin, admin, supervisor, agent, student), sauvegarde les sessions dans `tests/.auth/<role>.json`. Les fixtures réutilisent ces sessions au lieu de re-loggeur à chaque test → **0 risque de rate-limit Supabase auth** + suite **3× plus rapide** (~5,5 min pour 80 tests).
+- **Warmup routes** : pré-compilation côté serveur des 18 routes principales après seed.
+- **Retries 1** : absorbe les rares flakys (animation sidebar) sans masquer les vrais bugs.
+
+### Comptes de test E2E (créés au setup, préfixés `e2e_`)
+
+| Username | Rôle |
+|---|---|
+| `e2e_superadmin` | `super_admin` |
+| `e2e_admin` | `admin` |
+| `e2e_supervisor` | `supervisor` |
+| `e2e_agent` | `agent` |
+| `e2e.student` | `student` (auth email `e2e.student@students.joda.app`) |
+
+Mot de passe commun : `TestJoda!2026` (constante `TEST_PASSWORD` dans `tests/helpers/seed.ts`).
+
+### data-testid instrumentés
+
+Ajoutés dans le code app pour fiabiliser les sélecteurs E2E (indépendants de la langue et du style) :
+
+- **LoginPage** : `login-identifier`, `login-password`, `login-submit`, `login-forgot-btn`, `forgot-input`, `forgot-submit`, `forgot-cancel`, `theme-toggle`, `lang-switcher`, `lang-option-{fr|en}`
+- **AppShell** : `nav-{routeId}` × 15, `sidebar-section-{sectionId}` × 7, `btn-logout`, `btn-notifications`, `notif-badge`, `page-title`, `mobile-menu-toggle`
+- **ConfirmDialog** : `confirm-dialog`, `confirm-title`, `confirm-description`, `confirm-yes`, `confirm-cancel`
+- **Portail étudiant** : `portal-bell`, `portal-bell-badge`, `portal-theme-toggle`, `portal-logout`, `portal-tab-{dashboard|payments|documents|dossier|messaging}`
+
+Liste complète dans [`tests/TESTIDS.md`](tests/TESTIDS.md).
+
+### Couverture
+
+22 modules couverts, ~80 cas de tests :
+
+| # | Module testé | Tests | # | Module testé | Tests |
+|---|---|---|---|---|---|
+| 1 | Authentification | 9 | 12 | Newsletter | 3 |
+| 2 | Étudiants | 5 | 13 | Logs activités | 3 |
+| 3 | Candidatures | 3 | 14 | Notifications | 3 |
+| 4 | Universités | 4 | 15 | Performances | 3 |
+| 5 | Utilisateurs staff | 3 | 16 | Stockage | 3 |
+| 6 | Dossiers | 3 | 17 | Portail étudiant | 5 |
+| 7 | Paiements | 4 | 18 | Documents (staff) | 1 |
+| 8 | Cours langues | 3 | 19 | Tableau de bord | 4 |
+| 9 | Comptabilité | 3 | 20 | i18n & thème | 2 |
+| 10 | Configuration frais | 2 | 21 | Sécurité / RBAC | 6 |
+| 11 | Communication | 5 | 22 | Cron / API | 2 |
+
+Documentation détaillée : [`TESTS_FONCTIONNELS.md`](TESTS_FONCTIONNELS.md) (cas de tests métier), [`tests/RAPPORT_EXECUTION.md`](tests/RAPPORT_EXECUTION.md) (résultats des runs).
+
+### Bugs réels découverts via les tests E2E
+
+1. **`/api/forgot-password` vulnérable au DoS par spam-reset** → fix : rate-limit 5 min par user
+2. **`logout()` invalidait toutes les sessions du user** (signOut global par défaut) → fix : `scope: 'local'`
+
+---
+
+## Comptes de test (dev)
 
 | Email | Mot de passe | Rôle |
 |---|---|---|
