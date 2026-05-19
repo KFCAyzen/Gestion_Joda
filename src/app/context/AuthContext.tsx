@@ -59,11 +59,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(null);
                 if (typeof window !== "undefined") {
                     localStorage.removeItem("currentUser");
+                    // Desktop : informer le main process que la session est terminée
+                    // pour qu'il arrête la sync RLS-protégée.
+                    void window.jodaDesktop?.sync?.setAuth(null, null);
                 }
-            } else if (event === "TOKEN_REFRESHED" && session?.user) {
-                await loadUserProfile(session.user.id);
+            } else if ((event === "TOKEN_REFRESHED" || event === "SIGNED_IN") && session?.user) {
+                if (event === "TOKEN_REFRESHED") await loadUserProfile(session.user.id);
+                // Desktop : pousser le nouveau token au main process pour que le
+                // sync engine puisse accéder aux tables RLS-protégées.
+                if (typeof window !== "undefined" && window.jodaDesktop?.sync) {
+                    void window.jodaDesktop.sync.setAuth(session.access_token, session.refresh_token);
+                }
             }
         });
+
+        // Au montage : si on a déjà une session active (page reload, premier mount),
+        // pousser immédiatement le token au main process.
+        if (typeof window !== "undefined" && window.jodaDesktop?.sync) {
+            void supabase.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    void window.jodaDesktop!.sync.setAuth(session.access_token, session.refresh_token);
+                }
+            });
+        }
 
         return () => subscription.unsubscribe();
     }, []);

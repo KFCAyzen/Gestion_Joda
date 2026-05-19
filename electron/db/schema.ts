@@ -312,3 +312,58 @@ export const TIMESTAMP_FIELD: Record<BusinessTable, 'updated_at' | 'created_at'>
  * (l'utilisateur doit choisir manuellement). Pour les autres, LWW automatique.
  */
 export const INTERACTIVE_MERGE_TABLES: BusinessTable[] = ['payments'];
+
+/**
+ * Métadonnées de typage pour la (dé)sérialisation côté handlers IPC :
+ *   - Booleans  : SQLite stocke 0/1, on doit reconvertir en true/false avant le retour renderer
+ *   - JSON      : on stocke en TEXT, on doit JSON.parse() avant le retour renderer
+ */
+export const BOOLEAN_COLUMNS: Record<BusinessTable, string[]> = {
+  users: ['must_change_password', 'is_active'],
+  students: [],
+  universities: ['active'],
+  documents: [],
+  dossier_bourses: [],
+  dossier_history: [],
+  payments: ['initiated_by_student'],
+  cours_langues: [],
+  entrees_comptables: [],
+  sorties_comptables: [],
+  notifications: ['read'],
+  messages: ['read'],
+};
+
+export const JSON_COLUMNS: Record<BusinessTable, string[]> = {
+  users: [],
+  students: [],
+  universities: [],
+  documents: [],
+  dossier_bourses: [],
+  dossier_history: [],
+  payments: [],
+  cours_langues: [],
+  entrees_comptables: [],
+  sorties_comptables: [],
+  notifications: ['metadata'],
+  messages: ['attachments', 'metadata'],
+};
+
+/**
+ * Convertit une ligne brute SQLite vers le format attendu par le renderer
+ * (booleans, JSON parsé).
+ */
+export function deserializeRow(table: BusinessTable, row: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...row };
+  for (const col of BOOLEAN_COLUMNS[table]) {
+    const v = out[col];
+    if (v === 0 || v === 1) out[col] = v === 1;
+    else if (v === null) out[col] = null;
+  }
+  for (const col of JSON_COLUMNS[table]) {
+    const v = out[col];
+    if (typeof v === 'string' && v.length > 0) {
+      try { out[col] = JSON.parse(v); } catch { /* keep raw if not valid JSON */ }
+    }
+  }
+  return out;
+}

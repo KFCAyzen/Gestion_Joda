@@ -11,6 +11,7 @@ import {
   computeStatus,
   forceSyncNow,
   resolveConflict,
+  setAuthSession,
   subscribeToStatus,
 } from '../sync/engine';
 import { getRawDb } from '../db';
@@ -45,6 +46,16 @@ export function registerSyncHandlers(getMainWindow: () => BrowserWindow | null) 
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) subscribeToStatus(win);
     return true;
+  });
+
+  /**
+   * Le renderer transmet sa session Supabase au main process pour que le
+   * sync engine puisse accéder aux tables RLS-protégées.
+   * Appelé sur SIGNED_IN, TOKEN_REFRESHED et SIGNED_OUT (avec null).
+   */
+  ipcMain.handle('sync:set-auth', async (_event, args: { accessToken: string | null; refreshToken: string | null }) => {
+    await setAuthSession(args.accessToken, args.refreshToken);
+    return { ok: true };
   });
 
   // Au démarrage de la première fenêtre, auto-subscribe

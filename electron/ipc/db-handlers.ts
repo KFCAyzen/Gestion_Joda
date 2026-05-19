@@ -10,7 +10,7 @@
 import { ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { getRawDb } from '../db';
-import { ALL_BUSINESS_TABLES, BusinessTable } from '../db/schema';
+import { ALL_BUSINESS_TABLES, BusinessTable, deserializeRow } from '../db/schema';
 
 type SelectArgs = {
   table: BusinessTable;
@@ -77,7 +77,9 @@ function handleSelect(args: SelectArgs): unknown[] {
   if (args.limit) sql += ` LIMIT ${args.limit}`;
   if (args.offset) sql += ` OFFSET ${args.offset}`;
 
-  return raw.prepare(sql).all(...params);
+  const rows = raw.prepare(sql).all(...params) as Record<string, unknown>[];
+  // Convertit booleans 0/1 → true/false et JSON strings → objets pour le renderer.
+  return rows.map((r) => deserializeRow(args.table, r));
 }
 
 function handleInsert({ table, payload }: InsertArgs): { id: string } {

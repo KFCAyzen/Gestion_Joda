@@ -51,6 +51,7 @@ export interface DesktopApi {
     trigger(): Promise<DesktopSyncStatus>;
     listConflicts(): Promise<unknown[]>;
     resolveConflict(id: number, resolution: 'kept_local' | 'kept_server' | 'merged', mergedPayload?: Record<string, unknown>): Promise<DesktopSyncStatus>;
+    setAuth(accessToken: string | null, refreshToken: string | null): Promise<{ ok: true }>;
     subscribe(cb: (status: DesktopSyncStatus) => void): () => void;
   };
 }
@@ -114,10 +115,16 @@ function buildTableProxy(table: string, fallback: SupabaseClient): any {
     singleMode: 'none',
   };
 
-  const exec = async (action: 'select' | 'insert' | 'update' | 'delete' | 'upsert', payload?: any) => {
+  // L'action est mémorisée : on n'exécute qu'au .then()/.single()/.maybeSingle().
+  // Ainsi `from(t).update(p).eq('id', x)` ou `from(t).delete().eq('id', x)`
+  // fonctionnent comme avec Supabase JS officiel.
+  let pendingAction: 'select' | 'insert' | 'update' | 'delete' | 'upsert' = 'select';
+  let pendingPayload: any = undefined;
+
+  const exec = async () => {
     const api = window.jodaDesktop!;
     try {
-      if (action === 'select') {
+      if (pendingAction === 'select') {
         const where = whereFromFilters(state.filters);
         const rows = await api.db.select<any>(state.table as BusinessTable, {
           where,
@@ -127,27 +134,26 @@ function buildTableProxy(table: string, fallback: SupabaseClient): any {
         });
         return wrapResult(rows, state.singleMode);
       }
-      if (action === 'insert' || action === 'upsert') {
-        const items = Array.isArray(payload) ? payload : [payload];
-        const inserted = [];
+      if (pendingAction === 'insert' || pendingAction === 'upsert') {
+        const items = Array.isArray(pendingPayload) ? pendingPayload : [pendingPayload];
+        const inserted: any[] = [];
         for (const item of items) {
           const r = await api.db.insert<any>(state.table as BusinessTable, item);
           inserted.push({ ...item, id: r.id });
         }
         return wrapResult(inserted, state.singleMode);
       }
-      if (action === 'update') {
+      if (pendingAction === 'update') {
         const where = whereFromFilters(state.filters);
-        // Pour les updates, on attend un filtre eq('id', ...)
         const id = where?.id as string | undefined;
-        if (!id) throw new Error(`update offline sur ${state.table} requiert .eq('id', ...)`);
-        await api.db.update(state.table as BusinessTable, id, payload);
-        return wrapResult([{ id, ...payload }], state.singleMode);
+        if (!id) return { data: null, error: { message: `update offline ${state.table} requiert .eq('id', ...)` } };
+        await api.db.update(state.table as BusinessTable, id, pendingPayload);
+        return wrapResult([{ id, ...pendingPayload }], state.singleMode);
       }
-      if (action === 'delete') {
+      if (pendingAction === 'delete') {
         const where = whereFromFilters(state.filters);
         const id = where?.id as string | undefined;
-        if (!id) throw new Error(`delete offline sur ${state.table} requiert .eq('id', ...)`);
+        if (!id) return { data: null, error: { message: `delete offline ${state.table} requiert .eq('id', ...)` } };
         await api.db.delete(state.table as BusinessTable, id);
         return wrapResult([], state.singleMode);
       }
@@ -157,11 +163,11 @@ function buildTableProxy(table: string, fallback: SupabaseClient): any {
   };
 
   const chain: any = {
-    select(_cols?: string) { return chain; },
-    insert(payload: any) { return wrapPromise(() => exec('insert', payload)); },
-    update(payload: any) { return wrapPromise(() => exec('update', payload)); },
-    upsert(payload: any) { return wrapPromise(() => exec('upsert', payload)); },
-    delete() { return wrapPromise(() => exec('delete')); },
+    select(_cols?: string) { pendingAction = 'select'; return chain; },
+    insert(payload: any) { pendingAction = 'insert'; pendingPayload = payload; return chain; },
+    update(payload: any) { pendingAction = 'update'; pendingPayload = payload; return chain; },
+    upsert(payload: any) { pendingAction = 'upsert'; pendingPayload = payload; return chain; },
+    delete() { pendingAction = 'delete'; return chain; },
     eq(column: string, value: unknown) { state.filters.push({ op: 'eq', column, value }); return chain; },
     in(column: string, value: unknown[]) { state.filters.push({ op: 'in', column, value }); return chain; },
     is(column: string, value: unknown) { state.filters.push({ op: 'is', column, value }); return chain; },
@@ -176,9 +182,9 @@ function buildTableProxy(table: string, fallback: SupabaseClient): any {
     },
     limit(n: number) { state.limitN = n; return chain; },
     range(from: number, to: number) { state.offsetN = from; state.limitN = to - from + 1; return chain; },
-    single() { state.singleMode = 'single'; return wrapPromise(() => exec('select')); },
-    maybeSingle() { state.singleMode = 'maybeSingle'; return wrapPromise(() => exec('select')); },
-    then: (resolve: any, reject: any) => exec('select').then(resolve, reject),
+    single() { state.singleMode = 'single'; return exec(); },
+    maybeSingle() { state.singleMode = 'maybeSingle'; return exec(); },
+    then: (resolve: any, reject: any) => exec().then(resolve, reject),
   };
 
   return chain;
@@ -207,6 +213,3 @@ function wrapResult(rows: any[], mode: QueryState['singleMode']) {
   return { data: rows, error: null };
 }
 
-function wrapPromise<T>(fn: () => Promise<T>) {
-  return Promise.resolve().then(fn);
-}

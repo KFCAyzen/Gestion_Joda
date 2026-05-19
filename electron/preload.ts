@@ -57,6 +57,14 @@ const sync = {
   resolveConflict: (id: number, resolution: ConflictResolution, mergedPayload?: Record<string, unknown>): Promise<SyncStatusType> =>
     ipcRenderer.invoke('sync:resolve-conflict', { id, resolution, mergedPayload }),
 
+  /**
+   * Transmet l'access/refresh token au main process pour que le sync engine
+   * puisse accéder aux tables RLS-protégées. À appeler depuis AuthContext sur
+   * SIGNED_IN, TOKEN_REFRESHED et SIGNED_OUT (avec null).
+   */
+  setAuth: (accessToken: string | null, refreshToken: string | null): Promise<{ ok: true }> =>
+    ipcRenderer.invoke('sync:set-auth', { accessToken, refreshToken }),
+
   subscribe: (callback: (status: SyncStatusType) => void): (() => void) => {
     const wrapped = (_event: Electron.IpcRendererEvent, status: SyncStatusType) => callback(status);
     ipcRenderer.on('sync:status', wrapped);

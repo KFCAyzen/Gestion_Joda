@@ -36,11 +36,14 @@ export type SyncStatus = {
 };
 
 let sb: SupabaseClient | null = null;
+let supabaseUrl_: string | null = null;
+let supabaseAnonKey_: string | null = null;
 let pullTimer: NodeJS.Timeout | null = null;
 let pushTimer: NodeJS.Timeout | null = null;
 let isSyncing = false;
 let online = false;
 let lastError: string | null = null;
+let hasAuthSession = false;
 const subscribers = new Set<BrowserWindow>();
 
 function emitStatus() {
@@ -321,9 +324,12 @@ async function syncTick() {
   emitStatus();
   try {
     await refreshOnlineStatus();
-    if (online) {
+    if (online && hasAuthSession) {
       await pushPending();
       await pullAll();
+    } else if (online && !hasAuthSession) {
+      // Pas de session : on ne peut pas pull les tables RLS-protégées.
+      // Pas d'erreur, juste skip.
     }
   } catch (e: any) {
     console.error('[sync] tick error:', e?.message);
@@ -335,19 +341,54 @@ async function syncTick() {
 }
 
 export function startSyncEngine(supabaseUrl: string, supabaseAnonKey: string) {
+  supabaseUrl_ = supabaseUrl;
+  supabaseAnonKey_ = supabaseAnonKey;
   sb = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  console.log('[sync] engine starting…');
+  console.log('[sync] engine starting (en attente de la session utilisateur)…');
 
-  // Cycle initial dès maintenant
+  // Cycle initial : on tente, mais les tables RLS-protégées seront vides
+  // tant que setAuthSession() n'a pas été appelé.
   void syncTick();
 
   pullTimer = setInterval(() => void syncTick(), PULL_INTERVAL_MS);
   pushTimer = setInterval(() => {
-    if (online && !isSyncing) void pushPending();
+    if (online && hasAuthSession && !isSyncing) void pushPending();
   }, PUSH_INTERVAL_MS);
+}
+
+/**
+ * Transmet le JWT de la session authentifiée du renderer vers le client
+ * Supabase du main process. Sans cela, les SELECT/INSERT sur les tables
+ * RLS-protégées retourneraient vide ou échoueraient.
+ *
+ * À appeler depuis le renderer dès que `onAuthStateChange` détecte une
+ * SIGNED_IN ou un TOKEN_REFRESHED, et au logout (avec session=null).
+ */
+export async function setAuthSession(accessToken: string | null, refreshToken: string | null) {
+  if (!supabaseUrl_ || !supabaseAnonKey_) return;
+
+  if (accessToken && refreshToken) {
+    // Recrée le client avec la session de l'utilisateur. C'est plus fiable
+    // que sb.auth.setSession() pour s'assurer que toutes les requêtes futures
+    // utilisent le JWT (RLS happy).
+    sb = createClient(supabaseUrl_, supabaseAnonKey_, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    });
+    hasAuthSession = true;
+    console.log('[sync] auth session set, RLS-protected tables now accessible');
+    // Force un cycle sync immédiat
+    void syncTick();
+  } else {
+    sb = createClient(supabaseUrl_, supabaseAnonKey_, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    hasAuthSession = false;
+    console.log('[sync] auth session cleared');
+  }
 }
 
 export function stopSyncEngine() {
