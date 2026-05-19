@@ -15,6 +15,10 @@ import path from 'node:path';
 import fs from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
+import { initLocalDb, closeLocalDb } from './db';
+import { registerDbHandlers } from './ipc/db-handlers';
+import { registerSyncHandlers } from './ipc/sync-handlers';
+import { startSyncEngine, stopSyncEngine } from './sync/engine';
 
 const isDev = !app.isPackaged;
 const DEV_URL = process.env.ELECTRON_DEV_URL ?? 'http://localhost:3000';
@@ -91,15 +95,16 @@ async function startEmbeddedNext(): Promise<string> {
   }
 
   // node intégré à Electron : on lance via `process.execPath` + ELECTRON_RUN_AS_NODE.
-  nextServer = spawn(process.execPath, [serverEntry], {
+  const proc = spawn(process.execPath, [serverEntry], {
     cwd: standaloneDir,
-    env: { ...env, ELECTRON_RUN_AS_NODE: '1' },
+    env: { ...env, ELECTRON_RUN_AS_NODE: '1' } as NodeJS.ProcessEnv,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  nextServer = proc;
 
-  nextServer.stdout?.on('data', (d) => console.log(`[next] ${d.toString().trimEnd()}`));
-  nextServer.stderr?.on('data', (d) => console.error(`[next] ${d.toString().trimEnd()}`));
-  nextServer.on('exit', (code) => {
+  proc.stdout?.on('data', (d) => console.log(`[next] ${d.toString().trimEnd()}`));
+  proc.stderr?.on('data', (d) => console.error(`[next] ${d.toString().trimEnd()}`));
+  proc.on('exit', (code) => {
     console.warn(`[next] server exited with code ${code}`);
     nextServer = null;
   });
@@ -201,11 +206,52 @@ function buildAppMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+function loadEnvFromAppDir(): Record<string, string> {
+  const candidates = isDev
+    ? [path.join(__dirname, '..', '..', '.env.local'), path.join(process.cwd(), '.env.local')]
+    : [
+        path.join(process.resourcesPath, 'app', '.env.local'),
+        path.join(app.getPath('userData'), '.env.local'),
+      ];
+
+  for (const c of candidates) {
+    if (!fs.existsSync(c)) continue;
+    const env: Record<string, string> = {};
+    const content = fs.readFileSync(c, 'utf-8');
+    for (const line of content.split(/\r?\n/)) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.+?)\s*$/);
+      if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    }
+    console.log(`[main] env loaded from ${c}`);
+    return env;
+  }
+  console.warn('[main] no .env.local found; offline sync disabled');
+  return {};
+}
+
 async function bootstrap() {
   try {
+    // 1) DB locale + IPC handlers (avant le serveur Next.js pour être prêts dès le renderer load)
+    initLocalDb();
+    registerDbHandlers();
+
+    // 2) Sync engine (lecture .env.local pour les clés Supabase)
+    const envFromFile = loadEnvFromAppDir();
+    const supabaseUrl = envFromFile.NEXT_PUBLIC_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = envFromFile.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseAnonKey) {
+      startSyncEngine(supabaseUrl, supabaseAnonKey);
+    } else {
+      console.warn('[main] Supabase keys missing, sync engine not started');
+    }
+
+    // 3) Next.js server + fenêtre
     const targetUrl = isDev ? DEV_URL : await startEmbeddedNext();
     buildAppMenu();
     await createMainWindow(targetUrl);
+
+    // 4) Sync handlers une fois la fenêtre prête (pour qu'elle s'auto-subscribe au status)
+    registerSyncHandlers(() => mainWindow);
   } catch (err: any) {
     console.error('[main] bootstrap failed:', err);
     dialog.showErrorBox('Joda Company - Erreur', err?.message ?? String(err));
@@ -232,6 +278,8 @@ if (!gotLock) {
   });
 
   app.on('before-quit', () => {
+    stopSyncEngine();
+    closeLocalDb();
     if (nextServer && !nextServer.killed) {
       nextServer.kill();
     }

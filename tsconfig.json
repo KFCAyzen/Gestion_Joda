@@ -38,6 +38,9 @@
   "exclude": [
     "node_modules",
     "tests",
+    "electron",
+    "dist-electron",
+    "release",
     "playwright.config.ts"
   ]
 }

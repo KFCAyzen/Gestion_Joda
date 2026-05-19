@@ -1,33 +1,98 @@
 /**
- * Preload script — exposé en contexte isolé.
+ * Preload script — pont sécurisé entre main process et renderer.
  *
- * Aujourd'hui : expose juste quelques infos système (utile pour différencier
- * desktop vs web dans l'UI). Phase 2+ : exposer ici les API IPC pour
- * la base SQLite locale et le statut de sync offline.
+ * Expose `window.jodaDesktop` avec :
+ *   - db       : SQLite local (select/insert/update/delete/raw/stats)
+ *   - sync     : statut, déclenchement manuel, gestion conflits
+ *   - on/off   : subscribe events IPC (sync:status changements)
+ *
+ * SECURITY : contextIsolation activé, nodeIntegration désactivé.
+ * Le renderer ne peut PAS appeler require/process — seulement window.jodaDesktop.
  */
 import { contextBridge, ipcRenderer } from 'electron';
 
-const jodaApi = {
-  platform: process.platform,
-  appVersion: process.env.npm_package_version ?? null,
-  isDesktop: true,
+type BusinessTable =
+  | 'users' | 'students' | 'universities' | 'documents'
+  | 'dossier_bourses' | 'dossier_history' | 'payments' | 'cours_langues'
+  | 'entrees_comptables' | 'sorties_comptables' | 'notifications' | 'messages';
 
-  /**
-   * Liste les API IPC disponibles. Pour la Phase 2 :
-   *   - db:query (lecture SQLite locale)
-   *   - db:mutate (écriture + queue sync)
-   *   - sync:status (online / offline / syncing / pending count)
-   *   - sync:trigger (force une sync immédiate)
-   */
-  on: (channel: string, listener: (...args: unknown[]) => void) => {
-    const allowed = new Set(['sync:status', 'sync:error']);
-    if (!allowed.has(channel)) return () => undefined;
-    const wrapped = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => listener(...args);
-    ipcRenderer.on(channel, wrapped);
-    return () => ipcRenderer.removeListener(channel, wrapped);
+type WhereClause = Record<string, unknown>;
+type SelectOptions = {
+  where?: WhereClause;
+  limit?: number;
+  offset?: number;
+  orderBy?: { column: string; direction?: 'asc' | 'desc' };
+};
+
+const db = {
+  select: <T = unknown>(table: BusinessTable, opts?: SelectOptions): Promise<T[]> =>
+    ipcRenderer.invoke('db:select', { table, ...opts }),
+
+  insert: <T = { id: string }>(table: BusinessTable, payload: Record<string, unknown>): Promise<T> =>
+    ipcRenderer.invoke('db:insert', { table, payload }),
+
+  update: (table: BusinessTable, id: string, patch: Record<string, unknown>): Promise<{ ok: true }> =>
+    ipcRenderer.invoke('db:update', { table, id, patch }),
+
+  delete: (table: BusinessTable, id: string): Promise<{ ok: true }> =>
+    ipcRenderer.invoke('db:delete', { table, id }),
+
+  raw: <T = unknown>(sql: string, params?: unknown[]): Promise<T[]> =>
+    ipcRenderer.invoke('db:raw', { sql, params }),
+
+  stats: (): Promise<Record<string, number>> =>
+    ipcRenderer.invoke('db:stats'),
+};
+
+const sync = {
+  status: (): Promise<SyncStatusType> =>
+    ipcRenderer.invoke('sync:status'),
+
+  trigger: (): Promise<SyncStatusType> =>
+    ipcRenderer.invoke('sync:trigger'),
+
+  listConflicts: (): Promise<ConflictRow[]> =>
+    ipcRenderer.invoke('sync:list-conflicts'),
+
+  resolveConflict: (id: number, resolution: ConflictResolution, mergedPayload?: Record<string, unknown>): Promise<SyncStatusType> =>
+    ipcRenderer.invoke('sync:resolve-conflict', { id, resolution, mergedPayload }),
+
+  subscribe: (callback: (status: SyncStatusType) => void): (() => void) => {
+    const wrapped = (_event: Electron.IpcRendererEvent, status: SyncStatusType) => callback(status);
+    ipcRenderer.on('sync:status', wrapped);
+    void ipcRenderer.invoke('sync:subscribe-status');
+    return () => ipcRenderer.removeListener('sync:status', wrapped);
   },
 };
 
-contextBridge.exposeInMainWorld('jodaDesktop', jodaApi);
+export type SyncStatusType = {
+  online: boolean;
+  syncing: boolean;
+  pendingMutations: number;
+  pendingConflicts: number;
+  lastPullAt: number | null;
+  lastPushAt: number | null;
+  lastError: string | null;
+};
 
-export type JodaDesktopApi = typeof jodaApi;
+export type ConflictResolution = 'kept_local' | 'kept_server' | 'merged';
+
+export type ConflictRow = {
+  id: number;
+  detected_at: number;
+  table_name: BusinessTable;
+  record_id: string;
+  local_payload: string;
+  server_payload: string;
+};
+
+const jodaDesktop = {
+  platform: process.platform,
+  isDesktop: true as const,
+  db,
+  sync,
+};
+
+contextBridge.exposeInMainWorld('jodaDesktop', jodaDesktop);
+
+export type JodaDesktopApi = typeof jodaDesktop;

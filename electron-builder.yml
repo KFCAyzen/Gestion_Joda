@@ -2,9 +2,10 @@ appId: com.jodacompany.desktop
 productName: Joda Company
 copyright: Copyright © 2026 Joda Company
 
-# Phase 1 : pas de dépendances natives à compiler (better-sqlite3 viendra en Phase 2,
-# alors il faudra installer Visual Studio Build Tools ou désactiver @electron/rebuild).
-npmRebuild: false
+# Phase 2 : `better-sqlite3` est une dépendance native. electron-builder utilise
+# @electron/rebuild pour la recompiler contre la bonne version d'Electron.
+# Nécessite Visual Studio Build Tools (cf. https://www.electron.build/tutorials/code-signing).
+npmRebuild: true
 
 # Le code source compilé d'Electron + les ressources embarquées.
 directories:
@@ -12,19 +13,25 @@ directories:
   buildResources: electron/icons
 
 # Fichiers inclus dans l'app (resources/app.asar).
-# Le build standalone Next.js est en extraResources (cf. plus bas), pas dans l'asar :
-# l'app.asar ne contient que le main Electron + package.json minimal.
+# On inclut UNIQUEMENT better-sqlite3 et drizzle-orm (dépendances du main process).
+# Le standalone Next.js a son propre node_modules en extraResources.
 files:
   - "dist-electron/**/*"
   - "package.json"
-  - "!node_modules/**/*"        # exclu : standalone Next.js a son propre node_modules
-  - "!**/{.DS_Store,.git,.gitignore,.gitattributes}"
-  - "!**/{appveyor.yml,.travis.yml,circle.yml}"
-  - "!**/{npm-debug.log,yarn.lock,.yarn-integrity}"
-  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp}"
+  - "node_modules/better-sqlite3/**/*"
+  - "node_modules/bindings/**/*"
+  - "node_modules/file-uri-to-path/**/*"
+  - "node_modules/drizzle-orm/**/*"
+  - "!**/{.DS_Store,.git,.gitignore,.gitattributes,test,tests,examples,docs,scripts}"
+  - "!**/{appveyor.yml,.travis.yml,circle.yml,*.md}"
+  - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,*.tsbuildinfo,*.d.ts.map,*.js.map}"
+  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,c,cpp,h,gyp}"
 
-# Mode asar : bundle JS en un seul fichier. Plus rapide à charger, plus dur à modifier.
+# Mode asar avec better-sqlite3 unpacké (les .node natifs ne peuvent pas être dans l'asar).
 asar: true
+asarUnpack:
+  - "node_modules/better-sqlite3/**/*"
+  - "node_modules/bindings/**/*"
 
 # Le build Next.js standalone est trop volumineux pour `files`, on le déclare en `extraResources`.
 # Il sera disponible dans `process.resourcesPath` à l'exécution.

@@ -29,6 +29,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
+import SyncStatusIndicator from "../../components/SyncStatusIndicator";
 import { useNotification } from "../../hooks/useNotification";
 import Notification from "../../components/Notification";
 import { NotificationProvider } from "../../context/NotificationContext";
@@ -455,6 +456,7 @@ function AppShell({ children }: { children: ReactNode }) {
                             </div>
                         </div>
                         <div className="flex items-center space-x-4">
+                            <SyncStatusIndicator />
                             <ThemeToggle />
                             <LanguageSwitcher />
                             <button

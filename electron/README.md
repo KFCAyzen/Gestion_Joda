@@ -27,6 +27,13 @@ L'app embarque :
 - Node.js 18+
 - Windows 10/11 (build supporté nativement sur Windows ; possible aussi en cross-compile depuis macOS/Linux mais non testé)
 - ~3 GB d'espace disque libre (cache npm + electron download + build)
+- **Visual Studio Build Tools 2019+** (depuis Phase 2 — pour recompiler `better-sqlite3` natif contre l'ABI Node de Electron) :
+  ```powershell
+  # Via winget :
+  winget install Microsoft.VisualStudio.2022.BuildTools
+  # ou télécharger : https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  # Charger le workload "Desktop development with C++"
+  ```
 
 ## Configuration runtime
 
@@ -117,8 +124,65 @@ Non implémenté. Pour ajouter :
 3. Utiliser `electron-updater` dans le main process
 4. Tester avec une release "draft"
 
-## Phase 2 — Support offline-first
+## Phase 2 — Support offline-first ✅ Implémenté
 
-Voir [`docs/PHASE2_OFFLINE.md`](../docs/PHASE2_OFFLINE.md) pour le plan détaillé.
+Voir [`docs/PHASE2_OFFLINE.md`](../docs/PHASE2_OFFLINE.md) pour le plan d'origine.
 
-**TL;DR** : ajout d'une base SQLite locale via `better-sqlite3`, refactor des hooks TanStack pour lire/écrire localement d'abord, sync bidirectionnelle avec Supabase via une couche custom (ou intégration RxDB / PowerSync).
+### Architecture livrée
+
+```
+┌─ Renderer ──────────────────────────────────────────┐
+│  React + Next.js                                     │
+│  src/app/lib/supabase/client.ts                      │
+│    └─ détecte window.jodaDesktop → utilise wrapper  │
+│  src/app/lib/desktop/offline-client.ts (wrapper)    │
+│    └─ intercepte .from(table).select/insert/update/ │
+│       delete et les redirige vers IPC               │
+└─────────────────────┬────────────────────────────────┘
+                      │ IPC (contextBridge)
+┌─────────────────────▼────────────────────────────────┐
+│  Main process                                        │
+│  electron/db/         — SQLite via better-sqlite3   │
+│    ├ schema.ts        — Drizzle schema (12 tables)  │
+│    └ index.ts         — init + migrations           │
+│  electron/ipc/                                       │
+│    ├ db-handlers.ts   — db:select/insert/update/... │
+│    └ sync-handlers.ts — sync:status/trigger/resolve │
+│  electron/sync/                                      │
+│    └ engine.ts        — pull/push + conflict LWW    │
+└──────────────────────────────────────────────────────┘
+```
+
+### Composants offline livrés
+
+| Couche | Fichier | Rôle |
+|--------|---------|------|
+| Schéma | `electron/db/schema.ts` | 12 tables miroir Supabase + `mutations_queue` + `sync_meta` + `sync_conflicts` |
+| Init DB | `electron/db/index.ts` | better-sqlite3, WAL mode, migrations versionnées |
+| IPC DB | `electron/ipc/db-handlers.ts` | `db:select`, `db:insert`, `db:update`, `db:delete`, `db:raw`, `db:stats` |
+| Sync engine | `electron/sync/engine.ts` | pull/push toutes les 60s/5s, LWW, conflits interactifs sur paiements |
+| IPC sync | `electron/ipc/sync-handlers.ts` | `sync:status`, `sync:trigger`, `sync:list-conflicts`, `sync:resolve-conflict` |
+| Preload | `electron/preload.ts` | Expose `window.jodaDesktop.{db, sync}` au renderer |
+| Wrapper client | `src/app/lib/desktop/offline-client.ts` | Proxy Supabase JS → IPC pour les 12 tables |
+| UI status | `src/app/components/SyncStatusIndicator.tsx` | Pastille header avec état online/sync/pending/conflict |
+
+### Données stockées
+
+- Base SQLite locale : `%APPDATA%\Joda Company\joda-offline.db` (Windows)
+- 12 tables synchronisées : `users`, `students`, `universities`, `documents`, `dossier_bourses`, `dossier_history`, `payments`, `cours_langues`, `entrees_comptables`, `sorties_comptables`, `notifications`, `messages`
+- Mode conflit : **LWW** (Last-Write-Wins) automatique sur `updated_at`, sauf pour `payments` où un dialog de merge interactif est déclenché
+
+### Comportement en pratique
+
+1. **Premier lancement online** : pull complet de toutes les tables → SQLite local rempli
+2. **Utilisation normale online** : les SELECTs sont instantanés (SQLite), les mutations sont écrites en local + enqueue dans `mutations_queue` + push dans les ~5s suivantes
+3. **Perte de réseau** : l'app continue à fonctionner (lectures SQLite, mutations en queue), badge "Hors ligne · N en attente"
+4. **Retour réseau** : sync auto déclenche le push de la queue + pull incrémental
+5. **Conflit sur paiement** : badge rouge → l'admin peut consulter `sync:list-conflicts` et trancher (kept_local / kept_server / merged)
+
+### Limites connues
+
+- **Auth Supabase** : nécessite réseau pour le login initial. Une fois la session établie, elle est gardée mais le refresh token peut expirer après quelques heures offline.
+- **Storage Supabase** (fichiers documents) : pas de cache local. Les URLs servent toujours depuis Supabase Storage, donc affichage cassé offline.
+- **RPC / Edge functions** : non interceptées par le wrapper, échouent offline.
+- **Realtime subscriptions** : non implémentées. Le pull périodique (60s) suffit pour la plupart des cas.
