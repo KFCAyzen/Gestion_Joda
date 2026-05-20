@@ -12,13 +12,58 @@ import { randomUUID } from 'node:crypto';
 import { getRawDb } from '../db';
 import { ALL_BUSINESS_TABLES, BusinessTable, deserializeRow } from '../db/schema';
 
+/**
+ * Filtre structuré transmis par le wrapper renderer. Préserve l'opérateur
+ * (contrairement à l'ancien `where` plat qui ne supportait que l'égalité).
+ */
+type CmpOp = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'is';
+type Filter =
+  | { op: CmpOp; column: string; value: unknown }
+  | { op: 'in'; column: string; value: unknown[] }
+  | { op: 'or'; clauses: Array<{ op: CmpOp; column: string; value: unknown }> };
+
 type SelectArgs = {
   table: BusinessTable;
-  where?: Record<string, unknown>;
+  filters?: Filter[];
   limit?: number;
   offset?: number;
   orderBy?: { column: string; direction?: 'asc' | 'desc' };
+  /** Demande le nombre total de lignes (ignore limit/offset), façon `count: 'exact'`. */
+  count?: boolean;
+  /** `head: true` → ne ramène aucune ligne, juste le count. */
+  head?: boolean;
 };
+
+type SelectResult = { rows: unknown[]; count: number | null };
+
+const COLUMN_RE = /^[a-z_][a-z0-9_]*$/i;
+function assertColumn(col: string): void {
+  if (!COLUMN_RE.test(col)) throw new Error(`Nom de colonne invalide : ${col}`);
+}
+
+const SQL_OP: Record<CmpOp, string> = {
+  eq: '=', neq: '!=', gt: '>', gte: '>=', lt: '<', lte: '<=',
+  like: 'LIKE', ilike: 'LIKE', is: 'IS',
+};
+
+/**
+ * better-sqlite3 ne sait binder que number/string/bigint/buffer/null.
+ * Les booléens (ex: `.eq('read', false)`, `.eq('active', true)`) doivent être
+ * convertis en 0/1, sinon le bind jette une exception.
+ */
+function bindValue(v: unknown): unknown {
+  if (typeof v === 'boolean') return v ? 1 : 0;
+  return v;
+}
+
+/** Compile un filtre simple (non-OR) en fragment SQL + params. */
+function compileCmp(f: { op: CmpOp; column: string; value: unknown }): { sql: string; params: unknown[] } {
+  assertColumn(f.column);
+  if (f.op === 'is' || (f.op === 'eq' && f.value === null)) {
+    return { sql: `${f.column} IS ${f.value === null ? 'NULL' : '?'}`, params: f.value === null ? [] : [bindValue(f.value)] };
+  }
+  return { sql: `${f.column} ${SQL_OP[f.op]} ?`, params: [bindValue(f.value)] };
+}
 
 type InsertArgs = { table: BusinessTable; payload: Record<string, unknown> };
 type UpdateArgs = { table: BusinessTable; id: string; patch: Record<string, unknown> };
@@ -30,25 +75,42 @@ function assertValidTable(name: string): asserts name is BusinessTable {
   }
 }
 
-function buildWhereClause(where: Record<string, unknown> | undefined): { sql: string; params: unknown[] } {
-  if (!where || Object.keys(where).length === 0) {
-    return { sql: '', params: [] };
-  }
+/**
+ * Construit la clause WHERE à partir des filtres structurés.
+ * Tous les filtres sont AND'és entre eux ; un filtre `or` devient un groupe
+ * `(a OR b OR …)`. `_local_deleted = 0` est toujours ajouté.
+ */
+function buildWhereClause(filters: Filter[] | undefined): { sql: string; params: unknown[] } {
   const parts: string[] = [];
   const params: unknown[] = [];
-  for (const [k, v] of Object.entries(where)) {
-    if (v === null) {
-      parts.push(`${k} IS NULL`);
-    } else if (Array.isArray(v)) {
-      const placeholders = v.map(() => '?').join(', ');
-      parts.push(`${k} IN (${placeholders})`);
-      params.push(...v);
+
+  for (const f of filters ?? []) {
+    if (f.op === 'in') {
+      assertColumn(f.column);
+      const arr = f.value ?? [];
+      if (arr.length === 0) {
+        parts.push('0 = 1'); // IN () → toujours faux, comme PostgREST
+      } else {
+        parts.push(`${f.column} IN (${arr.map(() => '?').join(', ')})`);
+        params.push(...arr.map(bindValue));
+      }
+    } else if (f.op === 'or') {
+      const orParts: string[] = [];
+      for (const c of f.clauses) {
+        const { sql, params: p } = compileCmp(c);
+        orParts.push(sql);
+        params.push(...p);
+      }
+      if (orParts.length > 0) parts.push(`(${orParts.join(' OR ')})`);
     } else {
-      parts.push(`${k} = ?`);
-      params.push(v);
+      const { sql, params: p } = compileCmp(f);
+      parts.push(sql);
+      params.push(...p);
     }
   }
-  return { sql: ' WHERE ' + parts.join(' AND ') + ' AND _local_deleted = 0', params };
+
+  parts.push('_local_deleted = 0');
+  return { sql: ' WHERE ' + parts.join(' AND '), params };
 }
 
 function enqueueMutation(table: BusinessTable, recordId: string, operation: 'insert' | 'update' | 'delete', payload: Record<string, unknown>) {
@@ -61,28 +123,36 @@ function enqueueMutation(table: BusinessTable, recordId: string, operation: 'ins
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
-function handleSelect(args: SelectArgs): unknown[] {
+function handleSelect(args: SelectArgs): SelectResult {
   assertValidTable(args.table);
   const raw = getRawDb();
-  const { sql: whereSql, params } = buildWhereClause(args.where);
+  const { sql: whereSql, params } = buildWhereClause(args.filters);
 
-  let sql = `SELECT * FROM ${args.table}`;
-  // Si pas de where, on filtre quand même les soft-deleted
-  sql += whereSql || ' WHERE _local_deleted = 0';
+  // count: 'exact' → COUNT(*) sur le filtre complet, indépendant de limit/offset.
+  let count: number | null = null;
+  if (args.count || args.head) {
+    const row = raw.prepare(`SELECT COUNT(*) AS n FROM ${args.table}${whereSql}`).get(...params) as { n: number };
+    count = row.n;
+  }
 
+  // head: true → on ne ramène aucune ligne (juste le count).
+  if (args.head) return { rows: [], count };
+
+  let sql = `SELECT * FROM ${args.table}${whereSql}`;
   if (args.orderBy) {
+    assertColumn(args.orderBy.column);
     const dir = args.orderBy.direction === 'desc' ? 'DESC' : 'ASC';
     sql += ` ORDER BY ${args.orderBy.column} ${dir}`;
   }
-  if (args.limit) sql += ` LIMIT ${args.limit}`;
-  if (args.offset) sql += ` OFFSET ${args.offset}`;
+  if (args.limit != null) sql += ` LIMIT ${Number(args.limit)}`;
+  if (args.offset != null) sql += ` OFFSET ${Number(args.offset)}`;
 
   const rows = raw.prepare(sql).all(...params) as Record<string, unknown>[];
   // Convertit booleans 0/1 → true/false et JSON strings → objets pour le renderer.
-  return rows.map((r) => deserializeRow(args.table, r));
+  return { rows: rows.map((r) => deserializeRow(args.table, r)), count };
 }
 
-function handleInsert({ table, payload }: InsertArgs): { id: string } {
+function handleInsert({ table, payload }: InsertArgs): Record<string, unknown> {
   assertValidTable(table);
   const raw = getRawDb();
 
@@ -111,10 +181,13 @@ function handleInsert({ table, payload }: InsertArgs): { id: string } {
     enqueueMutation(table, id, 'insert', fullPayload);
   })();
 
-  return { id };
+  // Renvoie la ligne complète (façon Supabase `.insert().select().single()`),
+  // pour que les champs renseignés par la DB (created_at, defaults…) soient présents.
+  const row = raw.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id) as Record<string, unknown>;
+  return deserializeRow(table, row);
 }
 
-function handleUpdate({ table, id, patch }: UpdateArgs): { ok: true } {
+function handleUpdate({ table, id, patch }: UpdateArgs): Record<string, unknown> {
   assertValidTable(table);
   const raw = getRawDb();
 
@@ -122,7 +195,6 @@ function handleUpdate({ table, id, patch }: UpdateArgs): { ok: true } {
   const fullPatch = { ...patch, updated_at: now, _local_dirty: 1 };
 
   const cols = Object.keys(fullPatch);
-  if (cols.length === 0) return { ok: true };
 
   const setSql = cols.map((c) => `${c} = ?`).join(', ');
   const values = cols.map((c) => {
@@ -132,15 +204,20 @@ function handleUpdate({ table, id, patch }: UpdateArgs): { ok: true } {
     return v;
   });
 
-  raw.transaction(() => {
-    const result = raw.prepare(`UPDATE ${table} SET ${setSql} WHERE id = ?`).run(...values, id);
-    if (result.changes === 0) throw new Error(`${table}/${id} not found`);
+  if (cols.length > 0) {
+    raw.transaction(() => {
+      const result = raw.prepare(`UPDATE ${table} SET ${setSql} WHERE id = ?`).run(...values, id);
+      if (result.changes === 0) throw new Error(`${table}/${id} not found`);
 
-    // On enqueue le patch complet + id pour que le push puisse réémettre l'UPDATE serveur
-    enqueueMutation(table, id, 'update', { id, ...patch, updated_at: now });
-  })();
+      // On enqueue le patch complet + id pour que le push puisse réémettre l'UPDATE serveur
+      enqueueMutation(table, id, 'update', { id, ...patch, updated_at: now });
+    })();
+  }
 
-  return { ok: true };
+  // Renvoie la ligne complète mise à jour (façon Supabase `.update().select().single()`).
+  const row = raw.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+  if (!row) throw new Error(`${table}/${id} not found`);
+  return deserializeRow(table, row);
 }
 
 function handleDelete({ table, id }: DeleteArgs): { ok: true } {

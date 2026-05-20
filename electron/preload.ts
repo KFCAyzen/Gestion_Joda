@@ -16,22 +16,29 @@ type BusinessTable =
   | 'dossier_bourses' | 'dossier_history' | 'payments' | 'cours_langues'
   | 'entrees_comptables' | 'sorties_comptables' | 'notifications' | 'messages';
 
-type WhereClause = Record<string, unknown>;
+type CmpOp = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'is';
+type Filter =
+  | { op: CmpOp; column: string; value: unknown }
+  | { op: 'in'; column: string; value: unknown[] }
+  | { op: 'or'; clauses: Array<{ op: CmpOp; column: string; value: unknown }> };
 type SelectOptions = {
-  where?: WhereClause;
+  filters?: Filter[];
   limit?: number;
   offset?: number;
   orderBy?: { column: string; direction?: 'asc' | 'desc' };
+  count?: boolean;
+  head?: boolean;
 };
+type SelectResult<T> = { rows: T[]; count: number | null };
 
 const db = {
-  select: <T = unknown>(table: BusinessTable, opts?: SelectOptions): Promise<T[]> =>
+  select: <T = unknown>(table: BusinessTable, opts?: SelectOptions): Promise<SelectResult<T>> =>
     ipcRenderer.invoke('db:select', { table, ...opts }),
 
-  insert: <T = { id: string }>(table: BusinessTable, payload: Record<string, unknown>): Promise<T> =>
+  insert: <T = Record<string, unknown>>(table: BusinessTable, payload: Record<string, unknown>): Promise<T> =>
     ipcRenderer.invoke('db:insert', { table, payload }),
 
-  update: (table: BusinessTable, id: string, patch: Record<string, unknown>): Promise<{ ok: true }> =>
+  update: <T = Record<string, unknown>>(table: BusinessTable, id: string, patch: Record<string, unknown>): Promise<T> =>
     ipcRenderer.invoke('db:update', { table, id, patch }),
 
   delete: (table: BusinessTable, id: string): Promise<{ ok: true }> =>

@@ -354,6 +354,11 @@ export const JSON_COLUMNS: Record<BusinessTable, string[]> = {
  */
 export function deserializeRow(table: BusinessTable, row: Record<string, unknown>): Record<string, unknown> {
   const out = { ...row };
+  // Les colonnes internes de sync ne doivent jamais remonter au renderer
+  // (sinon elles polluent les objets métier et risquent d'être réinsérées).
+  delete out._local_dirty;
+  delete out._local_deleted;
+  delete out._last_synced_at;
   for (const col of BOOLEAN_COLUMNS[table]) {
     const v = out[col];
     if (v === 0 || v === 1) out[col] = v === 1;

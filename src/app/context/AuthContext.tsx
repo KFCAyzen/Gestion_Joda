@@ -3,8 +3,33 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { getFriendlyErrorMessage } from "../lib/feedback";
 import { createClient } from "../lib/supabase/client";
+import { getDirectClient } from "../lib/desktop/offline-client";
 
 const supabase = createClient();
+// Lectures du profil applicatif (table `users`) : toujours interroger Supabase
+// en direct. Sur desktop, le wrapper offline lirait le cache SQLite encore vide
+// au 1er login (la sync qui le peuple a elle-même besoin du token du login).
+const profileDb = getDirectClient(supabase);
+
+/** Lit le profil utilisateur mis en cache (pour la reprise hors-ligne sur desktop). */
+function readCachedUser(): AuthUser | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const raw = localStorage.getItem("currentUser");
+        return raw ? (JSON.parse(raw) as AuthUser) : null;
+    } catch {
+        return null;
+    }
+}
+
+/** Détecte une panne réseau (vs un vrai rejet d'auth) pour ne pas déconnecter hors-ligne. */
+function isNetworkError(err: unknown): boolean {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+    const msg = err && typeof err === "object" && "message" in err
+        ? String((err as { message: unknown }).message)
+        : String(err);
+    return /failed to fetch|networkerror|fetch failed|enotfound|etimedout|econnrefused|timeout|err_internet|err_network|load failed|network request failed/i.test(msg);
+}
 
 export type UserRole = "student" | "agent" | "admin" | "supervisor" | "user" | "super_admin";
 
@@ -80,20 +105,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (session) {
                     void window.jodaDesktop!.sync.setAuth(session.access_token, session.refresh_token);
                 }
-            });
+            }).catch(() => { /* hors-ligne : la session sera poussée au prochain SIGNED_IN */ });
         }
 
         return () => subscription.unsubscribe();
     }, []);
 
     const loadUserProfile = async (authUserId: string) => {
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: userError } = await profileDb
             .from("users")
             .select("*")
             .eq("id", authUserId)
             .single();
 
         if (userError) {
+            // Panne réseau transitoire (ex. desktop hors-ligne) : ne pas déconnecter,
+            // on conserve le profil en cache s'il existe.
+            if (isNetworkError(userError)) {
+                const cached = readCachedUser();
+                if (cached) setUser(cached);
+                return;
+            }
             console.error("Erreur récupération user:", userError.message);
             await supabase.auth.signOut();
             return;
@@ -107,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        setUser({
+        const profile: AuthUser = {
             id: userData.id,
             username: userData.username,
             role: userData.role,
@@ -115,15 +147,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: userData.email,
             mustChangePassword: userData.must_change_password === true,
             isActive: userData.is_active !== false,
-        });
+        };
+        setUser(profile);
+        // Rafraîchit le cache pour la reprise hors-ligne au prochain démarrage.
+        if (typeof window !== "undefined") {
+            localStorage.setItem("currentUser", JSON.stringify(profile));
+        }
     };
 
     const checkCurrentUser = async () => {
         try {
-            const { data: { user: authUser }, error } = await supabase.auth.getUser();
+            // getUser() valide le token côté serveur → nécessite le réseau.
+            let authUser: { id: string } | null = null;
+            let authError: unknown = null;
+            try {
+                const res = await supabase.auth.getUser();
+                authUser = res.data.user;
+                authError = res.error;
+            } catch (e) {
+                authError = e;
+            }
 
-            if (error) {
-                if (error.message.includes("refresh_token") || error.message.includes("Refresh Token")) {
+            if (authError) {
+                // Desktop offline-first : hors-ligne avec un profil en cache → on
+                // reste connecté avec l'identité mise en cache (les données viennent
+                // du SQLite local). On ne déconnecte que sur un vrai rejet d'auth en ligne.
+                const cached = readCachedUser();
+                if (isNetworkError(authError) && cached) {
+                    setUser(cached);
+                    return;
+                }
+                const msg = String((authError as { message?: unknown })?.message ?? authError);
+                if (/refresh_token|Refresh Token|Invalid|JWT|session/i.test(msg)) {
                     await supabase.auth.signOut();
                     setUser(null);
                     if (typeof window !== "undefined") {
@@ -137,11 +192,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await loadUserProfile(authUser.id);
             }
         } catch (error) {
-            console.error("Erreur vérification session:", error);
-            await supabase.auth.signOut();
-            setUser(null);
-            if (typeof window !== "undefined") {
-                localStorage.removeItem("currentUser");
+            // Erreur inattendue : si c'est réseau et qu'on a un cache, rester connecté.
+            const cached = readCachedUser();
+            if (isNetworkError(error) && cached) {
+                setUser(cached);
+            } else {
+                console.error("Erreur vérification session:", error);
             }
         } finally {
             setLoading(false);
@@ -196,7 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             if (authData.user) {
-                const { data: userData, error: userError } = await supabase
+                const { data: userData, error: userError } = await profileDb
                     .from("users")
                     .select("*")
                     .eq("id", authData.user.id)
