@@ -1,48 +1,71 @@
 /**
  * Smoke test du wrapper offline-first (intercepteur Supabase JS).
  *
- * On simule `window.jodaDesktop` côté Node avec un mock qui enregistre les
- * appels IPC, puis on vérifie que les méthodes chaînées Supabase JS
- * (.from().select().eq()…) sont bien interceptées et redirigées.
+ * Simule `window.jodaDesktop` côté Node avec un mock IPC table-aware, puis
+ * vérifie que les méthodes chaînées Supabase JS sont interceptées et redirigées.
  *
- * Note : ce test réimplémente inline la même logique que
- * src/app/lib/desktop/offline-client.ts (contrat comportemental). Il doit rester
- * synchronisé avec ce fichier. La vraie intégration est couverte par les E2E.
+ * Réimplémente inline la logique de src/app/lib/desktop/offline-client.ts
+ * (contrat comportemental) — doit rester synchronisé avec ce fichier.
  */
 
-// Setup mock window/global pour simuler l'environnement renderer Electron
 globalThis.window = {};
 
 const callLog = [];
+
+// Données mock par table (ids alignés avec les assertions).
+const TABLES = {
+  students: [
+    { id: 'student-1', nom: 'Doe', prenom: 'John', is_active: true },
+    { id: 'student-2', nom: 'Smith', prenom: 'Jane', is_active: false },
+  ],
+  payments: [
+    { id: 'p1', student_id: 'student-1', montant: 100 },
+    { id: 'p2', student_id: 'student-2', montant: 200 },
+  ],
+  notifications: [
+    { id: 'n1', user_id: 'u1', read: false },
+    { id: 'n2', user_id: 'u1', read: false },
+  ],
+};
+
+function applyFilters(rows, filters) {
+  let out = rows.slice();
+  for (const f of filters ?? []) {
+    if (f.op === 'eq') out = out.filter((r) => r[f.column] === f.value);
+    else if (f.op === 'in') out = out.filter((r) => f.value.includes(r[f.column]));
+  }
+  return out;
+}
+
 const mockDesktop = {
   isDesktop: true,
   db: {
-    // Nouveau contrat : retourne { rows, count }.
     async select(table, opts) {
       callLog.push({ op: 'select', table, opts });
-      const all = [
-        { id: 'student-1', nom: 'Doe', prenom: 'John', is_active: true },
-        { id: 'student-2', nom: 'Smith', prenom: 'Jane', is_active: false },
-      ];
-      // Filtre eq id pour le test single
-      const idFilter = opts?.filters?.find((f) => f.op === 'eq' && f.column === 'id');
-      const rows = idFilter ? all.filter((r) => r.id === idFilter.value) : all;
+      const rows = applyFilters(TABLES[table] ?? [], opts?.filters);
       const count = opts?.count ? rows.length : null;
-      return { rows: opts?.head ? [] : rows, count };
+      return { rows: opts?.head ? [] : rows.map((r) => ({ ...r })), count };
     },
     async insert(table, payload) {
       callLog.push({ op: 'insert', table, payload });
-      // Contrat : renvoie la ligne complète (id généré + created_at).
       return { ...payload, id: payload.id ?? 'generated-123', created_at: '2026-01-01T00:00:00Z' };
     },
     async update(table, id, patch) {
       callLog.push({ op: 'update', table, id, patch });
-      // Contrat : renvoie la ligne complète mise à jour.
       return { id, ...patch, updated_at: '2026-01-01T00:00:00Z' };
+    },
+    async updateWhere(table, filters, patch) {
+      callLog.push({ op: 'updateWhere', table, filters, patch });
+      const rows = applyFilters(TABLES[table] ?? [], filters);
+      return rows.map((r) => ({ ...r, ...patch }));
     },
     async delete(table, id) {
       callLog.push({ op: 'delete', table, id });
       return { ok: true };
+    },
+    async deleteWhere(table, filters) {
+      callLog.push({ op: 'deleteWhere', table, filters });
+      return { ok: true, count: applyFilters(TABLES[table] ?? [], filters).length };
     },
   },
 };
@@ -92,8 +115,34 @@ function idFromFilters(filters) {
   return undefined;
 }
 
+function singularFk(rel) {
+  let base = rel;
+  if (/ies$/.test(base)) base = base.replace(/ies$/, 'y');
+  else if (/s$/.test(base)) base = base.replace(/s$/, '');
+  return base + '_id';
+}
+
+async function resolveEmbeds(rows, selectStr, api) {
+  if (!selectStr || !selectStr.includes('(') || rows.length === 0) return rows;
+  const embedRe = /([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^()]*)\)/g;
+  const relations = [];
+  let m;
+  while ((m = embedRe.exec(selectStr))) relations.push(m[1]);
+  for (const rel of relations) {
+    if (!OFFLINE_TABLES.has(rel)) continue;
+    const fk = singularFk(rel);
+    if (rows[0][fk] === undefined) continue;
+    const ids = [...new Set(rows.map((r) => r[fk]).filter((v) => v != null))];
+    if (ids.length === 0) { for (const r of rows) r[rel] = null; continue; }
+    const { rows: related } = await api.db.select(rel, { filters: [{ op: 'in', column: 'id', value: ids }] });
+    const map = new Map(related.map((r) => [r.id, r]));
+    for (const r of rows) r[rel] = map.get(r[fk]) ?? null;
+  }
+  return rows;
+}
+
 function buildTableProxy(table) {
-  const state = { table, filters: [], orderBy: null, limitN: null, offsetN: null, singleMode: 'none', countMode: false, headMode: false };
+  const state = { table, filters: [], orderBy: null, limitN: null, offsetN: null, singleMode: 'none', countMode: false, headMode: false, selectStr: '*' };
   let pendingAction = 'select';
   let pendingPayload;
 
@@ -111,7 +160,8 @@ function buildTableProxy(table) {
         filters: state.filters, limit: state.limitN ?? undefined, offset: state.offsetN ?? undefined,
         orderBy: state.orderBy ?? undefined, count: state.countMode || state.headMode, head: state.headMode,
       });
-      return wrap(rows, count);
+      const resolved = state.headMode ? rows : await resolveEmbeds(rows, state.selectStr, api);
+      return wrap(resolved, count);
     }
     if (pendingAction === 'insert' || pendingAction === 'upsert') {
       const items = Array.isArray(pendingPayload) ? pendingPayload : [pendingPayload];
@@ -121,14 +171,13 @@ function buildTableProxy(table) {
     }
     if (pendingAction === 'update') {
       const id = idFromFilters(state.filters);
-      if (!id) return { data: null, count: null, error: { message: 'update requires .eq(id, ...)' } };
-      const row = await api.db.update(state.table, id, pendingPayload);
-      return wrap([row]);
+      if (id) return wrap([await api.db.update(state.table, id, pendingPayload)]);
+      return wrap(await api.db.updateWhere(state.table, state.filters, pendingPayload));
     }
     if (pendingAction === 'delete') {
       const id = idFromFilters(state.filters);
-      if (!id) return { data: null, count: null, error: { message: 'delete requires .eq(id, ...)' } };
-      await api.db.delete(state.table, id);
+      if (id) { await api.db.delete(state.table, id); return wrap([]); }
+      await api.db.deleteWhere(state.table, state.filters);
       return wrap([]);
     }
   };
@@ -136,7 +185,7 @@ function buildTableProxy(table) {
   const pushCmp = (op, column, value) => { state.filters.push({ op, column, value }); return chain; };
 
   const chain = {
-    select(_cols, opts) { if (opts?.count) state.countMode = true; if (opts?.head) state.headMode = true; return chain; },
+    select(cols, opts) { if (typeof cols === 'string' && cols.trim()) state.selectStr = cols; if (opts?.count) state.countMode = true; if (opts?.head) state.headMode = true; return chain; },
     insert(p) { pendingAction = 'insert'; pendingPayload = p; return chain; },
     update(p) { pendingAction = 'update'; pendingPayload = p; return chain; },
     upsert(p) { pendingAction = 'upsert'; pendingPayload = p; return chain; },
@@ -223,7 +272,7 @@ await test('CRITICAL: insert().select().single() still inserts', async () => {
   if (data?.id !== 'generated-123') throw new Error('generated id not merged');
 });
 
-await test('CRITICAL: update().eq().select().single() still updates', async () => {
+await test('CRITICAL: update().eq(id).select().single() still updates', async () => {
   callLog.length = 0;
   const { data, error } = await client.from('students').update({ nom: 'Updated' }).eq('id', 'student-1').select().single();
   if (error) throw new Error(`unexpected error: ${error.message}`);
@@ -232,17 +281,39 @@ await test('CRITICAL: update().eq().select().single() still updates', async () =
   if (data?.nom !== 'Updated') throw new Error('updated row not returned');
 });
 
-await test('update without eq returns error', async () => {
+await test('bulk update by non-id filter routes to updateWhere', async () => {
   callLog.length = 0;
-  const { error } = await client.from('students').update({ nom: 'X' });
-  if (!error) throw new Error('expected error when no eq');
+  await client.from('notifications').update({ read: true }).eq('user_id', 'u1').eq('read', false);
+  if (callLog[0].op !== 'updateWhere') throw new Error(`expected updateWhere, got ${callLog[0].op}`);
+  if (callLog[0].filters.length !== 2) throw new Error('filters not propagated to updateWhere');
 });
 
-await test('delete with eq', async () => {
+await test('update by .in(id) routes to updateWhere', async () => {
+  callLog.length = 0;
+  await client.from('notifications').update({ read: true }).in('id', ['n1', 'n2']);
+  if (callLog[0].op !== 'updateWhere') throw new Error(`expected updateWhere (no eq id), got ${callLog[0].op}`);
+});
+
+await test('delete with eq(id) uses fast path', async () => {
   callLog.length = 0;
   await client.from('students').delete().eq('id', 'student-1');
   if (callLog[0].op !== 'delete') throw new Error('IPC delete not called');
   if (callLog[0].id !== 'student-1') throw new Error('id not propagated');
+});
+
+await test('delete by non-id filter routes to deleteWhere', async () => {
+  callLog.length = 0;
+  await client.from('notifications').delete().eq('user_id', 'u1');
+  if (callLog[0].op !== 'deleteWhere') throw new Error(`expected deleteWhere, got ${callLog[0].op}`);
+});
+
+await test('embedded join payments → students(nom) resolved offline', async () => {
+  callLog.length = 0;
+  const { data } = await client.from('payments').select('*, students(nom, prenom)');
+  if (data.length !== 2) throw new Error(`expected 2 payments, got ${data.length}`);
+  if (data[0].students?.nom !== 'Doe') throw new Error(`embed not attached: ${JSON.stringify(data[0].students)}`);
+  if (data[1].students?.nom !== 'Smith') throw new Error('second embed wrong');
+  if (!callLog.some((c) => c.op === 'select' && c.table === 'students')) throw new Error('related students not fetched');
 });
 
 await test('or() parses into clause group', async () => {

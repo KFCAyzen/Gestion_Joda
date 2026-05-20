@@ -41,8 +41,14 @@ const db = {
   update: <T = Record<string, unknown>>(table: BusinessTable, id: string, patch: Record<string, unknown>): Promise<T> =>
     ipcRenderer.invoke('db:update', { table, id, patch }),
 
+  updateWhere: <T = Record<string, unknown>>(table: BusinessTable, filters: Filter[] | undefined, patch: Record<string, unknown>): Promise<T[]> =>
+    ipcRenderer.invoke('db:update-where', { table, filters, patch }),
+
   delete: (table: BusinessTable, id: string): Promise<{ ok: true }> =>
     ipcRenderer.invoke('db:delete', { table, id }),
+
+  deleteWhere: (table: BusinessTable, filters: Filter[] | undefined): Promise<{ ok: true; count: number }> =>
+    ipcRenderer.invoke('db:delete-where', { table, filters }),
 
   raw: <T = unknown>(sql: string, params?: unknown[]): Promise<T[]> =>
     ipcRenderer.invoke('db:raw', { sql, params }),

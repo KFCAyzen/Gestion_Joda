@@ -57,7 +57,9 @@ export interface DesktopApi {
     select<T>(table: BusinessTable, opts?: OfflineSelectOpts): Promise<{ rows: T[]; count: number | null }>;
     insert<T>(table: BusinessTable, payload: Record<string, unknown>): Promise<T>;
     update<T = Record<string, unknown>>(table: BusinessTable, id: string, patch: Record<string, unknown>): Promise<T>;
+    updateWhere<T = Record<string, unknown>>(table: BusinessTable, filters: OfflineFilter[] | undefined, patch: Record<string, unknown>): Promise<T[]>;
     delete(table: BusinessTable, id: string): Promise<{ ok: true }>;
+    deleteWhere(table: BusinessTable, filters: OfflineFilter[] | undefined): Promise<{ ok: true; count: number }>;
     raw?<T>(sql: string, params?: unknown[]): Promise<T[]>;
     stats?(): Promise<Record<string, number>>;
   };
@@ -137,7 +139,46 @@ type QueryState = {
   singleMode: 'none' | 'single' | 'maybeSingle';
   countMode: boolean;
   headMode: boolean;
+  selectStr: string;
 };
+
+/** Déduit la colonne FK locale pour une relation embarquée (students→student_id). */
+function singularFk(relation: string): string {
+  let base = relation;
+  if (/ies$/.test(base)) base = base.replace(/ies$/, 'y');
+  else if (/s$/.test(base)) base = base.replace(/s$/, '');
+  return base + '_id';
+}
+
+/**
+ * Résout les jointures embarquées Supabase de 1er niveau (`select('*, students(nom)')`)
+ * en chargeant la table liée depuis SQLite et en l'attachant sur chaque ligne.
+ * Gère la relation to-one parent→enfant via la FK `<singulier>_id`.
+ */
+async function resolveEmbeds(rows: any[], selectStr: string, api: DesktopApi): Promise<any[]> {
+  if (!selectStr || !selectStr.includes('(') || rows.length === 0) return rows;
+  const embedRe = /([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^()]*)\)/g;
+  let m: RegExpExecArray | null;
+  const relations: string[] = [];
+  while ((m = embedRe.exec(selectStr))) relations.push(m[1]);
+
+  for (const rel of relations) {
+    if (!OFFLINE_TABLES.has(rel as BusinessTable)) continue;
+    const fk = singularFk(rel);
+    if (rows[0][fk] === undefined) continue; // la FK n'est pas sur cette table
+    const ids = [...new Set(rows.map((r) => r[fk]).filter((v) => v != null))];
+    if (ids.length === 0) {
+      for (const r of rows) r[rel] = null;
+      continue;
+    }
+    const { rows: related } = await api.db.select<any>(rel as BusinessTable, {
+      filters: [{ op: 'in', column: 'id', value: ids }],
+    });
+    const map = new Map<unknown, any>(related.map((r: any) => [r.id, r]));
+    for (const r of rows) r[rel] = map.get(r[fk]) ?? null;
+  }
+  return rows;
+}
 
 const CMP_OPS = new Set<OfflineCmpOp>(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'ilike', 'is']);
 
@@ -199,6 +240,7 @@ function buildTableProxy(table: string, fallback: SupabaseClient): any {
     singleMode: 'none',
     countMode: false,
     headMode: false,
+    selectStr: '*',
   };
 
   // L'action est mémorisée : on n'exécute qu'au .then()/.single()/.maybeSingle().
@@ -231,7 +273,8 @@ function buildTableProxy(table: string, fallback: SupabaseClient): any {
           count: state.countMode || state.headMode,
           head: state.headMode,
         });
-        return wrap(rows, count);
+        const resolved = state.headMode ? rows : await resolveEmbeds(rows, state.selectStr, api);
+        return wrap(resolved, count);
       }
       if (pendingAction === 'insert' || pendingAction === 'upsert') {
         const items = Array.isArray(pendingPayload) ? pendingPayload : [pendingPayload];
@@ -245,14 +288,23 @@ function buildTableProxy(table: string, fallback: SupabaseClient): any {
       }
       if (pendingAction === 'update') {
         const id = idFromFilters(state.filters);
-        if (!id) return { data: null, count: null, error: { message: `update offline ${state.table} requiert .eq('id', ...)` } };
-        const row = await api.db.update<any>(state.table as BusinessTable, id, pendingPayload);
-        return wrap([row]);
+        if (id) {
+          // Chemin rapide : update par id unique.
+          const row = await api.db.update<any>(state.table as BusinessTable, id, pendingPayload);
+          return wrap([row]);
+        }
+        // Update en masse par filtre (mark-all-read, .in('id', …), .eq('user_id', …)…).
+        const rows = await api.db.updateWhere<any>(state.table as BusinessTable, state.filters, pendingPayload);
+        return wrap(rows);
       }
       if (pendingAction === 'delete') {
         const id = idFromFilters(state.filters);
-        if (!id) return { data: null, count: null, error: { message: `delete offline ${state.table} requiert .eq('id', ...)` } };
-        await api.db.delete(state.table as BusinessTable, id);
+        if (id) {
+          await api.db.delete(state.table as BusinessTable, id);
+          return wrap([]);
+        }
+        // Delete par filtre.
+        await api.db.deleteWhere(state.table as BusinessTable, state.filters);
         return wrap([]);
       }
     } catch (e: any) {
@@ -269,7 +321,8 @@ function buildTableProxy(table: string, fallback: SupabaseClient): any {
     // `select()` ne réinitialise PAS l'action : `insert(p).select()` / `update(p).eq().select()`
     // doivent rester un insert/update (sinon la mutation était perdue). On capte juste
     // les options de count/head éventuelles.
-    select(_cols?: string, opts?: { count?: 'exact' | 'planned' | 'estimated'; head?: boolean }) {
+    select(cols?: string, opts?: { count?: 'exact' | 'planned' | 'estimated'; head?: boolean }) {
+      if (typeof cols === 'string' && cols.trim()) state.selectStr = cols;
       if (opts?.count) state.countMode = true;
       if (opts?.head) state.headMode = true;
       return chain;

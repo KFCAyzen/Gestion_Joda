@@ -10,7 +10,23 @@
 import { ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { getRawDb } from '../db';
-import { ALL_BUSINESS_TABLES, BusinessTable, deserializeRow } from '../db/schema';
+import { ALL_BUSINESS_TABLES, BusinessTable, deserializeRow, TIMESTAMP_FIELD } from '../db/schema';
+
+/**
+ * Certaines tables (notifications, messages, entrees/sorties_comptables,
+ * dossier_history) n'ont PAS de colonne `updated_at`. Y écrire `updated_at`
+ * lèverait « no such column ». On ne touche `updated_at` que si la table l'a.
+ */
+function hasUpdatedAt(table: BusinessTable): boolean {
+  return TIMESTAMP_FIELD[table] === 'updated_at';
+}
+
+/** Sérialise une valeur JS pour le bind better-sqlite3 (booléen→0/1, objet→JSON). */
+function serializeValue(v: unknown): unknown {
+  if (typeof v === 'boolean') return v ? 1 : 0;
+  if (v !== null && typeof v === 'object') return JSON.stringify(v);
+  return v;
+}
 
 /**
  * Filtre structuré transmis par le wrapper renderer. Préserve l'opérateur
@@ -68,6 +84,8 @@ function compileCmp(f: { op: CmpOp; column: string; value: unknown }): { sql: st
 type InsertArgs = { table: BusinessTable; payload: Record<string, unknown> };
 type UpdateArgs = { table: BusinessTable; id: string; patch: Record<string, unknown> };
 type DeleteArgs = { table: BusinessTable; id: string };
+type UpdateWhereArgs = { table: BusinessTable; filters?: Filter[]; patch: Record<string, unknown> };
+type DeleteWhereArgs = { table: BusinessTable; filters?: Filter[] };
 
 function assertValidTable(name: string): asserts name is BusinessTable {
   if (!(ALL_BUSINESS_TABLES as readonly string[]).includes(name)) {
@@ -158,23 +176,19 @@ function handleInsert({ table, payload }: InsertArgs): Record<string, unknown> {
 
   const id = (payload.id as string) ?? randomUUID();
   const now = new Date().toISOString();
-  const fullPayload = {
+  const fullPayload: Record<string, unknown> = {
     ...payload,
     id,
     created_at: payload.created_at ?? now,
-    updated_at: payload.updated_at ?? now,
     _local_dirty: 1,
     _local_deleted: 0,
   };
+  // Seulement si la table possède la colonne.
+  if (hasUpdatedAt(table)) fullPayload.updated_at = payload.updated_at ?? now;
 
   const cols = Object.keys(fullPayload);
   const placeholders = cols.map(() => '?').join(', ');
-  const values = cols.map((c) => {
-    const v = (fullPayload as Record<string, unknown>)[c];
-    if (typeof v === 'boolean') return v ? 1 : 0;
-    if (v !== null && typeof v === 'object') return JSON.stringify(v);
-    return v;
-  });
+  const values = cols.map((c) => serializeValue(fullPayload[c]));
 
   raw.transaction(() => {
     raw.prepare(`INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`).run(...values);
@@ -189,53 +203,87 @@ function handleInsert({ table, payload }: InsertArgs): Record<string, unknown> {
 
 function handleUpdate({ table, id, patch }: UpdateArgs): Record<string, unknown> {
   assertValidTable(table);
-  const raw = getRawDb();
-
-  const now = new Date().toISOString();
-  const fullPatch = { ...patch, updated_at: now, _local_dirty: 1 };
-
-  const cols = Object.keys(fullPatch);
-
-  const setSql = cols.map((c) => `${c} = ?`).join(', ');
-  const values = cols.map((c) => {
-    const v = (fullPatch as Record<string, unknown>)[c];
-    if (typeof v === 'boolean') return v ? 1 : 0;
-    if (v !== null && typeof v === 'object') return JSON.stringify(v);
-    return v;
-  });
-
-  if (cols.length > 0) {
-    raw.transaction(() => {
-      const result = raw.prepare(`UPDATE ${table} SET ${setSql} WHERE id = ?`).run(...values, id);
-      if (result.changes === 0) throw new Error(`${table}/${id} not found`);
-
-      // On enqueue le patch complet + id pour que le push puisse réémettre l'UPDATE serveur
-      enqueueMutation(table, id, 'update', { id, ...patch, updated_at: now });
-    })();
-  }
-
-  // Renvoie la ligne complète mise à jour (façon Supabase `.update().select().single()`).
-  const row = raw.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+  applyUpdate(table, [id], patch);
+  const row = getRawDb().prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
   if (!row) throw new Error(`${table}/${id} not found`);
   return deserializeRow(table, row);
 }
 
+/** Met à jour les lignes `ids` avec `patch` + enregistre une mutation par ligne. */
+function applyUpdate(table: BusinessTable, ids: string[], patch: Record<string, unknown>) {
+  if (ids.length === 0) return;
+  const db = getRawDb();
+  const now = new Date().toISOString();
+  const fullPatch: Record<string, unknown> = { ...patch, _local_dirty: 1 };
+  if (hasUpdatedAt(table)) fullPatch.updated_at = now;
+
+  const cols = Object.keys(fullPatch);
+  if (cols.length === 0) return;
+  const setSql = cols.map((c) => `${c} = ?`).join(', ');
+  const values = cols.map((c) => serializeValue(fullPatch[c]));
+
+  // Payload de mutation (sans les colonnes internes) pour réémettre l'UPDATE serveur.
+  const mutationPatch: Record<string, unknown> = { ...patch };
+  if (hasUpdatedAt(table)) mutationPatch.updated_at = now;
+
+  db.transaction(() => {
+    const stmt = db.prepare(`UPDATE ${table} SET ${setSql} WHERE id = ?`);
+    for (const id of ids) {
+      stmt.run(...values, id);
+      enqueueMutation(table, id, 'update', { id, ...mutationPatch });
+    }
+  })();
+}
+
+/** Update par filtre (mark-all-read, .in('id', …), .eq('user_id', …)…). Renvoie les lignes. */
+function handleUpdateWhere({ table, filters, patch }: UpdateWhereArgs): Record<string, unknown>[] {
+  assertValidTable(table);
+  const db = getRawDb();
+  const { sql: whereSql, params } = buildWhereClause(filters);
+  const ids = (db.prepare(`SELECT id FROM ${table}${whereSql}`).all(...params) as Array<{ id: string }>).map((r) => r.id);
+  applyUpdate(table, ids, patch);
+  if (ids.length === 0) return [];
+  const placeholders = ids.map(() => '?').join(', ');
+  const rows = db.prepare(`SELECT * FROM ${table} WHERE id IN (${placeholders})`).all(...ids) as Record<string, unknown>[];
+  return rows.map((r) => deserializeRow(table, r));
+}
+
 function handleDelete({ table, id }: DeleteArgs): { ok: true } {
   assertValidTable(table);
-  const raw = getRawDb();
-
-  raw.transaction(() => {
-    // Soft delete local
-    const result = raw.prepare(`
-      UPDATE ${table} SET _local_deleted = 1, _local_dirty = 1, updated_at = ?
-      WHERE id = ?
-    `).run(new Date().toISOString(), id);
-    if (result.changes === 0) throw new Error(`${table}/${id} not found`);
-
-    enqueueMutation(table, id, 'delete', { id });
-  })();
-
+  const affected = applyDelete(table, [id]);
+  if (affected === 0) throw new Error(`${table}/${id} not found`);
   return { ok: true };
+}
+
+/** Soft-delete les lignes `ids` + enregistre une mutation delete par ligne. Renvoie le nb touché. */
+function applyDelete(table: BusinessTable, ids: string[]): number {
+  if (ids.length === 0) return 0;
+  const db = getRawDb();
+  // Pas d'updated_at sur certaines tables → on ne le touche que si elle l'a.
+  const setUpdatedAt = hasUpdatedAt(table) ? ', updated_at = ?' : '';
+  const now = new Date().toISOString();
+  let affected = 0;
+  db.transaction(() => {
+    const stmt = db.prepare(`UPDATE ${table} SET _local_deleted = 1, _local_dirty = 1${setUpdatedAt} WHERE id = ?`);
+    for (const id of ids) {
+      const res = setUpdatedAt ? stmt.run(now, id) : stmt.run(id);
+      if (res.changes > 0) {
+        affected += res.changes;
+        enqueueMutation(table, id, 'delete', { id });
+      }
+    }
+  })();
+  return affected;
+}
+
+/** Delete par filtre. Renvoie le nombre de lignes supprimées. */
+function handleDeleteWhere({ table, filters }: DeleteWhereArgs): { ok: true; count: number } {
+  assertValidTable(table);
+  const db = getRawDb();
+  const { sql: whereSql, params } = buildWhereClause(filters);
+  const ids = (db.prepare(`SELECT id FROM ${table}${whereSql}`).all(...params) as Array<{ id: string }>).map((r) => r.id);
+  const count = applyDelete(table, ids);
+  return { ok: true, count };
 }
 
 function handleRawSql({ sql, params }: { sql: string; params?: unknown[] }): unknown {
@@ -255,7 +303,9 @@ export function registerDbHandlers() {
   ipcMain.handle('db:select', (_event, args: SelectArgs) => handleSelect(args));
   ipcMain.handle('db:insert', (_event, args: InsertArgs) => handleInsert(args));
   ipcMain.handle('db:update', (_event, args: UpdateArgs) => handleUpdate(args));
+  ipcMain.handle('db:update-where', (_event, args: UpdateWhereArgs) => handleUpdateWhere(args));
   ipcMain.handle('db:delete', (_event, args: DeleteArgs) => handleDelete(args));
+  ipcMain.handle('db:delete-where', (_event, args: DeleteWhereArgs) => handleDeleteWhere(args));
   ipcMain.handle('db:raw', (_event, args: { sql: string; params?: unknown[] }) => handleRawSql(args));
 
   ipcMain.handle('db:stats', () => {
