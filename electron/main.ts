@@ -15,10 +15,45 @@ import path from 'node:path';
 import fs from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
-import { initLocalDb, closeLocalDb } from './db';
-import { registerDbHandlers } from './ipc/db-handlers';
-import { registerSyncHandlers } from './ipc/sync-handlers';
-import { startSyncEngine, stopSyncEngine } from './sync/engine';
+// Les modules offline (./db, ./ipc, ./sync) sont importés en lazy require dans
+// bootstrap() pour qu'un crash du module natif `better-sqlite3` ne tue pas le
+// main process avant d'avoir loggué l'erreur.
+type LocalDbModule = typeof import('./db');
+type DbHandlersModule = typeof import('./ipc/db-handlers');
+type SyncHandlersModule = typeof import('./ipc/sync-handlers');
+type SyncEngineModule = typeof import('./sync/engine');
+
+// File logger pour diagnostiquer les crashes en prod (Electron détache stdout).
+// Écrit dans %APPDATA%\Joda Company\main.log avec appendFileSync pour garantir
+// le flush avant que le process meure.
+let logPath_: string | null = null;
+function getLogPath(): string {
+  if (logPath_) return logPath_;
+  const logDir = app.getPath('userData');
+  if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+  logPath_ = path.join(logDir, 'main.log');
+  return logPath_;
+}
+function flog(level: 'log' | 'err' | 'warn', ...args: unknown[]) {
+  try {
+    const line = `[${new Date().toISOString()}] [${level}] ${args.map((a) => (a instanceof Error ? `${a.message}\n${a.stack}` : typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')}\n`;
+    fs.appendFileSync(getLogPath(), line);
+  } catch { /* ignore */ }
+}
+function initFileLogger() {
+  try {
+    // Reset le log à chaque démarrage
+    fs.writeFileSync(getLogPath(), `[${new Date().toISOString()}] [boot] === main.log === pid=${process.pid} electron=${process.versions.electron} node=${process.versions.node}\n`);
+    const origLog = console.log;
+    const origErr = console.error;
+    const origWarn = console.warn;
+    console.log = (...args) => { flog('log', ...args); origLog(...args); };
+    console.error = (...args) => { flog('err', ...args); origErr(...args); };
+    console.warn = (...args) => { flog('warn', ...args); origWarn(...args); };
+    process.on('uncaughtException', (e) => flog('err', 'uncaughtException', e));
+    process.on('unhandledRejection', (r) => flog('err', 'unhandledRejection', r));
+  } catch { /* ignore */ }
+}
 
 const isDev = !app.isPackaged;
 const DEV_URL = process.env.ELECTRON_DEV_URL ?? 'http://localhost:3000';
@@ -229,39 +264,97 @@ function loadEnvFromAppDir(): Record<string, string> {
   return {};
 }
 
+let dbMod: LocalDbModule | null = null;
+let syncEngineMod: SyncEngineModule | null = null;
+
 async function bootstrap() {
   try {
-    // 1) DB locale + IPC handlers (avant le serveur Next.js pour être prêts dès le renderer load)
-    initLocalDb();
-    registerDbHandlers();
+    earlyLog('bootstrap() entered');
 
-    // 2) Sync engine (lecture .env.local pour les clés Supabase)
-    const envFromFile = loadEnvFromAppDir();
-    const supabaseUrl = envFromFile.NEXT_PUBLIC_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = envFromFile.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (supabaseUrl && supabaseAnonKey) {
-      startSyncEngine(supabaseUrl, supabaseAnonKey);
-    } else {
-      console.warn('[main] Supabase keys missing, sync engine not started');
+    // 1) DB locale + IPC handlers — lazy require pour capturer un crash du
+    //    binding natif better-sqlite3 avec un message clair.
+    try {
+      earlyLog('loading ./db module…');
+      dbMod = require('./db') as LocalDbModule;
+      earlyLog('initLocalDb…');
+      const { dbPath } = dbMod.initLocalDb();
+      earlyLog(`SQLite OK at ${dbPath}`);
+
+      const dbHandlers = require('./ipc/db-handlers') as DbHandlersModule;
+      dbHandlers.registerDbHandlers();
+      earlyLog('db handlers registered');
+    } catch (e: any) {
+      earlyLog(`✗ db init failed: ${e?.message}\n${e?.stack}`);
+      // On continue sans la DB locale plutôt que de planter tout
     }
 
-    // 3) Next.js server + fenêtre
+    // 2) Sync engine
+    try {
+      const envFromFile = loadEnvFromAppDir();
+      const supabaseUrl = envFromFile.NEXT_PUBLIC_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = envFromFile.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey && dbMod) {
+        syncEngineMod = require('./sync/engine') as SyncEngineModule;
+        syncEngineMod.startSyncEngine(supabaseUrl, supabaseAnonKey);
+        earlyLog('sync engine started');
+      } else {
+        earlyLog('Supabase keys missing or DB unavailable, sync engine not started');
+      }
+    } catch (e: any) {
+      earlyLog(`✗ sync engine failed: ${e?.message}`);
+    }
+
+    // 3) Next.js server + fenêtre — fonctionnement DOIT marcher même si DB/sync KO
+    earlyLog(`starting Next.js… (isDev=${isDev})`);
     const targetUrl = isDev ? DEV_URL : await startEmbeddedNext();
+    earlyLog(`Next.js ready at ${targetUrl}`);
     buildAppMenu();
     await createMainWindow(targetUrl);
+    earlyLog('main window created');
 
-    // 4) Sync handlers une fois la fenêtre prête (pour qu'elle s'auto-subscribe au status)
-    registerSyncHandlers(() => mainWindow);
+    // 4) Sync handlers une fois la fenêtre prête
+    if (dbMod && syncEngineMod) {
+      try {
+        const syncHandlers = require('./ipc/sync-handlers') as SyncHandlersModule;
+        syncHandlers.registerSyncHandlers(() => mainWindow);
+        earlyLog('sync handlers registered');
+      } catch (e: any) {
+        earlyLog(`✗ sync handlers failed: ${e?.message}`);
+      }
+    }
   } catch (err: any) {
+    earlyLog(`bootstrap fatal: ${err?.message}\n${err?.stack}`);
     console.error('[main] bootstrap failed:', err);
     dialog.showErrorBox('Joda Company - Erreur', err?.message ?? String(err));
     app.quit();
   }
 }
 
+// Logger immédiat — utilise os.tmpdir() qui marche toujours, avant tout le reste.
+import { tmpdir } from 'node:os';
+const earlyLogPath = path.join(tmpdir(), 'joda-electron-boot.log');
+function earlyLog(msg: string) {
+  try {
+    fs.appendFileSync(earlyLogPath, `[${new Date().toISOString()}] ${msg}\n`);
+  } catch { /* ignore */ }
+}
+try {
+  fs.writeFileSync(earlyLogPath, `[${new Date().toISOString()}] [boot-top] entering main.js (pid=${process.pid}, electron=${process.versions.electron})\n`);
+} catch (e: any) {
+  // Tentative de fallback vers stderr
+  process.stderr.write(`early log write failed: ${e?.message}\n`);
+}
+
+// Nom cohérent pour le dossier userData (%APPDATA%\Joda Company) au lieu du
+// `name` du package.json (gestion_joda). Doit être appelé avant app.whenReady().
+app.setName('Joda Company');
+
 // Une seule instance autorisée.
+earlyLog('about to requestSingleInstanceLock');
 const gotLock = app.requestSingleInstanceLock();
+earlyLog(`gotSingleInstanceLock=${gotLock}`);
 if (!gotLock) {
+  earlyLog('another instance running, quitting');
   app.quit();
 } else {
   app.on('second-instance', () => {
@@ -271,15 +364,21 @@ if (!gotLock) {
     }
   });
 
-  app.whenReady().then(bootstrap);
+  earlyLog('registering app.whenReady()');
+  app.whenReady().then(() => {
+    earlyLog('whenReady fired');
+    initFileLogger();
+    earlyLog('logger initialized, entering bootstrap()');
+    return bootstrap().catch((e) => earlyLog(`bootstrap promise rejected: ${e?.message}`));
+  }).catch((e) => earlyLog(`whenReady rejected: ${e?.message}`));
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
   });
 
   app.on('before-quit', () => {
-    stopSyncEngine();
-    closeLocalDb();
+    try { syncEngineMod?.stopSyncEngine(); } catch {}
+    try { dbMod?.closeLocalDb(); } catch {}
     if (nextServer && !nextServer.killed) {
       nextServer.kill();
     }

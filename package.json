@@ -20,7 +20,8 @@
     "electron:start": "npm run electron:build-main && electron dist-electron/main.js",
     "desktop:build": "cross-env NEXT_BUILD_STANDALONE=1 next build && npm run electron:build-main",
     "desktop:dist": "npm run desktop:build && electron-builder --win nsis",
-    "desktop:dist:dir": "npm run desktop:build && electron-builder --win nsis --dir"
+    "desktop:dist:dir": "npm run desktop:build && electron-builder --win nsis --dir",
+    "electron:rebuild-native": "node scripts/rebuild-native.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
@@ -30,6 +31,7 @@
     "@supabase/supabase-js": "^2.101.1",
     "@tanstack/react-query": "^5.96.2",
     "better-sqlite3": "^12.10.0",
+    "drizzle-orm": "^0.45.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
@@ -63,8 +65,7 @@
     "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
-    "drizzle-orm": "^0.45.2",
-    "electron": "^42.1.0",
+    "electron": "^39.8.10",
     "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "^16.2.2",

@@ -2,10 +2,17 @@ appId: com.jodacompany.desktop
 productName: Joda Company
 copyright: Copyright © 2026 Joda Company
 
+# Hook qui copie le build Next.js standalone (avec son node_modules) dans
+# resources/app après packaging — electron-builder exclut node_modules des
+# extraResources, ce hook contourne le problème.
+afterPack: scripts/after-pack.cjs
+
 # Phase 2 : `better-sqlite3` est une dépendance native. electron-builder utilise
 # @electron/rebuild pour la recompiler contre la bonne version d'Electron.
-# Nécessite Visual Studio Build Tools (cf. https://www.electron.build/tutorials/code-signing).
-npmRebuild: true
+# Désactivé ici car le rebuild auto échoue sur @parcel/watcher (transitive de
+# Next.js, pas utilisé en runtime). On gère le rebuild de better-sqlite3
+# manuellement via `npm run electron:rebuild-native` (cf. package.json).
+npmRebuild: false
 
 # Le code source compilé d'Electron + les ressources embarquées.
 directories:
@@ -22,29 +29,21 @@ files:
   - "node_modules/bindings/**/*"
   - "node_modules/file-uri-to-path/**/*"
   - "node_modules/drizzle-orm/**/*"
-  - "!**/{.DS_Store,.git,.gitignore,.gitattributes,test,tests,examples,docs,scripts}"
+  - "!**/{.DS_Store,.git,.gitignore,.gitattributes,.gitmodules}"
   - "!**/{appveyor.yml,.travis.yml,circle.yml,*.md}"
   - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,*.tsbuildinfo,*.d.ts.map,*.js.map}"
   - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,c,cpp,h,gyp}"
 
-# Mode asar avec better-sqlite3 unpacké (les .node natifs ne peuvent pas être dans l'asar).
+# asar avec better-sqlite3 unpacké (les .node natifs ne peuvent pas être lus
+# depuis un asar). Mettre asar:false si besoin de débugger le contenu packagé.
 asar: true
 asarUnpack:
   - "node_modules/better-sqlite3/**/*"
   - "node_modules/bindings/**/*"
 
-# Le build Next.js standalone est trop volumineux pour `files`, on le déclare en `extraResources`.
-# Il sera disponible dans `process.resourcesPath` à l'exécution.
-extraResources:
-  - from: ".next/standalone"
-    to: "app/.next/standalone"
-    filter: ["**/*"]
-  - from: ".next/static"
-    to: "app/.next/standalone/.next/static"
-    filter: ["**/*"]
-  - from: "public"
-    to: "app/.next/standalone/public"
-    filter: ["**/*"]
+# Le build Next.js standalone (avec son node_modules) est copié par le hook
+# afterPack (scripts/after-pack.cjs), car electron-builder exclut node_modules
+# des extraResources. Voir le hook pour les détails.
 
 # Plate-forme Windows.
 win:
