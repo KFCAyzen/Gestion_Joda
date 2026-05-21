@@ -148,30 +148,41 @@ body {
    background: #0f172a;
  }
 
-/* Custom scrollbar — admin content (light / dark) */
+/* Custom scrollbar — admin content (light / dark) : très fine, quasi invisible.
+   IMPORTANT (Chromium ≥121 / Electron) : ne PAS poser scrollbar-width/scrollbar-color
+   sur ces éléments, sinon Chromium ignore tout ::-webkit-scrollbar. Les propriétés
+   standard sont donc réservées à Firefox via @supports plus bas. */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgba(100, 116, 139, 0.18);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #dc2626;
+  background: rgba(100, 116, 139, 0.42);
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #64748b;
+  background: rgba(148, 163, 184, 0.16);
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #ef4444;
+  background: rgba(148, 163, 184, 0.38);
 }
-/* Firefox — thin global */
-* {
-  scrollbar-width: thin;
+/* Firefox uniquement (pas de support ::-webkit-scrollbar) : fine + quasi invisible, mode-aware */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+  }
+  .app-shell {
+    scrollbar-color: rgba(100, 116, 139, 0.18) transparent;
+  }
+  .dark .app-shell {
+    scrollbar-color: rgba(148, 163, 184, 0.16) transparent;
+  }
 }
 
 /* Student shell — toutes les zones overflow (rouge / nuit) */
@@ -204,9 +215,11 @@ body {
 .student-sidebar::-webkit-scrollbar-thumb:hover {
   background: rgba(220, 38, 38, 0.45);
 }
-/* Firefox */
-.student-sidebar {
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+/* Firefox uniquement — sinon Chromium ignore le ::-webkit-scrollbar ci-dessus */
+@supports not selector(::-webkit-scrollbar) {
+  .student-sidebar {
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
 }
 
 /* Modals paiements étudiants — hors student-shell DOM */
@@ -291,9 +304,12 @@ body {
   .glass-sidebar nav::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.42);
   }
-  .glass-sidebar nav {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  /* Firefox uniquement — sinon Chromium ignore le ::-webkit-scrollbar ci-dessus */
+  @supports not selector(::-webkit-scrollbar) {
+    .glass-sidebar nav {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    }
   }
 
   .sidebar-orb { display: none; }
