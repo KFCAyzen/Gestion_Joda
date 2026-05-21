@@ -50,3 +50,6 @@ playwright-report/
 # Electron desktop — artefacts de build
 dist-electron/
 release/
+
+# Claude Code — config locale à la machine
+.claude/
