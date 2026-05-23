@@ -201,19 +201,59 @@
 <h2 id="connexion-generale">3. Connexion et Navigation Commune</h2>
 
 <h3>3.1 Connexion</h3>
+
+<h4>Version Web (navigateur)</h4>
 <div class="step">
+  <strong>Étapes détaillées :</strong>
   <ol>
-    <li>Ouvrez l'application Joda Company (navigateur ou application desktop)</li>
+    <li>Ouvrez un navigateur sécurisé (Chrome, Firefox, Edge, Safari)</li>
+    <li>Allez à l'adresse officielle : <strong>https://joda.company</strong></li>
+    <li>Vérifiez que vous voyez le cadenas vert (connexion sécurisée)</li>
+    <li>Saisissez votre <strong>nom d'utilisateur</strong> (format : InitialePrénom + Nom, ex : JDupont)</li>
+    <li>Saisissez votre <strong>mot de passe</strong> de façon sécurisée (respectez la casse)</li>
+    <li>Cliquez sur <strong>« Se connecter »</strong></li>
+    <li>Vous êtes redirigé automatiquement vers votre espace :
+      <ul>
+        <li><strong>Étudiants :</strong> Portail étudiant (suivi de dossier)</li>
+        <li><strong>Personnel (Agent, Superviseur, Admin) :</strong> Interface de gestion</li>
+      </ul>
+    </li>
+    <li>Votre nom et rôle s'affichent en haut à droite</li>
+  </ol>
+</div>
+
+<h4>Version Desktop (application installée)</h4>
+<div class="step">
+  <strong>Étapes détaillées :</strong>
+  <ol>
+    <li>Double-cliquez sur l'icône <strong>Joda Company</strong> sur le bureau ou le menu Démarrage</li>
+    <li>L'application démarre (première ouverture peut prendre 5-10 secondes)</li>
+    <li>Une fenêtre dédiée s'ouvre avec le formulaire de connexion</li>
     <li>Saisissez votre <strong>nom d'utilisateur</strong></li>
     <li>Saisissez votre <strong>mot de passe</strong></li>
     <li>Cliquez sur <strong>« Se connecter »</strong></li>
-    <li>Redirection automatique vers votre espace (portail étudiant ou interface de gestion)</li>
+    <li>L'application synchronise les données avec le serveur cloud (affiche une barre de progression)</li>
+    <li>Vous accédez à votre espace avec une copie locale des données (fonctionnement offline possible)</li>
   </ol>
 </div>
 
 <div class="note">
-  <strong>Note :</strong> Les étudiants sont redirigés automatiquement vers le portail étudiant. Le personnel de l'agence accède à l'interface de gestion.
+  <strong>Note importante :</strong>
+  <ul>
+    <li><strong>Étudiants :</strong> Vous êtes redirigés automatiquement vers le portail étudiant. C'est votre espace personnel pour suivre votre candidature et paiements.</li>
+    <li><strong>Personnel de l'agence (Agent, Superviseur, Admin) :</strong> Vous accédez à l'interface de gestion pour traiter les dossiers étudiants.</li>
+    <li><strong>Mode offline :</strong> L'application desktop continue de fonctionner sans Internet — les modifications seront synchronisées au retour de la connexion.</li>
+  </ul>
 </div>
+
+<h4>Problèmes de connexion courants</h4>
+<table>
+  <tr><th>Problème</th><th>Solution</th></tr>
+  <tr><td>« Identifiants invalides »</td><td>Vérifiez le nom d'utilisateur exact (respect de la casse). Cliquez sur « Mot de passe oublié » si nécessaire.</td></tr>
+  <tr><td>« Serveur indisponible »</td><td>Vérifiez votre connexion Internet. Attendez quelques minutes. Réessayez.</td></tr>
+  <tr><td>« Page se rafraîchit mais ne se connecte pas »</td><td>Videz le cache du navigateur. Essayez en mode navigation privée. Réessayez.</td></tr>
+  <tr><td>« Erreur de certificat SSL »</td><td>NE CLIQUEZ PAS sur « continuer sans sécurité ». Contactez votre admin.</td></tr>
+</table>
 
 <h3>3.2 Première connexion — changement de mot de passe</h3>
 <p>Lors de la toute première connexion, une fenêtre de changement de mot de passe s'affiche. Ce changement est obligatoire avant tout accès à l'application.</p>
@@ -290,13 +330,51 @@
 
 <h3>6.2 Envoyer un document</h3>
 <div class="step">
+  <strong>Procédure détaillée :</strong>
   <ol>
-    <li>Section <strong>Documents</strong> dans le menu</li>
-    <li>Cliquez sur <strong>« Choisir un fichier »</strong> ou glissez-déposez</li>
-    <li>Cliquez sur <strong>« Envoyer »</strong></li>
-    <li>Optionnel : cliquez sur <strong>« Envoyer à l'équipe »</strong> pour notifier votre agent</li>
+    <li>Depuis le menu, cliquez sur <strong>Documents</strong></li>
+    <li>Vous voyez la liste des documents attendus et leur statut</li>
+    <li>Pour un document, cliquez sur <strong>« Choisir un fichier »</strong> (bouton bleu)</li>
+    <li>Une fenêtre de sélection s'ouvre — naviguez vers votre fichier</li>
+    <li><strong>OU glissez-déposez</strong> directement le fichier dans la zone (plus rapide)</li>
+    <li>Vérifiez que le fichier est correct et lisible (test rapide : double-cliquez pour l'ouvrir)</li>
+    <li>Cliquez sur <strong>« Envoyer »</strong> (bouton vert)</li>
+    <li>L'application valide le fichier :
+      <ul>
+        <li>Format accepté ? (PDF, JPG, PNG uniquement)</li>
+        <li>Taille ≤ 10 MB ?</li>
+        <li>Fichier complet (pas corrompu) ?</li>
+      </ul>
+    </li>
+    <li>Un message de succès s'affiche : « Document envoyé »</li>
+    <li>Le statut du document passe à <span class="status-badge status-yellow">En attente</span> (en cours d'examen par l'équipe)</li>
+    <li><strong>Optionnel :</strong> Cochez <strong>« Notifier l'équipe »</strong> avant envoi pour envoyer une alerte à votre agent</li>
+    <li>Attendez la validation de l'équipe. Vous serez notifié si :
+      <ul>
+        <li>✓ Document est accepté → statut <span class="status-badge status-green">Validé</span></li>
+        <li>✗ Document est refusé → raison expliquée, nouvelle tentative possible</li>
+      </ul>
+    </li>
   </ol>
 </div>
+
+<h4>Points importants</h4>
+<ul>
+  <li><strong>Format :</strong> Acceptez PDF, JPG, PNG — pas de Word, Excel, ou autres formats</li>
+  <li><strong>Taille :</strong> Chaque fichier max 10 MB — si plus volumineux, comprimez l'image d'abord</li>
+  <li><strong>Qualité :</strong> Documents doivent être clairs et lisibles (pas de photos floues, pas de pages manquantes)</li>
+  <li><strong>Date limite :</strong> Envoyez vos documents rapidement — plus vous attendez, plus votre dossier avance lentement</li>
+  <li><strong>Documents manquants :</strong> Si vous recevez une notification « Document manquant », envoyez-le sans attendre</li>
+</ul>
+
+<h4>Erreurs possibles et solutions</h4>
+<table>
+  <tr><th>Erreur</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td>« Format de fichier non supporté »</td><td>Fichier Word, Excel, ZIP, etc.</td><td>Convertissez en PDF ou JPG/PNG. Utilisez un convertisseur en ligne (CloudConvert, Smallpdf).</td></tr>
+  <tr><td>« Fichier trop volumineux »</td><td>Fichier > 10 MB</td><td>Comprimez l'image (réduction qualité) ou le PDF (logiciel gratuit : ILovePDF).</td></tr>
+  <tr><td>« Impossible d'envoyer »</td><td>Connexion Internet perdue ou interruption upload</td><td>Vérifiez votre connexion. Réessayez. Pas de perte — les fichiers ne montent que si succès total.</td></tr>
+  <tr><td>« Document refusé — raison indiquée »</td><td>Qualité insuffisante, document incomplet, ou mauvais document</td><td>Lisez la raison fournie. Corrigez-la. Envoyez une nouvelle version.</td></tr>
+</table>
 
 <h3>6.3 Statuts des documents</h3>
 <table>
@@ -466,12 +544,41 @@
 
 <h3>13.2 Enregistrer un paiement (onglet Encaisser)</h3>
 <div class="step">
+  <strong>Procédure détaillée :</strong>
   <ol>
-    <li>Sélectionner l'étudiant, le type (bourse/mandarin/anglais/inscription), la tranche</li>
-    <li>Saisir le montant et la date de paiement</li>
-    <li>Enregistrer → écriture comptable créée automatiquement</li>
+    <li>Depuis le module <strong>Frais</strong>, cliquez sur l'onglet <strong>« Encaisser »</strong></li>
+    <li><strong>Sélectionner l'étudiant</strong> — tapez le nom/prénom pour filtrer la liste</li>
+    <li><strong>Sélectionner le type de paiement</strong> (obligatoire) :
+      <ul>
+        <li>Bourse (procédure) — Frais de candidature</li>
+        <li>Mandarin — Cours de langue chinoise</li>
+        <li>Anglais — Cours d'anglais</li>
+        <li>Inscription — Frais d'inscription administratifs</li>
+        <li>Autre — Paiements divers</li>
+      </ul>
+    </li>
+    <li><strong>Sélectionner la tranche</strong> — selon le type (T1-T4 pour cours, T1 pour procédure)</li>
+    <li><strong>Saisir le montant</strong> — format numérique uniquement, en FCFA (ex : 1000000 pour 1 million)</li>
+    <li><strong>Saisir la date de paiement</strong> — utilisez le calendrier (ne peut pas être future)</li>
+    <li><strong>Optionnel :</strong> Ajouter une date limite de paiement</li>
+    <li><strong>Optionnel :</strong> Ajouter une note (ex : « Reçu en espèces »)</li>
+    <li>Vérifiez tous les champs obligatoires (marqués d'une * rouge)</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+    <li>Validation serveur effectue les vérifications : montant > 0, dates cohérentes, pas de doublon</li>
+    <li>Un message de succès s'affiche : « Paiement enregistré »</li>
+    <li>Une écriture comptable (crédit) est créée automatiquement</li>
+    <li>Le paiement apparaît immédiatement dans l'onglet « Validés »</li>
+    <li>L'étudiant voit le paiement dans son portail</li>
   </ol>
 </div>
+
+<h4>Validation des champs</h4>
+<table>
+  <tr><th>Champ</th><th>Validation</th><th>Exemple</th></tr>
+  <tr><td>Montant</td><td>Nombre positif, max 50 000 000 FCFA</td><td>1000000 (pas d'espaces ni symboles)</td></tr>
+  <tr><td>Date paiement</td><td>Date révolue, antérieure ou égale à aujourd'hui</td><td>20/05/2026</td></tr>
+  <tr><td>Étudiant + Type + Tranche</td><td>Pas de doublon (pas deux paiements identiques)</td><td>Si Jean Dupont + Bourse + T1 existe déjà, erreur</td></tr>
+</table>
 
 <h3>13.3 Valider un paiement déclaré <span style="background:#f3e8ff;color:#6b21a8;padding:2px 8px;border-radius:4px;font-size:9.5pt;">Superviseur+</span></h3>
 <p>Onglet À valider → vérifier la preuve (si jointe) → bouton <strong>Valider</strong> → statut passe à « Payé » → reçu disponible.</p>
@@ -547,18 +654,58 @@
 
 <h3>17.1 Créer un utilisateur</h3>
 <div class="step">
+  <strong>Procédure détaillée :</strong>
   <ol>
-    <li>Menu → Utilisateurs → <strong>« Nouvel utilisateur »</strong></li>
-    <li>Remplir : prénom, nom, username (unique), email (unique), téléphone</li>
-    <li>Rôle : agent / supervisor / user (admin peut créer jusqu'à supervisor)</li>
-    <li>Mot de passe temporaire (min 8 caractères)</li>
-    <li>Créer → flag « doit changer le mot de passe » activé</li>
+    <li>Menu → <strong>Utilisateurs</strong> → cliquez sur <strong>« Nouvel utilisateur »</strong></li>
+    <li><strong>Remplir les informations personnelles :</strong>
+      <ul>
+        <li>Prénom (obligatoire) — 2-50 caractères</li>
+        <li>Nom (obligatoire) — 2-50 caractères</li>
+        <li>Téléphone (optionnel) — Format +237 6XX XXX XXX</li>
+      </ul>
+    </li>
+    <li><strong>Remplir les identifiants :</strong>
+      <ul>
+        <li>Nom d'utilisateur (unique, obligatoire) — Ex : JDupont (4-20 caractères, pas d'espaces)</li>
+        <li>Email (unique, obligatoire) — Ex : jean.dupont@joda.company</li>
+      </ul>
+    </li>
+    <li><strong>Sélectionner le rôle</strong> (obligatoire) :
+      <ul>
+        <li>User — lecture basique</li>
+        <li>Agent — opérations courantes</li>
+        <li>Supervisor — validations + suppressions</li>
+        <li>Admin — gestion complète (sauf création admin)</li>
+        <li>Super Admin — accès total (réservé super_admin uniquement)</li>
+      </ul>
+    </li>
+    <li><strong>Définir un mot de passe temporaire</strong> (obligatoire) :
+      <ul>
+        <li>Minimum 8 caractères</li>
+        <li>Au moins 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial (!@#$%)</li>
+        <li>Exemple : « JoDa#2026!Sec »</li>
+      </ul>
+    </li>
+    <li>Vérifiez tous les champs obligatoires</li>
+    <li>Cliquez sur <strong>« Créer »</strong></li>
+    <li>Le compte est créé avec le flag automatique : « Doit changer le mot de passe »</li>
+    <li>L'utilisateur sera forcé de changer son mot de passe à la première connexion</li>
+    <li>Communiquez les identifiants de façon sécurisée (jamais par email non chiffré)</li>
   </ol>
 </div>
 
 <div class="note">
-  <strong>Règle :</strong> Un admin ne peut créer que des rôles inférieurs (jusqu'à supervisor). Seul un super_admin peut créer des admins.
+  <strong>Hiérarchie des rôles :</strong> Un admin peut créer des utilisateurs de tous les rôles inférieurs (User, Agent, Supervisor). Seul un Super Admin peut créer des admins. Vous ne pouvez pas créer un rôle égal ou supérieur au vôtre.
 </div>
+
+<h4>Validation des champs</h4>
+<table>
+  <tr><th>Champ</th><th>Exigence</th><th>Erreur possible</th></tr>
+  <tr><td>Username</td><td>Unique, 4-20 caractères, pas d'espaces</td><td>« Nom d'utilisateur déjà utilisé »</td></tr>
+  <tr><td>Email</td><td>Unique, format valide (example@domain.com)</td><td>« Email déjà utilisé »</td></tr>
+  <tr><td>Mot de passe</td><td>8+ caractères, majuscules, minuscules, chiffres, spéciaux</td><td>« Mot de passe faible »</td></tr>
+  <tr><td>Rôle</td><td>Inférieur ou égal au vôtre</td><td>« Rôle non autorisé »</td></tr>
+</table>
 
 <h3>17.2 Actions de gestion</h3>
 <table>
@@ -572,7 +719,30 @@
 </table>
 
 <h3>17.3 Permissions granulaires</h3>
-<p>Pour chaque utilisateur, personnalisez les permissions par module (Voir / Créer / Modifier / Supprimer / Valider / Exporter). Utile pour des cas spéciaux qui ne correspondent pas exactement aux permissions par défaut du rôle.</p>
+<p>Au-delà des permissions standards du rôle, vous pouvez affiner les droits de chaque utilisateur pour des cas spéciaux. Exemple : un agent qui peut aussi valider les paiements, ou un superviseur qui n'a pas accès à la comptabilité.</p>
+
+<h4>Procédure</h4>
+<ol>
+  <li>Module Utilisateurs → trouvez l'utilisateur</li>
+  <li>Cliquez sur <strong>« Gérer les permissions »</strong></li>
+  <li>Un panneau affiche les permissions par module</li>
+  <li>Cochez/décochez les permissions selon vos besoins</li>
+  <li>Les modifications sont sauvegardées automatiquement</li>
+  <li>L'utilisateur doit se reconnecter pour que les nouveaux droits prennent effet</li>
+</ol>
+
+<h4>Cas d'usage courants</h4>
+<table>
+  <tr><th>Cas</th><th>Configuration</th><th>Raison</th></tr>
+  <tr><td><strong>Agent spécialisé en validation</strong></td><td>Agent normal + permissions supplémentaires : Paiements → Valider, Dossiers → Valider</td><td>Récompenser un agent compétent sans le promouvoir à superviseur</td></tr>
+  <tr><td><strong>Superviseur restreint</strong></td><td>Superviseur - Comptabilité (toutes permissions)</td><td>Superviseur de terrain, pas d'accès aux données financières</td></tr>
+  <tr><td><strong>Auditeur temporaire</strong></td><td>Agent normal + Système → Logs (lecture seule)</td><td>Agent externe effectuant un audit — accès limité aux logs</td></tr>
+  <tr><td><strong>Formation d'admin</strong></td><td>Superviseur + Comptabilité (Voir, Valider, Exporter)</td><td>Former un superviseur aux responsabilités admin</td></tr>
+</table>
+
+<div class="tip">
+  <strong>Conseil :</strong> Les permissions granulaires sont puissantes mais complexes — gardez-les simples et documentées. La plupart des cas peuvent être gérés avec les rôles standard (User, Agent, Supervisor, Admin).
+</div>
 
 <h2 id="admin-logs">18. Logs d'Activités — Audit Trail</h2>
 
