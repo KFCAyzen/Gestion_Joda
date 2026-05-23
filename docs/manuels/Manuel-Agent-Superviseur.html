@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Manuel Agent &amp; Superviseur - Joda Company</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; margin: 2.5cm; color: #1f2937; line-height: 1.6; }
+  h1 { font-size: 26pt; color: #dc2626; text-align: center; margin-top: 60px; }
+  h2 { font-size: 16pt; color: #dc2626; border-bottom: 2px solid #dc2626; padding-bottom: 4px; margin-top: 30px; page-break-before: always; }
+  h2:first-of-type { page-break-before: avoid; }
+  h3 { font-size: 13pt; color: #374151; margin-top: 20px; }
+  h4 { font-size: 11pt; color: #4b5563; font-weight: bold; margin-top: 15px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  td, th { border: 1px solid #d1d5db; padding: 8px 12px; font-size: 10.5pt; }
+  th { background-color: #dc2626; color: white; font-weight: bold; }
+  tr:nth-child(even) td { background-color: #f9fafb; }
+  .cover { text-align: center; margin-top: 120px; }
+  .cover-subtitle { font-size: 16pt; color: #6b7280; margin-top: 12px; }
+  .cover-version { font-size: 10pt; color: #9ca3af; margin-top: 40px; }
+  .toc-title { font-size: 18pt; color: #dc2626; margin-top: 60px; }
+  .toc li { margin: 6px 0; font-size: 11pt; }
+  .toc a { color: #1f2937; text-decoration: none; }
+  .note { background-color: #fef9c3; padding: 10px 14px; border-left: 4px solid #eab308; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .warning { background-color: #fee2e2; padding: 10px 14px; border-left: 4px solid #dc2626; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .tip { background-color: #dcfce7; padding: 10px 14px; border-left: 4px solid #16a34a; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .step { background-color: #eff6ff; padding: 10px 14px; border-left: 4px solid #2563eb; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .supervisor-only { background-color: #f3e8ff; padding: 10px 14px; border-left: 4px solid #7c3aed; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; }
+  .status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 9.5pt; font-weight: bold; }
+  .status-green { background: #dcfce7; color: #16a34a; }
+  .status-yellow { background: #fef9c3; color: #ca8a04; }
+  .status-red { background: #fee2e2; color: #dc2626; }
+  .status-blue { background: #dbeafe; color: #2563eb; }
+  .status-gray { background: #f3f4f6; color: #6b7280; }
+  .status-purple { background: #f3e8ff; color: #7c3aed; }
+  p { margin: 8px 0; }
+  .page-break { page-break-before: always; }
+  .footer-note { text-align: center; font-size: 9pt; color: #9ca3af; margin-top: 60px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+  .role-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 9pt; font-weight: bold; margin-left: 4px; }
+  .agent-tag { background: #dbeafe; color: #1d4ed8; }
+  .supervisor-tag { background: #f3e8ff; color: #7c3aed; }
+</style>
+</head>
+<body>
+
+<!-- PAGE DE COUVERTURE -->
+<div class="cover">
+  <p style="font-size: 14pt; color: #6b7280; letter-spacing: 2px; text-transform: uppercase;">JODA COMPANY</p>
+  <h1>Manuel Utilisateur<br>Agent &amp; Superviseur</h1>
+  <p class="cover-subtitle">Guide complet — Gestion opérationnelle</p>
+  <br><br>
+  <p style="font-size: 11pt; color: #4b5563;">Agence de Gestion des Bourses d'Études en Chine</p>
+  <p class="cover-version">Version 1.0 — Mai 2026<br>Confidentiel — Usage interne Joda Company uniquement</p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- TABLE DES MATIERES -->
+<p class="toc-title"><strong>Table des Matières</strong></p>
+<ol class="toc">
+  <li><a href="#intro">Introduction — Rôles et permissions</a></li>
+  <li><a href="#connexion">Connexion et navigation générale</a></li>
+  <li><a href="#tableau-de-bord">Tableau de bord</a></li>
+  <li><a href="#etudiants">Gestion des étudiants</a></li>
+  <li><a href="#candidatures">Gestion des candidatures</a></li>
+  <li><a href="#dossiers">Gestion des dossiers</a></li>
+  <li><a href="#paiements">Gestion des paiements (Frais)</a></li>
+  <li><a href="#universites">Gestion des universités</a></li>
+  <li><a href="#comptabilite">Comptabilité (consultation)</a></li>
+  <li><a href="#performances">Performances et statistiques</a></li>
+  <li><a href="#notifications">Notifications</a></li>
+  <li><a href="#workflows">Workflows courants</a></li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- SECTION 1 -->
+<h2 id="intro">1. Introduction — Rôles et Permissions</h2>
+
+<h3>1.1 Présentation</h3>
+<p>Ce manuel est destiné aux <strong>agents</strong> et <strong>superviseurs</strong> de Joda Company. Il couvre l'ensemble des opérations quotidiennes : gestion des étudiants, des candidatures, des dossiers, des paiements, et plus encore.</p>
+
+<h3>1.2 Différence entre Agent et Superviseur</h3>
+<p>Les permissions varient selon votre rôle. Les fonctionnalités marquées <span class="role-tag supervisor-tag">Superviseur</span> ne sont accessibles qu'aux superviseurs et niveaux supérieurs.</p>
+
+<table>
+  <tr><th>Module</th><th>Agent</th><th>Superviseur</th></tr>
+  <tr><td>Tableau de bord</td><td>Lecture</td><td>Lecture</td></tr>
+  <tr><td>Étudiants</td><td>Voir, Créer, Modifier</td><td>Voir, Créer, Modifier, Supprimer</td></tr>
+  <tr><td>Candidatures</td><td>Voir, Créer, Modifier</td><td>Voir, Créer, Modifier, Supprimer</td></tr>
+  <tr><td>Dossiers</td><td>Voir, Créer, Modifier</td><td>Voir, Créer, Modifier, Supprimer, Valider</td></tr>
+  <tr><td>Universités</td><td>Lecture seule</td><td>Voir, Créer, Modifier</td></tr>
+  <tr><td>Paiements</td><td>Voir, Créer, Modifier</td><td>Voir, Créer, Modifier, Valider</td></tr>
+  <tr><td>Comptabilité</td><td>Non accessible</td><td>Consultation</td></tr>
+  <tr><td>Utilisateurs</td><td>Non accessible</td><td>Non accessible</td></tr>
+  <tr><td>Logs d'activité</td><td>Non accessible</td><td>Non accessible</td></tr>
+  <tr><td>Performances</td><td>Lecture</td><td>Lecture</td></tr>
+</table>
+
+<h3>1.3 Hiérarchie des rôles</h3>
+<p>La hiérarchie complète dans l'application (du plus faible au plus fort) :</p>
+<ol>
+  <li>Étudiant (student) — portail dédié uniquement</li>
+  <li>Utilisateur (user) — accès lecture basique</li>
+  <li><strong>Agent</strong> — opérations courantes</li>
+  <li><strong>Superviseur</strong> — opérations + validations</li>
+  <li>Admin — gestion complète</li>
+  <li>Super Admin — accès total</li>
+</ol>
+
+<!-- SECTION 2 -->
+<h2 id="connexion">2. Connexion et Navigation Générale</h2>
+
+<h3>2.1 Connexion</h3>
+<div class="step">
+  <strong>Étapes de connexion :</strong>
+  <ol>
+    <li>Ouvrez l'application Joda Company (navigateur ou application desktop)</li>
+    <li>Saisissez votre <strong>nom d'utilisateur</strong></li>
+    <li>Saisissez votre <strong>mot de passe</strong></li>
+    <li>Cliquez sur <strong>« Se connecter »</strong></li>
+    <li>Vous arrivez automatiquement sur le tableau de bord</li>
+  </ol>
+</div>
+
+<h3>2.2 Navigation principale</h3>
+<p>La barre latérale gauche (sidebar) donne accès à tous les modules :</p>
+<table>
+  <tr><th>Élément de menu</th><th>Module</th><th>Raccourci usuel</th></tr>
+  <tr><td>Tableau de bord</td><td>Vue d'ensemble des activités</td><td>Page d'accueil</td></tr>
+  <tr><td>Candidatures</td><td>Gestion des candidatures</td><td>/candidatures</td></tr>
+  <tr><td>Étudiants</td><td>Fiches étudiants</td><td>/etudiants</td></tr>
+  <tr><td>Dossiers</td><td>Dossiers de bourse</td><td>/dossiers</td></tr>
+  <tr><td>Universités</td><td>Catalogue universités</td><td>/universites</td></tr>
+  <tr><td>Frais</td><td>Paiements des étudiants</td><td>/frais</td></tr>
+  <tr><td>Performances</td><td>Statistiques agents</td><td>/performances</td></tr>
+  <tr><td>Notifications</td><td>Alertes et messages</td><td>/notifications</td></tr>
+</table>
+
+<h3>2.3 En-tête de l'application</h3>
+<ul>
+  <li><strong>Logo Joda Company</strong> — retour au tableau de bord</li>
+  <li><strong>Fil d'Ariane (breadcrumb)</strong> — indique votre position dans l'application</li>
+  <li><strong>Cloche (🔔)</strong> — badge de notifications non lues</li>
+  <li><strong>Profil utilisateur</strong> — menu déconnexion et paramètres</li>
+</ul>
+
+<h3>2.4 Mode sombre</h3>
+<p>L'application supporte un mode sombre (dark mode). Le bouton de bascule est disponible dans les paramètres utilisateur.</p>
+
+<!-- SECTION 3 -->
+<h2 id="tableau-de-bord">3. Tableau de Bord</h2>
+
+<h3>3.1 Présentation</h3>
+<p>Le tableau de bord est votre vue d'ensemble opérationnelle. Il se rafraîchit automatiquement et affiche les données en temps réel.</p>
+
+<h3>3.2 Statistiques clés</h3>
+<table>
+  <tr><th>Carte</th><th>Contenu</th></tr>
+  <tr><td>À traiter</td><td>Nombre de dossiers en attente ou avec document manquant — À vérifier en priorité</td></tr>
+  <tr><td>Dossiers ouverts</td><td>Total des dossiers actifs + variation par rapport au mois précédent</td></tr>
+  <tr><td>Encaissé ce mois</td><td>Montant total des paiements validés ce mois + pourcentage vs mois précédent</td></tr>
+  <tr><td>Flux 7 jours</td><td>Graphique en barres des candidatures reçues par jour (aujourd'hui en rouge)</td></tr>
+  <tr><td>Top 3 universités</td><td>Classement hebdomadaire des universités avec le plus de candidatures</td></tr>
+</table>
+
+<h3>3.3 Journal des activités</h3>
+<p>Le journal central liste toutes les actions récentes de l'équipe. Vous pouvez :</p>
+<ul>
+  <li><strong>Filtrer par période</strong> : Aujourd'hui, Hier, Cette semaine, Ce mois</li>
+  <li><strong>Rechercher</strong> par description ou nom d'utilisateur</li>
+  <li>Voir les alertes critiques (fond rouge) : paiements à valider, admissions, etc.</li>
+</ul>
+
+<h3>3.4 Badges d'alertes dans le journal</h3>
+<table>
+  <tr><th>Badge</th><th>Couleur</th><th>Signification</th></tr>
+  <tr><td>À valider</td><td>Rouge</td><td>Paiement déclaré par étudiant — action requise</td></tr>
+  <tr><td>Prêt à examiner</td><td>Vert</td><td>Documents uploadés par l'étudiant</td></tr>
+  <tr><td>Admission</td><td>Orange</td><td>Admission récemment validée</td></tr>
+  <tr><td>Visa</td><td>Bleu</td><td>Procédure de visa en cours</td></tr>
+</table>
+
+<div class="tip">
+  <strong>Conseil :</strong> Commencez chaque journée par le tableau de bord. La section « À traiter » vous indique les dossiers prioritaires.
+</div>
+
+<!-- SECTION 4 -->
+<h2 id="etudiants">4. Gestion des Étudiants</h2>
+
+<h3>4.1 Accès au module</h3>
+<p>Menu latéral → <strong>Étudiants</strong></p>
+
+<h3>4.2 Vue liste des étudiants</h3>
+<p>La page affiche la liste de tous les étudiants avec :</p>
+<ul>
+  <li>Nom, prénom</li>
+  <li>Email de contact</li>
+  <li>Téléphone</li>
+  <li>Date d'inscription</li>
+  <li>Boutons d'actions</li>
+</ul>
+<p>Utilisez la barre de <strong>recherche</strong> (par nom/prénom/email) ou le <strong>filtre par sexe</strong> pour retrouver rapidement un étudiant. La liste est paginée (20 étudiants par page).</p>
+
+<h3>4.3 Créer un nouvel étudiant</h3>
+<div class="step">
+  <strong>Étapes :</strong>
+  <ol>
+    <li>Cliquez sur <strong>« Nouvel étudiant »</strong> (bouton en haut à droite)</li>
+    <li>Remplissez les informations d'identité :
+      <ul>
+        <li>Prénom et nom (obligatoires)</li>
+        <li>Email de contact personnel (obligatoire)</li>
+        <li>Téléphone</li>
+        <li>Date de naissance, sexe, nationalité</li>
+      </ul>
+    </li>
+    <li>Remplissez le profil académique :
+      <ul>
+        <li>Niveau d'études actuel</li>
+        <li>Filière / spécialité</li>
+        <li>Niveau de langue (HSK, TOEFL, etc.)</li>
+        <li>Diplôme obtenu</li>
+      </ul>
+    </li>
+    <li>Sélectionnez le type de programme (procédure seule, procédure + cours, cours seuls)</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+    <li>Un compte étudiant est automatiquement créé (email interne + mot de passe temporaire)</li>
+  </ol>
+</div>
+
+<h4>Informations générées automatiquement à la création :</h4>
+<table>
+  <tr><th>Champ</th><th>Valeur générée</th></tr>
+  <tr><td>Email système</td><td>prenom.nom@students.joda.app (pour la connexion)</td></tr>
+  <tr><td>Nom d'utilisateur</td><td>Initiale prénom + début du nom (ex : JDupont)</td></tr>
+  <tr><td>Mot de passe</td><td>Temporaire aléatoire (l'étudiant devra le changer à la 1ère connexion)</td></tr>
+</table>
+
+<div class="note">
+  <strong>Note :</strong> Communiquez les identifiants de connexion (nom d'utilisateur + mot de passe temporaire) à l'étudiant de façon sécurisée.
+</div>
+
+<h3>4.4 Modifier un étudiant</h3>
+<div class="step">
+  <ol>
+    <li>Dans la liste, cliquez sur l'icône <strong>crayon (modifier)</strong> de l'étudiant</li>
+    <li>Modifiez les champs souhaités</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+  </ol>
+</div>
+
+<h3>4.5 Voir les détails d'un étudiant</h3>
+<p>Cliquez sur l'icône <strong>œil (voir)</strong> pour accéder à la vue détaillée de l'étudiant, qui comprend :</p>
+<ul>
+  <li>Ses informations personnelles complètes</li>
+  <li>Ses candidatures en cours</li>
+  <li>Ses paiements et frais</li>
+  <li>Ses documents soumis</li>
+</ul>
+
+<h3>4.6 Inscrire à des cours de langue</h3>
+<div class="step">
+  <ol>
+    <li>Dans la vue détaillée de l'étudiant, accédez à l'onglet <strong>« Cours »</strong></li>
+    <li>Cliquez sur <strong>« Inscrire au Mandarin »</strong> ou <strong>« Inscrire à l'Anglais »</strong></li>
+    <li>L'inscription crée automatiquement 4 tranches de paiement dans le module Frais</li>
+  </ol>
+</div>
+
+<h3>4.7 Télécharger la fiche étudiant</h3>
+<p>Le bouton <strong>« Imprimer / PDF »</strong> génère une fiche étudiant complète au format PDF (avec logo Joda Company, informations personnelles, photo si disponible).</p>
+
+<h3>4.8 Supprimer un étudiant <span class="role-tag supervisor-tag">Superviseur</span></h3>
+<div class="warning">
+  <strong>Action irréversible :</strong> La suppression d'un étudiant efface toutes ses données, ses candidatures, ses documents et ses paiements. Cette action déclenche une confirmation explicite avant exécution.
+</div>
+
+<!-- SECTION 5 -->
+<h2 id="candidatures">5. Gestion des Candidatures</h2>
+
+<h3>5.1 Accès au module</h3>
+<p>Menu latéral → <strong>Candidatures</strong></p>
+
+<h3>5.2 Vue liste</h3>
+<p>La page affiche toutes les candidatures avec filtres par statut et université. Recherchez par nom d'étudiant, université ou programme. La liste est paginée (10 candidatures par page).</p>
+
+<h3>5.3 Créer une candidature</h3>
+<div class="step">
+  <strong>Étapes :</strong>
+  <ol>
+    <li>Cliquez sur <strong>« Nouvelle candidature »</strong></li>
+    <li>Sélectionnez l'<strong>étudiant</strong> concerné (liste déroulante)</li>
+    <li>Sélectionnez l'<strong>université cible</strong></li>
+    <li>Saisissez le <strong>programme souhaité</strong> (ex : « Master en Génie Informatique »)</li>
+    <li>Sélectionnez le <strong>niveau d'études</strong> (Licence, Master, Doctorat, etc.)</li>
+    <li>Indiquez le <strong>niveau de langue</strong> de l'étudiant</li>
+    <li>Sélectionnez le <strong>type de bourse</strong> (complète, partielle)</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+  </ol>
+</div>
+
+<div class="tip">
+  <strong>Conseil :</strong> Une candidature crée automatiquement un dossier dans le module « Dossiers ». Les deux sont liés.
+</div>
+
+<h3>5.4 Statuts des candidatures</h3>
+<table>
+  <tr><th>Statut</th><th>Description</th><th>Qui peut modifier</th></tr>
+  <tr><td><span class="status-badge status-gray">Documents reçus</span></td><td>Documents initiaux reçus de l'étudiant</td><td>Agent, Superviseur</td></tr>
+  <tr><td><span class="status-badge status-yellow">En attente</span></td><td>Dossier en attente de traitement</td><td>Agent, Superviseur</td></tr>
+  <tr><td><span class="status-badge status-blue">En cours</span></td><td>Traitement actif du dossier</td><td>Agent, Superviseur</td></tr>
+  <tr><td><span class="status-badge status-yellow">Document manquant</span></td><td>Des pièces sont à fournir par l'étudiant</td><td>Agent, Superviseur</td></tr>
+  <tr><td><span class="status-badge status-yellow">En attente université</span></td><td>Réponse attendue de l'université</td><td>Agent, Superviseur</td></tr>
+  <tr><td><span class="status-badge status-green">Admission validée</span></td><td>L'université a accepté la candidature</td><td>Superviseur, Admin</td></tr>
+  <tr><td><span class="status-badge status-red">Admission rejetée</span></td><td>L'université a refusé</td><td>Superviseur, Admin</td></tr>
+  <tr><td><span class="status-badge status-blue">Visa en cours</span></td><td>Procédure visa engagée</td><td>Agent, Superviseur</td></tr>
+  <tr><td><span class="status-badge status-green">Terminé</span></td><td>Dossier clôturé</td><td>Superviseur, Admin</td></tr>
+</table>
+
+<h3>5.5 Modifier une candidature</h3>
+<div class="step">
+  <ol>
+    <li>Cliquez sur l'icône <strong>crayon</strong> de la candidature</li>
+    <li>Modifiez les champs souhaités (université, programme, niveau, type de bourse)</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+    <li>La modification est enregistrée dans les logs d'activité</li>
+  </ol>
+</div>
+
+<!-- SECTION 6 -->
+<h2 id="dossiers">6. Gestion des Dossiers</h2>
+
+<h3>6.1 Accès au module</h3>
+<p>Menu latéral → <strong>Dossiers</strong></p>
+
+<h3>6.2 Présentation</h3>
+<p>Le module Dossiers est le cœur de la gestion opérationnelle. Chaque dossier correspond à une candidature et contient :</p>
+<ul>
+  <li>Les informations détaillées de la candidature</li>
+  <li>Les documents soumis par l'étudiant</li>
+  <li>Les notes internes (visibles uniquement par l'équipe)</li>
+  <li>L'historique des changements de statut</li>
+</ul>
+
+<h3>6.3 Filtrage et recherche</h3>
+<ul>
+  <li>Filtre par <strong>statut</strong> (menu déroulant)</li>
+  <li>Recherche par <strong>nom étudiant</strong>, <strong>université</strong> ou <strong>programme</strong></li>
+  <li>Pagination automatique</li>
+</ul>
+
+<h3>6.4 Ouvrir un dossier</h3>
+<p>Cliquez sur un dossier dans la liste pour ouvrir sa vue détaillée. Vous y trouverez :</p>
+<ul>
+  <li>Informations de l'étudiant et de la candidature</li>
+  <li>Statut actuel et menu de changement de statut</li>
+  <li>Zone de notes internes</li>
+  <li>Liste des documents</li>
+</ul>
+
+<h3>6.5 Changer le statut d'un dossier</h3>
+<div class="step">
+  <ol>
+    <li>Ouvrez le dossier</li>
+    <li>Cliquez sur le <strong>menu déroulant « Statut »</strong></li>
+    <li>Sélectionnez le nouveau statut</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+    <li>Le changement est automatiquement logué et l'étudiant est notifié</li>
+  </ol>
+</div>
+
+<h3>6.6 Notes internes</h3>
+<p>Le champ <strong>« Notes internes »</strong> permet de laisser des informations pour l'équipe (observations, actions à faire, commentaires sur l'université). Ces notes sont <strong>invisibles pour l'étudiant</strong>.</p>
+<div class="step">
+  <ol>
+    <li>Saisissez votre note dans le champ « Notes internes »</li>
+    <li>Cliquez sur <strong>« Sauvegarder les notes »</strong></li>
+  </ol>
+</div>
+
+<h3>6.7 Gestion des documents d'un dossier</h3>
+<p>La section documents du dossier liste tous les documents soumis par l'étudiant :</p>
+<table>
+  <tr><th>Action</th><th>Description</th><th>Rôle requis</th></tr>
+  <tr><td>Voir le document</td><td>Ouvre/télécharge le fichier</td><td>Agent</td></tr>
+  <tr><td>Valider</td><td>Marque le document comme conforme</td><td>Superviseur</td></tr>
+  <tr><td>Rejeter</td><td>Marque le document non conforme + saisir raison</td><td>Superviseur</td></tr>
+</table>
+
+<div class="supervisor-only">
+  <strong>Superviseur uniquement :</strong> La validation et le rejet de documents nécessitent le rôle superviseur. En tant qu'agent, vous pouvez consulter les documents mais pas les valider.
+</div>
+
+<h3>6.8 Uploader un document depuis le dossier</h3>
+<div class="step">
+  <ol>
+    <li>Dans la vue dossier, section documents</li>
+    <li>Cliquez sur <strong>« Ajouter un document »</strong></li>
+    <li>Sélectionnez le type de document</li>
+    <li>Choisissez le fichier (max 10 MB)</li>
+    <li>Cliquez sur <strong>« Envoyer »</strong></li>
+  </ol>
+</div>
+
+<!-- SECTION 7 -->
+<h2 id="paiements">7. Gestion des Paiements (Frais)</h2>
+
+<h3>7.1 Accès au module</h3>
+<p>Menu latéral → <strong>Frais</strong></p>
+
+<h3>7.2 Onglets du module</h3>
+<table>
+  <tr><th>Onglet</th><th>Contenu</th></tr>
+  <tr><td>À valider</td><td>Paiements déclarés par les étudiants — priorité immédiate</td></tr>
+  <tr><td>En retard</td><td>Paiements dont la date limite est dépassée</td></tr>
+  <tr><td>Validés</td><td>Paiements encaissés et confirmés</td></tr>
+  <tr><td>Tous</td><td>Vue complète de tous les paiements</td></tr>
+  <tr><td>Encaisser</td><td>Formulaire pour enregistrer un nouveau paiement</td></tr>
+</table>
+
+<h3>7.3 Enregistrer un nouveau paiement</h3>
+<div class="step">
+  <strong>Onglet « Encaisser » :</strong>
+  <ol>
+    <li>Sélectionnez l'<strong>étudiant</strong> dans la liste déroulante</li>
+    <li>Sélectionnez le <strong>type de paiement</strong> :
+      <ul>
+        <li>Bourse (procédure)</li>
+        <li>Mandarin</li>
+        <li>Anglais</li>
+        <li>Inscription</li>
+        <li>Autre</li>
+      </ul>
+    </li>
+    <li>Sélectionnez la <strong>tranche</strong> (T1, T2, T3, T4 selon le type)</li>
+    <li>Saisissez le <strong>montant</strong> en FCFA</li>
+    <li>Indiquez la <strong>date de paiement</strong></li>
+    <li>Ajoutez une <strong>date limite</strong> si applicable</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+    <li>Une écriture comptable est automatiquement créée</li>
+  </ol>
+</div>
+
+<h3>7.4 Valider un paiement déclaré <span class="role-tag supervisor-tag">Superviseur</span></h3>
+<p>Lorsqu'un étudiant déclare un paiement depuis son portail, il apparaît dans l'onglet <strong>« À valider »</strong> avec le badge « Déclaré par l'étudiant ».</p>
+<div class="step">
+  <ol>
+    <li>Allez dans l'onglet <strong>« À valider »</strong></li>
+    <li>Trouvez le paiement concerné</li>
+    <li>Si l'étudiant a joint une preuve, cliquez sur <strong>« Voir la preuve »</strong> pour la vérifier</li>
+    <li>Cliquez sur <strong>« Valider »</strong> pour confirmer le paiement</li>
+    <li>Ou <strong>« Rejeter »</strong> si la preuve est insuffisante</li>
+    <li>Une fois validé, le statut passe à « Payé » et un reçu est disponible</li>
+  </ol>
+</div>
+
+<h3>7.5 Pénalités de retard</h3>
+<p>Les pénalités sont calculées automatiquement pour les paiements en retard. Elles s'affichent sur la ligne du paiement en retard. L'application synchronise les pénalités au démarrage et peut les recalculer à la demande.</p>
+
+<table>
+  <tr><th>Type</th><th>Taux journalier</th></tr>
+  <tr><td>Procédure bourse</td><td>10 FCFA/jour</td></tr>
+  <tr><td>Cours (inscription)</td><td>500 FCFA/jour</td></tr>
+  <tr><td>Cours (tranche)</td><td>1 000 FCFA/jour</td></tr>
+</table>
+
+<h3>7.6 Générer un reçu de paiement</h3>
+<div class="step">
+  <ol>
+    <li>Sur la ligne d'un paiement validé, cliquez sur <strong>« Reçu »</strong></li>
+    <li>Choisissez le format : <strong>PDF</strong> (téléchargement) ou <strong>Word</strong></li>
+    <li>Le reçu inclut le logo Joda Company, les coordonnées de l'étudiant et les détails du paiement</li>
+  </ol>
+</div>
+
+<h3>7.7 Types de paiements et montants de référence</h3>
+<table>
+  <tr><th>Programme</th><th>Montant</th></tr>
+  <tr><td>Procédure bourse complète</td><td>1 000 000 FCFA</td></tr>
+  <tr><td>Procédure bourse partielle</td><td>500 000 FCFA</td></tr>
+  <tr><td>Procédure simple</td><td>100 000 FCFA</td></tr>
+  <tr><td>Procédure complète+</td><td>1 390 000 FCFA</td></tr>
+  <tr><td>Cours Mandarin (total)</td><td>121 000 FCFA</td></tr>
+  <tr><td>Cours Anglais (total)</td><td>91 000 FCFA</td></tr>
+</table>
+
+<!-- SECTION 8 -->
+<h2 id="universites">8. Gestion des Universités <span class="role-tag supervisor-tag">Superviseur</span></h2>
+
+<h3>8.1 Accès au module</h3>
+<p>Menu latéral → <strong>Universités</strong> (lecture seule pour les agents)</p>
+
+<h3>8.2 Catalogue des universités</h3>
+<p>Le module liste toutes les universités partenaires avec leurs informations. Les agents peuvent <strong>consulter</strong> la liste. Les superviseurs peuvent <strong>créer, modifier</strong>.</p>
+
+<h3>8.3 Ajouter une université <span class="role-tag supervisor-tag">Superviseur</span></h3>
+<div class="step">
+  <ol>
+    <li>Cliquez sur <strong>« Nouvelle université »</strong></li>
+    <li>Saisissez le nom de l'université</li>
+    <li>Pays et ville</li>
+    <li>Programmes offerts (liste séparée par virgules)</li>
+    <li>Niveaux d'études acceptés</li>
+    <li>Critères d'admission</li>
+    <li>Statut actif/inactif</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+  </ol>
+</div>
+
+<h3>8.4 Universités prédéfinies (Seed)</h3>
+<p>Un bouton <strong>« Importer universités chinoises »</strong> permet de charger rapidement 8 grandes universités chinoises :</p>
+<ul>
+  <li>Université de Pékin (PKU)</li>
+  <li>Université Tsinghua</li>
+  <li>Université Fudan (Shanghai)</li>
+  <li>Université Zhejiang</li>
+  <li>Université Nankai (Tianjin)</li>
+  <li>Université Wuhan</li>
+  <li>Université Sun Yat-sen (Guangzhou)</li>
+  <li>Université Tongji (Shanghai)</li>
+</ul>
+
+<!-- SECTION 9 -->
+<h2 id="comptabilite">9. Comptabilité (Consultation) <span class="role-tag supervisor-tag">Superviseur</span></h2>
+
+<h3>9.1 Accès</h3>
+<p>Menu latéral → <strong>Comptabilité</strong> (réservé aux superviseurs, admins et super admins)</p>
+
+<h3>9.2 Vue d'ensemble</h3>
+<p>En tant que superviseur, vous pouvez <strong>consulter</strong> le livre comptable (entrées et sorties) mais <strong>pas valider les écritures</strong> (réservé aux admins).</p>
+
+<h3>9.3 Contenu du livre comptable</h3>
+<table>
+  <tr><th>Type</th><th>Origine</th><th>Couleur</th></tr>
+  <tr><td>Entrées</td><td>Créées automatiquement lors de la validation d'un paiement</td><td>Vert (positif)</td></tr>
+  <tr><td>Sorties</td><td>Créées manuellement par les admins (dépenses)</td><td>Rouge (négatif)</td></tr>
+</table>
+
+<h3>9.4 Filtres disponibles</h3>
+<ul>
+  <li>Par période (date de début / date de fin)</li>
+  <li>Par catégorie (paiements procédure, cours, dépenses diverses, etc.)</li>
+</ul>
+
+<!-- SECTION 10 -->
+<h2 id="performances">10. Performances et Statistiques</h2>
+
+<h3>10.1 Accès</h3>
+<p>Menu latéral → <strong>Performances</strong></p>
+
+<h3>10.2 Onglets disponibles</h3>
+<p>Le module performances contient deux onglets :</p>
+
+<h4>Onglet « Par agent »</h4>
+<p>Classement des agents avec un <strong>score composite 0-100</strong> basé sur 4 axes :</p>
+<table>
+  <tr><th>Axe</th><th>Description</th></tr>
+  <tr><td>Score revenus</td><td>Chiffre d'affaires encaissé relatif au meilleur agent</td></tr>
+  <tr><td>Score activité</td><td>Nombre de logs d'activité (actions effectuées)</td></tr>
+  <tr><td>Score rapidité</td><td>Délai moyen de validation des paiements</td></tr>
+  <tr><td>Score dossiers</td><td>Nombre de dossiers gérés</td></tr>
+</table>
+
+<p>Un <strong>podium Trophy</strong> met en avant les 3 meilleurs agents du classement.</p>
+
+<h4>Onglet « Vue journalière »</h4>
+<p>Statistiques agrégées par jour : montant encaissé, paiements validés, tendances.</p>
+
+<h3>10.3 Filtres de période</h3>
+<ul>
+  <li>7 jours</li>
+  <li>30 jours</li>
+  <li>3 mois</li>
+  <li>Année</li>
+  <li>Tout (depuis le début)</li>
+</ul>
+
+<h3>10.4 Cartes agent</h3>
+<p>Chaque agent a une <strong>carte expandable</strong> avec son détail journalier, badge de rôle, pénalités appliquées, et statuts des dossiers à valider / en attente / en retard.</p>
+
+<!-- SECTION 11 -->
+<h2 id="notifications">11. Notifications</h2>
+
+<h3>11.1 Accès</h3>
+<p>Cliquez sur l'<strong>icône cloche (🔔)</strong> dans l'en-tête, ou Menu → <strong>Notifications</strong></p>
+
+<h3>11.2 Types de notifications reçues par l'équipe</h3>
+<table>
+  <tr><th>Type</th><th>Déclencheur</th></tr>
+  <tr><td>Paiement déclaré étudiant</td><td>Un étudiant a déclaré un paiement — à valider</td></tr>
+  <tr><td>Document uploadé</td><td>Un étudiant a soumis un document via le portail</td></tr>
+  <tr><td>Retard paiement</td><td>Un paiement a dépassé sa date limite</td></tr>
+  <tr><td>Mise à jour dossier</td><td>Notification générique de mise à jour</td></tr>
+</table>
+
+<h3>11.3 Actions</h3>
+<ul>
+  <li><strong>Marquer comme lue</strong> — une notification à la fois</li>
+  <li><strong>Marquer toutes comme lues</strong> — bouton en haut de liste</li>
+  <li><strong>Supprimer</strong> — retire définitivement la notification</li>
+</ul>
+
+<!-- SECTION 12 -->
+<h2 id="workflows">12. Workflows Courants</h2>
+
+<h3>12.1 Onboarding d'un nouvel étudiant (workflow complet)</h3>
+<div class="step">
+  <ol>
+    <li><strong>Créer l'étudiant</strong> (module Étudiants → Nouvel étudiant)</li>
+    <li><strong>Communiquer les identifiants</strong> de connexion au portail étudiant</li>
+    <li><strong>Créer la candidature</strong> (module Candidatures → Nouvelle candidature) avec l'université et le programme souhaités</li>
+    <li><strong>Si cours de langue</strong> : inscrire l'étudiant aux cours (module Étudiants → vue détail → Cours)</li>
+    <li><strong>Créer les paiements</strong> attendus (module Frais → Encaisser) selon la procédure choisie</li>
+    <li><strong>Demander les documents</strong> à l'étudiant (il les soumet via le portail)</li>
+    <li><strong>Valider les documents</strong> reçus (module Dossiers → Documents)</li>
+    <li><strong>Mettre à jour le statut</strong> du dossier au fur et à mesure</li>
+  </ol>
+</div>
+
+<h3>12.2 Traitement d'un paiement étudiant</h3>
+<div class="step">
+  <ol>
+    <li>Notification reçue : un étudiant a déclaré un paiement</li>
+    <li>Aller dans Frais → onglet <strong>« À valider »</strong></li>
+    <li>Trouver le paiement marqué « Déclaré par l'étudiant »</li>
+    <li>Cliquer sur <strong>« Voir la preuve »</strong> pour vérifier le justificatif</li>
+    <li>Si conforme → <strong>« Valider »</strong> le paiement</li>
+    <li>Le statut passe à « Payé », l'écriture comptable est créée automatiquement</li>
+    <li>Un reçu est disponible pour téléchargement</li>
+  </ol>
+</div>
+
+<h3>12.3 Gestion d'un document non conforme</h3>
+<div class="step">
+  <ol>
+    <li>Ouvrir le dossier concerné</li>
+    <li>Dans la liste des documents, identifier le document problématique</li>
+    <li>Cliquer sur <strong>« Rejeter »</strong> <span class="role-tag supervisor-tag">Superviseur</span></li>
+    <li>Saisir la <strong>raison du rejet</strong> (ex : « Image floue, merci de rescanner »)</li>
+    <li>L'étudiant reçoit une notification et voit la raison dans son portail</li>
+    <li>Il soumet un nouveau document — le statut repasse à « En attente »</li>
+    <li>Valider le nouveau document une fois conforme</li>
+  </ol>
+</div>
+
+<h3>12.4 Passer un dossier en admission validée</h3>
+<div class="step">
+  <ol>
+    <li>Ouvrir le dossier de l'étudiant</li>
+    <li>Vérifier que tous les documents requis sont validés</li>
+    <li>Changer le statut vers <strong>« Admission validée »</strong> <span class="role-tag supervisor-tag">Superviseur</span></li>
+    <li>Ajouter une note interne si nécessaire (ex : « Lettre d'admission reçue le JJ/MM »)</li>
+    <li>L'étudiant voit automatiquement toutes les étapes précédentes cochées dans sa timeline</li>
+    <li>Engager ensuite la procédure de visa : passer le statut à « Visa en cours »</li>
+  </ol>
+</div>
+
+<div class="footer-note">
+  Manuel Agent &amp; Superviseur — Joda Company — Version 1.0 — Mai 2026<br>
+  Usage interne confidentiel — Ne pas diffuser à l'extérieur de l'entreprise.
+</div>
+
+</body>
+</html>

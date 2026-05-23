@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--[if gte mso 9]>
+<xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+    <w:DoNotOptimizeForBrowser/>
+  </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  /* ===== Base ===== */
+  body {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    color: #1f2937;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 48px;
+  }
+
+  /* ===== Cover ===== */
+  .cover {
+    text-align: center;
+    padding: 80px 40px 60px;
+    border-bottom: 4px solid #dc2626;
+    margin-bottom: 48px;
+  }
+  .cover-logo-text {
+    font-size: 36pt;
+    font-weight: 700;
+    color: #dc2626;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  .cover-tagline {
+    font-size: 12pt;
+    color: #6b7280;
+    margin-bottom: 48px;
+    font-style: italic;
+  }
+  .cover-title {
+    font-size: 26pt;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 12px;
+  }
+  .cover-subtitle {
+    font-size: 14pt;
+    color: #374151;
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: inline-block;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px 40px;
+    text-align: left;
+    margin-top: 20px;
+  }
+  .cover-meta-row {
+    font-size: 10pt;
+    color: #6b7280;
+    margin: 4px 0;
+  }
+  .cover-meta-row strong {
+    color: #374151;
+    display: inline-block;
+    width: 120px;
+  }
+
+  /* ===== TOC ===== */
+  .toc {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 28px 36px;
+    margin-bottom: 48px;
+    page-break-after: always;
+  }
+  .toc-title {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #dc2626;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #fee2e2;
+  }
+  .toc ol {
+    margin: 0;
+    padding: 0 0 0 20px;
+  }
+  .toc li {
+    margin: 6px 0;
+    font-size: 10.5pt;
+    color: #374151;
+  }
+  .toc li a {
+    color: #374151;
+    text-decoration: none;
+  }
+  .toc li.toc-h2 {
+    font-weight: 600;
+    margin-top: 12px;
+    color: #111827;
+    list-style-type: none;
+    margin-left: -10px;
+  }
+  .toc li.toc-h3 {
+    font-size: 10pt;
+    color: #6b7280;
+    margin-left: 10px;
+  }
+
+  /* ===== Headings ===== */
+  h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    color: #dc2626;
+    border-bottom: 3px solid #fee2e2;
+    padding-bottom: 10px;
+    margin-top: 48px;
+    margin-bottom: 20px;
+  }
+  h1:first-of-type { margin-top: 0; }
+  h2 {
+    font-size: 15pt;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 32px;
+    margin-bottom: 12px;
+    padding-left: 10px;
+    border-left: 4px solid #dc2626;
+  }
+  h3 {
+    font-size: 12pt;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 20px;
+    margin-bottom: 8px;
+  }
+  h4 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #6b7280;
+    margin: 14px 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 9.5pt;
+  }
+
+  /* ===== Text ===== */
+  p { margin: 0 0 10px 0; line-height: 1.6; }
+  ul, ol { margin: 0 0 12px 0; padding-left: 24px; }
+  li { margin: 4px 0; line-height: 1.5; }
+
+  /* ===== Code ===== */
+  code, .mono {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 9.5pt;
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #dc2626;
+  }
+  pre, .codeblock {
+    background: #1f2937;
+    color: #e5e7eb;
+    border-radius: 6px;
+    padding: 16px 20px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 9pt;
+    overflow-x: auto;
+    margin: 12px 0 20px 0;
+    line-height: 1.6;
+    white-space: pre;
+  }
+  pre code { background: none; padding: 0; color: #e5e7eb; }
+
+  /* ===== Tables ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 20px 0;
+    font-size: 10pt;
+  }
+  th {
+    background: #dc2626;
+    color: white;
+    font-weight: 600;
+    padding: 9px 14px;
+    text-align: left;
+    border: 1px solid #b91c1c;
+  }
+  td {
+    padding: 8px 14px;
+    border: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f9fafb; }
+  tr:hover td { background: #fef2f2; }
+  .table-sm td, .table-sm th { padding: 5px 10px; font-size: 9.5pt; }
+
+  /* ===== Callouts ===== */
+  .callout {
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 10.5pt;
+    line-height: 1.5;
+  }
+  .callout-info { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e3a5f; }
+  .callout-warn { background: #fffbeb; border-left: 4px solid #f59e0b; color: #7c4f12; }
+  .callout-danger { background: #fef2f2; border-left: 4px solid #dc2626; color: #7f1d1d; }
+  .callout-success { background: #f0fdf4; border-left: 4px solid #22c55e; color: #14532d; }
+  .callout strong { display: block; margin-bottom: 4px; font-size: 10pt; }
+
+  /* ===== Badges ===== */
+  .badge {
+    display: inline-block;
+    font-size: 8.5pt;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-red { background: #fee2e2; color: #dc2626; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-yellow { background: #fef9c3; color: #a16207; }
+  .badge-gray { background: #f3f4f6; color: #374151; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+
+  /* ===== Section divider ===== */
+  .divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 40px 0;
+  }
+  .page-break { page-break-before: always; }
+
+  /* ===== Key-value ===== */
+  .kv-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 8px 16px;
+    margin: 12px 0;
+    font-size: 10.5pt;
+  }
+  .kv-key { font-weight: 600; color: #374151; }
+  .kv-val { color: #1f2937; }
+
+  /* ===== Two-col ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .card h4 { margin-top: 0; color: #dc2626; font-size: 10pt; text-transform: none; letter-spacing: 0; }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li { font-size: 10pt; }
+</style>
+<title>Documentation Technique — Joda Company</title>
+</head>
+<body>
+<div class="page">
+
+<!-- ===== COVER ===== -->
+<div class="cover">
+  <div class="cover-logo-text">JODA COMPANY</div>
+  <div class="cover-tagline">Agence de bourses d'études en Chine</div>
+
+  <div class="cover-title">Documentation Technique</div>
+  <div class="cover-subtitle">Architecture · Base de données · API · Composants · Tests</div>
+
+  <div class="cover-meta">
+    <div class="cover-meta-row"><strong>Version</strong> 2.0 — Mai 2026</div>
+    <div class="cover-meta-row"><strong>Stack</strong> Next.js 16 · TypeScript · Supabase · Electron</div>
+    <div class="cover-meta-row"><strong>Dépôt</strong> Gestion_Joda (branche main)</div>
+    <div class="cover-meta-row"><strong>Auteur</strong> Équipe technique Joda Company</div>
+    <div class="cover-meta-row"><strong>Audience</strong> Développeurs · DevOps · Tech Lead</div>
+  </div>
+</div>
+
+<!-- ===== TABLE DES MATIÈRES ===== -->
+<div class="toc">
+  <div class="toc-title">Table des matières</div>
+  <ol>
+    <li class="toc-h2">1. Vue d'ensemble de l'architecture</li>
+    <li class="toc-h3">1.1 Stack technologique</li>
+    <li class="toc-h3">1.2 Structure du dépôt</li>
+    <li class="toc-h3">1.3 Flux de données</li>
+
+    <li class="toc-h2">2. Authentification &amp; Sécurité</li>
+    <li class="toc-h3">2.1 Supabase Auth (SSR)</li>
+    <li class="toc-h3">2.2 Middleware proxy.ts</li>
+    <li class="toc-h3">2.3 Row Level Security (RLS)</li>
+    <li class="toc-h3">2.4 Rôles et hiérarchie</li>
+
+    <li class="toc-h2">3. Base de données Supabase</li>
+    <li class="toc-h3">3.1 Schéma des tables</li>
+    <li class="toc-h3">3.2 Relations &amp; contraintes</li>
+    <li class="toc-h3">3.3 Migrations en attente</li>
+
+    <li class="toc-h2">4. Routes API</li>
+    <li class="toc-h3">4.1 Routes authentification</li>
+    <li class="toc-h3">4.2 Routes métier</li>
+    <li class="toc-h3">4.3 Routes cron &amp; utilitaires</li>
+    <li class="toc-h3">4.4 Authentification des routes API</li>
+
+    <li class="toc-h2">5. Composants &amp; Modules Frontend</li>
+    <li class="toc-h3">5.1 App Router — structure des pages</li>
+    <li class="toc-h3">5.2 Couche données (TanStack Query)</li>
+    <li class="toc-h3">5.3 Contextes globaux</li>
+    <li class="toc-h3">5.4 Composants transverses</li>
+
+    <li class="toc-h2">6. Architecture Desktop Electron (offline-first)</li>
+    <li class="toc-h3">6.1 Principe général</li>
+    <li class="toc-h3">6.2 Wrapper offline-client.ts</li>
+    <li class="toc-h3">6.3 IPC db-handlers.ts</li>
+    <li class="toc-h3">6.4 Sync bidirectionnelle</li>
+    <li class="toc-h3">6.5 Limitations connues</li>
+
+    <li class="toc-h2">7. Variables d'environnement</li>
+
+    <li class="toc-h2">8. Notifications Email &amp; SMS</li>
+
+    <li class="toc-h2">9. Tests E2E (Playwright)</li>
+    <li class="toc-h3">9.1 Structure &amp; lancement</li>
+    <li class="toc-h3">9.2 Comptes de test</li>
+    <li class="toc-h3">9.3 Couverture</li>
+
+    <li class="toc-h2">10. Conventions &amp; décisions techniques</li>
+    <li class="toc-h3">10.1 Patterns UI obligatoires</li>
+    <li class="toc-h3">10.2 Naming &amp; organisation</li>
+    <li class="toc-h3">10.3 Performance &amp; optimisations</li>
+  </ol>
+</div>
+
+<!-- ===================================================================== -->
+<!-- PARTIE 1 — ARCHITECTURE -->
+<!-- ===================================================================== -->
+<h1 id="arch">1. Vue d'ensemble de l'architecture</h1>
+
+<h2>1.1 Stack technologique</h2>
+
+<table>
+  <tr><th>Couche</th><th>Technologie</th><th>Version</th><th>Rôle</th></tr>
+  <tr><td><strong>Frontend</strong></td><td>Next.js (App Router)</td><td>16.2.6</td><td>Rendu React, routing, SSR/RSC</td></tr>
+  <tr><td></td><td>TypeScript</td><td>5.x</td><td>Typage statique</td></tr>
+  <tr><td></td><td>Tailwind CSS</td><td>4.x</td><td>Styles utilitaires</td></tr>
+  <tr><td></td><td>Shadcn/UI</td><td>4.1.2</td><td>Composants UI accessibles</td></tr>
+  <tr><td></td><td>Framer Motion</td><td>12.38.0</td><td>Animations</td></tr>
+  <tr><td><strong>État</strong></td><td>TanStack Query</td><td>5.96.2</td><td>Cache serveur, requêtes async</td></tr>
+  <tr><td></td><td>Zustand</td><td>5.0.12</td><td>État UI global léger</td></tr>
+  <tr><td><strong>Backend</strong></td><td>Next.js API Routes</td><td>16.2.6</td><td>Endpoints serveur (App Router)</td></tr>
+  <tr><td></td><td>Resend</td><td>6.12.2</td><td>Envoi emails (SMTP transactionnel)</td></tr>
+  <tr><td><strong>BDD / Auth</strong></td><td>Supabase</td><td>2.101.1 (SDK)</td><td>PostgreSQL + Auth + Storage</td></tr>
+  <tr><td></td><td>@supabase/ssr</td><td>0.10.3</td><td>Client SSR avec cookies</td></tr>
+  <tr><td><strong>Desktop</strong></td><td>Electron</td><td>39.8.10</td><td>Wrapper natif (offline-first)</td></tr>
+  <tr><td></td><td>better-sqlite3</td><td>12.10.0</td><td>SQLite local</td></tr>
+  <tr><td><strong>Tests</strong></td><td>Playwright</td><td>1.60.0</td><td>Tests E2E multi-rôles</td></tr>
+  <tr><td><strong>PDF</strong></td><td>jsPDF</td><td>4.2.1</td><td>Génération PDF client-side</td></tr>
+</table>
+
+<h2>1.2 Structure du dépôt</h2>
+
+<pre>Gestion_Joda/
+├── src/
+│   ├── proxy.ts                     # Middleware auth (protège routes sauf /login, /api/public)
+│   ├── app/
+│   │   ├── (app)/                   # Routes protégées (AppShell + sidebar)
+│   │   │   ├── layout.tsx           # AppShell — sidebar, header, breadcrumb, notif badge
+│   │   │   ├── tableau-de-bord/     # ScholarshipDashboard.tsx
+│   │   │   ├── candidatures/        # ApplicationManagement.tsx
+│   │   │   ├── etudiants/           # StudentManagement.tsx
+│   │   │   ├── dossiers/            # ScholarshipFileManagement.tsx
+│   │   │   ├── universites/         # UniversityManagement.tsx
+│   │   │   ├── frais/               # ApplicationFeeManagement.tsx + PaymentManagement.tsx
+│   │   │   ├── comptabilite/        # AccountingPage.tsx
+│   │   │   ├── utilisateurs/        # UserManagement.tsx
+│   │   │   ├── logs-activites/      # ActivityLogsPage.tsx
+│   │   │   ├── stockage/            # StorageMonitoring.tsx
+│   │   │   ├── performances/        # PerformanceHistory.tsx
+│   │   │   ├── notifications/       # NotificationsPage.tsx
+│   │   │   └── cours-langues/       # CoursLangues.tsx
+│   │   ├── etudiant/                # Portail étudiant (StudentShell + sous-vues)
+│   │   ├── login/                   # LoginPage.tsx
+│   │   ├── api/                     # API Routes Next.js
+│   │   │   ├── create-user/
+│   │   │   ├── delete-user/
+│   │   │   ├── forgot-password/
+│   │   │   ├── send-student-message/
+│   │   │   ├── notify-staff/
+│   │   │   ├── declare-payment/
+│   │   │   ├── notify-payment-result/
+│   │   │   ├── cron/check-late-payments/
+│   │   │   └── auth/exchange/
+│   │   ├── context/
+│   │   │   ├── AuthContext.tsx
+│   │   │   ├── NotificationContext.tsx
+│   │   │   └── PaymentConfigContext.tsx
+│   │   ├── services/
+│   │   │   └── database.ts          # Couche CRUD Supabase
+│   │   ├── hooks/                   # Hooks TanStack Query (usePayments, useStudents…)
+│   │   ├── lib/
+│   │   │   ├── supabase/            # Clients Supabase (browser, server, admin)
+│   │   │   ├── emailService.ts      # Resend (SMTP transactionnel)
+│   │   │   ├── smsService.ts        # API smsvas.com
+│   │   │   └── pdfGenerator.ts      # Exports PDF (jsPDF)
+│   │   ├── utils/
+│   │   │   ├── activityLogger.ts    # Logs d'audit
+│   │   │   ├── thermalReceipt.ts    # Reçu A5 HTML → Word
+│   │   │   ├── imageCompression.ts  # Compression client-side
+│   │   │   └── fileValidation.ts    # Validation MIME + taille
+│   │   └── types/
+│   │       └── joda.ts              # Types métier globaux
+├── docs/
+│   └── manuels/                     # Manuels utilisateur (Word/HTML)
+├── migrations/                      # Migrations SQL Supabase
+├── tests/
+│   ├── e2e/                         # 22 fichiers .spec.ts
+│   ├── fixtures/                    # Sessions storageState par rôle
+│   ├── helpers/                     # auth-utils, seed, sidebar-nav, supabase-admin
+│   ├── global-setup.ts              # Seed + warmup + 5 logins
+│   └── global-teardown.ts           # Cleanup préfixe e2e_
+└── electron/                        # App desktop Electron
+    ├── main.ts                       # Process principal
+    ├── preload.ts                    # Bridge IPC → renderer
+    └── db-handlers.ts               # Handlers SQLite (IPC)</pre>
+
+<h2>1.3 Flux de données</h2>
+
+<div class="callout callout-info">
+  <strong>Architecture request-response standard (web)</strong>
+  Navigateur → Next.js App Router → Supabase (PostgreSQL + Auth).<br>
+  Les API Routes <code>/api/*</code> utilisent la <strong>service role key</strong> pour les opérations admin (contournement RLS).
+</div>
+
+<p>Pour chaque module, le patron de données est :</p>
+<ol>
+  <li><strong>Hook TanStack Query</strong> (<code>usePayments</code>, <code>useStudents</code>…) — requête Supabase, mise en cache, invalidation ciblée</li>
+  <li><strong>Composant</strong> — consomme le hook, affiche les données, déclenche mutations</li>
+  <li><strong>Mutation</strong> — appelle directement Supabase ou une API Route, puis <code>queryClient.invalidateQueries(KEY)</code></li>
+  <li><strong>Contextes</strong> — AuthContext (session + rôle), NotificationContext (toasts), PaymentConfigContext (frais)</li>
+</ol>
+
+<hr class="divider">
+
+<!-- ===================================================================== -->
+<!-- PARTIE 2 — AUTH -->
+<!-- ===================================================================== -->
+<div class="page-break"></div>
+<h1 id="auth">2. Authentification &amp; Sécurité</h1>
+
+<h2>2.1 Supabase Auth (SSR)</h2>
+
+<p>L'authentification utilise <code>@supabase/ssr</code> (v0.10.3) avec des cookies HTTP-only pour la persistance de session. Trois clients Supabase distincts coexistent :</p>
+
+<table>
+  <tr><th>Client</th><th>Fichier</th><th>Clé utilisée</th><th>Usage</th></tr>
+  <tr><td>Browser</td><td><code>lib/supabase/client.ts</code></td><td>ANON_KEY</td><td>Composants client (lecture, mutations RLS)</td></tr>
+  <tr><td>Server</td><td><code>lib/supabase/server.ts</code></td><td>ANON_KEY + cookies</td><td>Server Components, middleware</td></tr>
+  <tr><td>Admin</td><td><code>lib/supabase/admin.ts</code></td><td>SERVICE_ROLE_KEY</td><td>API Routes admin (bypass RLS)</td></tr>
+</table>
+
+<h3>Flux login admin/agent</h3>
+<ol>
+  <li>Saisie <code>username</code> ou <code>email</code> + mot de passe</li>
+  <li>Lookup dans les comptes hardcodés (fallback local dev)</li>
+  <li><code>supabase.auth.signInWithPassword(email, password)</code></li>
+  <li>Récupération profil table <code>users</code> → stockage <code>localStorage.currentUser</code></li>
+  <li>Si <code>must_change_password = true</code> → <code>ChangePasswordModal</code> bloquant</li>
+  <li>Redirection selon rôle : <code>/etudiant</code> (student) | <code>/tableau-de-bord</code> (staff)</li>
+</ol>
+
+<h3>Flux login étudiant</h3>
+<ol>
+  <li>Saisie <code>username</code> (ex : <code>jean.dupont</code>)</li>
+  <li>Construction email Auth : <code>jean.dupont@students.joda.app</code> (fonction <code>buildStudentAuthEmail</code>)</li>
+  <li><code>supabase.auth.signInWithPassword(authEmail, password)</code></li>
+</ol>
+
+<h3>Forgot password</h3>
+<ul>
+  <li>Route <code>POST /api/forgot-password</code> — génère mot de passe temporaire <code>Joda@XXXXX</code>, persiste, envoie email/SMS</li>
+  <li><strong>Rate-limit anti-DoS</strong> : 1 réinitialisation max par user toutes les 5 min (in-memory, retourne 200 silencieusement)</li>
+  <li>Les étudiants ont un <code>contact_email</code> réel dans la colonne <code>users.contact_email</code> (différent du <code>@students.joda.app</code> Auth)</li>
+</ul>
+
+<h2>2.2 Middleware proxy.ts</h2>
+
+<div class="callout callout-warn">
+  <strong>Convention Next.js 16</strong>
+  Le fichier s'appelle <code>proxy.ts</code> (non <code>middleware.ts</code>) — convention interne du projet.
+</div>
+
+<ul>
+  <li>Appelle <code>getUser()</code> (validation serveur + refresh automatique du token)</li>
+  <li>Routes publiques : <code>/login</code>, <code>/api/forgot-password</code>, <code>/auth/callback</code>, <code>/api/auth/exchange</code></li>
+  <li>Toute autre route → redirection <code>/login</code> si non authentifié</li>
+</ul>
+
+<h2>2.3 Row Level Security (RLS)</h2>
+
+<p>Migration <code>FIX_RLS_RECURSION_v5.sql</code> — à exécuter dans Supabase Dashboard (en attente).</p>
+
+<ul>
+  <li>Fonction JWT <code>get_auth_user_role()</code> lit <code>auth.jwt() -&gt; 'app_metadata'</code> — <strong>zéro requête DB</strong>, zéro récursion</li>
+  <li>Toutes les politiques RLS référencent cette fonction au lieu de joindre la table <code>users</code></li>
+  <li>Les API Routes admin contournent le RLS via le client <code>supabase-admin</code> (service role key)</li>
+</ul>
+
+<h2>2.4 Rôles et hiérarchie</h2>
+
+<table>
+  <tr><th>Rôle</th><th>Niveau</th><th>Accès résumé</th></tr>
+  <tr><td><code>student</code></td><td>0</td><td>Portail étudiant uniquement — lecture propre dossier + upload</td></tr>
+  <tr><td><code>user</code></td><td>1</td><td>Accès basique (rare, non utilisé en production)</td></tr>
+  <tr><td><code>agent</code></td><td>2</td><td>CRUD étudiants/candidatures, lecture dossiers/universités/frais, communication</td></tr>
+  <tr><td><code>supervisor</code></td><td>3</td><td>= agent + validation paiements + accès performances</td></tr>
+  <tr><td><code>admin</code></td><td>4</td><td>Accès complet sauf stockage. Peut gérer utilisateurs (pas suppression)</td></tr>
+  <tr><td><code>super_admin</code></td><td>5</td><td>Accès total — stockage, suppression utilisateurs, purge démo, RLS bypass</td></tr>
+</table>
+
+<hr class="divider">
+
+<!-- ===================================================================== -->
+<!-- PARTIE 8 — EMAIL & SMS -->
+<!-- ===================================================================== -->
+<h1 id="notif">8. Notifications Email &amp; SMS</h1>
+
+<h2>8.1 Email (Resend)</h2>
+
+<p>Fichier : <code>src/app/lib/emailService.ts</code></p>
+
+<p>L'application utilise <strong>Resend</strong> (v6.12.2) pour l'envoi d'emails transactionnels. Resend fournit une API SMTP moderne et fiable pour les emails d'application.</p>
+
+<table>
+  <tr><th>Fonction</th><th>Déclencheur</th></tr>
+  <tr><td><code>sendPaymentReminder</code></td><td>Cron check-late-payments (retard détecté)</td></tr>
+  <tr><td><code>sendPaymentResultEmail</code></td><td>Validation ou rejet d'un paiement (admin)</td></tr>
+  <tr><td><code>sendPaymentDeclarationEmail</code></td><td>Déclaration de paiement par l'étudiant</td></tr>
+  <tr><td><code>sendDocumentSubmissionEmail</code></td><td>Soumission de documents par l'étudiant</td></tr>
+  <tr><td><code>sendStudentMessageEmail</code></td><td>Message envoyé via le module Communication</td></tr>
+  <tr><td><code>sendWelcomeEmail</code></td><td>Création d'un compte étudiant ou utilisateur</td></tr>
+</table>
+
+<p>Templates HTML responsive — design rouge/blanc, bilingues FR/EN selon <code>getLang(langue)</code>.</p>
+
+<h2>8.2 SMS (smsvas.com)</h2>
+
+<p>Fichier : <code>src/app/lib/smsService.ts</code></p>
+
+<ul>
+  <li>Fonction principale : <code>sendSmsToPhone(phone, message)</code></li>
+  <li>Normalisation automatique numéros camerounais → <code>237XXXXXXXXX</code></li>
+  <li>160 caractères max (SMS simple)</li>
+  <li>Envoyé en <strong>parallèle</strong> de l'email sur tous les événements clés</li>
+</ul>
+
+<h2>8.3 Cron — check-late-payments</h2>
+
+<ul>
+  <li>Route : <code>GET /api/cron/check-late-payments</code> (protégée par <code>x-api-key: CRON_SECRET</code>)</li>
+  <li>Fréquence recommandée : quotidien (00h00 ou 06h00)</li>
+  <li>Actions : détecte paiements en retard → statut <code>retard</code> → email + SMS rappel</li>
+  <li>Délai de grâce + pénalité par jour configurables dans <code>PaymentConfigContext</code></li>
+</ul>
+
+<hr class="divider">
+
+<p style="text-align:center; color:#9ca3af; font-size:9pt; margin-top:48px; padding-top:20px; border-top:1px solid #e5e7eb;">
+  Documentation Technique — Joda Company &nbsp;|&nbsp; Version 2.0 — Mai 2026<br>
+  Pour les manuels utilisateur, voir <code>docs/manuels/</code> &nbsp;|&nbsp; Pour les tests, voir <code>tests/README.md</code>
+</p>
+
+</div>
+</body>
+</html>

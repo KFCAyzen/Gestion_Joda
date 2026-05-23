@@ -798,3 +798,31 @@ Documentation détaillée : [`TESTS_FONCTIONNELS.md`](TESTS_FONCTIONNELS.md) (ca
 | `superadmin@joda.com` | `Joda@Admin9` | `super_admin` |
 | `admin@joda.com` | `Joda@Admin9` | `admin` |
 | `agent@joda.com` | `Joda@Agent9` | `agent` |
+
+---
+
+## 21. DOCUMENTATION
+
+### Manuels utilisateur (`docs/manuels/`)
+
+| Fichier | Audience | Sections | Format |
+|---|---|---|---|
+| `Manuel-Etudiant.html` | Étudiants | 10 sections : connexion, tableau de bord, dossier, documents, paiements, notifications | Word (HTML Office XML) |
+| `Manuel-Agent-Superviseur.html` | Agents & Superviseurs | 12 sections : étudiants, candidatures, dossiers, paiements, universités, performances, workflows | Word (HTML Office XML) |
+| `Manuel-Admin-SuperAdmin.html` | Admins & Super Admins | 15 sections : comptabilité complète, utilisateurs, logs, stockage, sécurité, workflows avancés | Word (HTML Office XML) |
+| `Manuel-Complet.html` | Tous profils | 23 sections en 5 parties : présentation, portail étudiant, gestion agents, administration, référence | Word (HTML Office XML) |
+| `Documentation-Technique.html` | Développeurs & DevOps | 10 parties : architecture, auth, BDD, API, composants, Electron, env, email/SMS, tests, conventions | Word (HTML Office XML) |
+
+### Ouverture dans Microsoft Word
+
+Clic droit sur le fichier `.html` → **Ouvrir avec** → **Microsoft Word**.
+
+### Documentation complémentaire
+
+| Fichier | Contenu |
+|---|---|
+| `TESTS_FONCTIONNELS.md` | Cas de tests métier détaillés |
+| `tests/README.md` | Guide d'utilisation Playwright |
+| `tests/RAPPORT_EXECUTION.md` | Résultats des runs E2E |
+| `tests/TESTIDS.md` | Référence des `data-testid` ajoutés à l'app |
+| `migrations/` | Migrations SQL Supabase (voir section 3.3 de la doc technique) |

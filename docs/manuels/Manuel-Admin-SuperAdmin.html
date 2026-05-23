@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Manuel Administrateur &amp; Super Administrateur - Joda Company</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; margin: 2.5cm; color: #1f2937; line-height: 1.6; }
+  h1 { font-size: 26pt; color: #dc2626; text-align: center; margin-top: 60px; }
+  h2 { font-size: 16pt; color: #dc2626; border-bottom: 2px solid #dc2626; padding-bottom: 4px; margin-top: 30px; page-break-before: always; }
+  h2:first-of-type { page-break-before: avoid; }
+  h3 { font-size: 13pt; color: #374151; margin-top: 20px; }
+  h4 { font-size: 11pt; color: #4b5563; font-weight: bold; margin-top: 15px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  td, th { border: 1px solid #d1d5db; padding: 8px 12px; font-size: 10.5pt; }
+  th { background-color: #dc2626; color: white; font-weight: bold; }
+  tr:nth-child(even) td { background-color: #f9fafb; }
+  .cover { text-align: center; margin-top: 120px; }
+  .cover-subtitle { font-size: 16pt; color: #6b7280; margin-top: 12px; }
+  .cover-version { font-size: 10pt; color: #9ca3af; margin-top: 40px; }
+  .toc-title { font-size: 18pt; color: #dc2626; margin-top: 60px; }
+  .toc li { margin: 6px 0; font-size: 11pt; }
+  .toc a { color: #1f2937; text-decoration: none; }
+  .note { background-color: #fef9c3; padding: 10px 14px; border-left: 4px solid #eab308; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .warning { background-color: #fee2e2; padding: 10px 14px; border-left: 4px solid #dc2626; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .tip { background-color: #dcfce7; padding: 10px 14px; border-left: 4px solid #16a34a; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .step { background-color: #eff6ff; padding: 10px 14px; border-left: 4px solid #2563eb; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .superadmin-only { background-color: #fdf4ff; padding: 10px 14px; border-left: 4px solid #a855f7; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; }
+  .status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 9.5pt; font-weight: bold; }
+  .status-green { background: #dcfce7; color: #16a34a; }
+  .status-yellow { background: #fef9c3; color: #ca8a04; }
+  .status-red { background: #fee2e2; color: #dc2626; }
+  .status-blue { background: #dbeafe; color: #2563eb; }
+  .status-gray { background: #f3f4f6; color: #6b7280; }
+  p { margin: 8px 0; }
+  .page-break { page-break-before: always; }
+  .footer-note { text-align: center; font-size: 9pt; color: #9ca3af; margin-top: 60px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+  .role-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 9pt; font-weight: bold; margin-left: 4px; }
+  .admin-tag { background: #fee2e2; color: #991b1b; }
+  .superadmin-tag { background: #fdf4ff; color: #7e22ce; }
+</style>
+</head>
+<body>
+
+<!-- PAGE DE COUVERTURE -->
+<div class="cover">
+  <p style="font-size: 14pt; color: #6b7280; letter-spacing: 2px; text-transform: uppercase;">JODA COMPANY</p>
+  <h1>Manuel Utilisateur<br>Administrateur &amp; Super Administrateur</h1>
+  <p class="cover-subtitle">Guide complet — Administration et gestion système</p>
+  <br><br>
+  <p style="font-size: 11pt; color: #4b5563;">Agence de Gestion des Bourses d'Études en Chine</p>
+  <p class="cover-version">Version 1.0 — Mai 2026<br>CONFIDENTIEL — Usage exclusif des administrateurs Joda Company</p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- TABLE DES MATIERES -->
+<p class="toc-title"><strong>Table des Matières</strong></p>
+<ol class="toc">
+  <li><a href="#intro">Introduction — Rôles Admin et Super Admin</a></li>
+  <li><a href="#connexion">Connexion et navigation</a></li>
+  <li><a href="#tableau-de-bord">Tableau de bord opérationnel</a></li>
+  <li><a href="#etudiants">Gestion des étudiants</a></li>
+  <li><a href="#candidatures">Gestion des candidatures</a></li>
+  <li><a href="#dossiers">Gestion des dossiers</a></li>
+  <li><a href="#paiements">Gestion des paiements</a></li>
+  <li><a href="#universites">Gestion des universités</a></li>
+  <li><a href="#comptabilite">Comptabilité — Livre comptable complet</a></li>
+  <li><a href="#utilisateurs">Gestion des utilisateurs et permissions</a></li>
+  <li><a href="#logs">Logs d'activités — Traçabilité complète</a></li>
+  <li><a href="#stockage">Stockage et monitoring</a></li>
+  <li><a href="#performances">Performances des agents</a></li>
+  <li><a href="#securite">Sécurité et bonnes pratiques</a></li>
+  <li><a href="#workflows">Workflows administratifs courants</a></li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- SECTION 1 -->
+<h2 id="intro">1. Introduction — Rôles Admin et Super Admin</h2>
+
+<h3>1.1 Présentation</h3>
+<p>Ce manuel est destiné aux <strong>Administrateurs</strong> et <strong>Super Administrateurs</strong> de Joda Company. En plus de toutes les fonctionnalités accessibles aux agents et superviseurs, vous avez accès à la gestion des utilisateurs, la comptabilité complète, les logs d'activité et la surveillance du système.</p>
+
+<h3>1.2 Hiérarchie des rôles</h3>
+<table>
+  <tr><th>Rôle</th><th>Niveau</th><th>Accès</th></tr>
+  <tr><td>Étudiant</td><td>0</td><td>Portail étudiant uniquement</td></tr>
+  <tr><td>Utilisateur</td><td>1</td><td>Lecture basique</td></tr>
+  <tr><td>Agent</td><td>2</td><td>Opérations courantes</td></tr>
+  <tr><td>Superviseur</td><td>3</td><td>Validations + suppression</td></tr>
+  <tr><td><strong>Admin</strong></td><td>4</td><td>Gestion complète sauf Super Admin</td></tr>
+  <tr><td><strong>Super Admin</strong></td><td>5</td><td>Accès total sans restriction</td></tr>
+</table>
+
+<h3>1.3 Différences Admin vs Super Admin</h3>
+<table>
+  <tr><th>Fonctionnalité</th><th>Admin</th><th>Super Admin</th></tr>
+  <tr><td>Toutes opérations agents/superviseurs</td><td>Oui</td><td>Oui</td></tr>
+  <tr><td>Comptabilité complète (validation sorties)</td><td>Oui</td><td>Oui</td></tr>
+  <tr><td>Gestion des utilisateurs</td><td>Oui (sauf super_admin)</td><td>Oui (tous)</td></tr>
+  <tr><td>Supprimer un admin</td><td>Non</td><td>Oui</td></tr>
+  <tr><td>Créer un admin ou super_admin</td><td>Non</td><td>Oui</td></tr>
+  <tr><td>Logs d'activité complets</td><td>Oui</td><td>Oui</td></tr>
+  <tr><td>Stockage et monitoring</td><td>Oui</td><td>Oui</td></tr>
+  <tr><td>Exporter comptabilité (PDF)</td><td>Oui</td><td>Oui</td></tr>
+</table>
+
+<!-- SECTION 2 -->
+<h2 id="connexion">2. Connexion et Navigation</h2>
+
+<h3>2.1 Connexion</h3>
+<div class="step">
+  <ol>
+    <li>Ouvrez l'application Joda Company</li>
+    <li>Saisissez votre <strong>nom d'utilisateur</strong> et votre <strong>mot de passe</strong></li>
+    <li>Cliquez sur <strong>« Se connecter »</strong></li>
+    <li>Vous arrivez sur le tableau de bord administrateur</li>
+  </ol>
+</div>
+
+<h3>2.2 Menu de navigation complet</h3>
+<p>En tant qu'admin, vous voyez tous les menus disponibles dans l'application :</p>
+<table>
+  <tr><th>Menu</th><th>Module</th><th>Accès</th></tr>
+  <tr><td>Tableau de bord</td><td>Vue opérationnelle</td><td>Tous</td></tr>
+  <tr><td>Candidatures</td><td>Gestion candidatures</td><td>Agent+</td></tr>
+  <tr><td>Étudiants</td><td>Fiches étudiants</td><td>Agent+</td></tr>
+  <tr><td>Dossiers</td><td>Dossiers de bourse</td><td>Tous</td></tr>
+  <tr><td>Universités</td><td>Catalogue universités</td><td>Supervisor+</td></tr>
+  <tr><td>Frais</td><td>Paiements</td><td>Agent+</td></tr>
+  <tr><td>Comptabilité</td><td>Livre comptable</td><td>Supervisor+</td></tr>
+  <tr><td>Utilisateurs</td><td>Comptes et permissions</td><td>Admin+</td></tr>
+  <tr><td>Logs activités</td><td>Audit trail</td><td>Admin+</td></tr>
+  <tr><td>Stockage</td><td>Monitoring système</td><td>Admin+</td></tr>
+  <tr><td>Performances</td><td>Statistiques agents</td><td>Tous</td></tr>
+  <tr><td>Notifications</td><td>Alertes</td><td>Tous</td></tr>
+</table>
+
+<!-- SECTION 3 -->
+<h2 id="tableau-de-bord">3. Tableau de Bord Opérationnel</h2>
+
+<h3>3.1 Présentation</h3>
+<p>Le tableau de bord affiche en temps réel l'état opérationnel de Joda Company. Toutes les actions de l'équipe y sont visibles et agrégées.</p>
+
+<h3>3.2 Statistiques clés (partie haute)</h3>
+<table>
+  <tr><th>Carte</th><th>Contenu</th><th>Usage admin</th></tr>
+  <tr><td>À traiter</td><td>Dossiers en attente ou document manquant</td><td>Identifier les goulets d'étranglement</td></tr>
+  <tr><td>Dossiers ouverts</td><td>Total + variation mensuelle</td><td>Suivi de l'activité globale</td></tr>
+  <tr><td>Encaissé ce mois</td><td>CA mensuel + % vs mois précédent</td><td>Suivi financier en temps réel</td></tr>
+  <tr><td>Flux 7 jours</td><td>Graphique candidatures/jour</td><td>Identifier les pics d'activité</td></tr>
+  <tr><td>Top 3 universités</td><td>Universités les plus demandées</td><td>Orientation stratégique</td></tr>
+</table>
+
+<h3>3.3 Journal d'activités</h3>
+<p>Toutes les actions de tous les utilisateurs sont listées en temps réel. Utilisez les filtres pour analyser l'activité :</p>
+<ul>
+  <li><strong>Période</strong> : Aujourd'hui, Hier, 7 jours, Ce mois</li>
+  <li><strong>Recherche</strong> : par description ou nom d'utilisateur</li>
+</ul>
+
+<div class="note">
+  <strong>Note Admin :</strong> En tant qu'admin, vous voyez les activités de <strong>tous</strong> les membres de l'équipe, y compris les agents et superviseurs. Cela vous permet de surveiller la conformité des opérations.
+</div>
+
+<!-- SECTION 4 -->
+<h2 id="etudiants">4. Gestion des Étudiants</h2>
+
+<p>En tant qu'admin, vous avez accès à toutes les fonctionnalités de l'agent et du superviseur, plus :</p>
+<ul>
+  <li><strong>Supprimer</strong> un étudiant (suppression complète : dossier, paiements, compte)</li>
+  <li>Accès complet à toutes les fiches sans restriction</li>
+</ul>
+
+<div class="warning">
+  <strong>Attention :</strong> La suppression d'un étudiant est <strong>irréversible</strong>. Elle efface :
+  <ul>
+    <li>Son compte utilisateur (accès portail)</li>
+    <li>Ses candidatures et dossiers</li>
+    <li>Ses paiements et écritures comptables liées</li>
+    <li>Ses documents uploadés</li>
+  </ul>
+  Une confirmation explicite est demandée avant suppression.
+</div>
+
+<p>Pour toutes les autres fonctionnalités (création, modification, inscription cours, reçus), référez-vous au <strong>Manuel Agent &amp; Superviseur — Section 4</strong>.</p>
+
+<!-- SECTION 5 -->
+<h2 id="candidatures">5. Gestion des Candidatures</h2>
+
+<p>Accès complet : créer, modifier, supprimer, valider toutes les candidatures sans restriction.</p>
+<p>Pour les détails opérationnels, référez-vous au <strong>Manuel Agent &amp; Superviseur — Section 5</strong>.</p>
+
+<!-- SECTION 6 -->
+<h2 id="dossiers">6. Gestion des Dossiers</h2>
+
+<p>Accès complet : créer, modifier, changer tous les statuts (y compris Admission validée, Terminé), valider/rejeter tous les documents, supprimer des dossiers.</p>
+<p>Pour les détails opérationnels, référez-vous au <strong>Manuel Agent &amp; Superviseur — Section 6</strong>.</p>
+
+<!-- SECTION 7 -->
+<h2 id="paiements">7. Gestion des Paiements</h2>
+
+<p>Accès complet : enregistrer, valider, rejeter, supprimer des paiements. Générer les reçus PDF et Word.</p>
+<p>En tant qu'admin, vous pouvez également <strong>supprimer</strong> des paiements (action réservée aux admins uniquement).</p>
+<p>Pour les détails opérationnels, référez-vous au <strong>Manuel Agent &amp; Superviseur — Section 7</strong>.</p>
+
+<!-- SECTION 8 -->
+<h2 id="universites">8. Gestion des Universités</h2>
+
+<p>Accès complet : créer, modifier, supprimer des universités. Activer/désactiver.</p>
+<p>Pour les détails opérationnels, référez-vous au <strong>Manuel Agent &amp; Superviseur — Section 8</strong>.</p>
+
+<!-- SECTION 9 -->
+<h2 id="comptabilite">9. Comptabilité — Livre Comptable Complet</h2>
+
+<h3>9.1 Accès</h3>
+<p>Menu latéral → <strong>Comptabilité</strong></p>
+
+<h3>9.2 Vue d'ensemble</h3>
+<p>Le livre comptable consolide toutes les entrées (revenus) et sorties (dépenses) de Joda Company. En tant qu'admin, vous pouvez créer, modifier, valider et exporter les écritures comptables.</p>
+
+<h3>9.3 Entrées comptables (Revenus)</h3>
+<p>Les entrées sont <strong>créées automatiquement</strong> lors de la validation d'un paiement étudiant. Vous n'avez généralement pas à les créer manuellement.</p>
+
+<table>
+  <tr><th>Type d'entrée</th><th>Origine</th></tr>
+  <tr><td>paiement_procedure</td><td>Validation d'un paiement de type bourse/inscription</td></tr>
+  <tr><td>paiement_cours</td><td>Validation d'un paiement de type mandarin/anglais</td></tr>
+  <tr><td>revenus_divers</td><td>Entrée manuelle pour revenus exceptionnels</td></tr>
+</table>
+
+<h3>9.4 Sorties comptables (Dépenses)</h3>
+<p>Les sorties sont créées manuellement pour enregistrer les dépenses de l'entreprise.</p>
+
+<h4>Créer une sortie (dépense)</h4>
+<div class="step">
+  <ol>
+    <li>Dans le module Comptabilité, cliquez sur <strong>« Nouvelle dépense »</strong></li>
+    <li>Sélectionnez la <strong>catégorie</strong> :
+      <ul>
+        <li>Loyer</li>
+        <li>Salaires</li>
+        <li>Fonctionnement</li>
+        <li>Matériels</li>
+        <li>Fournitures</li>
+        <li>Transports</li>
+        <li>Communication</li>
+        <li>Partenaires</li>
+        <li>Divers</li>
+      </ul>
+    </li>
+    <li>Saisissez le <strong>montant</strong> en FCFA</li>
+    <li>Saisissez la <strong>date</strong> de la dépense</li>
+    <li>Rédigez une <strong>description</strong> claire</li>
+    <li>Optionnellement, uploadez un <strong>justificatif</strong> (facture, bon de caisse, etc.) — PDF ou image, max 10 MB</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+    <li>La dépense apparaît en rouge dans le livre avec le statut « Non validée »</li>
+  </ol>
+</div>
+
+<h4>Valider une sortie</h4>
+<div class="step">
+  <ol>
+    <li>Trouvez la dépense dans le livre comptable (fond rouge = non validée)</li>
+    <li>Vérifiez la description et le justificatif si disponible</li>
+    <li>Cliquez sur <strong>« Valider »</strong></li>
+    <li>La dépense est marquée comme validée avec votre nom et la date</li>
+    <li>Elle apparaît grisée dans le livre (validée)</li>
+  </ol>
+</div>
+
+<h3>9.5 Vue du livre comptable</h3>
+<p>Le livre affiche un tableau chronologique avec :</p>
+<table>
+  <tr><th>Colonne</th><th>Description</th></tr>
+  <tr><td>Heure</td><td>Date et heure de l'opération</td></tr>
+  <tr><td>Description</td><td>Nature de l'opération</td></tr>
+  <tr><td>Catégorie</td><td>Type d'opération</td></tr>
+  <tr><td>Montant</td><td>+ (entrée) ou - (sortie) en FCFA</td></tr>
+  <tr><td>Validateur</td><td>Nom de l'agent qui a validé (sorties)</td></tr>
+</table>
+
+<h3>9.6 Filtres</h3>
+<ul>
+  <li>Par <strong>période</strong> : sélecteur date de début et date de fin</li>
+  <li>Par <strong>type/catégorie</strong> : paiements, cours, dépenses diverses, etc.</li>
+</ul>
+
+<h3>9.7 Export PDF</h3>
+<div class="step">
+  <strong>Générer un rapport comptable PDF :</strong>
+  <ol>
+    <li>Appliquez les filtres souhaités (période, catégorie)</li>
+    <li>Cliquez sur <strong>« Exporter PDF »</strong></li>
+    <li>Un rapport formaté est généré avec :
+      <ul>
+        <li>En-tête Joda Company (logo, coordonnées)</li>
+        <li>Tableau des entrées et sorties</li>
+        <li>Totaux entrées / sorties</li>
+        <li>Balance (entrées - sorties)</li>
+        <li>Date d'export et période couverte</li>
+      </ul>
+    </li>
+    <li>Le fichier se télécharge automatiquement</li>
+  </ol>
+</div>
+
+<h3>9.8 Réconciliation quotidienne</h3>
+<p>Le module affiche en haut la somme des entrées et sorties <strong>du jour</strong> pour faciliter la réconciliation quotidienne de caisse.</p>
+
+<!-- SECTION 10 -->
+<h2 id="utilisateurs">10. Gestion des Utilisateurs et Permissions</h2>
+
+<h3>10.1 Accès</h3>
+<p>Menu latéral → <strong>Utilisateurs</strong></p>
+
+<h3>10.2 Vue liste des utilisateurs</h3>
+<p>La page affiche tous les comptes utilisateurs avec :</p>
+<ul>
+  <li>Nom, prénom, nom d'utilisateur</li>
+  <li>Email</li>
+  <li>Rôle (badge coloré)</li>
+  <li>Statut actif/inactif</li>
+  <li>Actions disponibles</li>
+</ul>
+<p>Utilisez la recherche (par nom/username/email) ou le filtre par rôle pour retrouver un utilisateur.</p>
+
+<h3>10.3 Créer un utilisateur</h3>
+<div class="step">
+  <ol>
+    <li>Cliquez sur <strong>« Nouvel utilisateur »</strong></li>
+    <li>Remplissez les champs :
+      <ul>
+        <li><strong>Prénom et nom</strong> (obligatoires)</li>
+        <li><strong>Nom d'utilisateur</strong> — doit être unique dans le système</li>
+        <li><strong>Email</strong> — adresse email professionnelle, doit être unique</li>
+        <li><strong>Téléphone</strong></li>
+        <li><strong>Rôle</strong> — sélectionnez selon la responsabilité</li>
+        <li><strong>Mot de passe temporaire</strong> — minimum 8 caractères</li>
+      </ul>
+    </li>
+    <li>Cliquez sur <strong>« Créer »</strong></li>
+    <li>Le compte est créé avec le flag <em>« Doit changer le mot de passe »</em> — l'utilisateur sera forcé de le changer à la 1ère connexion</li>
+    <li>Communiquez les identifiants à l'utilisateur de façon sécurisée</li>
+  </ol>
+</div>
+
+<div class="warning">
+  <strong>Règle de création :</strong> Un admin ne peut créer que des comptes de niveau inférieur (agent, supervisor, user, student). Seul un super_admin peut créer un compte admin ou super_admin.
+</div>
+
+<h3>10.4 Modifier un utilisateur</h3>
+<div class="step">
+  <ol>
+    <li>Cliquez sur l'icône <strong>crayon</strong> de l'utilisateur</li>
+    <li>Modifiez nom, email, téléphone ou rôle selon besoin</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+  </ol>
+</div>
+
+<h3>10.5 Réinitialiser le mot de passe d'un utilisateur</h3>
+<div class="step">
+  <ol>
+    <li>Sur la ligne de l'utilisateur, cliquez sur <strong>« Réinitialiser mot de passe »</strong></li>
+    <li>Un email de réinitialisation est automatiquement envoyé à l'adresse de l'utilisateur</li>
+    <li>L'utilisateur suit le lien reçu par email pour définir son nouveau mot de passe</li>
+  </ol>
+</div>
+
+<div class="note">
+  <strong>Note :</strong> La réinitialisation envoie un lien sécurisé (valable 24h) vers l'email enregistré dans le profil de l'utilisateur.
+</div>
+
+<h3>10.6 Activer / Désactiver un compte</h3>
+<p>Un compte désactivé ne peut plus se connecter à l'application. L'historique et les données sont conservés. Utile pour les départs d'employés sans suppression définitive des données.</p>
+<div class="step">
+  <ol>
+    <li>Cliquez sur le <strong>bouton bascule Actif/Inactif</strong> de l'utilisateur</li>
+    <li>Confirmez l'action dans la boîte de dialogue</li>
+  </ol>
+</div>
+
+<h3>10.7 Supprimer un utilisateur</h3>
+<div class="warning">
+  <strong>Action irréversible :</strong> La suppression efface le compte définitivement. Les données historiques (paiements validés par cet utilisateur, logs) sont conservées mais le compte ne peut pas être restauré. Préférez désactiver le compte plutôt que de le supprimer.
+</div>
+<p><strong>Règles de suppression :</strong></p>
+<ul>
+  <li>Un admin ne peut pas supprimer un autre admin ou un super_admin</li>
+  <li>Un utilisateur ne peut pas supprimer son propre compte</li>
+  <li>Seul un super_admin peut supprimer un compte admin</li>
+</ul>
+
+<h3>10.8 Gestion des permissions granulaires</h3>
+<p>Au-delà des permissions par défaut du rôle, vous pouvez personnaliser les permissions de chaque utilisateur.</p>
+
+<h4>Permissions disponibles par module :</h4>
+<table>
+  <tr><th>Module</th><th>Permissions configurables</th></tr>
+  <tr><td>Étudiants</td><td>Voir, Créer, Modifier, Supprimer</td></tr>
+  <tr><td>Candidatures</td><td>Voir, Créer, Modifier, Supprimer</td></tr>
+  <tr><td>Dossiers</td><td>Voir, Créer, Modifier, Supprimer, Valider</td></tr>
+  <tr><td>Universités</td><td>Voir, Créer, Modifier, Supprimer</td></tr>
+  <tr><td>Paiements</td><td>Voir, Créer, Modifier, Supprimer, Valider</td></tr>
+  <tr><td>Comptabilité</td><td>Voir, Créer, Modifier, Supprimer, Valider, Exporter</td></tr>
+  <tr><td>Utilisateurs</td><td>Voir, Créer, Modifier, Supprimer, Gérer permissions</td></tr>
+  <tr><td>Rapports</td><td>Voir, Exporter</td></tr>
+  <tr><td>Système</td><td>Logs, Monitoring</td></tr>
+</table>
+
+<h4>Modifier les permissions d'un utilisateur :</h4>
+<div class="step">
+  <ol>
+    <li>Sur la ligne de l'utilisateur, cliquez sur <strong>« Gérer les permissions »</strong></li>
+    <li>Le panneau des permissions s'ouvre</li>
+    <li>Les permissions par défaut de son rôle sont indiquées</li>
+    <li>Cochez ou décochez les permissions personnalisées</li>
+    <li>Les modifications sont sauvegardées en temps réel (pas de bouton « Enregistrer » séparé)</li>
+  </ol>
+</div>
+
+<div class="tip">
+  <strong>Usage recommandé :</strong> Les permissions granulaires sont utiles pour des cas spéciaux (ex : un agent qui peut valider les documents pour un dossier précis, ou un superviseur qui ne doit pas voir la comptabilité). Pour les cas standard, les permissions par défaut du rôle suffisent.
+</div>
+
+<!-- SECTION 11 -->
+<h2 id="logs">11. Logs d'Activités — Traçabilité Complète</h2>
+
+<h3>11.1 Accès</h3>
+<p>Menu latéral → <strong>Logs d'activités</strong></p>
+
+<h3>11.2 Présentation</h3>
+<p>Le module Logs d'activités est votre outil d'audit. Chaque action effectuée dans l'application est enregistrée avec :</p>
+<ul>
+  <li><strong>Qui</strong> — utilisateur et rôle</li>
+  <li><strong>Quoi</strong> — type d'action et description</li>
+  <li><strong>Quand</strong> — date et heure précises</li>
+  <li><strong>Où</strong> — entité concernée (étudiant ID, dossier ID, etc.)</li>
+  <li><strong>Métadonnées</strong> — ancien et nouveau statut, montants, etc.</li>
+</ul>
+
+<h3>11.3 Types d'activités enregistrées</h3>
+<table>
+  <tr><th>Catégorie</th><th>Actions suivies</th><th>Icône couleur</th></tr>
+  <tr><td>Authentification</td><td>login, logout, changement mot de passe, réinitialisation</td><td>Indigo</td></tr>
+  <tr><td>Étudiants</td><td>creation, modification, suppression</td><td>Vert (créa), Bleu (modif), Rouge (suppr)</td></tr>
+  <tr><td>Candidatures</td><td>création, modification, changement statut, suppression</td><td>Vert/Bleu/Violet/Rouge</td></tr>
+  <tr><td>Dossiers</td><td>modification, changement statut, suppression</td><td>Bleu/Violet/Rouge</td></tr>
+  <tr><td>Documents</td><td>upload, validation, rejet</td><td>Teal (upload), Vert (valid), Rose (rejet)</td></tr>
+  <tr><td>Paiements</td><td>création, modification, validation, suppression</td><td>Vert/Bleu/Vert foncé/Rouge</td></tr>
+  <tr><td>Comptabilité</td><td>entrée comptable, dépense, validation</td><td>Vert/Orange/Vert foncé</td></tr>
+  <tr><td>Utilisateurs</td><td>création, suppression, changement permissions</td><td>Vert/Rouge/Bleu</td></tr>
+  <tr><td>Universités</td><td>création, modification, suppression</td><td>Vert/Bleu/Rouge</td></tr>
+</table>
+
+<h3>11.4 Filtres avancés</h3>
+<ul>
+  <li><strong>Type d'activité</strong> : sélectionner dans la liste déroulante</li>
+  <li><strong>Utilisateur</strong> : filtrer par membre de l'équipe</li>
+  <li><strong>Entité</strong> : filtrer par type (étudiant, dossier, paiement, etc.)</li>
+  <li><strong>Période</strong> : date de début et date de fin</li>
+  <li>Pagination : 25 logs par page</li>
+</ul>
+
+<h3>11.5 Lecture d'un log</h3>
+<table>
+  <tr><th>Information</th><th>Localisation</th></tr>
+  <tr><td>Icône colorée</td><td>Type d'action (créa/modif/suppression/etc.)</td></tr>
+  <tr><td>Nom utilisateur + rôle</td><td>Auteur de l'action</td></tr>
+  <tr><td>Description</td><td>Texte lisible (ex : « Paiement validé pour Dupont Jean »)</td></tr>
+  <tr><td>Date/heure</td><td>À droite de chaque ligne</td></tr>
+  <tr><td>Métadonnées</td><td>Expandable : ancien statut → nouveau statut, montant, etc.</td></tr>
+</table>
+
+<h3>11.6 Cas d'usage courants des logs</h3>
+<ul>
+  <li><strong>Audit d'un paiement contesté</strong> : rechercher par étudiant ID et type « payment_validate »</li>
+  <li><strong>Vérifier qui a changé un statut</strong> : rechercher par dossier ID et type « dossier_status_change »</li>
+  <li><strong>Surveiller les connexions</strong> : filtrer par type « login »/« logout »</li>
+  <li><strong>Tracer une suppression</strong> : filtrer par types « *_delete »</li>
+</ul>
+
+<!-- SECTION 12 -->
+<h2 id="stockage">12. Stockage et Monitoring</h2>
+
+<h3>12.1 Accès</h3>
+<p>Menu latéral → <strong>Stockage</strong></p>
+
+<h3>12.2 Présentation</h3>
+<p>Le module Stockage vous donne une vue sur l'utilisation des ressources de la base de données et du stockage de fichiers (Supabase).</p>
+
+<h3>12.3 Statistiques de la base de données</h3>
+<table>
+  <tr><th>Compteur</th><th>Description</th></tr>
+  <tr><td>Total étudiants</td><td>Nombre d'étudiants enregistrés</td></tr>
+  <tr><td>Total candidatures</td><td>Nombre de candidatures créées</td></tr>
+  <tr><td>Total documents uploadés</td><td>Nombre de fichiers stockés</td></tr>
+  <tr><td>Total universités</td><td>Universités dans le catalogue</td></tr>
+  <tr><td>Total utilisateurs</td><td>Comptes utilisateurs actifs et inactifs</td></tr>
+</table>
+
+<h3>12.4 Statistiques de stockage fichiers</h3>
+<table>
+  <tr><th>Métrique</th><th>Description</th></tr>
+  <tr><td>Nombre total de fichiers</td><td>Documents et justificatifs stockés</td></tr>
+  <tr><td>Taille totale utilisée</td><td>En MB — à surveiller</td></tr>
+  <tr><td>Taille moyenne par fichier</td><td>Indicateur d'optimisation</td></tr>
+  <tr><td>Plus grand fichier</td><td>Identifier les fichiers anormalement lourds</td></tr>
+</table>
+
+<h3>12.5 Limites et alertes</h3>
+<table>
+  <tr><th>Seuil</th><th>Couleur</th><th>Action recommandée</th></tr>
+  <tr><td>Moins de 80% (400 MB)</td><td>Vert</td><td>Aucune action requise</td></tr>
+  <tr><td>80-95% (400-475 MB)</td><td>Orange</td><td>Planifier un nettoyage</td></tr>
+  <tr><td>Plus de 95% (475+ MB)</td><td>Rouge</td><td>Nettoyage urgent ou upgrade</td></tr>
+</table>
+
+<div class="note">
+  <strong>Limite Supabase (plan gratuit) :</strong> 500 MB de stockage de fichiers. Si vous approchez de cette limite, contactez le prestataire technique pour envisager un upgrade du plan Supabase.
+</div>
+
+<h3>12.6 Actions de maintenance</h3>
+<ul>
+  <li>Identifier les fichiers anciens ou non utilisés</li>
+  <li>Nettoyer les doublons de documents</li>
+  <li>Archiver les dossiers terminés depuis plus de 2 ans</li>
+</ul>
+
+<!-- SECTION 13 -->
+<h2 id="performances">13. Performances des Agents</h2>
+
+<h3>13.1 Accès</h3>
+<p>Menu latéral → <strong>Performances</strong></p>
+
+<h3>13.2 Classement des agents</h3>
+<p>L'onglet <strong>« Par agent »</strong> affiche un classement basé sur un score composite 0-100 :</p>
+<table>
+  <tr><th>Axe de score</th><th>Poids relatif</th><th>Description</th></tr>
+  <tr><td>Score revenus</td><td>Fort</td><td>CA encaissé relatif au meilleur agent de la période</td></tr>
+  <tr><td>Score activité</td><td>Moyen</td><td>Nombre d'actions dans les logs (réactivité)</td></tr>
+  <tr><td>Score rapidité</td><td>Moyen</td><td>Délai moyen de validation des paiements</td></tr>
+  <tr><td>Score dossiers</td><td>Moyen</td><td>Nombre de dossiers gérés</td></tr>
+</table>
+
+<h3>13.3 Lecture des cartes agents</h3>
+<p>Chaque carte agent affiche :</p>
+<ul>
+  <li>Score global et position dans le classement</li>
+  <li>Badge de rôle</li>
+  <li>Montant encaissé sur la période</li>
+  <li>Nombre de dossiers actifs</li>
+  <li>Statuts à valider / en attente / en retard</li>
+  <li>Pénalités appliquées</li>
+  <li>Détail journalier (expandable)</li>
+</ul>
+
+<h3>13.4 Vue journalière</h3>
+<p>L'onglet <strong>« Vue journalière »</strong> agrège les performances par jour :</p>
+<ul>
+  <li>Montant total encaissé par jour</li>
+  <li>Nombre de paiements validés</li>
+  <li>Tendance (hausse/baisse/stable) vs jour précédent</li>
+</ul>
+
+<h3>13.5 Utilisation managériale</h3>
+<div class="tip">
+  <strong>Conseil :</strong> Utilisez les performances pour :
+  <ul>
+    <li>Identifier les agents les plus actifs pour les valoriser</li>
+    <li>Détecter les agents avec beaucoup de paiements en retard (à accompagner)</li>
+    <li>Comparer les performances sur différentes périodes</li>
+    <li>Préparer les évaluations mensuelles de l'équipe</li>
+  </ul>
+</div>
+
+<!-- SECTION 14 -->
+<h2 id="securite">14. Sécurité et Bonnes Pratiques</h2>
+
+<h3>14.1 Gestion des accès</h3>
+<ul>
+  <li>Changez régulièrement votre mot de passe admin (recommandé : tous les 3 mois)</li>
+  <li>Ne communiquez jamais votre mot de passe admin à qui que ce soit</li>
+  <li>Désactivez immédiatement les comptes des employés qui quittent l'entreprise</li>
+  <li>N'accordez que les permissions strictement nécessaires (principe du moindre privilège)</li>
+</ul>
+
+<h3>14.2 Surveillance des logs</h3>
+<ul>
+  <li>Vérifiez régulièrement les logs de connexion pour détecter des accès inhabituels</li>
+  <li>En cas d'anomalie, désactivez immédiatement le compte concerné</li>
+  <li>Conservez une copie des rapports comptables PDF chaque mois</li>
+</ul>
+
+<h3>14.3 Données sensibles</h3>
+<ul>
+  <li>Les données étudiants sont confidentielles — limitez l'accès au minimum nécessaire</li>
+  <li>Ne partagez pas les exports PDF de la comptabilité en dehors de l'équipe direction</li>
+  <li>Les logs d'activité ne doivent pas être diffusés aux agents</li>
+</ul>
+
+<h3>14.4 Sauvegarde</h3>
+<div class="warning">
+  <strong>Important :</strong> La base de données est hébergée sur Supabase (cloud). Supabase effectue des sauvegardes automatiques quotidiennes. En cas de problème majeur, contactez le prestataire technique Joda Company.
+</div>
+
+<h3>14.5 Application desktop et mode hors-ligne</h3>
+<p>L'application desktop synchronise les données entre le cloud Supabase et une base SQLite locale. En cas de coupure Internet :</p>
+<ul>
+  <li>Les données locales restent accessibles</li>
+  <li>Les modifications locales sont synchronisées dès le retour de la connexion</li>
+  <li>Uploads de documents et notifications nécessitent une connexion active</li>
+</ul>
+
+<!-- SECTION 15 -->
+<h2 id="workflows">15. Workflows Administratifs Courants</h2>
+
+<h3>15.1 Création d'un nouveau membre de l'équipe</h3>
+<div class="step">
+  <ol>
+    <li>Menu Utilisateurs → <strong>« Nouvel utilisateur »</strong></li>
+    <li>Remplir : prénom, nom, email professionnel, téléphone</li>
+    <li>Définir le rôle approprié (agent ou superviseur pour le terrain)</li>
+    <li>Définir un mot de passe temporaire fort</li>
+    <li>Créer le compte → le flag « doit changer le mot de passe » est activé</li>
+    <li>Communiquer les identifiants de façon sécurisée (de vive voix ou message sécurisé)</li>
+    <li>Si besoin, configurer des permissions personnalisées (Gérer les permissions)</li>
+    <li>Vérifier dans les logs le premier login de l'employé</li>
+  </ol>
+</div>
+
+<h3>15.2 Clôture mensuelle comptable</h3>
+<div class="step">
+  <ol>
+    <li>Module Comptabilité → filtrer sur le mois écoulé</li>
+    <li>Vérifier que toutes les sorties du mois sont <strong>validées</strong> (sinon les valider)</li>
+    <li>Vérifier la cohérence des entrées (liées aux paiements validés)</li>
+    <li>Cliquer sur <strong>« Exporter PDF »</strong> pour le rapport du mois</li>
+    <li>Sauvegarder le rapport dans votre archive mensuelle</li>
+    <li>Comparer avec les paiements validés dans le module Frais</li>
+  </ol>
+</div>
+
+<h3>15.3 Départ d'un employé</h3>
+<div class="step">
+  <ol>
+    <li>Module Utilisateurs → trouver le compte de l'employé</li>
+    <li><strong>Désactiver</strong> immédiatement le compte (le toggle Actif/Inactif)</li>
+    <li>Si l'employé avait des dossiers en cours, les <strong>réassigner</strong> à un autre agent</li>
+    <li>Vérifier dans les logs d'activité les dernières actions de l'employé</li>
+    <li>Conserver le compte désactivé pour l'historique (ne pas supprimer)</li>
+  </ol>
+</div>
+
+<h3>15.4 Audit d'une contestation de paiement</h3>
+<div class="step">
+  <ol>
+    <li>Module Logs d'activités</li>
+    <li>Filtrer par type « payment_validate » et par étudiant concerné</li>
+    <li>Identifier le log de validation : qui a validé, quand, quel montant</li>
+    <li>Si disponible, consulter la preuve de paiement attachée (module Frais → voir la preuve)</li>
+    <li>Si une erreur est confirmée, corriger via le module Frais (modifier ou annuler le paiement)</li>
+    <li>Documenter la correction dans les notes internes du dossier</li>
+  </ol>
+</div>
+
+<h3>15.5 Monitoring hebdomadaire recommandé</h3>
+<table>
+  <tr><th>Fréquence</th><th>Action</th><th>Module</th></tr>
+  <tr><td>Quotidien</td><td>Consulter le tableau de bord — vérifier la section « À traiter »</td><td>Tableau de bord</td></tr>
+  <tr><td>Quotidien</td><td>Valider les paiements déclarés par les étudiants</td><td>Frais → À valider</td></tr>
+  <tr><td>Hebdomadaire</td><td>Valider les sorties comptables non validées</td><td>Comptabilité</td></tr>
+  <tr><td>Hebdomadaire</td><td>Revoir les performances des agents</td><td>Performances → 7 jours</td></tr>
+  <tr><td>Mensuel</td><td>Exporter le rapport comptable du mois</td><td>Comptabilité → Export PDF</td></tr>
+  <tr><td>Mensuel</td><td>Vérifier l'utilisation du stockage</td><td>Stockage</td></tr>
+  <tr><td>Trimestriel</td><td>Revoir les permissions utilisateurs</td><td>Utilisateurs</td></tr>
+</table>
+
+<div class="footer-note">
+  Manuel Administrateur &amp; Super Administrateur — Joda Company — Version 1.0 — Mai 2026<br>
+  CONFIDENTIEL — Usage exclusif de la direction et administration Joda Company — Ne pas diffuser.
+</div>
+
+</body>
+</html>
