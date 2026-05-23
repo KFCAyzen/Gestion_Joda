@@ -807,10 +807,10 @@ Documentation détaillée : [`TESTS_FONCTIONNELS.md`](TESTS_FONCTIONNELS.md) (ca
 
 | Fichier | Audience | Sections | Format |
 |---|---|---|---|
-| `Manuel-Etudiant.html` | Étudiants | 10 sections : connexion, tableau de bord, dossier, documents, paiements, notifications | Word (HTML Office XML) |
-| `Manuel-Agent-Superviseur.html` | Agents & Superviseurs | 12 sections : étudiants, candidatures, dossiers, paiements, universités, performances, workflows | Word (HTML Office XML) |
-| `Manuel-Admin-SuperAdmin.html` | Admins & Super Admins | 15 sections : comptabilité complète, utilisateurs, logs, stockage, sécurité, workflows avancés | Word (HTML Office XML) |
-| `Manuel-Complet.html` | Tous profils | 23 sections en 5 parties : présentation, portail étudiant, gestion agents, administration, référence | Word (HTML Office XML) |
+| `Manuel-Etudiant.html` | Étudiants | 11 sections : connexion (+ mot de passe oublié), tableau de bord, dossier, documents, paiements, notifications, messagerie | Word (HTML Office XML) |
+| `Manuel-Agent-Superviseur.html` | Agents & Superviseurs | 14 sections : étudiants, candidatures, dossiers, paiements, universités, performances, cours de langues, communication, workflows | Word (HTML Office XML) |
+| `Manuel-Admin-SuperAdmin.html` | Admins & Super Admins | 17 sections : comptabilité complète (budgets, catégories, exports), utilisateurs, logs, stockage, sécurité, config frais, communication, workflows avancés | Word (HTML Office XML) |
+| `Manuel-Complet.html` | Tous profils | 26 sections en 6 parties : présentation, portail étudiant, gestion agents, administration, référence, modules complémentaires | Word (HTML Office XML) |
 | `Documentation-Technique.html` | Développeurs & DevOps | 10 parties : architecture, auth, BDD, API, composants, Electron, env, email/SMS, tests, conventions | Word (HTML Office XML) |
 
 ### Ouverture dans Microsoft Word
