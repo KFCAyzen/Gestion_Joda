@@ -116,15 +116,51 @@
 <h2 id="connexion">2. Connexion et Navigation Générale</h2>
 
 <h3>2.1 Connexion</h3>
+
+<h4>Accès Web (navigateur)</h4>
 <div class="step">
-  <strong>Étapes de connexion :</strong>
+  <strong>Étapes de connexion — Version web :</strong>
   <ol>
-    <li>Ouvrez l'application Joda Company (navigateur ou application desktop)</li>
+    <li>Ouvrez votre navigateur (Chrome, Firefox, Edge, Safari)</li>
+    <li>Accédez à l'adresse officielle : <strong>https://joda.company/login</strong></li>
+    <li>Vérifiez que l'adresse commence par <strong>https://</strong> (connexion sécurisée)</li>
+    <li>Saisissez votre <strong>nom d'utilisateur</strong> (exemple : <em>JDupont</em>)</li>
+    <li>Saisissez votre <strong>mot de passe</strong> (respect de la casse)</li>
+    <li>Cliquez sur <strong>« Se connecter »</strong></li>
+    <li>L'application effectue une vérification du serveur (peut prendre 2-3 secondes)</li>
+    <li>Vous arrivez sur le tableau de bord principal</li>
+    <li>Votre nom et rôle (Agent/Superviseur) s'affichent en haut à droite</li>
+  </ol>
+</div>
+
+<h4>Accès Desktop (application installée)</h4>
+<div class="step">
+  <strong>Étapes de connexion — Version desktop :</strong>
+  <ol>
+    <li>Double-cliquez sur l'icône <strong>Joda Company</strong> sur le bureau ou dans le menu Démarrage</li>
+    <li>Attendez le chargement de l'application (première ouverture peut prendre 5-10 secondes)</li>
+    <li>Une fenêtre dédiée s'ouvre avec le formulaire de connexion</li>
     <li>Saisissez votre <strong>nom d'utilisateur</strong></li>
     <li>Saisissez votre <strong>mot de passe</strong></li>
     <li>Cliquez sur <strong>« Se connecter »</strong></li>
-    <li>Vous arrivez automatiquement sur le tableau de bord</li>
+    <li>L'application se synchronise avec la base de données cloud (affiche une barre de progression)</li>
+    <li>Vous accédez au tableau de bord avec vos données locales synchronisées</li>
+    <li><strong>Avantage offline :</strong> Si vous perdez la connexion Internet, vous continuez à travailler. Les modifications seront synchronisées automatiquement au retour de la connexion.</li>
   </ol>
+</div>
+
+<h4>Tableau des problèmes courants et solutions</h4>
+<table>
+  <tr><th>Problème</th><th>Cause probable</th><th>Solution</th></tr>
+  <tr><td>« Identifiants invalides »</td><td>Nom d'utilisateur ou mot de passe incorrect (respect de la casse)</td><td>Vérifiez le nom d'utilisateur exact (majuscules/minuscules). Cliquez sur « Mot de passe oublié » si nécessaire.</td></tr>
+  <tr><td>« Erreur de connexion — serveur indisponible »</td><td>Serveur Joda Company en maintenance ou problème réseau</td><td>Attendez quelques minutes. Vérifiez votre connexion Internet. Réessayez.</td></tr>
+  <tr><td>« Certificat SSL invalide » (navigateur)</td><td>Problème de sécurité ou cache navigateur corrompu</td><td>Videz le cache du navigateur. Essayez en mode navigation privée. Réessayez.</td></tr>
+  <tr><td>« Application desktop ne démarre pas »</td><td>Problème d'installation ou port bloqué</td><td>Redémarrez votre ordinateur. Réinstallez l'application si le problème persiste.</td></tr>
+  <tr><td>« Connexion réussie mais tableau de bord vide »</td><td>Données non encore synchronisées (lenteur réseau)</td><td>Attendez 10-15 secondes. Rafraîchissez la page (F5 ou Cmd+R).</td></tr>
+</table>
+
+<div class="tip">
+  <strong>Conseil :</strong> Pour les accès fréquents, l'application web est plus rapide. L'application desktop est idéale si vous devez travailler sans connexion Internet stable.
 </div>
 
 <h3>2.2 Navigation principale</h3>
@@ -208,29 +244,72 @@
 
 <h3>4.3 Créer un nouvel étudiant</h3>
 <div class="step">
-  <strong>Étapes :</strong>
+  <strong>Étapes détaillées :</strong>
   <ol>
-    <li>Cliquez sur <strong>« Nouvel étudiant »</strong> (bouton en haut à droite)</li>
-    <li>Remplissez les informations d'identité :
+    <li>Cliquez sur <strong>« Nouvel étudiant »</strong> (bouton rouge en haut à droite)</li>
+    <li>Vous entrez dans le formulaire composé de plusieurs onglets ou sections.</li>
+    <li><strong>Onglet 1 — Identité personnelle :</strong>
       <ul>
-        <li>Prénom et nom (obligatoires)</li>
-        <li>Email de contact personnel (obligatoire)</li>
-        <li>Téléphone</li>
-        <li>Date de naissance, sexe, nationalité</li>
+        <li><strong>Prénom</strong> (obligatoire) — 2-50 caractères, lettres uniquement</li>
+        <li><strong>Nom</strong> (obligatoire) — 2-50 caractères, lettres uniquement</li>
+        <li><strong>Email personnel</strong> (obligatoire) — Format valide (exemple@domaine.com). Doit être unique dans la base de données.</li>
+        <li><strong>Téléphone</strong> (optionnel) — Format international accepté (ex : +237 6XX XXX XXX) ou format national (6XX XXX XXX)</li>
+        <li><strong>Date de naissance</strong> (optionnel) — Sélectionnez via calendrier. Doit être une date révolue.</li>
+        <li><strong>Sexe</strong> (optionnel) — Sélection : Masculin, Féminin, Autre</li>
+        <li><strong>Nationalité</strong> (optionnel) — Liste déroulante des pays</li>
       </ul>
     </li>
-    <li>Remplissez le profil académique :
+    <li><strong>Onglet 2 — Profil académique :</strong>
       <ul>
-        <li>Niveau d'études actuel</li>
-        <li>Filière / spécialité</li>
-        <li>Niveau de langue (HSK, TOEFL, etc.)</li>
-        <li>Diplôme obtenu</li>
+        <li><strong>Niveau d'études actuel</strong> (optionnel) — Licence, Master, Doctorat, Professionnel, Autre</li>
+        <li><strong>Filière / Spécialité</strong> (optionnel) — Texte libre (ex : « Génie Informatique »)</li>
+        <li><strong>Niveau de langue</strong> (optionnel) — HSK (pour mandarin), TOEFL/IELTS (pour anglais), score actuel</li>
+        <li><strong>Diplôme obtenu</strong> (optionnel) — Baccalauréat, Licence, Master, etc.</li>
       </ul>
     </li>
-    <li>Sélectionnez le type de programme (procédure seule, procédure + cours, cours seuls)</li>
-    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
-    <li>Un compte étudiant est automatiquement créé (email interne + mot de passe temporaire)</li>
+    <li><strong>Onglet 3 — Programme d'études :</strong>
+      <ul>
+        <li><strong>Type de programme</strong> (obligatoire) — Sélectionnez un parmi :
+          <ul>
+            <li><em>Procédure seule</em> — Frais de candidature uniquement</li>
+            <li><em>Procédure + Cours</em> — Candidature + cours de langue</li>
+            <li><em>Cours seuls</em> — Cours de langue sans procédure</li>
+          </ul>
+        </li>
+        <li><em>Note :</em> Ce choix détermine les types de paiement à créer plus tard dans le module Frais.</li>
+      </ul>
+    </li>
+    <li>Vérifiez que tous les champs obligatoires (marqués d'une <strong>*</strong> rouge) sont remplis.</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong> (bouton vert en bas du formulaire).</li>
+    <li>L'application effectue une validation :
+      <ul>
+        <li>Vérification de l'unicité de l'email</li>
+        <li>Vérification du format du téléphone</li>
+        <li>Vérification que la date de naissance est antérieure à aujourd'hui</li>
+      </ul>
+    </li>
+    <li>Un compte étudiant est automatiquement créé avec :
+      <ul>
+        <li><strong>Email système :</strong> prenom.nom@students.joda.app (pour accéder au portail étudiant)</li>
+        <li><strong>Mot de passe temporaire :</strong> Chaîne aléatoire de 12 caractères (à communiquer en toute sécurité)</li>
+      </ul>
+    </li>
+    <li>Un email d'activation est envoyé automatiquement à l'adresse email personnelle de l'étudiant avec ses identifiants et un lien d'activation.</li>
+    <li>Vous êtes redirigé vers la vue détails de l'étudiant nouvellement créé.</li>
   </ol>
+</div>
+
+<h4>Erreurs courantes et solutions</h4>
+<table>
+  <tr><th>Message d'erreur</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td>« Email déjà utilisé »</td><td>Cet email existe déjà dans la base de données</td><td>Utilisez un email différent ou vérifiez si l'étudiant existe déjà avec un alias email.</td></tr>
+  <tr><td>« Format de téléphone invalide »</td><td>Numéro qui ne correspond pas aux formats acceptés</td><td>Utiliser le format +237 XXXXXXXXX (avec code pays) ou 6XX XXX XXX (national).</td></tr>
+  <tr><td>« Champs obligatoires manquants »</td><td>Au moins un champ marqué * n'est pas rempli</td><td>Vérifiez les onglets, complétez prénom et nom, sélectionnez un type de programme.</td></tr>
+  <tr><td>« Date de naissance invalide »</td><td>Date future saisie ou format incorrect</td><td>Utilisez le calendrier pour sélectionner une date. Elle doit être antérieure à aujourd'hui.</td></tr>
+</table>
+
+<div class="note">
+  <strong>Important :</strong> Ne communiquez jamais les identifiants par email non sécurisé. Utilisez un canal sécurisé (SMS, discussion directe, portail interne) ou imprimer les identifiants en main propre.
 </div>
 
 <h4>Informations générées automatiquement à la création :</h4>
@@ -364,23 +443,96 @@
 </ul>
 
 <h3>6.5 Changer le statut d'un dossier</h3>
+
+<h4>Transitions de statut autorisées</h4>
+<p>Tous les statuts ne peuvent pas être atteints depuis n'importe quel état. Le système applique des règles de transition :</p>
+<table>
+  <tr><th>Statut actuel</th><th>Statuts possibles suivants</th><th>Rôle requis</th></tr>
+  <tr><td>Documents reçus</td><td>En attente, En cours, Document manquant</td><td>Agent</td></tr>
+  <tr><td>En attente</td><td>En cours, Document manquant, En attente université</td><td>Agent</td></tr>
+  <tr><td>En cours</td><td>Document manquant, En attente université, Admission validée, Admission rejetée</td><td>Superviseur</td></tr>
+  <tr><td>Document manquant</td><td>En attente, En cours</td><td>Agent</td></tr>
+  <tr><td>En attente université</td><td>En cours, Admission validée, Admission rejetée</td><td>Superviseur</td></tr>
+  <tr><td>Admission validée</td><td>Visa en cours, Terminé</td><td>Superviseur</td></tr>
+  <tr><td>Admission rejetée</td><td>Terminé</td><td>Superviseur</td></tr>
+  <tr><td>Visa en cours</td><td>Admission validée, Terminé</td><td>Superviseur</td></tr>
+  <tr><td>Terminé</td><td>Aucun (statut final)</td><td>—</td></tr>
+</table>
+
+<h4>Procédure détaillée</h4>
 <div class="step">
   <ol>
-    <li>Ouvrez le dossier</li>
-    <li>Cliquez sur le <strong>menu déroulant « Statut »</strong></li>
-    <li>Sélectionnez le nouveau statut</li>
-    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
-    <li>Le changement est automatiquement logué et l'étudiant est notifié</li>
+    <li>Depuis la liste Dossiers, cliquez sur le dossier à modifier pour l'ouvrir</li>
+    <li>Localisez la section <strong>« État du dossier »</strong> ou <strong>« Statut »</strong> (généralement en haut de la page)</li>
+    <li>Observez le statut actuel (couleur badge indique l'état) et les statuts possibles affichés</li>
+    <li>Cliquez sur le <strong>menu déroulant « Changer le statut »</strong></li>
+    <li>Seuls les statuts autorisés selon la transition actuelle apparaissent</li>
+    <li>Sélectionnez le nouveau statut souhaité</li>
+    <li>Si applicable, une zone de commentaire supplémentaire peut apparaître (exemple : « Raison du rejet » si admission rejetée)</li>
+    <li>Remplissez les champs additionnels si demandés</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong> (bouton vert)</li>
+    <li>Un message de confirmation affiche le nouvel état</li>
+    <li>La modification est enregistrée dans l'historique du dossier avec timestamp et nom de l'utilisateur</li>
+    <li>L'étudiant reçoit automatiquement une notification du changement de statut dans son portail</li>
   </ol>
 </div>
 
+<h4>Cas d'erreur et blocages</h4>
+<table>
+  <tr><th>Situation</th><th>Blocage</th><th>Raison / Solution</th></tr>
+  <tr><td>Pas de transition possible visible</td><td>Menu déroulant grisé ou vide</td><td>Vous n'avez pas les permissions pour ce changement (rôle insuffisant), ou le statut actuel n'a aucune transition valide. Consultez votre superviseur.</td></tr>
+  <tr><td>« Documents manquants obligatoires »</td><td>Impossible de passer à « Admission validée »</td><td>Vérifiez que tous les documents requis sont validés (voir section 6.7). Rejetez ou marquez comme « Document manquant » jusqu'à ce que tous soient reçus.</td></tr>
+  <tr><td>« Statut non autorisé pour ce rôle »</td><td>Impossible de passer à « Admission validée » en tant qu'agent</td><td>Seuls les superviseurs peuvent valider les admissions. Demandez à un superviseur de faire le changement.</td></tr>
+  <tr><td>Changement ne se sauvegarde pas</td><td>Erreur réseau ou session expirée</td><td>Vérifiez votre connexion Internet. Reconnectez-vous et réessayez.</td></tr>
+</table>
+
+<div class="warning">
+  <strong>Attention :</strong> Une fois un dossier en statut « Terminé », aucun changement ultérieur n'est autorisé. Vérifiez tous les détails avant de finaliser.
+</div>
+
 <h3>6.6 Notes internes</h3>
-<p>Le champ <strong>« Notes internes »</strong> permet de laisser des informations pour l'équipe (observations, actions à faire, commentaires sur l'université). Ces notes sont <strong>invisibles pour l'étudiant</strong>.</p>
+<p>Le champ <strong>« Notes internes »</strong> permet de laisser des informations pour l'équipe (observations, actions à faire, commentaires sur l'université, suivi administratif). Ces notes sont <strong>confidentielles et invisibles pour l'étudiant</strong>. Elles s'affichent uniquement aux agents et superviseurs de Joda Company.</p>
+
+<h4>Procédure pour ajouter une note</h4>
 <div class="step">
   <ol>
-    <li>Saisissez votre note dans le champ « Notes internes »</li>
-    <li>Cliquez sur <strong>« Sauvegarder les notes »</strong></li>
+    <li>Ouvrez le dossier concerné</li>
+    <li>Localisez la section <strong>« Notes internes »</strong> (zone de texte libre en bas de page ou dans un onglet dédié)</li>
+    <li>Cliquez dans la zone pour l'activer</li>
+    <li>Saisissez votre note (sans limite de caractères, mais restez concis)</li>
+    <li>Les notes antérieures aparaissent en historique avec timestamps et noms des auteurs</li>
+    <li>Votre note s'ajoute en bas de l'historique quand vous la saisissez</li>
+    <li>Cliquez sur <strong>« Sauvegarder les notes »</strong> ou appuyez sur <strong>Ctrl+S</strong></li>
+    <li>Un message de confirmation « Notes sauvegardées » s'affiche</li>
+    <li>La note devient immédiatement visible à tous les utilisateurs ayant accès au dossier</li>
   </ol>
+</div>
+
+<h4>Bonnes pratiques pour les notes internes</h4>
+<ul>
+  <li><strong>Datez vos entrées :</strong> Incluez la date et l'heure (ex : « 23/05/2026 14h30 — »)</li>
+  <li><strong>Soyez précis :</strong> Au lieu de « À faire », écrivez « À faire : contacter l'université pour obtenir la lettre d'admission »</li>
+  <li><strong>Utilisez des actions claires :</strong>
+    <ul>
+      <li>« ✓ FAIT : » pour marquer quelque chose d'accompli</li>
+      <li>« ⚠️ URGENT : » pour signaler une tâche prioritaire</li>
+      <li>« ❓ CLARIFIER : » pour une question en attente de réponse</li>
+      <li>« 📞 APPEL : » pour un suivi téléphonique</li>
+    </ul>
+  </li>
+  <li><strong>Évitez les informations sensibles :</strong> Ne pas noter les identifiants, numéros de sécurité sociale, etc. (sauf strictement nécessaire pour l'équipe)</li>
+  <li><strong>Soyez professionnel :</strong> Ces notes sont des documents de travail internes — adoptez un ton neutre et factuel</li>
+  <li><strong>Mettez à jour régulièrement :</strong> Dès qu'il y a un développement, ajoutez une note pour que toute l'équipe soit à jour</li>
+  <li><strong>Référencez les décisions :</strong> Notez pourquoi un changement de statut a été fait (ex : « Passé en « Visa en cours » suite à réception de lettre d'admission le 22/05 »)</li>
+</ul>
+
+<h4>Exemple de notes bien structurées</h4>
+<div class="note">
+  <strong>Exemple :</strong><br>
+  23/05/2026 14h30 — ✓ FAIT : Documents reçus validés par Jessica<br>
+  24/05/2026 09h15 — 📞 APPEL : Université de Pékin demande test HSK supplémentaire — Étudiant en attente de date d'examen<br>
+  25/05/2026 11h — ⚠️ URGENT : Paiement Tranche 2 en retard de 5 jours — Contacter étudiant demain<br>
+  25/05/2026 15h30 — ✓ FAIT : Étudiant contacté, paiement prévu pour 26/05
 </div>
 
 <h3>6.7 Gestion des documents d'un dossier</h3>
@@ -424,39 +576,191 @@
 </table>
 
 <h3>7.3 Enregistrer un nouveau paiement</h3>
+<p>Le formulaire « Encaisser » permet d'enregistrer manuellement un paiement d'étudiant (reçu en cash, virement bancaire, mobile money, etc.). Les paiements déclarés par l'étudiant via le portail apparaissent automatiquement dans « À valider », pas besoin de passer par ce formulaire.</p>
+
 <div class="step">
-  <strong>Onglet « Encaisser » :</strong>
+  <strong>Procédure détaillée — Onglet « Encaisser » :</strong>
   <ol>
-    <li>Sélectionnez l'<strong>étudiant</strong> dans la liste déroulante</li>
-    <li>Sélectionnez le <strong>type de paiement</strong> :
+    <li>Cliquez sur l'onglet <strong>« Encaisser »</strong> du module Frais</li>
+    <li><strong>Sélectionnez l'étudiant</strong> (champ obligatoire)
       <ul>
-        <li>Bourse (procédure)</li>
-        <li>Mandarin</li>
-        <li>Anglais</li>
-        <li>Inscription</li>
-        <li>Autre</li>
+        <li>Tapez le nom ou prénom pour filtrer la liste déroulante</li>
+        <li>Sélectionnez la bonne entrée (affichée sous format « Prénom NOM - Email »)</li>
+        <li>Note : Seuls les étudiants avec au moins un paiement en attente apparaissent</li>
       </ul>
     </li>
-    <li>Sélectionnez la <strong>tranche</strong> (T1, T2, T3, T4 selon le type)</li>
-    <li>Saisissez le <strong>montant</strong> en FCFA</li>
-    <li>Indiquez la <strong>date de paiement</strong></li>
-    <li>Ajoutez une <strong>date limite</strong> si applicable</li>
-    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
-    <li>Une écriture comptable est automatiquement créée</li>
+    <li><strong>Sélectionnez le type de paiement</strong> (champ obligatoire)
+      <ul>
+        <li><em>Bourse (procédure)</em> — Frais de candidature pour la procédure d'admission en université chinoise</li>
+        <li><em>Mandarin</em> — Inscription ou tranche de cours de mandarin</li>
+        <li><em>Anglais</em> — Inscription ou tranche de cours d'anglais</li>
+        <li><em>Inscription</em> — Frais d'inscription administratifs (optionnel)</li>
+        <li><em>Autre</em> — Paiements divers non catégorisés</li>
+      </ul>
+    </li>
+    <li><strong>Sélectionnez la tranche</strong> (champ obligatoire, dépend du type)
+      <ul>
+        <li>Pour <em>Procédure</em> : T1 (tranche unique pour procédure standard)</li>
+        <li>Pour <em>Mandarin/Anglais</em> : T1, T2, T3, T4 (4 tranches de cours)</li>
+        <li>Pour <em>Autre</em> : Pas de subdivision, une seule option « Autre »</li>
+        <li>Note : Vous ne pouvez enregistrer qu'une tranche qui n'a pas déjà un paiement validé</li>
+      </ul>
+    </li>
+    <li><strong>Saisissez le montant</strong> (champ obligatoire)
+      <ul>
+        <li>Format numérique uniquement (pas de caractères spéciaux)</li>
+        <li>Montant en FCFA (devise locale)</li>
+        <li>Montants de référence (voir section 7.7) : Bourse complète = 1 000 000 FCFA, Mandarin T1 = 30 250 FCFA, etc.</li>
+        <li>Vous pouvez saisir un montant différent du référence (paiement partiel, correction, etc.)</li>
+        <li>Maximum accepté : 10 000 000 FCFA (protection contre les erreurs de saisie)</li>
+      </ul>
+    </li>
+    <li><strong>Indiquez la date de paiement</strong> (champ obligatoire)
+      <ul>
+        <li>Date à laquelle l'étudiant a effectivement payé (jour du virement, remise en cash, etc.)</li>
+        <li>Utilisez le calendrier popup — ne tapez pas manuellement</li>
+        <li>Ne peut pas être une date future</li>
+        <li>Si la date est antérieure à aujourd'hui de plus de 30 jours, un avertissement s'affiche (paiement ancien — à confirmer)</li>
+      </ul>
+    </li>
+    <li><strong>Indiquez la date limite</strong> (champ optionnel)
+      <ul>
+        <li>Date limite pour le paiement (deadline pour l'étudiant)</li>
+        <li>Utilisée pour calculer les pénalités de retard si applicable</li>
+        <li>Généralement 30 jours après la date de paiement ou selon accord avec l'étudiant</li>
+        <li>Peut être vide si pas de date limite spécifique</li>
+      </ul>
+    </li>
+    <li><strong>Ajoutez une note (optionnel)</strong>
+      <ul>
+        <li>Zone texte pour contexte ou commentaire : « Reçu en espèces », « Virement banque ABC », etc.</li>
+        <li>Visible uniquement par l'équipe</li>
+      </ul>
+    </li>
+    <li>Vérifiez tous les champs obligatoires (marqués d'une <strong>*</strong> rouge)</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong> (bouton vert)</li>
+    <li>Validation serveur effectue les vérifications :
+      <ul>
+        <li>Montant > 0 et réaliste</li>
+        <li>Dates cohérentes (paiement ≤ limite)</li>
+        <li>Étudiant + type + tranche ne duplique pas un paiement existant</li>
+      </ul>
+    </li>
+    <li>Une fois validé, un message de succès s'affiche : « Paiement enregistré »</li>
+    <li>Le paiement apparaît immédiatement dans l'onglet <strong>« Validés »</strong></li>
+    <li>Une écriture comptable (crédit) est créée automatiquement dans le livre comptable</li>
+    <li>L'étudiant voit le paiement dans son portail (historique des frais)</li>
   </ol>
 </div>
 
+<h4>Erreurs courants lors de l'enregistrement</h4>
+<table>
+  <tr><th>Erreur</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td>« Champ obligatoire manquant »</td><td>Un champ marqué * n'est pas rempli</td><td>Vérifiez que étudiant, type, tranche, montant et date sont tous complétés.</td></tr>
+  <tr><td>« Montant invalide »</td><td>Montant ≤ 0, caractères non numériques, ou > 10 000 000 FCFA</td><td>Saisissez un montant numérique positif et réaliste.</td></tr>
+  <tr><td>« Paiement en double »</td><td>Un paiement pour ce étudiant + type + tranche existe déjà validé</td><td>Vérifiez dans l'onglet « Validés ». Si correction nécessaire, créez une sortie comptable (remboursement) et enregistrez le nouveau montant.</td></tr>
+  <tr><td>« Date future »</td><td>Vous avez saisi une date antérieure au jour actuel pour le paiement</td><td>Utilisez le calendrier pour sélectionner une date aujourd'hui ou antérieure.</td></tr>
+  <tr><td>« Aucun étudiant avec ce nom »</td><td>Recherche ne trouvant aucun résultat</td><td>Vérifiez l'orthographe du nom. Essayez avec le prénom. L'étudiant doit être créé dans le module Étudiants d'abord.</td></tr>
+</table>
+
 <h3>7.4 Valider un paiement déclaré <span class="role-tag supervisor-tag">Superviseur</span></h3>
-<p>Lorsqu'un étudiant déclare un paiement depuis son portail, il apparaît dans l'onglet <strong>« À valider »</strong> avec le badge « Déclaré par l'étudiant ».</p>
+<p>Lorsqu'un étudiant déclare un paiement depuis son portail, il apparaît dans l'onglet <strong>« À valider »</strong> avec le badge <span class="status-badge status-yellow">Déclaré par l'étudiant</span>. <strong>Seuls les superviseurs peuvent valider ou rejeter ces paiements.</strong> Les agents peuvent consulter mais pas agir.</p>
+
+<h4>Procédure de validation</h4>
 <div class="step">
   <ol>
-    <li>Allez dans l'onglet <strong>« À valider »</strong></li>
-    <li>Trouvez le paiement concerné</li>
-    <li>Si l'étudiant a joint une preuve, cliquez sur <strong>« Voir la preuve »</strong> pour la vérifier</li>
-    <li>Cliquez sur <strong>« Valider »</strong> pour confirmer le paiement</li>
-    <li>Ou <strong>« Rejeter »</strong> si la preuve est insuffisante</li>
-    <li>Une fois validé, le statut passe à « Payé » et un reçu est disponible</li>
+    <li>Cliquez sur l'onglet <strong>« À valider »</strong></li>
+    <li>Vous voyez une liste des paiements déclarés par des étudiants, triés par date (plus récent en haut)</li>
+    <li>Pour chaque paiement, vérifiez les informations affichées :
+      <ul>
+        <li>Nom de l'étudiant</li>
+        <li>Type de paiement (Bourse, Mandarin, etc.)</li>
+        <li>Montant déclaré</li>
+        <li>Date de déclaration (quand l'étudiant l'a soumis)</li>
+        <li>Statut actuel : <span class="status-badge status-yellow">Déclaré</span></li>
+      </ul>
+    </li>
+    <li><strong>Examinez la preuve jointe :</strong>
+      <ul>
+        <li>Cliquez sur <strong>« Voir la preuve »</strong> ou <strong>« Télécharger »</strong> pour ouvrir le justificatif</li>
+        <li>Les preuves acceptées incluent :
+          <ul>
+            <li>Capture d'écran de confirmation de virement</li>
+            <li>Reçu mobile money (Orange Money, MTN Money, etc.)</li>
+            <li>Confirmation email de la banque</li>
+            <li>Photo du reçu de paiement (cash conforme, lisible)</li>
+          </ul>
+        </li>
+        <li>Vérifiez les points suivants :
+          <ul>
+            <li><strong>Montant :</strong> Correspond-il au montant déclaré ? (Attention aux frais bancaires qui réduisent le montant reçu)</li>
+            <li><strong>Identité du payeur :</strong> Est-ce l'étudiant ou un parent/proche mandaté ?</li>
+            <li><strong>Date du paiement :</strong> Est-elle cohérente ? (Ne pas rejeter pour paiement datant de quelques jours)</li>
+            <li><strong>Clarté de la preuve :</strong> Est-elle lisible et authentique-looking ?</li>
+            <li><strong>Référence :</strong> Y a-t-il une référence de transaction ou numéro de virement ?</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+    <li><strong>Décision :</strong>
+      <ul>
+        <li><strong>Si conforme :</strong> Cliquez sur <strong>« Valider »</strong></li>
+        <li><strong>Si incomplet/suspect :</strong> Cliquez sur <strong>« Rejeter »</strong></li>
+      </ul>
+    </li>
+    <li><strong>Si validation :</strong>
+      <ul>
+        <li>Ajoutez un commentaire optionnel (ex : « Montant vérifié le 23/05 »)</li>
+        <li>Cliquez sur <strong>« Confirmer la validation »</strong></li>
+        <li>Le statut passe immédiatement à <span class="status-badge status-green">Payé</span></li>
+        <li>Une écriture comptable (entrée) est créée automatiquement</li>
+        <li>Un reçu devient disponible pour téléchargement en PDF</li>
+        <li>L'étudiant reçoit une notification : « Votre paiement a été validé »</li>
+      </ul>
+    </li>
+    <li><strong>Si rejet :</strong>
+      <ul>
+        <li>Un champ <strong>« Raison du rejet »</strong> apparaît (obligatoire)</li>
+        <li>Sélectionnez ou saisissez une raison parmi :
+          <ul>
+            <li>« Montant ne correspond pas »</li>
+            <li>« Preuve non lisible »</li>
+            <li>« Preuve insuffisante »</li>
+            <li>« Montant partiellement reçu (frais déduits) »</li>
+            <li>« Autre » (libre)</li>
+          </ul>
+        </li>
+        <li>Cliquez sur <strong>« Confirmer le rejet »</strong></li>
+        <li>Le statut revient à <span class="status-badge status-red">Rejeté</span></li>
+        <li>L'étudiant reçoit une notification avec la raison du rejet et peut resoumettre</li>
+        <li>Aucune écriture comptable n'est créée</li>
+      </ul>
+    </li>
   </ol>
+</div>
+
+<h4>Points de vérification critiques</h4>
+<table>
+  <tr><th>Vérification</th><th>À chercher</th><th>Action si absent</th></tr>
+  <tr><td>Identité du payeur</td><td>Nom de l'étudiant visible dans le virement ou preuve</td><td>Accepter si preuve claire que c'est un proche avec mandat oral. Sinon, rejeter pour clarification.</td></tr>
+  <tr><td>Montant exact</td><td>Montant versé = montant attendu</td><td>Si différence &lt; 5 % (frais bancaires), accepter. Sinon, rejeter avec raison « Montant partiellement reçu ».</td></tr>
+  <tr><td>Référence de transaction</td><td>Numéro de virement, ID mobile money, ou reçu</td><td>Souhaitable mais non critique. Accepter si autres preuves solides.</td></tr>
+  <tr><td>Clarté du document</td><td>Preuve lisible, suffisamment détaillée</td><td>Si image floue/partielle, rejeter pour « Preuve non lisible ».</td></tr>
+  <tr><td>Cohérence temporelle</td><td>Date du paiement antérieure à la date de déclaration</td><td>Normal si paiement datant de quelques jours. Accepter.</td></tr>
+</table>
+
+<h4>Cas particuliers</h4>
+<table>
+  <tr><th>Situation</th><th>Action</th></tr>
+  <tr><td>Paiement partiel (étudiant ne paie que 50% du montant attendu)</td><td>Accepter comme paiement partiel. Le solde reste dû. Aucune pénalité appliquée pour la partie payée, mais la tranche est marquée « Partiellement payée ».</td></tr>
+  <tr><td>Frais bancaires ont réduit le montant de 3-5 %</td><td>Accepter le montant net reçu. Ajouter une note interne : « Frais bancaires déduits — montant reçu [X] FCFA ».</td></tr>
+  <tr><td>Étudiant a soumis une preuve mais montant manquant de 10 %</td><td>Rejeter avec raison « Montant partiellement reçu ». Contactez l'étudiant pour clarifier.</td></tr>
+  <tr><td>Preuve est un email de confirmation de banque (très fiable)</td><td>Accepter immédiatement si montant et date correspondent.</td></tr>
+  <tr><td>Étudiant réclame avoir payé mais aucune preuve n'a été jointe</td><td>Rejeter ou garder en attente. Demander à l'étudiant de resoumettre avec preuve. Vous pouvez aussi enregistrer manuellement via « Encaisser » si certain que le paiement est fait.</td></tr>
+</table>
+
+<div class="warning">
+  <strong>Important :</strong> Validez les paiements dès que la preuve est satisfaisante. Un délai d'attente long frustre les étudiants. Cible : < 24 heures de traitement.
 </div>
 
 <h3>7.5 Pénalités de retard</h3>
@@ -499,17 +803,162 @@
 <p>Le module liste toutes les universités partenaires avec leurs informations. Les agents peuvent <strong>consulter</strong> la liste. Les superviseurs peuvent <strong>créer, modifier</strong>.</p>
 
 <h3>8.3 Ajouter une université <span class="role-tag supervisor-tag">Superviseur</span></h3>
+<p>Seuls les superviseurs peuvent ajouter ou modifier les universités partenaires. Les agents ne peuvent que consulter la liste.</p>
+
 <div class="step">
+  <strong>Procédure détaillée :</strong>
   <ol>
-    <li>Cliquez sur <strong>« Nouvelle université »</strong></li>
-    <li>Saisissez le nom de l'université</li>
-    <li>Pays et ville</li>
-    <li>Programmes offerts (liste séparée par virgules)</li>
-    <li>Niveaux d'études acceptés</li>
-    <li>Critères d'admission</li>
-    <li>Statut actif/inactif</li>
-    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+    <li>Depuis le module Universités, cliquez sur le bouton <strong>« Nouvelle université »</strong> (rouge, en haut à droite)</li>
+    <li>Un formulaire multi-sections s'ouvre. Remplissez les champs suivants :</li>
+
+    <li><strong>Informations générales :</strong>
+      <ul>
+        <li><strong>Nom de l'université</strong> (obligatoire)
+          <ul>
+            <li>Nom officiel complet (ex : « Université de Pékin », pas « PKU »)</li>
+            <li>2-100 caractères, lettres, chiffres et espaces acceptés</li>
+            <li>Doit être unique dans la base (pas de doublons)</li>
+          </ul>
+        </li>
+        <li><strong>Pays</strong> (obligatoire)
+          <ul>
+            <li>Sélectionnez dans la liste déroulante des pays</li>
+            <li>Généralement « Chine » pour les universités partenaires</li>
+          </ul>
+        </li>
+        <li><strong>Ville / Province</strong> (obligatoire)
+          <ul>
+            <li>Texte libre (ex : « Pékin », « Shanghai », « Tianjin »)</li>
+            <li>Utilisé pour filtrer et rechercher</li>
+          </ul>
+        </li>
+        <li><strong>Code CEAIE</strong> (optionnel)
+          <ul>
+            <li>Identifiant officiel de l'université auprès de la Chine (si disponible)</li>
+            <li>Format numérique (ex : 10001 pour PKU)</li>
+          </ul>
+        </li>
+        <li><strong>Site web</strong> (optionnel)
+          <ul>
+            <li>URL officielle de l'université (ex : www.pku.edu.cn)</li>
+            <li>Utile pour vérifier les critères d'admission à jour</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+
+    <li><strong>Programmes et niveaux :</strong>
+      <ul>
+        <li><strong>Programmes offerts</strong> (obligatoire)
+          <ul>
+            <li><strong>Format :</strong> Liste séparée par des virgules ou « ; »</li>
+            <li><strong>Exemple :</strong> « Master en Génie Informatique, Master en Administration Publique, Licence en Commerce International »</li>
+            <li>Chaque programme sur une ligne si possible (un par ligne = plus lisible)</li>
+            <li>Soyez précis : « Master en Finance » plutôt que « Finance »</li>
+            <li>Vous pouvez en ajouter jusqu'à 50</li>
+          </ul>
+        </li>
+        <li><strong>Niveaux d'études acceptés</strong> (obligatoire)
+          <ul>
+            <li>Cases à cocher pour sélectionner (plusieurs possibles) :
+              <ul>
+                <li>☐ Licence (Bac+3)</li>
+                <li>☐ Master (Bac+5)</li>
+                <li>☐ Doctorat (Bac+8)</li>
+                <li>☐ Formation professionnelle (court terme)</li>
+              </ul>
+            </li>
+            <li>Au moins un niveau doit être sélectionné</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+
+    <li><strong>Critères d'admission :</strong>
+      <ul>
+        <li><strong>Niveau de langue requis</strong> (optionnel)
+          <ul>
+            <li>Sélectionnez : Pas requis, HSK 4, HSK 5, HSK 6, TOEFL 80+, IELTS 6.0+, Autre</li>
+            <li>Utilisé pour orienter les candidatures</li>
+          </ul>
+        </li>
+        <li><strong>Moyenne minimale requise</strong> (optionnel)
+          <ul>
+            <li>Format numérique (ex : 3.0 sur 4.0, ou 70 sur 100)</li>
+            <li>Indiquez l'échelle si nécessaire (« 3.0/4.0 »)</li>
+          </ul>
+        </li>
+        <li><strong>Autres critères</strong> (optionnel)
+          <ul>
+            <li>Zone de texte libre pour critères spécifiques (ex : « Expérience professionnelle 2+ ans », « Tests d'entrée requis », « Entretien obligatoire »)</li>
+            <li>Jusqu'à 500 caractères</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+
+    <li><strong>Paramètres opérationnels :</strong>
+      <ul>
+        <li><strong>Statut de l'université</strong> (obligatoire)
+          <ul>
+            <li>☑ <strong>Actif</strong> — Les agents peuvent créer des candidatures pour cette université</li>
+            <li>☐ <strong>Inactif</strong> — L'université n'apparaît plus dans les listes. Utilisez ce statut pour les universités avec lesquelles vous ne travaillez plus temporairement.</li>
+          </ul>
+        </li>
+        <li><strong>Contact administratif</strong> (optionnel)
+          <ul>
+            <li>Email ou personne de référence pour vos communications avec l'université</li>
+            <li>Utile pour suivre les dossiers</li>
+          </ul>
+        </li>
+        <li><strong>Notes internes</strong> (optionnel)
+          <ul>
+            <li>Informations de contexte pour votre équipe : « Partenaire depuis 2020 », « Haut taux d'acceptation (80%) », etc.</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+
+    <li>Vérifiez que tous les champs obligatoires (marqués d'une <strong>*</strong> rouge) sont complétés</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong> (bouton vert)</li>
+    <li>L'application valide :
+      <ul>
+        <li>Unicité du nom (pas d'université avec le même nom)</li>
+        <li>Au moins un programme et un niveau sélectionnés</li>
+        <li>Statut défini</li>
+      </ul>
+    </li>
+    <li>Un message de confirmation s'affiche : « Université créée »</li>
+    <li>L'université apparaît immédiatement dans la liste et est disponible pour les candidatures</li>
   </ol>
+</div>
+
+<h4>Exemple complet d'entrée</h4>
+<div class="note">
+  <strong>Exemple — Université de Pékin :</strong><br>
+  <strong>Nom :</strong> Université de Pékin (PKU)<br>
+  <strong>Pays :</strong> Chine<br>
+  <strong>Ville :</strong> Pékin<br>
+  <strong>Programmes :</strong> Master en Génie Informatique; Master en Administration Publique; Licence en Commerce International; Master en Économie<br>
+  <strong>Niveaux :</strong> ☑ Licence, ☑ Master, ☑ Doctorat<br>
+  <strong>Langue requise :</strong> HSK 6<br>
+  <strong>Moyenne min :</strong> 3.5/4.0<br>
+  <strong>Autres critères :</strong> Entretien obligatoire. Documents supplémentaires : plan de recherche (pour doctorat)<br>
+  <strong>Statut :</strong> ☑ Actif<br>
+  <strong>Contact :</strong> admissions@pku.edu.cn
+</div>
+
+<h4>Erreurs et blocages possibles</h4>
+<table>
+  <tr><th>Erreur</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td>« Université existe déjà »</td><td>Une université avec ce nom exact existe dans la base</td><td>Modifiez le nom légèrement (ex : ajouter la ville), ou recherchez l'existante et modifiez-la au lieu de créer un doublon.</td></tr>
+  <tr><td>« Au moins un programme doit être sélectionné »</td><td>Champ programmes vide</td><td>Remplissez le champ « Programmes offerts » avec au moins un programme.</td></tr>
+  <tr><td>« Aucun niveau d'études sélectionné »</td><td>Aucune case Licence/Master/Doctorat cochée</td><td>Cochez au moins un niveau (généralement Master pour les universités chinoises).</td></tr>
+  <tr><td>« URL invalide »</td><td>Format incorrect du site web</td><td>Utilisez un format complet : https://www.university.edu.cn (ou http://)</td></tr>
+</table>
+
+<div class="tip">
+  <strong>Conseil :</strong> Avant de créer une nouvelle université, vérifiez qu'elle n'existe pas déjà sous un alias (ex : PKU vs Université de Pékin). Utilisez la barre de recherche pour vérifier.
 </div>
 
 <h3>8.4 Universités prédéfinies (Seed)</h3>
