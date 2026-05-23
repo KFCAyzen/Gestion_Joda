@@ -75,6 +75,8 @@
   <li><a href="#stockage">Stockage et monitoring</a></li>
   <li><a href="#performances">Performances des agents</a></li>
   <li><a href="#securite">Sécurité et bonnes pratiques</a></li>
+  <li><a href="#config-frais">Configuration des frais</a></li>
+  <li><a href="#communication">Communication — Messages &amp; SMS</a></li>
   <li><a href="#workflows">Workflows administratifs courants</a></li>
 </ol>
 
@@ -275,6 +277,28 @@
 <h3>9.2 Vue d'ensemble</h3>
 <p>Le livre comptable consolide toutes les entrées (revenus) et sorties (dépenses) de Joda Company. En tant qu'admin, vous pouvez créer, modifier, valider et exporter les écritures comptables.</p>
 
+<h4>Les 5 onglets du module Comptabilité</h4>
+<table>
+  <tr><th>Onglet</th><th>Contenu</th></tr>
+  <tr><td><strong>Rapport</strong></td><td>Indicateurs clés (KPI) de la période + tableaux des entrées/sorties + statistiques par catégorie</td></tr>
+  <tr><td><strong>Entrées</strong></td><td>Liste complète des entrées (revenus) avec recherche, détails, reçu et suppression</td></tr>
+  <tr><td><strong>Sorties</strong></td><td>Liste complète des sorties (dépenses) avec validation admin, détails et suppression</td></tr>
+  <tr><td><strong>Budgets</strong></td><td>Gestion des budgets prévisionnels par catégorie et par période (voir section 9.9)</td></tr>
+  <tr><td><strong>Catégories</strong></td><td>Gestion des catégories personnalisées d'entrées et de sorties (voir section 9.10)</td></tr>
+</table>
+
+<h4>Filtres de période (disponibles sur tous les onglets)</h4>
+<table>
+  <tr><th>Filtre</th><th>Portée</th></tr>
+  <tr><td>Aujourd'hui</td><td>Opérations du jour courant</td></tr>
+  <tr><td>Semaine</td><td>7 derniers jours</td></tr>
+  <tr><td>Mois</td><td>Mois en cours</td></tr>
+  <tr><td>Année</td><td>Année en cours</td></tr>
+  <tr><td>Personnalisé</td><td>Plage de dates au choix (date de début → date de fin)</td></tr>
+</table>
+
+<p>La <strong>portée du rapport</strong> peut également être ajustée : « Entrées &amp; Sorties », « Entrées uniquement » ou « Sorties uniquement ».</p>
+
 <h3>9.3 Entrées comptables (Revenus)</h3>
 <p>Les entrées sont <strong>créées automatiquement</strong> lors de la validation d'un paiement étudiant. Vous n'avez généralement pas à les créer manuellement.</p>
 
@@ -446,27 +470,95 @@
   <li>Par <strong>type/catégorie</strong> : paiements, cours, dépenses diverses, etc.</li>
 </ul>
 
-<h3>9.7 Export PDF</h3>
+<h3>9.7 Exports (PDF, Excel/CSV, rapport HTML)</h3>
+<p>Le module Comptabilité propose <strong>trois formats d'export</strong> pour la période et la portée filtrées :</p>
+
+<table>
+  <tr><th>Format</th><th>Usage</th><th>Contenu</th></tr>
+  <tr><td><strong>PDF</strong></td><td>Rapport officiel à archiver ou transmettre à la direction</td><td>En-tête Joda Company, tableaux entrées/sorties, totaux et balance, mise en page professionnelle</td></tr>
+  <tr><td><strong>Excel / CSV</strong></td><td>Analyse dans un tableur (Excel, Google Sheets, LibreOffice)</td><td>Fichier .csv avec toutes les opérations de la période, ligne par ligne — idéal pour calculs et tris</td></tr>
+  <tr><td><strong>Rapport HTML</strong></td><td>Impression rapide depuis le navigateur</td><td>Ouvre une fenêtre d'impression formatée — pratique pour imprimer directement</td></tr>
+</table>
+
 <div class="step">
-  <strong>Générer un rapport comptable PDF :</strong>
+  <strong>Générer un export :</strong>
   <ol>
-    <li>Appliquez les filtres souhaités (période, catégorie)</li>
-    <li>Cliquez sur <strong>« Exporter PDF »</strong></li>
-    <li>Un rapport formaté est généré avec :
+    <li>Appliquez les filtres souhaités (période, portée, catégorie)</li>
+    <li>Cliquez sur le bouton correspondant : <strong>« Exporter PDF »</strong>, <strong>« Exporter Excel/CSV »</strong> ou <strong>« Imprimer le rapport »</strong> (HTML)</li>
+    <li>Le rapport est généré avec :
       <ul>
         <li>En-tête Joda Company (logo, coordonnées)</li>
-        <li>Tableau des entrées et sorties</li>
+        <li>Tableau des entrées et sorties de la période</li>
         <li>Totaux entrées / sorties</li>
         <li>Balance (entrées - sorties)</li>
         <li>Date d'export et période couverte</li>
       </ul>
     </li>
-    <li>Le fichier se télécharge automatiquement</li>
+    <li>PDF et CSV se téléchargent automatiquement ; le rapport HTML ouvre la fenêtre d'impression</li>
   </ol>
+</div>
+
+<div class="tip">
+  <strong>Conseil :</strong> Pour la clôture mensuelle, exportez le <strong>PDF</strong> (archive officielle) ET le <strong>CSV</strong> (pour vos analyses dans Excel). Conservez les deux dans votre archive mensuelle.
 </div>
 
 <h3>9.8 Réconciliation quotidienne</h3>
 <p>Le module affiche en haut la somme des entrées et sorties <strong>du jour</strong> pour faciliter la réconciliation quotidienne de caisse.</p>
+
+<h3>9.9 Budgets prévisionnels</h3>
+<p>L'onglet <strong>Budgets</strong> permet de définir des budgets prévisionnels par catégorie et par période, puis de suivre les dépenses réelles par rapport à ces prévisions.</p>
+
+<div class="step">
+  <strong>Créer un budget :</strong>
+  <ol>
+    <li>Module Comptabilité → onglet <strong>« Budgets »</strong></li>
+    <li>Cliquez sur <strong>« Nouveau budget »</strong></li>
+    <li>Sélectionnez la <strong>catégorie</strong> concernée (ex : Loyer, Salaires, Communication)</li>
+    <li>Définissez la <strong>période</strong> (mois, trimestre, année)</li>
+    <li>Saisissez le <strong>montant prévu</strong> (plafond budgétaire) en FCFA</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+  </ol>
+</div>
+
+<h4>Suivi budgétaire</h4>
+<p>Une fois un budget créé, le module compare automatiquement les <strong>dépenses réelles</strong> de la catégorie aux prévisions :</p>
+<table>
+  <tr><th>Indicateur</th><th>Signification</th></tr>
+  <tr><td>Montant prévu</td><td>Le plafond budgétaire défini</td></tr>
+  <tr><td>Montant consommé</td><td>Total des sorties validées de la catégorie sur la période</td></tr>
+  <tr><td>Reste disponible</td><td>Prévu − Consommé (alerte si négatif = dépassement)</td></tr>
+  <tr><td>Pourcentage consommé</td><td>Jauge de progression (vert &lt; 80%, orange 80-100%, rouge &gt; 100%)</td></tr>
+</table>
+
+<div class="tip">
+  <strong>Conseil :</strong> Définissez vos budgets en début de mois ou d'année. Consultez l'onglet Budgets régulièrement pour anticiper les dépassements avant qu'ils ne surviennent.
+</div>
+
+<h3>9.10 Catégories personnalisées</h3>
+<p>L'onglet <strong>Catégories</strong> permet d'ajouter vos propres catégories d'entrées et de sorties, au-delà des catégories par défaut, pour mieux refléter votre activité.</p>
+
+<h4>Catégories par défaut</h4>
+<table>
+  <tr><th>Type</th><th>Catégories par défaut</th></tr>
+  <tr><td>Entrées</td><td>paiement_procedure, paiement_cours, revenus_divers</td></tr>
+  <tr><td>Sorties</td><td>loyer, salaires, fonctionnement, materiels, fournitures, transports, communication, partenaires, divers</td></tr>
+</table>
+
+<div class="step">
+  <strong>Ajouter une catégorie personnalisée :</strong>
+  <ol>
+    <li>Module Comptabilité → onglet <strong>« Catégories »</strong></li>
+    <li>Cliquez sur <strong>« Nouvelle catégorie »</strong></li>
+    <li>Choisissez le <strong>type</strong> : Entrée (revenu) ou Sortie (dépense)</li>
+    <li>Saisissez le <strong>nom</strong> de la catégorie (ex : « Subventions », « Frais de visa », « Événements »)</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
+    <li>La nouvelle catégorie devient immédiatement disponible lors de la création d'entrées ou de sorties</li>
+  </ol>
+</div>
+
+<div class="note">
+  <strong>Note :</strong> Les catégories personnalisées apparaissent dans les listes déroulantes de création d'entrées/sorties et dans les filtres du rapport. Utilisez-les pour affiner vos analyses financières.
+</div>
 
 <!-- SECTION 10 -->
 <h2 id="utilisateurs">10. Gestion des Utilisateurs et Permissions</h2>
@@ -1004,10 +1096,108 @@
   <li>Uploads de documents et notifications nécessitent une connexion active</li>
 </ul>
 
-<!-- SECTION 15 -->
-<h2 id="workflows">15. Workflows Administratifs Courants</h2>
+<!-- SECTION 15 — CONFIGURATION DES FRAIS -->
+<h2 id="config-frais">15. Configuration des Frais</h2>
 
-<h3>15.1 Création d'un nouveau membre de l'équipe</h3>
+<h3>15.1 Accès</h3>
+<p>Menu latéral → <strong>Configuration des Frais</strong> (section Configuration). Réservé aux <strong>admins</strong> et <strong>super admins</strong>.</p>
+
+<h3>15.2 Présentation</h3>
+<p>Ce module définit les <strong>montants et tranches de paiement par défaut</strong> appliqués dans toute l'application. Lorsqu'un agent inscrit un étudiant à un cours ou crée une procédure, les montants proviennent de cette configuration. La modifier change les montants proposés pour les <strong>nouvelles</strong> opérations (les paiements existants ne sont pas affectés).</p>
+
+<div class="note">
+  <strong>Note :</strong> La configuration est chargée une seule fois au démarrage de l'application et injectée dans tous les modules. Après modification, les utilisateurs déjà connectés devront rafraîchir l'application pour voir les nouveaux montants.
+</div>
+
+<h3>15.3 Les 4 onglets de configuration</h3>
+<table>
+  <tr><th>Onglet</th><th>Configure</th></tr>
+  <tr><td><strong>Bourse Bachelor</strong></td><td>Tranches et montants de la procédure bourse niveau Licence</td></tr>
+  <tr><td><strong>Bourse Master</strong></td><td>Tranches et montants de la procédure bourse niveau Master</td></tr>
+  <tr><td><strong>Mandarin</strong></td><td>Tranches et montants des cours de mandarin</td></tr>
+  <tr><td><strong>Anglais</strong></td><td>Tranches et montants des cours d'anglais</td></tr>
+</table>
+
+<h3>15.4 Modifier les tranches d'un service</h3>
+<div class="step">
+  <ol>
+    <li>Ouvrez le module Configuration des Frais</li>
+    <li>Sélectionnez l'onglet du service à configurer (ex : Mandarin)</li>
+    <li>La liste des tranches actuelles s'affiche (label + montant)</li>
+    <li>Pour <strong>modifier</strong> une tranche : changez son label ou son montant directement dans le champ</li>
+    <li>Pour <strong>ajouter</strong> une tranche : cliquez sur <strong>« Ajouter une tranche »</strong>, saisissez le label et le montant</li>
+    <li>Pour <strong>supprimer</strong> une tranche : cliquez sur l'icône poubelle de la ligne concernée</li>
+    <li>Le <strong>total</strong> du service se recalcule automatiquement à chaque modification</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong> pour appliquer la configuration</li>
+  </ol>
+</div>
+
+<h3>15.5 Réinitialiser aux valeurs par défaut</h3>
+<p>Un bouton <strong>« Réinitialiser »</strong> permet de revenir aux montants par défaut de Joda Company en cas d'erreur de saisie. Une confirmation est demandée avant la réinitialisation.</p>
+
+<h4>Valeurs de référence des cours (par défaut)</h4>
+<table>
+  <tr><th>Tranche</th><th>Nature</th><th>Mandarin</th><th>Anglais</th></tr>
+  <tr><td>T1</td><td>Inscription</td><td>10 000 FCFA</td><td>10 000 FCFA</td></tr>
+  <tr><td>T2</td><td>Livre / Matériel</td><td>11 000 FCFA</td><td>11 000 FCFA</td></tr>
+  <tr><td>T3</td><td>1re tranche de cours</td><td>50 000 FCFA</td><td>30 000 FCFA</td></tr>
+  <tr><td>T4</td><td>2e tranche de cours</td><td>50 000 FCFA</td><td>40 000 FCFA</td></tr>
+  <tr><td colspan="2"><strong>Total</strong></td><td><strong>121 000 FCFA</strong></td><td><strong>91 000 FCFA</strong></td></tr>
+</table>
+
+<div class="warning">
+  <strong>Attention :</strong> La modification des montants doit être faite avec prudence et idéalement validée par la direction. Une erreur de montant se répercute sur toutes les nouvelles inscriptions. Vérifiez deux fois avant d'enregistrer.
+</div>
+
+<!-- SECTION 16 — COMMUNICATION -->
+<h2 id="communication">16. Communication — Messages &amp; SMS</h2>
+
+<h3>16.1 Accès</h3>
+<p>Menu latéral → <strong>Communication</strong> (section Communication). Accessible aux agents, superviseurs, admins et super admins.</p>
+
+<h3>16.2 Présentation</h3>
+<p>Le module Communication permet d'envoyer des <strong>emails</strong> et des <strong>SMS</strong> aux étudiants, individuellement ou en masse. Il comprend deux onglets : <strong>Messages</strong> (email + SMS simultané) et <strong>SMS</strong> (SMS uniquement, avec solde de crédits).</p>
+
+<h3>16.3 Onglet Messages (email + SMS)</h3>
+<div class="step">
+  <ol>
+    <li>Ouvrez le module Communication, onglet <strong>« Messages »</strong></li>
+    <li>Sélectionnez un ou plusieurs étudiants (cases à cocher, ou « Tout sélectionner »)</li>
+    <li>Saisissez le <strong>sujet</strong> et le <strong>corps</strong> du message</li>
+    <li>Cliquez sur <strong>« Envoyer »</strong></li>
+    <li>Un <strong>email HTML</strong> est envoyé à chaque destinataire, plus un <strong>SMS simultané</strong> si l'étudiant a un numéro enregistré</li>
+  </ol>
+</div>
+
+<h3>16.4 Onglet SMS</h3>
+<div class="step">
+  <ol>
+    <li>Ouvrez l'onglet <strong>« SMS »</strong></li>
+    <li>Consultez le <strong>solde de crédits SMS</strong> affiché en haut</li>
+    <li>Sélectionnez les destinataires (étudiants avec numéro de téléphone)</li>
+    <li>Saisissez le texte (max 160 caractères pour un SMS simple — surveillez le compteur)</li>
+    <li>Cliquez sur <strong>« Envoyer le SMS »</strong></li>
+    <li>Les numéros camerounais sont normalisés automatiquement (237XXXXXXXXX)</li>
+  </ol>
+</div>
+
+<h3>16.5 Gestion du solde SMS <span class="superadmin-only">Suivi administratif</span></h3>
+<p>Le solde de crédits SMS est un consommable payant. En tant qu'admin, surveillez-le :</p>
+<ul>
+  <li>Vérifiez le solde avant les campagnes d'envoi de masse</li>
+  <li>Anticipez les recharges auprès du prestataire SMS (smsvas.com)</li>
+  <li>Limitez les SMS aux communications réellement utiles (rappels d'échéance, documents manquants, validations)</li>
+  <li>Privilégiez l'email (gratuit) pour les communications longues ou non urgentes</li>
+</ul>
+
+<div class="warning">
+  <strong>Attention :</strong> Les envois de masse (email comme SMS) sont irréversibles. Vérifiez le contenu et la liste des destinataires avant d'envoyer. Pensez à la confidentialité : ne diffusez jamais d'informations sensibles d'un étudiant à un groupe.
+</div>
+
+<!-- SECTION 17 -->
+<h2 id="workflows">17. Workflows Administratifs Courants</h2>
+
+<h3>17.1 Création d'un nouveau membre de l'équipe</h3>
 <div class="step">
   <ol>
     <li>Menu Utilisateurs → <strong>« Nouvel utilisateur »</strong></li>
@@ -1021,7 +1211,7 @@
   </ol>
 </div>
 
-<h3>15.2 Clôture mensuelle comptable</h3>
+<h3>17.2 Clôture mensuelle comptable</h3>
 <div class="step">
   <ol>
     <li>Module Comptabilité → filtrer sur le mois écoulé</li>
@@ -1033,7 +1223,7 @@
   </ol>
 </div>
 
-<h3>15.3 Départ d'un employé</h3>
+<h3>17.3 Départ d'un employé</h3>
 <div class="step">
   <ol>
     <li>Module Utilisateurs → trouver le compte de l'employé</li>
@@ -1044,7 +1234,7 @@
   </ol>
 </div>
 
-<h3>15.4 Audit d'une contestation de paiement</h3>
+<h3>17.4 Audit d'une contestation de paiement</h3>
 <div class="step">
   <ol>
     <li>Module Logs d'activités</li>
@@ -1056,7 +1246,7 @@
   </ol>
 </div>
 
-<h3>15.5 Monitoring hebdomadaire recommandé</h3>
+<h3>17.5 Monitoring hebdomadaire recommandé</h3>
 <table>
   <tr><th>Fréquence</th><th>Action</th><th>Module</th></tr>
   <tr><td>Quotidien</td><td>Consulter le tableau de bord — vérifier la section « À traiter »</td><td>Tableau de bord</td></tr>

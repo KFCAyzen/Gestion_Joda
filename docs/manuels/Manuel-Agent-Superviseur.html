@@ -73,6 +73,8 @@
   <li><a href="#comptabilite">Comptabilité (consultation)</a></li>
   <li><a href="#performances">Performances et statistiques</a></li>
   <li><a href="#notifications">Notifications</a></li>
+  <li><a href="#cours-langues">Cours de langues</a></li>
+  <li><a href="#communication">Communication — Messages &amp; SMS</a></li>
   <li><a href="#workflows">Workflows courants</a></li>
 </ol>
 
@@ -1054,10 +1056,163 @@
   <li><strong>Supprimer</strong> — retire définitivement la notification</li>
 </ul>
 
-<!-- SECTION 12 -->
-<h2 id="workflows">12. Workflows Courants</h2>
+<!-- SECTION 12 — COURS DE LANGUES -->
+<h2 id="cours-langues">12. Cours de Langues</h2>
 
-<h3>12.1 Onboarding d'un nouvel étudiant (workflow complet)</h3>
+<h3>12.1 Accès au module</h3>
+<p>Menu latéral → <strong>Cours de Langues</strong> (section Ressources)</p>
+
+<h3>12.2 Présentation</h3>
+<p>Le module Cours de Langues gère les inscriptions des étudiants aux cours de <strong>Mandarin</strong> et d'<strong>Anglais</strong>. Chaque inscription génère automatiquement <strong>4 tranches de paiement</strong> dans le module Frais. Ce module permet de suivre l'état des paiements de cours, de les valider et de gérer les pénalités de retard.</p>
+
+<div class="note">
+  <strong>Note :</strong> Un étudiant ne peut pas être inscrit deux fois au même cours actif (mandarin ou anglais). L'application vérifie automatiquement les doublons.
+</div>
+
+<h3>12.3 Inscrire un étudiant à un cours</h3>
+<div class="step">
+  <strong>Procédure détaillée :</strong>
+  <ol>
+    <li>Ouvrez le module <strong>Cours de Langues</strong></li>
+    <li>Cliquez sur <strong>« Nouvelle inscription »</strong> (ou bouton équivalent en haut de page)</li>
+    <li><strong>Sélectionnez l'étudiant</strong> dans la liste déroulante (tapez le nom pour filtrer)</li>
+    <li><strong>Sélectionnez le type de cours :</strong>
+      <ul>
+        <li><em>Mandarin</em> — Cours de langue chinoise</li>
+        <li><em>Anglais</em> — Cours d'anglais</li>
+      </ul>
+    </li>
+    <li>Cliquez sur <strong>« Inscrire »</strong></li>
+    <li>L'application vérifie que l'étudiant n'a pas déjà une inscription active à ce cours</li>
+    <li>L'inscription crée automatiquement <strong>4 tranches de paiement</strong> dans le module Frais (statut « En attente »)</li>
+    <li>Un message de confirmation s'affiche : « Inscription créée »</li>
+    <li>Les tranches deviennent immédiatement visibles dans le module Frais et dans le portail de l'étudiant</li>
+  </ol>
+</div>
+
+<h3>12.4 Détail des tranches de paiement</h3>
+<p>Les 4 tranches générées à l'inscription dépendent du type de cours :</p>
+<table>
+  <tr><th>Tranche</th><th>Nature</th><th>Mandarin</th><th>Anglais</th></tr>
+  <tr><td>T1</td><td>Inscription</td><td>10 000 FCFA</td><td>10 000 FCFA</td></tr>
+  <tr><td>T2</td><td>Livre / Matériel</td><td>11 000 FCFA</td><td>11 000 FCFA</td></tr>
+  <tr><td>T3</td><td>1re tranche de cours</td><td>50 000 FCFA</td><td>30 000 FCFA</td></tr>
+  <tr><td>T4</td><td>2e tranche de cours</td><td>50 000 FCFA</td><td>40 000 FCFA</td></tr>
+  <tr><td colspan="2"><strong>Total</strong></td><td><strong>121 000 FCFA</strong></td><td><strong>91 000 FCFA</strong></td></tr>
+</table>
+
+<div class="note">
+  <strong>Note :</strong> Les montants des tranches sont définis dans le module <strong>Configuration des Frais</strong> (accessible aux admins). Ce sont les montants par défaut — ils peuvent être ajustés.
+</div>
+
+<h3>12.5 Valider un paiement de cours <span class="role-tag supervisor-tag">Superviseur</span></h3>
+<p>Lorsqu'un étudiant paie une tranche de cours, le paiement doit être validé (comme tout paiement). La procédure est identique à celle de la section 7.4 :</p>
+<div class="step">
+  <ol>
+    <li>Dans le module Cours de Langues (ou Frais), localisez la tranche à valider</li>
+    <li>Vérifiez la preuve de paiement si jointe</li>
+    <li>Cliquez sur <strong>« Valider »</strong></li>
+    <li>Le statut de la tranche passe à <span class="status-badge status-green">Payé</span></li>
+    <li>Une écriture comptable de type « paiement_cours » est créée automatiquement</li>
+    <li>L'étudiant est notifié de la validation</li>
+  </ol>
+</div>
+
+<h3>12.6 Pénalités de retard sur les cours</h3>
+<p>Les tranches de cours non payées à la date limite génèrent des pénalités, calculées automatiquement :</p>
+<table>
+  <tr><th>Type de tranche</th><th>Pénalité journalière</th></tr>
+  <tr><td>Inscription (T1)</td><td>500 FCFA/jour</td></tr>
+  <tr><td>Autres tranches (T2, T3, T4)</td><td>1 000 FCFA/jour</td></tr>
+</table>
+
+<h3>12.7 Supprimer une inscription <span class="role-tag supervisor-tag">Superviseur</span></h3>
+<div class="warning">
+  <strong>Attention :</strong> La suppression d'une inscription supprime également les tranches de paiement associées non encore payées. Une confirmation explicite est demandée. Les tranches déjà payées et leurs écritures comptables sont conservées.
+</div>
+
+<!-- SECTION 13 — COMMUNICATION -->
+<h2 id="communication">13. Communication — Messages &amp; SMS</h2>
+
+<h3>13.1 Accès au module</h3>
+<p>Menu latéral → <strong>Communication</strong> (ou <strong>Messages &amp; SMS</strong>). Accessible aux agents, superviseurs et administrateurs.</p>
+
+<h3>13.2 Présentation</h3>
+<p>Le module Communication permet d'envoyer des <strong>emails</strong> et des <strong>SMS</strong> aux étudiants, individuellement ou en masse (à plusieurs étudiants en une seule opération). Il comprend deux onglets :</p>
+<table>
+  <tr><th>Onglet</th><th>Fonctionnalité</th></tr>
+  <tr><td><strong>Messages</strong></td><td>Envoi d'emails individuels ou groupés. Un SMS est envoyé en parallèle si le numéro de l'étudiant est disponible.</td></tr>
+  <tr><td><strong>SMS</strong></td><td>Envoi de SMS uniquement, avec affichage du solde de crédits SMS disponibles.</td></tr>
+</table>
+
+<h3>13.3 Envoyer un message (email + SMS)</h3>
+<div class="step">
+  <strong>Onglet « Messages » :</strong>
+  <ol>
+    <li>Ouvrez le module Communication, onglet <strong>« Messages »</strong></li>
+    <li>La liste de tous les étudiants s'affiche avec une case à cocher devant chacun</li>
+    <li><strong>Sélectionnez les destinataires :</strong>
+      <ul>
+        <li>Cochez un ou plusieurs étudiants individuellement</li>
+        <li>Ou utilisez « Tout sélectionner » pour un envoi de masse</li>
+      </ul>
+    </li>
+    <li>Saisissez le <strong>sujet</strong> du message (objet de l'email)</li>
+    <li>Saisissez le <strong>corps du message</strong> (texte à envoyer)</li>
+    <li>Un <strong>compteur de caractères</strong> indique la longueur — utile car les SMS sont limités à 160 caractères</li>
+    <li>Cliquez sur <strong>« Envoyer »</strong></li>
+    <li>L'application envoie :
+      <ul>
+        <li>Un <strong>email HTML</strong> (responsive, avec en-tête Joda Company) à chaque destinataire</li>
+        <li>Un <strong>SMS simultané</strong> à chaque étudiant disposant d'un numéro de téléphone enregistré</li>
+      </ul>
+    </li>
+    <li>Un message de confirmation indique le nombre d'envois réussis</li>
+  </ol>
+</div>
+
+<h3>13.4 Envoyer un SMS</h3>
+<div class="step">
+  <strong>Onglet « SMS » :</strong>
+  <ol>
+    <li>Ouvrez l'onglet <strong>« SMS »</strong></li>
+    <li>Le <strong>solde de crédits SMS disponibles</strong> s'affiche en haut (rechargé par l'administration)</li>
+    <li>La liste des étudiants disposant d'un numéro de téléphone s'affiche</li>
+    <li>Sélectionnez les destinataires (une sélection ou tous)</li>
+    <li>Saisissez le texte du SMS (maximum 160 caractères pour un SMS simple)</li>
+    <li>Surveillez le compteur de caractères</li>
+    <li>Cliquez sur <strong>« Envoyer le SMS »</strong></li>
+    <li>Les numéros camerounais sont automatiquement normalisés au format international (237XXXXXXXXX)</li>
+    <li>Le solde de crédits est décrémenté selon le nombre d'envois</li>
+  </ol>
+</div>
+
+<div class="tip">
+  <strong>Conseils pour les SMS :</strong>
+  <ul>
+    <li>Restez sous 160 caractères pour éviter qu'un message soit facturé comme plusieurs SMS</li>
+    <li>Vérifiez le solde de crédits avant un envoi de masse</li>
+    <li>Les SMS ne fonctionnent qu'avec des numéros valides et bien renseignés dans la fiche étudiant</li>
+  </ul>
+</div>
+
+<div class="warning">
+  <strong>Attention :</strong> Les envois de masse sont irréversibles. Vérifiez bien le contenu et la liste des destinataires avant d'envoyer. Un message mal rédigé envoyé à tous les étudiants ne peut pas être rappelé.
+</div>
+
+<h3>13.5 Bonnes pratiques de communication</h3>
+<ul>
+  <li><strong>Personnalisez quand c'est possible :</strong> Pour un message important à un seul étudiant, préférez l'envoi individuel</li>
+  <li><strong>Soyez concis :</strong> Surtout pour les SMS (coût + limite de caractères)</li>
+  <li><strong>Vérifiez les destinataires :</strong> Un envoi de masse touche tous les étudiants cochés</li>
+  <li><strong>Privilégiez l'email pour le contenu long :</strong> Le SMS pour les rappels courts (échéance, document manquant)</li>
+  <li><strong>Évitez le spam :</strong> N'envoyez que des informations utiles pour préserver la confiance des étudiants</li>
+</ul>
+
+<!-- SECTION 14 -->
+<h2 id="workflows">14. Workflows Courants</h2>
+
+<h3>14.1 Onboarding d'un nouvel étudiant (workflow complet)</h3>
 <div class="step">
   <ol>
     <li><strong>Créer l'étudiant</strong> (module Étudiants → Nouvel étudiant)</li>
@@ -1071,7 +1226,7 @@
   </ol>
 </div>
 
-<h3>12.2 Traitement d'un paiement étudiant</h3>
+<h3>14.2 Traitement d'un paiement étudiant</h3>
 <div class="step">
   <ol>
     <li>Notification reçue : un étudiant a déclaré un paiement</li>
@@ -1084,7 +1239,7 @@
   </ol>
 </div>
 
-<h3>12.3 Gestion d'un document non conforme</h3>
+<h3>14.3 Gestion d'un document non conforme</h3>
 <div class="step">
   <ol>
     <li>Ouvrir le dossier concerné</li>
@@ -1097,7 +1252,7 @@
   </ol>
 </div>
 
-<h3>12.4 Passer un dossier en admission validée</h3>
+<h3>14.4 Passer un dossier en admission validée</h3>
 <div class="step">
   <ol>
     <li>Ouvrir le dossier de l'étudiant</li>

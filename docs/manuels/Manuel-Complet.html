@@ -92,7 +92,7 @@
   <li><a href="#etudiant-dossier">Suivi du dossier</a></li>
   <li><a href="#etudiant-documents">Gestion des documents</a></li>
   <li><a href="#etudiant-paiements">Paiements et frais</a></li>
-  <li><a href="#etudiant-notifications">Notifications</a></li>
+  <li><a href="#etudiant-notifications">Notifications et messagerie</a></li>
 </ol>
 
 <p class="toc-section">Partie 3 — Interface de Gestion (Agents &amp; Superviseurs)</p>
@@ -120,6 +120,13 @@
   <li><a href="#ref-montants">Référence des montants</a></li>
   <li><a href="#ref-workflows">Workflows métier complets</a></li>
   <li><a href="#ref-securite">Sécurité et bonnes pratiques</a></li>
+</ol>
+
+<p class="toc-section">Partie 6 — Modules Complémentaires &amp; Configuration</p>
+<ol class="toc" start="24">
+  <li><a href="#cours-langues">Cours de langues</a></li>
+  <li><a href="#communication">Communication — Messages &amp; SMS</a></li>
+  <li><a href="#config-frais">Configuration des frais</a></li>
 </ol>
 
 <div class="page-break"></div>
@@ -431,6 +438,18 @@
   <tr><td>Mise à jour dossier</td><td style="color:#2563eb">Bleu</td><td>Votre dossier a été mis à jour</td></tr>
 </table>
 
+<h3 id="etudiant-messagerie">8.1 Messagerie avec l'équipe</h3>
+<p>En plus des notifications, votre portail dispose d'une <strong>messagerie</strong> où vous recevez les messages envoyés par l'équipe Joda Company : demandes de documents, rappels de paiement, informations sur votre dossier, instructions administratives.</p>
+<ul>
+  <li>Cliquez sur <strong>« Messagerie »</strong> dans le menu pour consulter vos messages</li>
+  <li>Un badge signale les nouveaux messages non lus</li>
+  <li>Selon votre profil, vous pouvez aussi recevoir ces communications par <strong>email</strong> et/ou <strong>SMS</strong></li>
+  <li>Pour répondre ou poser une question, contactez votre agent (téléphone, email, ou à l'agence)</li>
+</ul>
+<div class="tip">
+  <strong>Conseil :</strong> Consultez régulièrement votre messagerie : les messages contiennent souvent des actions à effectuer qui font avancer votre dossier.
+</div>
+
 <!-- ============================================================ -->
 <!-- PARTIE 3 — INTERFACE DE GESTION -->
 <!-- ============================================================ -->
@@ -645,8 +664,36 @@
 <h3>16.3 Valider une sortie</h3>
 <p>Trouver la sortie (fond rouge) → vérifier → cliquer <strong>« Valider »</strong> → marquée avec votre nom et date.</p>
 
-<h3>16.4 Export PDF</h3>
-<p>Appliquer les filtres période/catégorie → cliquer <strong>« Exporter PDF »</strong> → rapport avec en-tête Joda Company, tableau entrées/sorties, totaux et balance.</p>
+<h3>16.4 Exports (PDF, Excel/CSV, rapport HTML)</h3>
+<p>Trois formats d'export sont disponibles pour la période et la portée filtrées :</p>
+<table>
+  <tr><th>Format</th><th>Usage</th></tr>
+  <tr><td><strong>PDF</strong></td><td>Rapport officiel à archiver (en-tête Joda Company, tableaux, totaux, balance)</td></tr>
+  <tr><td><strong>Excel / CSV</strong></td><td>Analyse dans un tableur — toutes les opérations ligne par ligne</td></tr>
+  <tr><td><strong>Rapport HTML</strong></td><td>Ouvre une fenêtre d'impression pour imprimer directement</td></tr>
+</table>
+<p>Appliquer les filtres période/portée/catégorie → cliquer sur le bouton du format souhaité. PDF et CSV se téléchargent ; le HTML ouvre l'impression.</p>
+
+<h3>16.5 Budgets prévisionnels</h3>
+<p>L'onglet <strong>Budgets</strong> permet de définir un montant prévisionnel par catégorie et par période, puis de suivre les dépenses réelles par rapport à la prévision.</p>
+<div class="step">
+  <ol>
+    <li>Onglet <strong>Budgets</strong> → <strong>« Nouveau budget »</strong></li>
+    <li>Sélectionner la catégorie (ex : Loyer, Salaires), la période et le montant prévu</li>
+    <li>Enregistrer</li>
+    <li>Le module compare automatiquement : Montant prévu / Consommé / Reste disponible / % consommé (jauge verte &lt; 80%, orange 80-100%, rouge &gt; 100%)</li>
+  </ol>
+</div>
+
+<h3>16.6 Catégories personnalisées</h3>
+<p>L'onglet <strong>Catégories</strong> permet d'ajouter vos propres catégories d'entrées et de sorties au-delà des catégories par défaut.</p>
+<div class="step">
+  <ol>
+    <li>Onglet <strong>Catégories</strong> → <strong>« Nouvelle catégorie »</strong></li>
+    <li>Choisir le type (Entrée ou Sortie) et saisir le nom (ex : « Subventions », « Frais de visa »)</li>
+    <li>Enregistrer → la catégorie devient disponible dans les listes de création d'entrées/sorties et dans les filtres</li>
+  </ol>
+</div>
 
 <h2 id="admin-utilisateurs">17. Gestion des Utilisateurs et Permissions</h2>
 
@@ -934,6 +981,105 @@
   <tr><td>Problème de stockage (limite atteinte)</td><td>Admin + prestataire technique</td></tr>
   <tr><td>Accès suspect détecté</td><td>Admin immédiatement (désactivation du compte)</td></tr>
 </table>
+
+<!-- ============================================================ -->
+<!-- PARTIE 6 — MODULES COMPLÉMENTAIRES & CONFIGURATION -->
+<!-- ============================================================ -->
+
+<h2 id="cours-langues">24. Cours de Langues</h2>
+
+<div class="audience-banner agent-banner">Agent / Superviseur / Admin</div>
+
+<h3>24.1 Présentation</h3>
+<p>Le module Cours de Langues gère les inscriptions des étudiants aux cours de <strong>Mandarin</strong> et d'<strong>Anglais</strong>. Chaque inscription génère automatiquement <strong>4 tranches de paiement</strong> dans le module Frais.</p>
+
+<h3>24.2 Inscrire un étudiant</h3>
+<div class="step">
+  <ol>
+    <li>Menu → <strong>Cours de Langues</strong> → <strong>« Nouvelle inscription »</strong></li>
+    <li>Sélectionner l'étudiant et le type de cours (Mandarin ou Anglais)</li>
+    <li>Cliquer sur <strong>« Inscrire »</strong> — l'application vérifie qu'il n'y a pas déjà une inscription active</li>
+    <li>4 tranches de paiement sont créées automatiquement (statut « En attente »)</li>
+  </ol>
+</div>
+
+<h3>24.3 Détail des tranches</h3>
+<table>
+  <tr><th>Tranche</th><th>Nature</th><th>Mandarin</th><th>Anglais</th></tr>
+  <tr><td>T1</td><td>Inscription</td><td>10 000 FCFA</td><td>10 000 FCFA</td></tr>
+  <tr><td>T2</td><td>Livre / Matériel</td><td>11 000 FCFA</td><td>11 000 FCFA</td></tr>
+  <tr><td>T3</td><td>1re tranche de cours</td><td>50 000 FCFA</td><td>30 000 FCFA</td></tr>
+  <tr><td>T4</td><td>2e tranche de cours</td><td>50 000 FCFA</td><td>40 000 FCFA</td></tr>
+  <tr><td colspan="2"><strong>Total</strong></td><td><strong>121 000 FCFA</strong></td><td><strong>91 000 FCFA</strong></td></tr>
+</table>
+
+<h3>24.4 Validation et pénalités</h3>
+<p>Les tranches de cours se valident comme tout paiement (voir section 13.3). Les pénalités de retard : <strong>500 FCFA/jour</strong> pour l'inscription (T1), <strong>1 000 FCFA/jour</strong> pour les autres tranches.</p>
+
+<div class="warning">
+  <strong>Suppression d'inscription :</strong> Supprime aussi les tranches non payées (confirmation requise). Les tranches déjà payées et leurs écritures comptables sont conservées.
+</div>
+
+<h2 id="communication">25. Communication — Messages &amp; SMS</h2>
+
+<div class="audience-banner agent-banner">Agent / Superviseur / Admin</div>
+
+<h3>25.1 Présentation</h3>
+<p>Le module Communication permet d'envoyer des <strong>emails</strong> et des <strong>SMS</strong> aux étudiants, individuellement ou en masse. Deux onglets : <strong>Messages</strong> (email + SMS simultané) et <strong>SMS</strong> (SMS seul, avec solde de crédits).</p>
+
+<h3>25.2 Envoyer un message (Messages)</h3>
+<div class="step">
+  <ol>
+    <li>Module Communication → onglet <strong>« Messages »</strong></li>
+    <li>Cocher un ou plusieurs étudiants (ou « Tout sélectionner »)</li>
+    <li>Saisir le sujet et le corps du message</li>
+    <li>Cliquer sur <strong>« Envoyer »</strong> → email HTML à chaque destinataire + SMS simultané si numéro disponible</li>
+  </ol>
+</div>
+
+<h3>25.3 Envoyer un SMS (SMS)</h3>
+<div class="step">
+  <ol>
+    <li>Onglet <strong>« SMS »</strong> → consulter le solde de crédits affiché</li>
+    <li>Sélectionner les destinataires (étudiants avec numéro)</li>
+    <li>Saisir le texte (max 160 caractères — surveiller le compteur)</li>
+    <li>Envoyer → normalisation automatique des numéros camerounais (237XXXXXXXXX)</li>
+  </ol>
+</div>
+
+<div class="warning">
+  <strong>Attention :</strong> Les envois de masse sont irréversibles. Vérifiez le contenu et les destinataires. Surveillez le solde SMS (consommable payant) et privilégiez l'email pour les messages longs.
+</div>
+
+<h2 id="config-frais">26. Configuration des Frais</h2>
+
+<div class="audience-banner admin-banner">Admin / Super Admin</div>
+
+<h3>26.1 Présentation</h3>
+<p>Ce module définit les <strong>montants et tranches par défaut</strong> appliqués dans toute l'application. Quand un agent inscrit un étudiant à un cours ou crée une procédure, les montants proviennent de cette configuration. La modifier affecte les <strong>nouvelles</strong> opérations uniquement (les paiements existants ne changent pas).</p>
+
+<h3>26.2 Les 4 onglets</h3>
+<table>
+  <tr><th>Onglet</th><th>Configure</th></tr>
+  <tr><td>Bourse Bachelor</td><td>Tranches/montants procédure bourse Licence</td></tr>
+  <tr><td>Bourse Master</td><td>Tranches/montants procédure bourse Master</td></tr>
+  <tr><td>Mandarin</td><td>Tranches/montants cours de mandarin</td></tr>
+  <tr><td>Anglais</td><td>Tranches/montants cours d'anglais</td></tr>
+</table>
+
+<h3>26.3 Modifier la configuration</h3>
+<div class="step">
+  <ol>
+    <li>Sélectionner l'onglet du service à configurer</li>
+    <li>Modifier le label ou le montant d'une tranche, en ajouter ou en supprimer</li>
+    <li>Le total se recalcule automatiquement</li>
+    <li>Cliquer sur <strong>« Enregistrer »</strong> (ou <strong>« Réinitialiser »</strong> pour revenir aux valeurs par défaut)</li>
+  </ol>
+</div>
+
+<div class="warning">
+  <strong>Attention :</strong> Une erreur de montant se répercute sur toutes les nouvelles inscriptions. Vérifiez deux fois avant d'enregistrer, idéalement avec validation de la direction.
+</div>
 
 <div class="footer-note">
   Manuel d'Utilisation Complet — Joda Company — Version 1.0 — Mai 2026<br>
