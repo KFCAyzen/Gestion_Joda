@@ -114,14 +114,65 @@
 <h2 id="connexion">2. Connexion et Navigation</h2>
 
 <h3>2.1 Connexion</h3>
+
+<h4>Accès Web (navigateur)</h4>
 <div class="step">
+  <strong>Étapes de connexion — Version web :</strong>
   <ol>
-    <li>Ouvrez l'application Joda Company</li>
-    <li>Saisissez votre <strong>nom d'utilisateur</strong> et votre <strong>mot de passe</strong></li>
+    <li>Ouvrez un navigateur web sécurisé (Chrome, Firefox, Edge, Safari)</li>
+    <li>Naviguez vers l'adresse officielle : <strong>https://admin.joda.company/login</strong></li>
+    <li>Vérifiez le certificat SSL (icône cadenas vert dans la barre d'adresse)</li>
+    <li>Entrez votre <strong>nom d'utilisateur</strong> (format : InitialePrénom + Nom, ex : JDupont)</li>
+    <li>Entrez votre <strong>mot de passe</strong> de façon sécurisée (clavier virtuel recommandé pour les environnements sensibles)</li>
+    <li>Cochez <strong>« Rester connecté »</strong> si souhaité (à éviter sur ordinateurs partagés)</li>
     <li>Cliquez sur <strong>« Se connecter »</strong></li>
-    <li>Vous arrivez sur le tableau de bord administrateur</li>
+    <li>Après vérification des identifiants et permissions, vous accédez au <strong>tableau de bord administrateur</strong></li>
+    <li>Votre nom et rôle (Admin/Super Admin) s'affichent en haut à droite</li>
+    <li>Un badge <span class="superadmin-tag">Super Admin</span> ou <span class="admin-tag">Admin</span> indique votre niveau de permission exact</li>
   </ol>
 </div>
+
+<h4>Accès Desktop (application installée)</h4>
+<div class="step">
+  <strong>Étapes de connexion — Version desktop :</strong>
+  <ol>
+    <li>Double-cliquez sur l'icône <strong>Joda Company Admin</strong> sur le bureau ou le menu Démarrage</li>
+    <li>Attendez le chargement initial de l'application (5-10 secondes, plus lent que le web)</li>
+    <li>Une fenêtre dédiée s'ouvre avec le formulaire de connexion sécurisé</li>
+    <li>Saisissez votre <strong>nom d'utilisateur</strong></li>
+    <li>Saisissez votre <strong>mot de passe</strong></li>
+    <li>Cliquez sur <strong>« Se connecter »</strong></li>
+    <li>L'application effectue une synchronisation avec la base de données cloud Supabase (barre de progression visible)</li>
+    <li>L'application crée également une copie locale de vos données administratives en SQLite pour fonctionnement offline</li>
+    <li>Vous accédez au tableau de bord administrateur avec toutes les fonctionnalités disponibles</li>
+    <li><strong>Avantage offline :</strong> Si vous perdez la connexion Internet, vous pouvez continuer à consulter les données en local (lecture seule pour certains modules). Les modifications administratives seront synchronisées au retour de la connexion.</li>
+  </ol>
+</div>
+
+<h4>Points de sécurité importants pour l'administrateur</h4>
+<div class="warning">
+  <strong>Sécurité critique :</strong> En tant qu'administrateur, vos identifiants donnent accès à des données sensibles (tous les dossiers étudiants, la comptabilité, les logs d'activité). Respectez ces règles :
+  <ul>
+    <li>Ne cliquez jamais sur un lien de connexion envoyé par email — tapez toujours l'URL directement</li>
+    <li>Utilisez un mot de passe fort (>12 caractères, mélange de majuscules, minuscules, chiffres, caractères spéciaux)</li>
+    <li>Changez votre mot de passe tous les 3 mois</li>
+    <li>Ne vous connectez jamais sur des réseaux WiFi publics — utilisez un VPN si nécessaire</li>
+    <li>Déconnectez-vous toujours après chaque session, surtout sur ordinateurs partagés</li>
+  </ul>
+</div>
+
+<h4>Tableau des problèmes courants et solutions</h4>
+<table>
+  <tr><th>Problème</th><th>Cause probable</th><th>Solution</th></tr>
+  <tr><td>« Identifiants invalides »</td><td>Nom d'utilisateur ou mot de passe incorrect (respect de la casse)</td><td>Vérifiez le nom d'utilisateur exact. Utilisez « Mot de passe oublié » si nécessaire. Vérifiez que votre compte n'a pas été désactivé.</td></tr>
+  <tr><td>« Certificat SSL invalide » (navigateur)</td><td>Problème de sécurité ou cache navigateur corrompu</td><td>ATTENTION : Ne contournez jamais cet avertissement. Videz le cache, essayez en mode navigation privée, réessayez.</td></tr>
+  <tr><td>« Accès refusé — permissions insuffisantes »</td><td>Votre compte a été désactivé ou son rôle downgrad é</td><td>Contactez le Super Admin pour vérifier votre compte et permissions.</td></tr>
+  <tr><td>« Erreur de synchronisation données »</td><td>Problème de connexion cloud ou session expirée</td><td>Vérifiez votre connexion Internet. Reconnectez-vous. Si le problème persiste, attendez quelques minutes (maintenance Supabase possible).</td></tr>
+  <tr><td>« Session expirée après inactivité »</td><td>Sécurité cloud : session expirée après 1 heure d'inactivité</td><td>Reconnectez-vous pour poursuivre. C'est normal et prévu pour la sécurité.</td></tr>
+</table>
+
+<div class="tip">
+  <strong>Conseil :</strong> Pour les accès fréquents et hautement sécurisés, utilisez l'application web (plus rapide). L'application desktop est idéale pour les environnements avec connexion Internet instable ou pour les audits offline.</div>
 
 <h3>2.2 Menu de navigation complet</h3>
 <p>En tant qu'admin, vous voyez tous les menus disponibles dans l'application :</p>
@@ -239,29 +290,133 @@
 
 <h4>Créer une sortie (dépense)</h4>
 <div class="step">
+  <strong>Procédure détaillée :</strong>
   <ol>
-    <li>Dans le module Comptabilité, cliquez sur <strong>« Nouvelle dépense »</strong></li>
-    <li>Sélectionnez la <strong>catégorie</strong> :
+    <li>Naviguez vers le module <strong>Comptabilité</strong> depuis le menu latéral</li>
+    <li>Cliquez sur le bouton <strong>« Nouvelle dépense »</strong> (en haut à droite, rouge)</li>
+    <li>Un formulaire multi-champs s'ouvre. Remplissez obligatoirement :</li>
+
+    <li><strong>Catégorie</strong> (champ obligatoire)
       <ul>
-        <li>Loyer</li>
-        <li>Salaires</li>
-        <li>Fonctionnement</li>
-        <li>Matériels</li>
-        <li>Fournitures</li>
-        <li>Transports</li>
-        <li>Communication</li>
-        <li>Partenaires</li>
-        <li>Divers</li>
+        <li><em>Loyer</em> — Loyer bureau + charges mensuelles</li>
+        <li><em>Salaires</em> — Rémunération équipe + cotisations patron</li>
+        <li><em>Fonctionnement</em> — Électricité, eau, Internet, téléphone</li>
+        <li><em>Matériels</em> — Équipement informatique, furniture, maintenance</li>
+        <li><em>Fournitures</em> — Fournitures bureau, papier, cartouches encre</li>
+        <li><em>Transports</em> — Déplacements agents, carburant, taxi</li>
+        <li><em>Communication</em> — Publicité, marketing, événements</li>
+        <li><em>Partenaires</em> — Paiements aux partenaires, commissions</li>
+        <li><em>Divers</em> — Dépenses non catégorisables ailleurs</li>
       </ul>
     </li>
-    <li>Saisissez le <strong>montant</strong> en FCFA</li>
-    <li>Saisissez la <strong>date</strong> de la dépense</li>
-    <li>Rédigez une <strong>description</strong> claire</li>
-    <li>Optionnellement, uploadez un <strong>justificatif</strong> (facture, bon de caisse, etc.) — PDF ou image, max 10 MB</li>
-    <li>Cliquez sur <strong>« Enregistrer »</strong></li>
-    <li>La dépense apparaît en rouge dans le livre avec le statut « Non validée »</li>
+
+    <li><strong>Montant</strong> (champ obligatoire)
+      <ul>
+        <li>Format : numérique uniquement, sans symbole de devise</li>
+        <li>Montant en FCFA</li>
+        <li>Maximum accepté : 50 000 000 FCFA (protection contre les erreurs)</li>
+        <li>Exemple : saisissez « 1500000 » pour 1 500 000 FCFA</li>
+        <li>Montant doit être > 0</li>
+      </ul>
+    </li>
+
+    <li><strong>Date de la dépense</strong> (champ obligatoire)
+      <ul>
+        <li>Date à laquelle la dépense a été effectuée (date du paiement ou de la facture)</li>
+        <li>Utilisez le calendrier popup (ne tapez pas manuellement)</li>
+        <li>Ne peut pas être une date future</li>
+        <li>Si date antérieure de plus de 3 mois, un avertissement s'affiche (dépense ancienne — à confirmer)</li>
+      </ul>
+    </li>
+
+    <li><strong>Description</strong> (champ obligatoire)
+      <ul>
+        <li>Texte clair et descriptif (ex : « Facture électricité mai 2026 » plutôt que « Électricité »)</li>
+        <li>2-200 caractères</li>
+        <li>Incluez si possible : date facture, numéro facture, bénéficiaire/fournisseur</li>
+        <li>Exemple : « Facture téléphonie Orange #INV-2026-05-1234 »</li>
+      </ul>
+    </li>
+
+    <li><strong>Justificatif / Pièce jointe</strong> (champ optionnel mais RECOMMANDÉ)
+      <ul>
+        <li>Upload la facture, le bon de caisse, le reçu, ou tout document justificatif</li>
+        <li>Formats acceptés : PDF, JPG, PNG, GIF (max 10 MB par fichier)</li>
+        <li>Cliquez sur « Sélectionner un fichier » ou glissez-déposez le fichier</li>
+        <li>Vérifiez que le fichier est lisible et montre clairement :
+          <ul>
+            <li>Montant de la facture</li>
+            <li>Date de la facture</li>
+            <li>Identité du fournisseur</li>
+            <li>Numéro de facture (si disponible)</li>
+          </ul>
+        </li>
+        <li>Les justificatifs manquants sont un risque audit — un admin ultra-strict peut les demander ultérieurement</li>
+      </ul>
+    </li>
+
+    <li><strong>Notes internes</strong> (optionnel)
+      <ul>
+        <li>Contexte additionnel pour l'équipe (ex : « Approuvé par direction le 20/05 »)</li>
+        <li>Raison si montant ou date inhabituel</li>
+      </ul>
+    </li>
+
+    <li>Vérifiez tous les champs obligatoires (marqués d'un <strong>*</strong> rouge)</li>
+    <li>Cliquez sur <strong>« Enregistrer »</strong> (bouton vert)</li>
+    <li>L'application effectue une validation :
+      <ul>
+        <li>Montant > 0 et ≤ 50 000 000 FCFA</li>
+        <li>Date révolue</li>
+        <li>Catégorie valide</li>
+      </ul>
+    </li>
+    <li>Un message de succès s'affiche : « Dépense créée »</li>
+    <li>La dépense apparaît immédiatement dans le livre comptable avec :
+      <ul>
+        <li>Fond <span class="status-red">rouge clair</span> (non validée)</li>
+        <li>Statut : <strong>Non validée</strong></li>
+        <li>Votre nom en tant que créateur</li>
+      </ul>
+    </li>
   </ol>
 </div>
+
+<h4>Exemples de dépenses bien complétées</h4>
+<div class="note">
+  <strong>Exemple 1 — Dépense courante :</strong><br>
+  <strong>Catégorie :</strong> Fonctionnement<br>
+  <strong>Montant :</strong> 125000<br>
+  <strong>Date :</strong> 20/05/2026<br>
+  <strong>Description :</strong> Facture électricité Eneo mai 2026 #1234567<br>
+  <strong>Justificatif :</strong> [Facture PDF uploadée]<br><br>
+
+  <strong>Exemple 2 — Dépense salariale :</strong><br>
+  <strong>Catégorie :</strong> Salaires<br>
+  <strong>Montant :</strong> 2500000<br>
+  <strong>Date :</strong> 30/04/2026 (fin de mois)<br>
+  <strong>Description :</strong> Paie équipe avril 2026 (6 agents + 2 superviseurs)<br>
+  <strong>Justificatif :</strong> [Bordereau paie/relevé bancaire]<br>
+  <strong>Notes :</strong> Prime de performance agent Dupont incluse<br><br>
+
+  <strong>Exemple 3 — Dépense d'investissement :</strong><br>
+  <strong>Catégorie :</strong> Matériels<br>
+  <strong>Montant :</strong> 850000<br>
+  <strong>Date :</strong> 15/05/2026<br>
+  <strong>Description :</strong> Achat serveur informatique SSD 1TB (Fnac) #FAC-2026-0512345<br>
+  <strong>Justificatif :</strong> [Facture magasin]<br>
+  <strong>Notes :</strong> Approbation direction avant 20/05
+</div>
+
+<h4>Erreurs courantes lors de la création</h4>
+<table>
+  <tr><th>Erreur</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td>« Montant invalide »</td><td>Montant ≤ 0, format incorrect, ou > 50 000 000 FCFA</td><td>Saisissez un montant numérique positif réaliste, sans espace ni symbole.</td></tr>
+  <tr><td>« Description vide ou trop courte »</td><td>Moins de 2 caractères</td><td>Complétez la description avec au moins quelques mots explicatifs.</td></tr>
+  <tr><td>« Date future »</td><td>Vous avez saisi une date postérieure à aujourd'hui</td><td>Utilisez le calendrier pour sélectionner une date passée ou aujourd'hui.</td></tr>
+  <tr><td>« Fichier trop volumineux »</td><td>Justificatif > 10 MB</td><td>Comprimez l'image ou le PDF, ou scannez en résolution plus basse.</td></tr>
+  <tr><td>« Format de fichier non accepté »</td><td>Vous avez tenté d'uploader un fichier non-image/PDF (ex : .docx, .xlsx)</td><td>Convertissez en PDF ou JPG d'abord, puis réessayez.</td></tr>
+</table>
 
 <h4>Valider une sortie</h4>
 <div class="step">
@@ -332,22 +487,159 @@
 
 <h3>10.3 Créer un utilisateur</h3>
 <div class="step">
+  <strong>Procédure détaillée :</strong>
   <ol>
-    <li>Cliquez sur <strong>« Nouvel utilisateur »</strong></li>
-    <li>Remplissez les champs :
+    <li>Naviguez vers le module <strong>Utilisateurs</strong> depuis le menu latéral</li>
+    <li>Cliquez sur le bouton <strong>« Nouvel utilisateur »</strong> (rouge, en haut à droite)</li>
+    <li>Un formulaire s'ouvre. Remplissez les champs :</li>
+
+    <li><strong>Prénom</strong> (obligatoire)
       <ul>
-        <li><strong>Prénom et nom</strong> (obligatoires)</li>
-        <li><strong>Nom d'utilisateur</strong> — doit être unique dans le système</li>
-        <li><strong>Email</strong> — adresse email professionnelle, doit être unique</li>
-        <li><strong>Téléphone</strong></li>
-        <li><strong>Rôle</strong> — sélectionnez selon la responsabilité</li>
-        <li><strong>Mot de passe temporaire</strong> — minimum 8 caractères</li>
+        <li>2-50 caractères, lettres uniquement</li>
+        <li>Exemple : « Jean »</li>
       </ul>
     </li>
-    <li>Cliquez sur <strong>« Créer »</strong></li>
-    <li>Le compte est créé avec le flag <em>« Doit changer le mot de passe »</em> — l'utilisateur sera forcé de le changer à la 1ère connexion</li>
-    <li>Communiquez les identifiants à l'utilisateur de façon sécurisée</li>
+
+    <li><strong>Nom de famille</strong> (obligatoire)
+      <ul>
+        <li>2-50 caractères, lettres et tirets acceptés</li>
+        <li>Exemple : « Dupont-Martin »</li>
+      </ul>
+    </li>
+
+    <li><strong>Nom d'utilisateur</strong> (obligatoire)
+      <ul>
+        <li>Format standard : InitialePrénom + Nom (ex : JDupont)</li>
+        <li>4-20 caractères, lettres et chiffres uniquement (pas d'espaces ni caractères spéciaux)</li>
+        <li><strong>Doit être unique</strong> dans la base — le système vérifie et alerte en cas de doublon</li>
+        <li>Suggestions :
+          <ul>
+            <li>Prénom simple + Nom (ex : JeanDupont)</li>
+            <li>Initiales (ex : JD01, JD02 si plusieurs JD)</li>
+          </ul>
+        </li>
+        <li>Éventuellement des chiffres pour distinction (ex : JDupont01, JDupont02)</li>
+      </ul>
+    </li>
+
+    <li><strong>Email professionnel</strong> (obligatoire)
+      <ul>
+        <li>Format valide : prenom.nom@joda.company ou prenom.nom@societe.cm (à adapter)</li>
+        <li><strong>Doit être unique</strong> dans le système</li>
+        <li>Utilisé pour :
+          <ul>
+            <li>Réinitialisation du mot de passe (lien envoyé par email)</li>
+            <li>Notifications admin</li>
+            <li>Authentification alternative</li>
+          </ul>
+        </li>
+        <li>À éviter : emails génériques (info@, contact@) ou emails personnels (@gmail.com)</li>
+      </ul>
+    </li>
+
+    <li><strong>Téléphone</strong> (optionnel)
+      <ul>
+        <li>Format : +237 6XX XXX XXX ou local 6XX XXX XXX</li>
+        <li>Utilisé pour contact direct ou notifications SMS (si activé ultérieurement)</li>
+      </ul>
+    </li>
+
+    <li><strong>Rôle</strong> (obligatoire)
+      <ul>
+        <li>Sélectionnez dans la liste déroulante selon la fonction :
+          <ul>
+            <li><em>User</em> — Accès lecture basique uniquement</li>
+            <li><em>Agent</em> — Opérations courantes (gestion étudiants, dossiers, paiements)</li>
+            <li><em>Supervisor</em> — Opérations + validations (paiements, documents, statuts)</li>
+            <li><em>Admin</em> — Gestion complète sauf création/suppression d'autres admins</li>
+            <li><em>Super Admin</em> — <span class="superadmin-only"><strong>Super Admin uniquement :</strong> Accès illimité + création d'autres admins/super_admins</span></li>
+          </ul>
+        </li>
+        <li><strong>Règle de hiérarchie :</strong> Vous pouvez créer des utilisateurs de tout rôle <strong>inférieur au vôtre</strong>
+          <ul>
+            <li>Admin peut créer : User, Agent, Supervisor (mais pas Admin ni Super Admin)</li>
+            <li>Super Admin peut créer : tous les rôles y compris Admin et Super Admin</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+
+    <li><strong>Mot de passe temporaire</strong> (obligatoire)
+      <ul>
+        <li><strong>Exigences de sécurité :</strong>
+          <ul>
+            <li>Minimum 8 caractères (recommandé : 12+)</li>
+            <li>Au moins 1 majuscule (A-Z)</li>
+            <li>Au moins 1 minuscule (a-z)</li>
+            <li>Au moins 1 chiffre (0-9)</li>
+            <li>Au moins 1 caractère spécial (!@#$%^&*)</li>
+          </ul>
+        </li>
+        <li><strong>Exemple de mot de passe fort :</strong> « JoDa#2026!Sec »</li>
+        <li>Évitez :
+          <ul>
+            <li>Mots de dictionnaire (password, 12345678)</li>
+            <li>Informations personnelles visibles (nom, date naissance)</li>
+            <li>Mêmes caractères répétés (aaaaaaaa)</li>
+          </ul>
+        </li>
+        <li><strong>Flag automatique :</strong> « Doit changer le mot de passe » est activé — l'utilisateur sera forcé de le changer à la 1ère connexion</li>
+      </ul>
+    </li>
+
+    <li><strong>Permissions personnalisées</strong> (avancé, optionnel)
+      <ul>
+        <li>Par défaut, les permissions sont celles du rôle sélectionné</li>
+        <li>Vous pouvez refinancer celles-ci après la création si des besoins spécifiques existent</li>
+        <li>À laisser par défaut pour la plupart des cas standard</li>
+      </ul>
+    </li>
+
+    <li>Vérifiez que tous les champs obligatoires (marqués d'un <strong>*</strong> rouge) sont complétés</li>
+    <li>Cliquez sur <strong>« Créer »</strong> (bouton vert)</li>
+    <li>L'application effectue les validations :
+      <ul>
+        <li>Unicité du nom d'utilisateur</li>
+        <li>Unicité de l'email</li>
+        <li>Force du mot de passe</li>
+        <li>Respect de la hiérarchie (vous ne créez pas un rôle ≥ au vôtre)</li>
+      </ul>
+    </li>
+    <li>Un message de succès s'affiche : « Utilisateur créé »</li>
+    <li>Le compte est créé avec :
+      <ul>
+        <li>Statut : <strong>Actif</strong></li>
+        <li>Flag : <strong>« Doit changer le mot de passe »</strong> (forcera changement à 1ère connexion)</li>
+      </ul>
+    </li>
+    <li>Communiquez les identifiants à l'utilisateur de façon <strong>SÉCURISÉE</strong> (voir section sécurité ci-dessous)</li>
   </ol>
+</div>
+
+<h4>Communication sécurisée des identifiants</h4>
+<div class="warning">
+  <strong>IMPORTANT :</strong> Ne jamais envoyer les identifiants par email non sécurisé ! Utilisez l'une de ces méthodes :
+  <ul>
+    <li><strong>Réunion en personne :</strong> Donnez les identifiants verbalement et demandez à l'utilisateur de définir immédiatement un nouveau mot de passe</li>
+    <li><strong>Lien de réinitialisation :</strong> Envoyez un email avec lien de réinitialisation (lien valable 24h) — l'utilisateur définit son propre mot de passe</li>
+    <li><strong>Gestionnaire de mots de passe sécurisé :</strong> Utilisez Bitwarden, LastPass, ou équivalent si disponible dans votre organisation</li>
+    <li><strong>Message chiffré :</strong> Utilisez Signal, WhatsApp, ou communication sécurisée certifiée</li>
+  </ul>
+  Ne transmettez <strong>jamais</strong> le mot de passe par SMS ou message non chiffré.
+</div>
+
+<h4>Erreurs courantes lors de la création</h4>
+<table>
+  <tr><th>Erreur</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td>« Nom d'utilisateur déjà utilisé »</td><td>Un utilisateur avec ce username existe déjà</td><td>Choisissez un nom d'utilisateur différent (ex : ajouter des chiffres)</td></tr>
+  <tr><td>« Email déjà utilisé »</td><td>Cet email est associé à un autre compte</td><td>Utilisez un email différent ou vérifiez si cet utilisateur existe déjà</td></tr>
+  <tr><td>« Mot de passe faible »</td><td>Le mot de passe ne respecte pas les exigences</td><td>Ajoutez majuscules, minuscules, chiffres, caractères spéciaux. Minimum 8 caractères.</td></tr>
+  <tr><td>« Rôle non autorisé »</td><td>Vous tentez de créer un Admin ou Super Admin sans être Super Admin</td><td>Seul un Super Admin peut créer des comptes Admin/Super Admin.</td></tr>
+  <tr><td>« Champs obligatoires manquants »</td><td>Un champ marqué * n'est pas rempli</td><td>Complétez prénom, nom, username, email, rôle, mot de passe.</td></tr>
+</table>
+
+<div class="tip">
+  <strong>Conseil :</strong> Après création du compte, invitez l'utilisateur à se connecter rapidement (dans les 24h) pour que le flag « Doit changer mot de passe » le force à choisir un mot de passe personnel. Un mot de passe personnalisé dès le départ améliore la sécurité.
 </div>
 
 <div class="warning">
@@ -364,16 +656,67 @@
 </div>
 
 <h3>10.5 Réinitialiser le mot de passe d'un utilisateur</h3>
+<p>La réinitialisation de mot de passe est utile quand un utilisateur oublie son mot de passe ou quand vous souhaitez forcer un changement pour des raisons de sécurité.</p>
+
+<h4>Procédure côté administrateur</h4>
 <div class="step">
   <ol>
-    <li>Sur la ligne de l'utilisateur, cliquez sur <strong>« Réinitialiser mot de passe »</strong></li>
-    <li>Un email de réinitialisation est automatiquement envoyé à l'adresse de l'utilisateur</li>
-    <li>L'utilisateur suit le lien reçu par email pour définir son nouveau mot de passe</li>
+    <li>Accédez au module <strong>Utilisateurs</strong></li>
+    <li>Trouvez l'utilisateur dans la liste (utilisez la recherche si nécessaire)</li>
+    <li>Sur la ligne de cet utilisateur, localisez le bouton <strong>« Réinitialiser mot de passe »</strong> (ou icône clé)</li>
+    <li>Cliquez sur <strong>« Réinitialiser mot de passe »</strong></li>
+    <li>Une confirmation s'affiche : « Un email de réinitialisation sera envoyé à [email] »</li>
+    <li>Confirmez en cliquant sur <strong>« Confirmer la réinitialisation »</strong></li>
+    <li>Un message de succès s'affiche : « Email de réinitialisation envoyé »</li>
+    <li>L'application envoie automatiquement un email sécurisé à l'adresse du profil de l'utilisateur</li>
+    <li>Vous pouvez fermer la fenêtre — le processus se poursuit en arrière-plan</li>
   </ol>
 </div>
 
+<h4>Ce qui se passe pour l'utilisateur</h4>
 <div class="note">
-  <strong>Note :</strong> La réinitialisation envoie un lien sécurisé (valable 24h) vers l'email enregistré dans le profil de l'utilisateur.
+  <strong>Côté utilisateur (flux email) :</strong>
+  <ol>
+    <li>L'utilisateur reçoit un email avec le sujet : « Réinitialisation de votre mot de passe Joda Company »</li>
+    <li>L'email contient un lien sécurisé unique : « https://joda.company/reset-password?token=XXXXX »</li>
+    <li>Le lien est <strong>valable 24 heures uniquement</strong> — après expiration, il faudra redemander une réinitialisation</li>
+    <li>L'utilisateur clique sur le lien (il peut le faire depuis n'importe quel appareil et connexion)</li>
+    <li>Une page de formulaire s'ouvre : « Définir votre nouveau mot de passe »</li>
+    <li>L'utilisateur saisit son nouveau mot de passe (mêmes exigences que lors de la création : 8+ caractères, majuscules, minuscules, chiffres, caractères spéciaux)</li>
+    <li>Il confirme en cliquant <strong>« Changer le mot de passe »</strong></li>
+    <li>Le mot de passe est changé immédiatement — il peut dès lors se reconnecter avec le nouveau</li>
+    <li>Il reçoit un email de confirmation : « Votre mot de passe a été changé avec succès »</li>
+  </ol>
+</div>
+
+<h4>Important à savoir</h4>
+<table>
+  <tr><th>Aspect</th><th>Détail</th></tr>
+  <tr><td>Email utilisé</td><td>L'email du lien est celui enregistré dans le profil utilisateur (champ « Email »)</td></tr>
+  <tr><td>Validité du lien</td><td>24 heures après l'envoi — après, l'utilisateur doit redemander une réinitialisation</td></tr>
+  <tr><td>Nombre de tentatives</td><td>L'utilisateur peut essayer autant de fois qu'il veut avant le timeout 24h</td></tr>
+  <tr><td>Compte temporairement bloqué ?</td><td>Non — l'utilisateur peut toujours tenter de se connecter avec son ancien mot de passe (qui ne fonctionne plus après changement)</td></tr>
+  <tr><td>Qui change le mot de passe</td><td>L'utilisateur lui-même via le lien — l'administrateur ne connaît pas le nouveau mot de passe</td></tr>
+  <tr><td>Historique</td><td>Le changement est enregistré dans les logs d'activité comme « password_reset »</td></tr>
+</table>
+
+<h4>Cas d'usage courants</h4>
+<ul>
+  <li><strong>Utilisateur oublie son mot de passe :</strong> Cliquez sur « Réinitialiser mot de passe », l'utilisateur reçoit un email avec lien de changement</li>
+  <li><strong>Renouvellement de sécurité trimestriel :</strong> Forcez une réinitialisation pour tous les comptes actifs tous les 3 mois</li>
+  <li><strong>Email de l'utilisateur change :</strong> Modifiez d'abord l'adresse email dans le profil, puis réinitialisez — le lien sera envoyé à la nouvelle adresse</li>
+  <li><strong>Utilisateur n'a pas reçu l'email :</strong> Vérifiez que l'email est correct dans le profil. Essayez de réinitialiser à nouveau. Vérifiez les spams de l'utilisateur.</li>
+</ul>
+
+<h4>Différence avec « Forcer le changement de mot de passe »</h4>
+<table>
+  <tr><th>Action</th><th>Effet</th><th>Utilisation</th></tr>
+  <tr><td>Réinitialiser mot de passe</td><td>Envoie un lien email — l'utilisateur change son mot de passe lui-même</td><td>Quand l'utilisateur oublie son mot de passe ou quand il est absent (change ultérieur)</td></tr>
+  <tr><td>Forcer le changement</td><td>Force l'utilisateur à changer son mot de passe à la prochaine connexion</td><td>À la création du compte (par défaut) ou quand vous souhaitez forcer un changement immédiat</td></tr>
+</table>
+
+<div class="warning">
+  <strong>Note de sécurité :</strong> Si un utilisateur signale un accès non autorisé à son compte, réinitialisez immédiatement son mot de passe, vérifiez les logs de ses dernières actions, et demandez-lui de se reconnecter avec un nouveau mot de passe personnel.
 </div>
 
 <h3>10.6 Activer / Désactiver un compte</h3>
@@ -397,35 +740,79 @@
 </ul>
 
 <h3>10.8 Gestion des permissions granulaires</h3>
-<p>Au-delà des permissions par défaut du rôle, vous pouvez personnaliser les permissions de chaque utilisateur.</p>
+<p>Au-delà des permissions par défaut attachées à chaque rôle, vous pouvez personnaliser les permissions individuelles de chaque utilisateur pour des cas spéciaux. Les permissions granulaires permettent des ajustements fins sans changer le rôle global.</p>
 
-<h4>Permissions disponibles par module :</h4>
+<h4>Permissions disponibles par module</h4>
 <table>
-  <tr><th>Module</th><th>Permissions configurables</th></tr>
-  <tr><td>Étudiants</td><td>Voir, Créer, Modifier, Supprimer</td></tr>
-  <tr><td>Candidatures</td><td>Voir, Créer, Modifier, Supprimer</td></tr>
-  <tr><td>Dossiers</td><td>Voir, Créer, Modifier, Supprimer, Valider</td></tr>
-  <tr><td>Universités</td><td>Voir, Créer, Modifier, Supprimer</td></tr>
-  <tr><td>Paiements</td><td>Voir, Créer, Modifier, Supprimer, Valider</td></tr>
-  <tr><td>Comptabilité</td><td>Voir, Créer, Modifier, Supprimer, Valider, Exporter</td></tr>
-  <tr><td>Utilisateurs</td><td>Voir, Créer, Modifier, Supprimer, Gérer permissions</td></tr>
-  <tr><td>Rapports</td><td>Voir, Exporter</td></tr>
-  <tr><td>Système</td><td>Logs, Monitoring</td></tr>
+  <tr><th>Module</th><th>Permissions configurables</th><th>Description</th></tr>
+  <tr><td>Étudiants</td><td>Voir, Créer, Modifier, Supprimer</td><td>Accès à la gestion des fiches étudiants</td></tr>
+  <tr><td>Candidatures</td><td>Voir, Créer, Modifier, Supprimer</td><td>Accès aux candidatures universités</td></tr>
+  <tr><td>Dossiers</td><td>Voir, Créer, Modifier, Supprimer, Valider</td><td>Gestion des dossiers de bourse</td></tr>
+  <tr><td>Universités</td><td>Voir, Créer, Modifier, Supprimer</td><td>Gestion du catalogue universités</td></tr>
+  <tr><td>Paiements</td><td>Voir, Créer, Modifier, Supprimer, Valider</td><td>Gestion des paiements étudiants</td></tr>
+  <tr><td>Comptabilité</td><td>Voir, Créer, Modifier, Supprimer, Valider, Exporter</td><td>Accès au livre comptable complet</td></tr>
+  <tr><td>Utilisateurs</td><td>Voir, Créer, Modifier, Supprimer, Gérer permissions</td><td>Gestion des comptes utilisateurs</td></tr>
+  <tr><td>Rapports</td><td>Voir, Exporter</td><td>Accès aux statistiques et rapports</td></tr>
+  <tr><td>Système</td><td>Logs, Monitoring</td><td>Accès à l'audit et surveillance</td></tr>
 </table>
 
-<h4>Modifier les permissions d'un utilisateur :</h4>
+<h4>Procédure de modification des permissions</h4>
 <div class="step">
   <ol>
-    <li>Sur la ligne de l'utilisateur, cliquez sur <strong>« Gérer les permissions »</strong></li>
-    <li>Le panneau des permissions s'ouvre</li>
-    <li>Les permissions par défaut de son rôle sont indiquées</li>
-    <li>Cochez ou décochez les permissions personnalisées</li>
-    <li>Les modifications sont sauvegardées en temps réel (pas de bouton « Enregistrer » séparé)</li>
+    <li>Accédez au module <strong>Utilisateurs</strong></li>
+    <li>Trouvez l'utilisateur à modifier</li>
+    <li>Sur la ligne de cet utilisateur, cliquez sur <strong>« Gérer les permissions »</strong> (icône clé/cadenas)</li>
+    <li>Un panneau détaillé s'ouvre affichant :
+      <ul>
+        <li>Rôle actuel de l'utilisateur (Badge coloré)</li>
+        <li>Permissions par défaut de ce rôle (affichées mais souvent non modifiables)</li>
+        <li>Permissions additionnelles ou sur-mesure (cases à cocher)</li>
+      </ul>
+    </li>
+    <li>Parcourez les modules et cochez/décochez les permissions selon vos besoins</li>
+    <li>Les modifications sont <strong>sauvegardées automatiquement</strong> (pas de bouton « Enregistrer »)</li>
+    <li>Un message de confirmation s'affiche : « Permissions mises à jour »</li>
+    <li>L'utilisateur doit se reconnecter pour que les nouvelles permissions prennent effet</li>
   </ol>
 </div>
 
+<h4>Cas d'usage courants avec exemples</h4>
+<table>
+  <tr><th>Cas d'usage</th><th>Configuration typique</th><th>Raison</th></tr>
+  <tr><td><strong>Agent spécialisé en documents</strong><br>(Ajoute des permissions « Superviseur »)</td><td>Agent normal<br>+ Permission supplémentaire : Dossiers → Valider<br>+ Permission supplémentaire : Paiements → Valider</td><td>Cet agent a montré une expertise et peut valider les documents/paiements sans montée en rôle complète. Reste agent pour les stats mais a capacités de superviseur.</td></tr>
+  <tr><td><strong>Superviseur sans accès comptabilité</strong><br>(Réduit les permissions)</td><td>Superviseur normal<br>- Retirer permission : Comptabilité → Voir<br>- Retirer permission : Comptabilité → Exporter</td><td>Superviseur qui ne doit pas voir les données financières pour raisons de séparation des tâches ou politique interne. Conserve tous les pouvoirs opérationnels.</td></tr>
+  <tr><td><strong>Admin limité aux utilisateurs</strong><br>(Restreint l'étendue)</td><td>Admin normal<br>- Retirer permission : Comptabilité → Valider<br>- Retirer permission : Système → Logs<br>+ Garder : Utilisateurs → Voir/Créer/Modifier</td><td>Admin responsable uniquement du management des comptes utilisateurs et des permissions, pas des opérations financières ou audits système.</td></tr>
+  <tr><td><strong>Agent audit temporaire</strong><br>(Ajoute capacités temporaires)</td><td>Agent normal<br>+ Permission temporaire : Système → Logs (lecture seule)<br>+ Permission temporaire : Rapports → Exporter</td><td>Agent externe ou temporaire qui effectue un audit — accès très limité aux logs et rapports. À retirer une fois l'audit terminé.</td></tr>
+  <tr><td><strong>Superviseur + Comptabilité</strong><br>(Prépare montée en admin)</td><td>Superviseur normal<br>+ Permission supplémentaire : Comptabilité → Voir<br>+ Permission supplémentaire : Comptabilité → Valider<br>+ Permission supplémentaire : Comptabilité → Exporter</td><td>Superviseur en formation pour devenir Admin — lui donner progressivement l'accès comptable avant promotion formelle.</td></tr>
+</table>
+
+<h4>Matrice d'héritage des permissions</h4>
+<p>Les permissions granulaires s'ajoutent ou se retirent du rôle de base :</p>
+<table>
+  <tr><th>Situation</th><th>Résultat</th></tr>
+  <tr><td>Rôle « Agent » + Ajouter « Valider paiements »</td><td>Agent a toutes les permissions Agent + la permission de valider (normalement Superviseur)</td></tr>
+  <tr><td>Rôle « Superviseur » - Retirer « Voir comptabilité »</td><td>Superviseur a toutes les permissions Superviseur SAUF accès à Comptabilité</td></tr>
+  <tr><td>Rôle « Admin » + Ajouter « Créer Super Admin »</td><td>Admin peut créer des Super Admin (normalement réservé aux Super Admin — à éviter sauf cas exceptionnel)</td></tr>
+</table>
+
+<div class="warning">
+  <strong>Attention :</strong> Les permissions granulaires peuvent créer de la confusion. Lignes directrices :
+  <ul>
+    <li>Documentez les raisons des permissions personnalisées (dans les notes du profil utilisateur)</li>
+    <li>Gardez le nombre de cas granulaires au minimum (organisation plus simple = moins de bugs)</li>
+    <li>Révisez régulièrement les permissions granulaires (mensuellement) — elles peuvent devenir obsolètes</li>
+    <li>Évitez de donner des permissions non cohérentes (ex : « Valider paiements » sans « Voir paiements »)</li>
+  </ul>
+</div>
+
 <div class="tip">
-  <strong>Usage recommandé :</strong> Les permissions granulaires sont utiles pour des cas spéciaux (ex : un agent qui peut valider les documents pour un dossier précis, ou un superviseur qui ne doit pas voir la comptabilité). Pour les cas standard, les permissions par défaut du rôle suffisent.
+  <strong>Conseil :</strong> Pour la plupart des cas standard (agents, superviseurs, admins classiques), les permissions par défaut du rôle suffisent. Les permissions granulaires sont vraiment utiles pour :
+  <ul>
+    <li>Agents spécialisés avec capacités supplémentaires</li>
+    <li>Rôles hybrides temporaires (audit, formation, transition)</li>
+    <li>Restrictions pour raisons de sécurité ou conformité (séparation des tâches)</li>
+  </ul>
+  Ninvoquez-les que si vous avez une raison clairement documentée.
 </div>
 
 <!-- SECTION 11 -->
