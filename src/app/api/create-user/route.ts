@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { z } from "zod";
-import { requireRole } from "@/app/lib/auth";
+import { requireRole, AuthSession } from "@/app/lib/auth";
 import { getLang, sendNewStudentAdminEmail } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 
@@ -52,13 +52,17 @@ function getCreateUserErrorMessage(error: unknown) {
     return rawMessage || "Impossible de créer le compte pour le moment. Réessayez dans un instant.";
 }
 
-async function handleCreateUser(req: NextRequest) {
+async function handleCreateUser(req: NextRequest, session: AuthSession) {
     try {
     const parsed = createUserBodySchema.safeParse(await req.json());
     if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
     }
     const { name, email, username, password, role, authEmail, telephone, langue } = parsed.data;
+
+    if (session.user.role === 'admin' && role === 'super_admin') {
+        return NextResponse.json({ error: "Les administrateurs ne peuvent pas créer de comptes Super Admin." }, { status: 403 });
+    }
 
     // Pour les étudiants, authEmail DOIT être fourni et se terminer par @students.joda.app
     const supabaseEmail = (role === 'student')
