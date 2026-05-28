@@ -913,6 +913,46 @@ body {
   --student-border: #e2e8f0;
   --student-surface: #f8fafc;
   --student-surface-2: #f1f5f9;
+  /* Rouge vif pour barre de progression + montant "reste à payer" lisibles sur fond clair */
+  --student-ring-move: #dc2626;
+  --student-ring-exercise: #dc2626;
+  --student-ring-stand: #dc2626;
+  --student-glow-move: 0 0 0.5rem rgba(220, 38, 38, 0.35);
+  --student-glow-exercise: 0 0 0.5rem rgba(220, 38, 38, 0.30);
+  --student-glow-stand: 0 0 0.5rem rgba(220, 38, 38, 0.30);
+  --student-pay-glow: 0 0 22px rgba(220, 38, 38, 0.45);
+  --student-pay-glow-soft: 0 0 12px rgba(220, 38, 38, 0.28);
+  /* Neon-lime (statut payé + CTA déclarer) — vert foncé pour le contraste + sémantique succès */
+  --student-neon-lime: #15803d;
+  --student-neon-lime-mid: #16a34a;
+  --student-neon-mid: #22c55e;
+  --student-neon-ink: #ffffff;
+}
+
+/* Cartes de paiement dans la modal admin — surfaces blanches opaques pour le contraste sur fond clair */
+.admin-payment-wrapper .student-pay-surface-soft {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+  backdrop-filter: none;
+}
+.admin-payment-wrapper .student-pay-surface {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+  backdrop-filter: none;
+}
+.admin-payment-wrapper .student-pay-pill {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+/* Rails de barres de progression — fond gris clair plutôt que noir transparent */
+.admin-payment-wrapper .bg-black\/25,
+.admin-payment-wrapper .bg-black\/45,
+.admin-payment-wrapper .bg-black\/50 {
+  background-color: #e2e8f0 !important;
 }
 .dark .admin-payment-wrapper {
   --student-fg: rgba(255, 255, 255, 0.93);
