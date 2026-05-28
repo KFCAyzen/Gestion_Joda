@@ -44,6 +44,8 @@ interface EntreeComptable {
     created_at: string;
 }
 
+type SortieStatus = "pending" | "validated" | "rejected";
+
 interface SortieComptable {
     id: string;
     montant: number;
@@ -51,8 +53,12 @@ interface SortieComptable {
     categorie: string;
     description: string;
     justificatif_url: string | null;
+    status: SortieStatus;
     validated_by: string | null;
     validated_at: string | null;
+    rejected_by: string | null;
+    rejected_at: string | null;
+    rejection_reason: string | null;
     created_by: string | null;
     created_at: string;
 }
@@ -118,6 +124,7 @@ export default function AccountingPage() {
     const [pendingDeleteAction, setPendingDeleteAction] = useState<(() => Promise<void>) | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [validatingId, setValidatingId] = useState<string | null>(null);
+    const [rejectModal, setRejectModal] = useState<{ open: boolean; sortieId: string; reason: string }>({ open: false, sortieId: "", reason: "" });
     const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
     const handleDeleteConfirm = async () => {
         if (!pendingDeleteAction) return;
@@ -274,6 +281,7 @@ export default function AccountingPage() {
                 categorie: newSortie.categorie,
                 date: newSortie.date,
                 created_by: user?.id,
+                status: "pending",
 
             }).select();
 
@@ -311,8 +319,12 @@ export default function AccountingPage() {
         const sortie = sorties.find((s) => s.id === id);
         try {
             await supabase.from("sorties_comptables").update({
+                status: "validated",
                 validated_by: user.id,
                 validated_at: new Date().toISOString(),
+                rejected_by: null,
+                rejected_at: null,
+                rejection_reason: null,
             }).eq("id", id);
             await logActivity(
                 user.id, user.name, user.role,
@@ -329,6 +341,38 @@ export default function AccountingPage() {
             setValidatingId(null);
         }
     };
+
+    const handleRejectSortie = async (id: string, reason: string) => {
+        if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
+        setValidatingId(id);
+        const sortie = sorties.find((s) => s.id === id);
+        try {
+            await supabase.from("sorties_comptables").update({
+                status: "rejected",
+                rejected_by: user.id,
+                rejected_at: new Date().toISOString(),
+                rejection_reason: reason || null,
+                validated_by: null,
+                validated_at: null,
+            }).eq("id", id);
+            await logActivity(
+                user.id, user.name, user.role,
+                "accounting_expense", "sorties_comptables", id,
+                `Sortie comptable rejetée — ${sortie?.description ?? id}${reason ? ` (${reason})` : ""}`,
+                { montant: sortie?.montant ?? null, reason: reason || null }
+            );
+            await load();
+            showNotification(t("messages.expenseRejected"), "success");
+        } catch (err) {
+            console.error("Expense rejection error:", err);
+            showNotification(t("messages.rejectionError"), "error");
+        } finally {
+            setValidatingId(null);
+            setRejectModal({ open: false, sortieId: "", reason: "" });
+        }
+    };
+
+    const openRejectModal = (id: string) => setRejectModal({ open: true, sortieId: id, reason: "" });
 
     const getPeriodDates = () => {
         const now = new Date();
@@ -386,11 +430,15 @@ export default function AccountingPage() {
     const startOfDay = new Date(reportDay.getFullYear(), reportDay.getMonth(), reportDay.getDate());
     const endOfDay = new Date(reportDay.getFullYear(), reportDay.getMonth(), reportDay.getDate(), 23, 59, 59);
 
+    // Seules les sorties validées impactent la comptabilité — les sorties en attente
+    // ou rejetées sont exclues des totaux, rapports et statistiques.
+    const sortiesEffective = sorties.filter((s) => s.status === "validated");
+
     const entreesJour = entrees.filter((e) => {
         const d = toDate(e.date);
         return d >= startOfDay && d <= endOfDay;
     });
-    const sortiesJour = sorties.filter((s) => {
+    const sortiesJour = sortiesEffective.filter((s) => {
         const d = toDate(s.date);
         return d >= startOfDay && d <= endOfDay;
     });
@@ -399,13 +447,13 @@ export default function AccountingPage() {
         const d = toDate(e.date);
         return d >= startOfPeriod && d <= endOfPeriod;
     });
-    const sortiesPeriod = sorties.filter((s) => {
+    const sortiesPeriod = sortiesEffective.filter((s) => {
         const d = toDate(s.date);
         return d >= startOfPeriod && d <= endOfPeriod;
     });
 
     const totalEntrees = entrees.reduce((sum, e) => sum + e.montant, 0);
-    const totalSorties = sorties.reduce((sum, e) => sum + e.montant, 0);
+    const totalSorties = sortiesEffective.reduce((sum, e) => sum + e.montant, 0);
     const soldeGlobal = totalEntrees - totalSorties;
 
     const totalEntreesJour = entreesJour.reduce((sum, e) => sum + e.montant, 0);
@@ -950,8 +998,10 @@ export default function AccountingPage() {
                                                                     <TableCell>{s.description}</TableCell>
                                                                     <TableCell><Badge variant="outline">{getCategoryLabel(s.categorie)}</Badge></TableCell>
                                                                     <TableCell>
-                                                                        {s.validated_by ? (
+                                                                        {s.status === "validated" ? (
                                                                             <Badge className="bg-emerald-100 text-emerald-700 dark:text-emerald-300">{t("status.validated")}</Badge>
+                                                                        ) : s.status === "rejected" ? (
+                                                                            <Badge className="bg-rose-100 text-rose-700">{t("status.rejected")}</Badge>
                                                                         ) : (
                                                                             <Badge className="bg-amber-100 text-amber-700">{t("status.pending")}</Badge>
                                                                         )}
@@ -1229,18 +1279,25 @@ export default function AccountingPage() {
                                                         <TableCell>{s.description}</TableCell>
                                                         <TableCell><Badge variant="outline">{getCategoryLabel(s.categorie)}</Badge></TableCell>
                                                         <TableCell>
-                                                            {s.validated_by ? (
+                                                            {s.status === "validated" ? (
                                                                 <Badge className="bg-emerald-100 text-emerald-700 dark:text-emerald-300">{t("status.validated")}</Badge>
+                                                            ) : s.status === "rejected" ? (
+                                                                <Badge className="bg-rose-100 text-rose-700">{t("status.rejected")}</Badge>
                                                             ) : isAdmin ? (
-                                                                <Button variant="outline" size="sm" disabled={validatingId === s.id} onClick={() => handleValidateSortie(s.id)}>
-                                                                    {validatingId === s.id && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
-                                                                    {t("actions.validate")}
-                                                                </Button>
+                                                                <div className="flex gap-1">
+                                                                    <Button variant="outline" size="sm" disabled={validatingId === s.id} onClick={() => handleValidateSortie(s.id)}>
+                                                                        {validatingId === s.id && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                                                                        {t("actions.validate")}
+                                                                    </Button>
+                                                                    <Button variant="outline" size="sm" disabled={validatingId === s.id} onClick={() => openRejectModal(s.id)} className="text-rose-700 hover:text-rose-800">
+                                                                        {t("actions.reject")}
+                                                                    </Button>
+                                                                </div>
                                                             ) : (
                                                                 <Badge className="bg-amber-100 text-amber-700">{t("status.pending")}</Badge>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="text-right font-semibold text-rose-600">{formatAmount(s.montant)}</TableCell>
+                                                        <TableCell className={`text-right font-semibold ${s.status === "validated" ? "text-rose-600" : "text-slate-400 line-through"}`}>{formatAmount(s.montant)}</TableCell>
                                                         <TableCell className="text-right">
                                                             <div className="flex justify-end">
                                                                 <DropdownMenu
@@ -1250,6 +1307,24 @@ export default function AccountingPage() {
                                                                             icon: <Eye className="h-4 w-4" />,
                                                                             onClick: () => setDetailSortie(s),
                                                                         },
+                                                                        ...(isAdmin && s.status !== "validated"
+                                                                            ? [
+                                                                                  {
+                                                                                      label: t("actions.validate"),
+                                                                                      icon: <Eye className="h-4 w-4" />,
+                                                                                      onClick: () => handleValidateSortie(s.id),
+                                                                                  },
+                                                                              ]
+                                                                            : []),
+                                                                        ...(isAdmin && s.status !== "rejected"
+                                                                            ? [
+                                                                                  {
+                                                                                      label: t("actions.reject"),
+                                                                                      icon: <X className="h-4 w-4" />,
+                                                                                      onClick: () => openRejectModal(s.id),
+                                                                                  },
+                                                                              ]
+                                                                            : []),
                                                                         ...(isAdmin
                                                                             ? [
                                                                                   {
@@ -1514,11 +1589,44 @@ export default function AccountingPage() {
                         <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.description")}</span><span className="font-medium text-right max-w-[60%]">{detailSortie.description}</span></div>
                         <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.category")}</span><span className="font-medium">{getCategoryLabel(detailSortie.categorie)}</span></div>
                         <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.amount")}</span><span className="font-bold text-rose-600">{formatAmount(detailSortie.montant)}</span></div>
-                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.status")}</span><span className="font-medium">{detailSortie.validated_by ? t("status.validated") : t("status.pending")}</span></div>
+                        <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("table.status")}</span><span className="font-medium">{detailSortie.status === "validated" ? t("status.validated") : detailSortie.status === "rejected" ? t("status.rejected") : t("status.pending")}</span></div>
+                        {detailSortie.status === "rejected" && detailSortie.rejection_reason && (
+                            <div className="flex justify-between border-b pb-2"><span className="text-slate-500 dark:text-slate-400">{t("detail.rejectionReason")}</span><span className="font-medium text-right max-w-[60%] text-rose-600">{detailSortie.rejection_reason}</span></div>
+                        )}
                         <div className="flex justify-between"><span className="text-slate-500 dark:text-slate-400">{t("table.createdAt")}</span><span className="font-medium">{toDate(detailSortie.created_at).toLocaleDateString(dateLocale)}</span></div>
                     </div>
                     <div className="mt-5">
                         <Button variant="outline" size="sm" onClick={() => setDetailSortie(null)}>{t("actions.close")}</Button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Reject expense modal */}
+        {rejectModal.open && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-rose-700">{t("reject.title")}</h3>
+                        <button onClick={() => setRejectModal({ open: false, sortieId: "", reason: "" })} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
+                    </div>
+                    <p className="mb-3 text-sm text-slate-600 dark:text-slate-300">{t("reject.description")}</p>
+                    <div className="space-y-2">
+                        <Label className="text-xs">{t("reject.reasonLabel")}</Label>
+                        <textarea
+                            value={rejectModal.reason}
+                            onChange={(e) => setRejectModal(m => ({ ...m, reason: e.target.value }))}
+                            placeholder={t("reject.reasonPlaceholder")}
+                            className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                            rows={3}
+                        />
+                    </div>
+                    <div className="mt-5 flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setRejectModal({ open: false, sortieId: "", reason: "" })}>{t("actions.cancel")}</Button>
+                        <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-white" disabled={validatingId === rejectModal.sortieId} onClick={() => handleRejectSortie(rejectModal.sortieId, rejectModal.reason.trim())}>
+                            {validatingId === rejectModal.sortieId && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                            {t("actions.confirmReject")}
+                        </Button>
                     </div>
                 </div>
             </div>

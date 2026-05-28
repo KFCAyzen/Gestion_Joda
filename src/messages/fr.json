@@ -908,6 +908,9 @@
       "printReceipt": "Imprimer reçu",
       "printReport": "Imprimer rapport",
       "validate": "Valider",
+      "reject": "Rejeter",
+      "confirmReject": "Confirmer le rejet",
+      "cancel": "Annuler",
       "close": "Fermer"
     },
     "reportScopes": {
@@ -920,7 +923,8 @@
     },
     "status": {
       "validated": "Validé",
-      "pending": "En attente"
+      "pending": "En attente",
+      "rejected": "Rejeté"
     },
     "empty": {
       "noPeriodOperations": "Aucune opération pour cette période",
@@ -952,6 +956,15 @@
       "entryTitle": "Détails - Entrée",
       "expenseTitle": "Détails - Sortie"
     },
+    "detail": {
+      "rejectionReason": "Motif du rejet"
+    },
+    "reject": {
+      "title": "Rejeter la sortie",
+      "description": "Cette sortie ne sera pas comptabilisée. Indiquez le motif (facultatif).",
+      "reasonLabel": "Motif",
+      "reasonPlaceholder": "Ex: pièce justificative manquante..."
+    },
     "confirm": {
       "deleteCategoryTitle": "Supprimer la catégorie",
       "deleteCategoryDescription": "Cette catégorie sera définitivement supprimée.",
@@ -968,6 +981,8 @@
       "expenseAdded": "Sortie ajoutée",
       "expenseAddError": "Erreur lors de l'ajout de la sortie",
       "expenseValidated": "Sortie validée",
+      "expenseRejected": "Sortie rejetée",
+      "rejectionError": "Erreur lors du rejet",
       "validationError": "Erreur lors de la validation",
       "budgetAdded": "Budget ajouté",
       "budgetAddError": "Erreur lors de l'ajout du budget",

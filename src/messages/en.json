@@ -908,6 +908,9 @@
       "printReceipt": "Print receipt",
       "printReport": "Print report",
       "validate": "Validate",
+      "reject": "Reject",
+      "confirmReject": "Confirm rejection",
+      "cancel": "Cancel",
       "close": "Close"
     },
     "reportScopes": {
@@ -920,7 +923,8 @@
     },
     "status": {
       "validated": "Validated",
-      "pending": "Pending"
+      "pending": "Pending",
+      "rejected": "Rejected"
     },
     "empty": {
       "noPeriodOperations": "No operation for this period",
@@ -952,6 +956,15 @@
       "entryTitle": "Details - Income",
       "expenseTitle": "Details - Expense"
     },
+    "detail": {
+      "rejectionReason": "Rejection reason"
+    },
+    "reject": {
+      "title": "Reject expense",
+      "description": "This expense will not be counted in accounting. Provide a reason (optional).",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "e.g. missing supporting document..."
+    },
     "confirm": {
       "deleteCategoryTitle": "Delete category",
       "deleteCategoryDescription": "This category will be permanently deleted.",
@@ -968,6 +981,8 @@
       "expenseAdded": "Expense added",
       "expenseAddError": "Error while adding expense",
       "expenseValidated": "Expense validated",
+      "expenseRejected": "Expense rejected",
+      "rejectionError": "Error while rejecting",
       "validationError": "Error while validating",
       "budgetAdded": "Budget added",
       "budgetAddError": "Error while adding budget",
