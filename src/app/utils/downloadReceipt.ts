@@ -1,4 +1,5 @@
 import { sanitizeForHtml } from "./security";
+import { isInternational } from "../types/payment-config";
 
 export interface ReceiptPayment {
     id: string;
@@ -19,6 +20,7 @@ export interface ReceiptStudent {
     niveau: string;
     filiere: string;
     langue?: string;
+    nationalite?: string | null;
 }
 
 type Lang = 'fr' | 'en';
@@ -100,6 +102,17 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
     const amountWords = `${numberToWords(payment.montant)} francs CFA`;
     const receiptNo   = payment.id.slice(-8).toUpperCase();
     const studentName = `${sanitizeForHtml(student.nom)} ${sanitizeForHtml(student.prenom)}`;
+    const isIntl      = isInternational(student.nationalite);
+    const companyBlock = isIntl
+        ? `<div class="company-name">JODA COMPANY SARL</div>
+            <div class="company-sub">Travel consulting and assistance company — Study scholarships in China</div>
+            <div class="company-info">
+              220 Handan Road, Yangpu District, Shanghai 200433 — People's Republic of China<br>
+              Email : contact@joda-company.com &nbsp;|&nbsp; Tel : +86 180 5289 2460 / +86 183 0187 0211
+            </div>`
+        : `<div class="company-name">JODA COMPANY</div>
+            <div class="company-sub">Entreprise de conseil et assistance voyage — Bourse d'étude en Chine</div>
+            <div class="company-info">BP 2525 Douala Makepe entrée Marie Lumière &nbsp;|&nbsp; contact@joda-company.com</div>`;
 
     const quittance = (copy: 'ORIGINAL' | 'DUPLICATA') => `
     <div class="quittance">
@@ -108,9 +121,7 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
         <tr>
           <td class="logo-cell">${logoTag}</td>
           <td class="company-cell">
-            <div class="company-name">JODA COMPANY</div>
-            <div class="company-sub">Entreprise de conseil et assistance voyage — Bourse d'étude en Chine</div>
-            <div class="company-info">BP 2525 Douala Makepe entrée Marie Lumière &nbsp;|&nbsp; contact@joda-company.com</div>
+            ${companyBlock}
           </td>
           <td class="copy-cell">
             <div class="copy-badge">${copy}</div>

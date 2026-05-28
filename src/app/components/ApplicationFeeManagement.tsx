@@ -47,6 +47,7 @@ interface Student {
     telephone: string;
     niveau: string;
     filiere: string;
+    nationalite?: string | null;
 }
 
 const MOTIFS = ["Inscription", "Frais de dossier", "Cours de langue", "Autre"];
@@ -191,7 +192,7 @@ export default function ApplicationFeeManagement() {
         if (!student) return;
         void downloadReceipt(
             { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
-            { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere }
+            { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere, nationalite: student.nationalite ?? null }
         );
     };
 
@@ -374,7 +375,7 @@ export default function ApplicationFeeManagement() {
                                                 ...(fee.status === "paye" && student ? [
                                                     { label: t("actions.downloadReceipt"), icon: <Download className="h-4 w-4" />, onClick: () => downloadReceipt(
                                                         { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
-                                                        { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere }
+                                                        { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere, nationalite: student.nationalite ?? null }
                                                     )},
                                                 ] : []),
                                             ]} />

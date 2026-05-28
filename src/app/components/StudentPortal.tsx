@@ -200,6 +200,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
               niveau: studentProfile.niveau,
               filiere: studentProfile.filiere,
               langue: studentProfile.langue,
+              nationalite: studentProfile.nationalite ?? null,
           }
         : null;
 

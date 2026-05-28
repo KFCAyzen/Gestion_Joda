@@ -994,6 +994,7 @@ export default function StudentManagement() {
                                                         telephone: selectedStudent.telephone,
                                                         niveau: selectedStudent.niveau,
                                                         filiere: selectedStudent.filiere,
+                                                        nationalite: selectedStudent.nationalite ?? null,
                                                     })
                                                 }
                                             />
