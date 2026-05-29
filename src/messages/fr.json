@@ -149,6 +149,10 @@
       "regeneratePin": "Régénérer le code",
       "pinRegenerated": "Nouveau code généré et copié : {pin}",
       "pinRegeneratedNoValue": "Code régénéré",
+      "pinSentEmail": "PIN envoyé par e-mail",
+      "pinSentSms": "PIN envoyé par SMS",
+      "pinSentBoth": "PIN envoyé par e-mail et SMS",
+      "pinSentNone": "PIN non envoyé (e-mail/téléphone manquant)",
       "pinHiddenHint": "Code haché côté serveur. Cliquez sur Régénérer pour obtenir un nouveau code à transmettre."
     },
     "leaves": {

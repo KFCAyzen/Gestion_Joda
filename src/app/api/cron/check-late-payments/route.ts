@@ -159,8 +159,8 @@ export async function GET(req: NextRequest) {
               const smsText = isEn
                 ? `JODA - PAYMENT REMINDER (${urgency}): ${studentName}, your payment ${typeLabel} ${instalment} ${payment.tranche} (${formattedAmount} FCFA) is ${daysLate} day(s) late. Regularize at gestion-joda.vercel.app`
                 : `JODA - RAPPEL PAIEMENT (${urgency}): ${studentName}, votre paiement ${typeLabel} Tranche ${payment.tranche} (${formattedAmount} FCFA) a ${daysLate} jour(s) de retard. Regularisez sur gestion-joda.vercel.app`;
-              const smsSent = await sendSmsToPhone(student.telephone, smsText);
-              if (smsSent) results.smsSent++;
+              const smsResult = await sendSmsToPhone(student.telephone, smsText);
+              if (smsResult.ok) results.smsSent++;
             }
           }
         }

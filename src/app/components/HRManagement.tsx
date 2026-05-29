@@ -43,6 +43,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { getFriendlyErrorMessage } from "../lib/feedback";
+import PhoneInput from "./shared/PhoneInput";
+import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhoneNumber, splitPhoneNumber } from "../lib/phone";
 import {
     useEmployees,
     useCreateEmployee,
@@ -279,6 +281,7 @@ type EmployeeFormState = {
     nom: string;
     prenom: string;
     email: string;
+    phoneCountryCode: string;
     telephone: string;
     poste: string;
     departement: string;
@@ -293,6 +296,7 @@ const emptyEmployeeForm: EmployeeFormState = {
     nom: "",
     prenom: "",
     email: "",
+    phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     telephone: "",
     poste: "",
     departement: "",
@@ -362,9 +366,25 @@ function EmployeesPanel({
             const json = await res.json();
             if (!res.ok) throw new Error(json?.error || "Regenerate failed");
             const newPin = json?.employee?.report_pin as string | undefined;
+            const notif = (json?.notifications ?? {}) as {
+                email?: boolean;
+                sms?: boolean;
+                emailError?: string;
+                smsError?: string;
+                emailSkipped?: string;
+                smsSkipped?: string;
+            };
             if (newPin) {
                 setPinByEmployee((prev) => ({ ...prev, [employee.id]: newPin }));
                 await copyToClipboard(newPin, t("employees.pinRegenerated", { pin: newPin }));
+                let key: "pinSentBoth" | "pinSentEmail" | "pinSentSms" | "pinSentNone";
+                if (notif.email && notif.sms) key = "pinSentBoth";
+                else if (notif.email) key = "pinSentEmail";
+                else if (notif.sms) key = "pinSentSms";
+                else key = "pinSentNone";
+                onSuccess(t(`employees.${key}`));
+                if (notif.emailError) onError(new Error(`E-mail: ${notif.emailError}`));
+                if (notif.smsError) onError(new Error(`SMS: ${notif.smsError}`));
             } else {
                 onSuccess(t("employees.pinRegeneratedNoValue"));
             }
@@ -385,12 +405,14 @@ function EmployeesPanel({
 
     const openEdit = (e: Employee) => {
         setEditing(e);
+        const { countryCode, localNumber } = splitPhoneNumber(e.telephone);
         setForm({
             matricule: e.matricule ?? "",
             nom: e.nom,
             prenom: e.prenom,
             email: e.email ?? "",
-            telephone: e.telephone ?? "",
+            phoneCountryCode: countryCode,
+            telephone: localNumber,
             poste: e.poste,
             departement: e.departement ?? "",
             date_embauche: e.date_embauche,
@@ -408,7 +430,7 @@ function EmployeesPanel({
                 nom: form.nom.trim(),
                 prenom: form.prenom.trim(),
                 email: form.email.trim() || null,
-                telephone: form.telephone.trim() || null,
+                telephone: normalizePhoneNumber(form.phoneCountryCode, form.telephone) || null,
                 poste: form.poste.trim(),
                 departement: form.departement.trim() || null,
                 date_embauche: form.date_embauche,
@@ -420,8 +442,40 @@ function EmployeesPanel({
                 await update.mutateAsync({ id: editing.id, data: payload });
                 onSuccess(t("messages.employeeUpdated"));
             } else {
-                await create.mutateAsync(payload);
+                const created = await create.mutateAsync(payload);
                 onSuccess(t("messages.employeeCreated"));
+                try {
+                    const res = await fetch(`/api/hr/employees/${created.id}/regenerate-pin`, { method: "POST" });
+                    const json = await res.json();
+                    if (res.ok) {
+                        const newPin = json?.employee?.report_pin as string | undefined;
+                        const notif = (json?.notifications ?? {}) as {
+                email?: boolean;
+                sms?: boolean;
+                emailError?: string;
+                smsError?: string;
+                emailSkipped?: string;
+                smsSkipped?: string;
+            };
+                        if (newPin) {
+                            setPinByEmployee((prev) => ({ ...prev, [created.id]: newPin }));
+                            await copyToClipboard(newPin, t("employees.pinRegenerated", { pin: newPin }));
+                            let key: "pinSentBoth" | "pinSentEmail" | "pinSentSms" | "pinSentNone";
+                            if (notif.email && notif.sms) key = "pinSentBoth";
+                            else if (notif.email) key = "pinSentEmail";
+                            else if (notif.sms) key = "pinSentSms";
+                            else key = "pinSentNone";
+                            onSuccess(t(`employees.${key}`));
+                            if (notif.emailError) onError(new Error(`E-mail: ${notif.emailError}`));
+                            if (notif.smsError) onError(new Error(`SMS: ${notif.smsError}`));
+                        }
+                    } else {
+                        console.error("regenerate-pin HTTP", res.status, json);
+                        onError(new Error(json?.error || `HTTP ${res.status}`));
+                    }
+                } catch (pinErr) {
+                    console.error("Auto-send PIN failed:", pinErr);
+                }
             }
             setModalOpen(false);
         } catch (e) {
@@ -608,7 +662,13 @@ function EmployeesPanel({
                         />
                     </Field>
                     <Field label={t("employees.form.phone")}>
-                        <Input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} />
+                        <PhoneInput
+                            id="employee-telephone"
+                            countryCode={form.phoneCountryCode}
+                            value={form.telephone}
+                            onCountryCodeChange={(value) => setForm({ ...form, phoneCountryCode: value })}
+                            onValueChange={(value) => setForm({ ...form, telephone: value })}
+                        />
                     </Field>
                     <Field label={t("employees.col.hiredAt")} required>
                         <Input

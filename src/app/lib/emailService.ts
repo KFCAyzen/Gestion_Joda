@@ -16,15 +16,11 @@ export function getLang(langue?: string | null): Lang {
 
 // ── Shared HTML helpers ────────────────────────────────────────────────────────
 
-function emailHeader(lang: Lang = 'fr') {
-  const subtitle = lang === 'en'
-    ? 'China Scholarship Management'
-    : "Gestion des bourses d'études en Chine";
+function emailHeader(_lang: Lang = 'fr') {
   return `
     <tr>
       <td style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 40px;text-align:center;">
         <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Joda Company</h1>
-        <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">${subtitle}</p>
       </td>
     </tr>`;
 }
@@ -1100,5 +1096,79 @@ ${emailFooter(year)}
   } catch (err) {
     console.error('[Email] Erreur sendNewStudentAdminEmail:', err);
     return false;
+  }
+}
+
+// ── PIN de rapport → employé ──────────────────────────────────────────────────
+
+interface ReportPinEmailData {
+  employeeName: string;
+  employeeEmail: string;
+  pin: string;
+  reportUrl?: string;
+}
+
+export async function sendReportPinEmail(data: ReportPinEmailData): Promise<{ ok: boolean; error?: string }> {
+  const year = new Date().getFullYear();
+  const reportUrl = data.reportUrl ?? 'https://portal-joda.company/fr/rapport';
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[Email] RESEND_API_KEY manquant');
+    return { ok: false, error: 'RESEND_API_KEY missing' };
+  }
+
+  try {
+    const result = await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: [data.employeeEmail],
+      subject: '🔐 Votre code PIN — Rapports journaliers Joda',
+      html: `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader()}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${data.employeeName}</strong>,</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+    Voici votre code PIN personnel pour soumettre vos rapports journaliers via le formulaire public.
+  </p>
+  <div style="text-align:center;background:#fef2f2;border:2px dashed #dc2626;border-radius:12px;padding:24px;margin-bottom:24px;">
+    <p style="margin:0 0 8px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Votre code PIN</p>
+    <p style="margin:0;font-size:32px;font-weight:700;color:#dc2626;font-family:monospace;letter-spacing:6px;">${data.pin}</p>
+  </div>
+  <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:14px 18px;margin-bottom:24px;border-radius:4px;">
+    <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
+      <strong>⚠️ Confidentiel :</strong> ne communiquez ce code à personne. En cas de perte ou de doute, demandez à la RH de le régénérer.
+    </p>
+  </div>
+  <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">Lien du formulaire :</p>
+  <table cellpadding="0" cellspacing="0" style="margin:0 auto 20px;">
+    <tr>
+      <td style="background:#dc2626;border-radius:8px;">
+        <a href="${reportUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+          Soumettre un rapport →
+        </a>
+      </td>
+    </tr>
+  </table>
+</td></tr>
+${emailFooter(year)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    if (result.error) {
+      const msg = `${result.error.name ?? 'Error'}: ${result.error.message ?? ''}`;
+      console.error('[Email] Resend a renvoyé une erreur:', result.error);
+      return { ok: false, error: msg };
+    }
+    console.log(`[Email] PIN envoyé à ${data.employeeEmail} (id=${result.data?.id})`);
+    return { ok: true };
+  } catch (err: any) {
+    console.error('[Email] Exception sendReportPinEmail:', err);
+    return { ok: false, error: err?.message || String(err) };
   }
 }

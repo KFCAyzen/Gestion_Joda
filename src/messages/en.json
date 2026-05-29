@@ -149,6 +149,10 @@
       "regeneratePin": "Regenerate PIN",
       "pinRegenerated": "New PIN generated and copied: {pin}",
       "pinRegeneratedNoValue": "PIN regenerated",
+      "pinSentEmail": "PIN sent by email",
+      "pinSentSms": "PIN sent by SMS",
+      "pinSentBoth": "PIN sent by email and SMS",
+      "pinSentNone": "PIN not sent (missing email/phone)",
       "pinHiddenHint": "PIN is hashed on the server. Click Regenerate to obtain a new PIN to share."
     },
     "leaves": {
