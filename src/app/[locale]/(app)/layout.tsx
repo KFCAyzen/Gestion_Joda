@@ -23,6 +23,7 @@ import {
     Settings2,
     ShieldUser,
     TrendingUp,
+    UserCog,
     Users,
     WalletCards,
 } from "lucide-react";
@@ -55,7 +56,8 @@ type RouteId =
     | "comptabilite"
     | "storage"
     | "activity_logs"
-    | "fee_config";
+    | "fee_config"
+    | "hr";
 
 const ROUTES: Record<RouteId, string> = {
     home: "/tableau-de-bord",
@@ -74,6 +76,7 @@ const ROUTES: Record<RouteId, string> = {
     storage: "/stockage",
     activity_logs: "/logs-activites",
     fee_config: "/configuration-frais",
+    hr: "/rh",
 };
 
 const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
@@ -93,6 +96,7 @@ const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
     storage: "Monitoring du stockage et de la base de données",
     activity_logs: "Logs des activités sensibles des agents",
     fee_config: "Configuration des tranches, pénalités et délais",
+    hr: "Gestion des ressources humaines",
 };
 
 type MenuItem = { id: RouteId; label: string; icon: ReactNode };
@@ -154,6 +158,14 @@ function AppShell({ children }: { children: ReactNode }) {
             ],
         },
         {
+            id: "rh",
+            label: t('sections.hr'),
+            roles: ["supervisor", "admin", "super_admin"] as UserRole[],
+            items: [
+                { id: "hr", label: tNav('hr'), icon: <UserCog className={iconCls} /> },
+            ],
+        },
+        {
             id: "administration",
             label: t('sections.administration'),
             roles: ["admin", "super_admin"] as UserRole[],
@@ -190,6 +202,7 @@ function AppShell({ children }: { children: ReactNode }) {
         storage: t('descriptions.storage'),
         activity_logs: t('descriptions.activityLogs'),
         fee_config: t('descriptions.feeConfig'),
+        hr: t('descriptions.hr'),
     }), [t]);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showPasswordChange, setShowPasswordChange] = useState(false);

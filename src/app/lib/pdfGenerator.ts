@@ -545,3 +545,119 @@ export const generateStudentReport = async (report: StudentReport): Promise<void
   addFooter(doc);
   doc.save(`Rapport_${report.student.name.replace(/\s+/g, '_')}.pdf`);
 };
+
+// ─── 4. Fiche de paie (module RH) ────────────────────────────────────────────
+interface PayslipPdfData {
+  id: string;
+  mois: number;
+  annee: number;
+  salaire_base: number;
+  primes: number;
+  deductions: number;
+  jours_absences: number;
+  net_a_payer: number;
+  notes?: string | null;
+}
+
+interface PayslipEmployeeData {
+  matricule?: string | null;
+  nom: string;
+  prenom: string;
+  poste: string;
+  departement?: string | null;
+  date_embauche: string;
+}
+
+const MOIS_FR = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+];
+
+export const generatePayslip = async (
+  payslip: PayslipPdfData,
+  employee: PayslipEmployeeData,
+): Promise<void> => {
+  const doc = new jsPDF();
+  const logo = await loadLogoWhiteBase64();
+  const moisLabel = MOIS_FR[payslip.mois - 1] ?? String(payslip.mois);
+  const startY = addHeader(doc, `FICHE DE PAIE — ${moisLabel.toUpperCase()} ${payslip.annee}`, logo);
+
+  // Bloc employé
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(31, 41, 55);
+  doc.text('Employé', 15, startY);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  const empY = startY + 6;
+  doc.text(`Nom complet : ${employee.prenom} ${employee.nom}`, 15, empY);
+  doc.text(`Poste       : ${employee.poste}`, 15, empY + 5);
+  if (employee.departement) {
+    doc.text(`Département : ${employee.departement}`, 15, empY + 10);
+  }
+  if (employee.matricule) {
+    doc.text(`Matricule   : ${employee.matricule}`, 120, empY);
+  }
+  doc.text(`Embauché le : ${formatDate(employee.date_embauche)}`, 120, empY + 5);
+
+  // Tableau récap
+  const tableY = empY + 22;
+  autoTable(doc, {
+    startY: tableY,
+    head: [['Désignation', 'Montant (FCFA)']],
+    body: [
+      ['Salaire de base', formatCurrency(payslip.salaire_base)],
+      ['Primes', formatCurrency(payslip.primes)],
+      ['Retenues', `- ${formatCurrency(payslip.deductions)}`],
+      [`Jours d'absence (${payslip.jours_absences} j)`,
+       `- ${formatCurrency(Math.round(payslip.salaire_base / 30) * payslip.jours_absences)}`],
+    ],
+    theme: 'striped',
+    headStyles: {
+      fillColor: [220, 38, 38],
+      textColor: 255,
+      fontStyle: 'bold',
+      fontSize: 10,
+    },
+    styles: { fontSize: 9.5, cellPadding: 3.5 },
+    columnStyles: { 1: { halign: 'right' } },
+    margin: { left: 15, right: 15 },
+  });
+
+  // Net à payer
+  const netY = ((doc as any).lastAutoTable?.finalY ?? tableY + 40) + 10;
+  doc.setFillColor(254, 242, 242);
+  doc.roundedRect(15, netY, 180, 14, 2, 2, 'F');
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(31, 41, 55);
+  doc.text('NET À PAYER', 20, netY + 9);
+  doc.setTextColor(220, 38, 38);
+  doc.text(formatCurrency(payslip.net_a_payer), 190, netY + 9, { align: 'right' });
+
+  // Notes
+  if (payslip.notes) {
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Notes', 15, netY + 24);
+    doc.setFont('helvetica', 'normal');
+    const split = doc.splitTextToSize(payslip.notes, 180);
+    doc.text(split, 15, netY + 30);
+  }
+
+  // Signatures
+  const sigY = 240;
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.3);
+  doc.line(25, sigY, 85, sigY);
+  doc.line(125, sigY, 185, sigY);
+  doc.setFontSize(8.5);
+  doc.setTextColor(107, 114, 128);
+  doc.text('Signature employé', 55, sigY + 5, { align: 'center' });
+  doc.text('Signature employeur', 155, sigY + 5, { align: 'center' });
+
+  addFooter(doc);
+  doc.save(`Fiche_paie_${employee.nom}_${moisLabel}_${payslip.annee}.pdf`);
+};

@@ -17,7 +17,8 @@
     "fees": "Fees",
     "feeConfig": "Fee Config.",
     "com": "Communication",
-    "newsletter": "Newsletter"
+    "newsletter": "Newsletter",
+    "hr": "Human Resources"
   },
   "layout": {
     "workspace": "Joda Workspace",
@@ -35,6 +36,7 @@
       "ressources": "Resources",
       "finance": "Finance",
       "communication": "Communication",
+      "hr": "Human Resources",
       "administration": "Administration",
       "systeme": "System"
     },
@@ -61,7 +63,8 @@
       "activityLogs": "Agent sensitive activity logs",
       "feeConfig": "Installment, penalty and deadline configuration",
       "com": "Student communication",
-      "newsletter": "Email campaigns and automated re-engagement"
+      "newsletter": "Email campaigns and automated re-engagement",
+      "hr": "Employees, leaves, payroll and daily reports"
     }
   },
   "common": {
@@ -74,6 +77,145 @@
     "close": "Close",
     "confirm": "Confirm",
     "actions": "Actions"
+  },
+  "hrManagement": {
+    "common": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create"
+    },
+    "unknownEmployee": "Unknown employee",
+    "stats": {
+      "totalEmployees": "Active employees",
+      "pendingLeaves": "Pending leaves",
+      "payslips": "Payslips",
+      "reports": "Daily reports"
+    },
+    "tabs": {
+      "employees": "Employees",
+      "leaves": "Leaves",
+      "payroll": "Payroll",
+      "reports": "Daily reports"
+    },
+    "messages": {
+      "employeeCreated": "Employee created",
+      "employeeUpdated": "Employee updated",
+      "employeeDeleted": "Employee deleted",
+      "leaveCreated": "Leave request submitted",
+      "leaveApproved": "Leave approved",
+      "leaveRejected": "Leave rejected",
+      "leaveDeleted": "Request deleted",
+      "payslipCreated": "Payslip created",
+      "payslipDeleted": "Payslip deleted",
+      "reportCreated": "Report saved",
+      "reportDeleted": "Report deleted"
+    },
+    "employees": {
+      "title": "Employees",
+      "description": "Manage employee records",
+      "add": "Add employee",
+      "addTitle": "New employee",
+      "editTitle": "Edit employee",
+      "empty": "No employee yet",
+      "confirmDeleteTitle": "Delete this employee?",
+      "confirmDeleteDesc": "All related data (leaves, payslips, reports) for {name} will also be removed.",
+      "col": {
+        "name": "Name",
+        "matricule": "Code",
+        "position": "Position",
+        "department": "Department",
+        "hiredAt": "Hired on",
+        "salary": "Base salary",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "form": {
+        "firstname": "First name",
+        "lastname": "Last name",
+        "phone": "Phone",
+        "notes": "Notes"
+      },
+      "status": {
+        "actif": "Active",
+        "suspendu": "Suspended",
+        "inactif": "Inactive"
+      }
+    },
+    "leaves": {
+      "title": "Leave requests",
+      "description": "Approve or reject requests",
+      "add": "New request",
+      "addTitle": "New leave request",
+      "empty": "No request",
+      "approve": "Approve",
+      "reject": "Reject",
+      "selectEmployee": "Select an employee",
+      "computedDays": "Computed duration: {n} day(s)",
+      "confirmDeleteTitle": "Delete this request?",
+      "confirmDeleteDesc": "This action cannot be undone.",
+      "col": {
+        "employee": "Employee",
+        "type": "Type",
+        "period": "Period",
+        "days": "Days",
+        "from": "From",
+        "to": "To",
+        "status": "Status"
+      },
+      "form": {
+        "reason": "Reason"
+      },
+      "type": {
+        "annuel": "Annual leave",
+        "maladie": "Sick leave",
+        "maternite": "Maternity",
+        "paternite": "Paternity",
+        "sans_solde": "Unpaid",
+        "autre": "Other"
+      },
+      "status": {
+        "en_attente": "Pending",
+        "approuve": "Approved",
+        "rejete": "Rejected"
+      }
+    },
+    "payroll": {
+      "title": "Payslips",
+      "description": "Monthly salary generation",
+      "add": "New payslip",
+      "addTitle": "New payslip",
+      "empty": "No payslip",
+      "computedNet": "Computed net pay",
+      "confirmDeleteTitle": "Delete this payslip?",
+      "confirmDeleteDesc": "This action cannot be undone.",
+      "col": {
+        "period": "Period",
+        "month": "Month",
+        "year": "Year",
+        "base": "Base salary",
+        "bonus": "Bonuses",
+        "deductions": "Deductions",
+        "absences": "Absent days",
+        "net": "Net pay"
+      }
+    },
+    "reports": {
+      "title": "Daily reports",
+      "description": "Daily activities per employee",
+      "add": "New report",
+      "addTitle": "New daily report",
+      "empty": "No report",
+      "allEmployees": "All employees",
+      "activitiesPlaceholder": "Describe today's activities…",
+      "confirmDeleteTitle": "Delete this report?",
+      "confirmDeleteDesc": "This action cannot be undone.",
+      "col": {
+        "date": "Date",
+        "activities": "Activities",
+        "hours": "Hours",
+        "observations": "Observations"
+      }
+    }
   },
   "auth": {
     "login": "Login",

@@ -4,6 +4,9 @@ const createNextIntlPlugin = require('next-intl/plugin');
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   // Mode standalone : Next.js produit `.next/standalone/` autonome avec un serveur
   // Node.js minimal et toutes les dépendances tracées. C'est ce que l'app Electron
   // embarque pour fonctionner sans installation Node.js sur la machine cible.

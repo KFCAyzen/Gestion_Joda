@@ -17,7 +17,8 @@
     "fees": "Frais",
     "feeConfig": "Config. Frais",
     "com": "Communication",
-    "newsletter": "Newsletter"
+    "newsletter": "Newsletter",
+    "hr": "Ressources humaines"
   },
   "layout": {
     "workspace": "Workspace Joda",
@@ -35,6 +36,7 @@
       "ressources": "Ressources",
       "finance": "Finance",
       "communication": "Communication",
+      "hr": "Ressources humaines",
       "administration": "Administration",
       "systeme": "Système"
     },
@@ -61,7 +63,8 @@
       "activityLogs": "Logs des activités sensibles des agents",
       "feeConfig": "Configuration des tranches, pénalités et délais",
       "com": "Communication avec les étudiants",
-      "newsletter": "Campagnes email et relances automatiques"
+      "newsletter": "Campagnes email et relances automatiques",
+      "hr": "Employés, congés, paie et rapports journaliers"
     }
   },
   "common": {
@@ -74,6 +77,145 @@
     "close": "Fermer",
     "confirm": "Confirmer",
     "actions": "Actions"
+  },
+  "hrManagement": {
+    "common": {
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "create": "Créer"
+    },
+    "unknownEmployee": "Employé inconnu",
+    "stats": {
+      "totalEmployees": "Employés actifs",
+      "pendingLeaves": "Congés en attente",
+      "payslips": "Fiches de paie",
+      "reports": "Rapports journaliers"
+    },
+    "tabs": {
+      "employees": "Employés",
+      "leaves": "Congés",
+      "payroll": "Paie",
+      "reports": "Rapports journaliers"
+    },
+    "messages": {
+      "employeeCreated": "Employé créé",
+      "employeeUpdated": "Employé mis à jour",
+      "employeeDeleted": "Employé supprimé",
+      "leaveCreated": "Demande de congé enregistrée",
+      "leaveApproved": "Congé approuvé",
+      "leaveRejected": "Congé rejeté",
+      "leaveDeleted": "Demande supprimée",
+      "payslipCreated": "Fiche de paie créée",
+      "payslipDeleted": "Fiche de paie supprimée",
+      "reportCreated": "Rapport enregistré",
+      "reportDeleted": "Rapport supprimé"
+    },
+    "employees": {
+      "title": "Employés",
+      "description": "Gérez les fiches employés",
+      "add": "Ajouter un employé",
+      "addTitle": "Nouvel employé",
+      "editTitle": "Modifier l'employé",
+      "empty": "Aucun employé enregistré",
+      "confirmDeleteTitle": "Supprimer cet employé ?",
+      "confirmDeleteDesc": "Toutes les données associées (congés, fiches de paie, rapports) de {name} seront aussi supprimées.",
+      "col": {
+        "name": "Nom",
+        "matricule": "Matricule",
+        "position": "Poste",
+        "department": "Département",
+        "hiredAt": "Date d'embauche",
+        "salary": "Salaire de base",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "form": {
+        "firstname": "Prénom",
+        "lastname": "Nom",
+        "phone": "Téléphone",
+        "notes": "Notes"
+      },
+      "status": {
+        "actif": "Actif",
+        "suspendu": "Suspendu",
+        "inactif": "Inactif"
+      }
+    },
+    "leaves": {
+      "title": "Demandes de congés",
+      "description": "Validez ou rejetez les demandes",
+      "add": "Nouvelle demande",
+      "addTitle": "Nouvelle demande de congé",
+      "empty": "Aucune demande",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "selectEmployee": "Choisir un employé",
+      "computedDays": "Durée calculée : {n} jour(s)",
+      "confirmDeleteTitle": "Supprimer cette demande ?",
+      "confirmDeleteDesc": "Cette action est irréversible.",
+      "col": {
+        "employee": "Employé",
+        "type": "Type",
+        "period": "Période",
+        "days": "Jours",
+        "from": "Du",
+        "to": "Au",
+        "status": "Statut"
+      },
+      "form": {
+        "reason": "Motif"
+      },
+      "type": {
+        "annuel": "Congé annuel",
+        "maladie": "Maladie",
+        "maternite": "Maternité",
+        "paternite": "Paternité",
+        "sans_solde": "Sans solde",
+        "autre": "Autre"
+      },
+      "status": {
+        "en_attente": "En attente",
+        "approuve": "Approuvé",
+        "rejete": "Rejeté"
+      }
+    },
+    "payroll": {
+      "title": "Fiches de paie",
+      "description": "Génération mensuelle des salaires",
+      "add": "Nouvelle fiche",
+      "addTitle": "Nouvelle fiche de paie",
+      "empty": "Aucune fiche de paie",
+      "computedNet": "Net à payer calculé",
+      "confirmDeleteTitle": "Supprimer cette fiche ?",
+      "confirmDeleteDesc": "Cette action est irréversible.",
+      "col": {
+        "period": "Période",
+        "month": "Mois",
+        "year": "Année",
+        "base": "Salaire base",
+        "bonus": "Primes",
+        "deductions": "Retenues",
+        "absences": "J. d'absence",
+        "net": "Net à payer"
+      }
+    },
+    "reports": {
+      "title": "Rapports journaliers",
+      "description": "Activités quotidiennes par employé",
+      "add": "Nouveau rapport",
+      "addTitle": "Nouveau rapport journalier",
+      "empty": "Aucun rapport",
+      "allEmployees": "Tous les employés",
+      "activitiesPlaceholder": "Décrire les activités réalisées dans la journée…",
+      "confirmDeleteTitle": "Supprimer ce rapport ?",
+      "confirmDeleteDesc": "Cette action est irréversible.",
+      "col": {
+        "date": "Date",
+        "activities": "Activités",
+        "hours": "Heures",
+        "observations": "Observations"
+      }
+    }
   },
   "auth": {
     "login": "Connexion",
