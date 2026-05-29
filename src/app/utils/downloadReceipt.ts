@@ -1,3 +1,4 @@
+import jsPDF from "jspdf";
 import { sanitizeForHtml } from "./security";
 import { isInternational } from "../types/payment-config";
 
@@ -83,7 +84,12 @@ async function fetchLogoBase64(): Promise<string | null> {
     } catch { return null; }
 }
 
-export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptStudent) {
+export async function downloadReceipt(
+    payment: ReceiptPayment,
+    student: ReceiptStudent,
+    options: { includeDuplicata?: boolean } = {},
+) {
+    const includeDuplicata = options.includeDuplicata ?? false;
     const lang  = getLang(student.langue);
     const isEn  = lang === 'en';
     const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString(isEn ? "en-GB" : "fr-FR") : new Date().toLocaleDateString(isEn ? "en-GB" : "fr-FR");
@@ -186,14 +192,8 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
       </table>
     </div>`;
 
-    const html = `<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>Quittance ${receiptNo}</title>
-<style>
+    const styleBlock = `<style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  @page { size: A5 portrait; margin: 8mm; }
   body { font-family: Arial, sans-serif; font-size: 9pt; color: #111; background: #fff; }
 
   .quittance { width: 100%; padding: 6px 0; }
@@ -273,23 +273,51 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
   .sig-line   { border-bottom: 1px solid #333; margin-bottom: 4px; }
   .sig-name   { font-size: 7.5pt; color: #555; }
 
-  @media print {
-    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  }
-</style>
-</head>
-<body>
-  ${quittance('ORIGINAL')}
-  <hr class="cut-line">
-  ${quittance('DUPLICATA')}
-</body>
-</html>`;
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+</style>`;
 
-    const win = window.open('', '_blank', 'width=700,height=950,menubar=no,toolbar=no,scrollbars=yes');
-    if (!win) { alert('Veuillez autoriser les popups pour imprimer.'); return; }
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 600);
+    const bodyContent = includeDuplicata
+        ? `${quittance('ORIGINAL')}<hr class="cut-line">${quittance('DUPLICATA')}`
+        : quittance('ORIGINAL');
+
+    // Conteneur off-screen pour le rendu html2canvas via jsPDF.html()
+    const A5_WIDTH_MM = 148;
+    const RENDER_WIDTH_PX = 560; // ≈ 148 mm @ 96 dpi
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-10000px';
+    container.style.top = '0';
+    container.style.width = `${RENDER_WIDTH_PX}px`;
+    container.style.background = '#ffffff';
+    container.innerHTML = `${styleBlock}<div style="padding:8mm;width:100%;">${bodyContent}</div>`;
+    document.body.appendChild(container);
+
+    const filename = `Quittance_${receiptNo}.pdf`;
+
+    try {
+        const doc = new jsPDF({ unit: 'mm', format: 'a5', orientation: 'portrait' });
+        await doc.html(container, {
+            x: 0,
+            y: 0,
+            width: A5_WIDTH_MM,
+            windowWidth: RENDER_WIDTH_PX,
+            autoPaging: 'slice',
+            margin: 0,
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+            },
+        });
+        doc.save(filename);
+    } catch (err) {
+        console.error('Erreur génération PDF reçu', err);
+        const isFr = !isEn;
+        alert(isFr
+            ? 'Téléchargement du reçu impossible. Réessayez.'
+            : 'Could not download the receipt. Please retry.');
+    } finally {
+        container.remove();
+    }
 }
 

@@ -995,7 +995,7 @@ export default function StudentManagement() {
                                                         niveau: selectedStudent.niveau,
                                                         filiere: selectedStudent.filiere,
                                                         nationalite: selectedStudent.nationalite ?? null,
-                                                    })
+                                                    }, { includeDuplicata: true })
                                                 }
                                             />
                                         </div>
