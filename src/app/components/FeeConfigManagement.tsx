@@ -19,23 +19,45 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, RotateCcw, GraduationCap, BookOpen } from "lucide-react";
+import { Plus, Trash2, Save, RotateCcw, GraduationCap, BookOpen, Globe } from "lucide-react";
 
-type TabId = "bourse" | "langues";
+type TabId = "bourse" | "langues" | "intl";
 type BourseNiveauTab = "bachelor" | "master";
 type BourseOriginTab = "local" | "international";
 type LangueSubTab = "mandarin" | "anglais";
+type IntlSubTab = "language_program_intl" | "partial_scholarship_intl" | "full_scholarship_intl";
 
-function fmt(n: number) {
-    return n.toLocaleString("fr-FR") + " FCFA";
+const INTL_SERVICE_TYPES: ServiceType[] = [
+    "bourse_bachelor_intl",
+    "bourse_master_intl",
+    "language_program_intl",
+    "partial_scholarship_intl",
+    "full_scholarship_intl",
+];
+
+function isIntlService(serviceType: ServiceType): boolean {
+    return INTL_SERVICE_TYPES.includes(serviceType);
+}
+
+function getCurrencyLabel(serviceType: ServiceType): string {
+    return isIntlService(serviceType) ? "$" : "FCFA";
+}
+
+function fmt(n: number, currency: string = "FCFA") {
+    const locale = currency === "$" ? "en-US" : "fr-FR";
+    return currency === "$"
+        ? "$ " + n.toLocaleString(locale)
+        : n.toLocaleString(locale) + " " + currency;
 }
 
 function TrancheEditor({
     tranches,
     onChange,
+    currency,
 }: {
     tranches: PaymentConfigTranche[];
     onChange: (t: PaymentConfigTranche[]) => void;
+    currency: string;
 }) {
     const t = useTranslations("feeConfig.trancheEditor");
     const addTranche = () => {
@@ -79,7 +101,7 @@ function TrancheEditor({
                             className="h-8 text-sm"
                         />
                     </div>
-                    <div className="col-span-1 text-xs text-slate-400 text-right">FCFA</div>
+                    <div className="col-span-1 text-xs text-slate-400 text-right">{currency}</div>
                 </div>
             ))}
             <div className="flex gap-2 pt-1">
@@ -166,6 +188,7 @@ function ServiceConfigCard({
     };
 
     const total = getTotalMontant(draft);
+    const currency = getCurrencyLabel(serviceType);
 
     return (
         <Card className="joda-surface border-0 shadow-none">
@@ -173,7 +196,7 @@ function ServiceConfigCard({
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base">{draft.label}</CardTitle>
                     <Badge variant="outline" className="text-xs font-normal">
-                        {t("total", { amount: fmt(total) })}
+                        {t("total", { amount: fmt(total, currency) })}
                     </Badge>
                 </div>
             </CardHeader>
@@ -193,6 +216,7 @@ function ServiceConfigCard({
                     <TrancheEditor
                         tranches={draft.tranches}
                         onChange={(t) => setDraft((d) => ({ ...d, tranches: t }))}
+                        currency={currency}
                     />
                 </div>
 
@@ -226,7 +250,7 @@ function ServiceConfigCard({
                                     onChange={(e) => setDraft((d) => ({ ...d, daily_penalty: Number(e.target.value) }))}
                                     className="h-8 w-28 text-sm"
                                 />
-                                <span className="text-xs text-slate-400">{t("penalties.dailyPenaltyUnit")}</span>
+                                <span className="text-xs text-slate-400">{currency}/j</span>
                             </div>
                         </div>
                     </div>
@@ -296,6 +320,7 @@ export default function FeeConfigManagement() {
     const [bourseNiveauTab, setBourseNiveauTab] = useState<BourseNiveauTab>("bachelor");
     const [bourseOriginTab, setBourseOriginTab] = useState<BourseOriginTab>("local");
     const [langueSubTab, setLangueSubTab] = useState<LangueSubTab>("mandarin");
+    const [intlSubTab, setIntlSubTab] = useState<IntlSubTab>("language_program_intl");
 
     const handleSaved = async () => {
         await refresh();
@@ -324,6 +349,7 @@ export default function FeeConfigManagement() {
                     {([
                         { id: "bourse" as TabId, label: "Procédure Bourse", icon: <GraduationCap className="h-4 w-4" /> },
                         { id: "langues" as TabId, label: "Cours de Langues", icon: <BookOpen className="h-4 w-4" /> },
+                        { id: "intl" as TabId, label: "Programmes Internationaux", icon: <Globe className="h-4 w-4" /> },
                     ] as const).map(({ id, label, icon }) => (
                         <button
                             key={id}
@@ -414,6 +440,36 @@ export default function FeeConfigManagement() {
                         <ServiceConfigCard
                             key={langueSubTab}
                             serviceType={langueSubTab}
+                            onSaved={handleSaved}
+                        />
+                    </div>
+                )}
+
+                {/* Contenu Programmes Internationaux */}
+                {activeTab === "intl" && (
+                    <div className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                            {([
+                                { id: "language_program_intl" as IntlSubTab, label: "Language Program" },
+                                { id: "partial_scholarship_intl" as IntlSubTab, label: "Partial Scholarship" },
+                                { id: "full_scholarship_intl" as IntlSubTab, label: "Full Scholarship" },
+                            ] as const).map(({ id, label }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => setIntlSubTab(id)}
+                                    className={`rounded-lg border px-4 py-1.5 text-sm font-medium transition-all ${
+                                        intlSubTab === id
+                                            ? "border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                                            : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-300 hover:text-slate-700 dark:text-slate-300"
+                                    }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                        <ServiceConfigCard
+                            key={intlSubTab}
+                            serviceType={intlSubTab}
                             onSaved={handleSaved}
                         />
                     </div>
