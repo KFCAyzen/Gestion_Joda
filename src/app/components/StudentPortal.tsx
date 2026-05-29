@@ -10,6 +10,7 @@ import { StudentMessaging } from "./student/StudentMessaging";
 import DocumentUpload from "./DocumentUpload";
 import PaymentOverview from "./PaymentOverview";
 import { downloadReceipt, type ReceiptStudent } from "../utils/downloadReceipt";
+import { isInternational } from "../types/payment-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,8 +59,13 @@ interface StudentPortalProps {
 
 // ── Constantes UI ─────────────────────────────────────────────────────────────
 
-function formatMontant(n: number) {
-    return `${n.toLocaleString("fr-FR")} FCFA`;
+function formatMontant(n: number, isIntl = false) {
+    // Aligné sur PaymentOverview / FeeConfigManagement :
+    //   intl  → "$1 499" (fr-FR thin-space, $ collé devant)
+    //   local → "100 000 FCFA"
+    return isIntl
+        ? `$${n.toLocaleString("fr-FR")}`
+        : `${n.toLocaleString("fr-FR")} FCFA`;
 }
 
 function mapDossierStatusToI18nKey(status: string) {
@@ -190,6 +196,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     }, [studentId, queryClient, supabase]);
 
     // ── Données dérivées ──────────────────────────────────────────────────────
+
+    const isIntl = isInternational(studentProfile?.nationalite ?? null);
 
     const studentInfo: ReceiptStudent | null = studentProfile
         ? {
@@ -533,7 +541,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                                     </p>
                                                 </div>
                                                 <div className="shrink-0 text-right">
-                                                    <p className="text-sm font-semibold text-[var(--student-fg)]">{formatMontant(payment.montant)}</p>
+                                                    <p className="text-sm font-semibold text-[var(--student-fg)]">{formatMontant(payment.montant, isIntl)}</p>
                                                     <Badge className={`rounded-full border ${PAYMENTS_TAB_BADGE[payment.status] ?? STATUS_COLORS[payment.status]}`}>
                                                         {getPaymentStatusLabel(payment.status)}
                                                     </Badge>

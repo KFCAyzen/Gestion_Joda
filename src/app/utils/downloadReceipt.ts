@@ -98,11 +98,14 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
     const typeLabel   = getTypeLabel(payment, lang);
     const typeLabelFr = getTypeLabel(payment, 'fr');
     const typeLabelEn = getTypeLabel(payment, 'en');
-    const amountFmt   = Math.round(payment.montant).toLocaleString('fr-FR') + ' FCFA';
-    const amountWords = `${numberToWords(payment.montant)} francs CFA`;
+    const isIntl      = isInternational(student.nationalite);
+    const amountFmt   = isIntl
+        ? '$' + Math.round(payment.montant).toLocaleString('fr-FR')
+        : Math.round(payment.montant).toLocaleString('fr-FR') + ' FCFA';
+    // Montant en lettres uniquement pour FCFA (numberToWords est en français).
+    const amountWords = isIntl ? '' : `${numberToWords(payment.montant)} francs CFA`;
     const receiptNo   = payment.id.slice(-8).toUpperCase();
     const studentName = `${sanitizeForHtml(student.nom)} ${sanitizeForHtml(student.prenom)}`;
-    const isIntl      = isInternational(student.nationalite);
     const companyBlock = isIntl
         ? `<div class="company-name">JODA COMPANY SARL</div>
             <div class="company-sub">Travel consulting and assistance company — Study scholarships in China</div>
@@ -164,7 +167,7 @@ export async function downloadReceipt(payment: ReceiptPayment, student: ReceiptS
         <span class="amount-label">MONTANT REÇU / AMOUNT RECEIVED :</span>
         <span class="amount-value">${amountFmt}</span>
       </div>
-      <div class="amount-words">Arrêté à : <em>${amountWords}</em></div>
+      ${amountWords ? `<div class="amount-words">Arrêté à : <em>${amountWords}</em></div>` : ''}
 
       <!-- SIGNATURES -->
       <table class="sig-table">

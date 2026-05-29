@@ -44,6 +44,11 @@ interface StudentDashboardProps {
     onViewChange: (view: string) => void;
     getStatusColor: (status: string) => string;
     getPaymentStatusColor: (status: string) => string;
+    isIntl?: boolean;
+}
+
+function fmtAmount(n: number, isIntl: boolean): string {
+    return isIntl ? `$${n.toLocaleString("fr-FR")}` : `${n.toLocaleString("fr-FR")} FCFA`;
 }
 
 export default function StudentDashboard({
@@ -58,6 +63,7 @@ export default function StudentDashboard({
     onViewChange,
     getStatusColor,
     getPaymentStatusColor,
+    isIntl = false,
 }: StudentDashboardProps) {
     return (
         <>
@@ -178,7 +184,7 @@ export default function StudentDashboard({
                                 <p className="truncate text-sm font-medium text-slate-900">Reçu {receipt.id}</p>
                                 <p className="text-sm text-slate-500">{new Date(receipt.date).toLocaleDateString("fr-FR")}</p>
                             </div>
-                            <span className="text-sm font-semibold text-red-600">{parseInt(receipt.amount, 10).toLocaleString()} FCFA</span>
+                            <span className="text-sm font-semibold text-red-600">{fmtAmount(parseInt(receipt.amount, 10), isIntl)}</span>
                         </div>
                     )}
                 />

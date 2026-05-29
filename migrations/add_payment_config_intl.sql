@@ -19,8 +19,10 @@ ALTER TABLE public.payment_config
     'full_scholarship_intl'
   ));
 
--- 2. Seed des configs intl (en USD). ON CONFLICT DO NOTHING : ne touche pas
---    aux configs déjà personnalisées par un admin via l'UI.
+-- 2. Seed des configs intl (en USD) — force la cohérence avec DEFAULT_PAYMENT_CONFIGS.
+--    ON CONFLICT DO UPDATE : écrase toute valeur précédemment stockée afin que la
+--    devise, les montants et les libellés affichés correspondent exactement à la
+--    spécification produit (cf. memory/project_intl_pricing.md).
 INSERT INTO public.payment_config (service_type, label, tranches, grace_days, daily_penalty, deadline_offset_days)
 VALUES
   (
@@ -63,4 +65,11 @@ VALUES
     10,
     30
   )
-ON CONFLICT (service_type) DO NOTHING;
+ON CONFLICT (service_type) DO UPDATE
+SET
+  label                = EXCLUDED.label,
+  tranches             = EXCLUDED.tranches,
+  grace_days           = EXCLUDED.grace_days,
+  daily_penalty        = EXCLUDED.daily_penalty,
+  deadline_offset_days = EXCLUDED.deadline_offset_days,
+  updated_at           = now();

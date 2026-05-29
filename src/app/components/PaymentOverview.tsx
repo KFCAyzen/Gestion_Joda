@@ -178,8 +178,11 @@ function configToService(cfg: PaymentConfig, type: string): Service {
 }
 
 function fmt(n: number, isIntl = false) {
+    // Format canonique aligné sur FeeConfigManagement et StudentManagement :
+    //   intl  → "$1 499" (fr-FR thin-space, $ collé devant)
+    //   local → "100 000 FCFA"
     return isIntl
-        ? n.toLocaleString("en-US") + " $"
+        ? "$" + n.toLocaleString("fr-FR")
         : n.toLocaleString("fr-FR") + " FCFA";
 }
 
@@ -236,7 +239,9 @@ export default function PaymentOverview({
     const locale = useLocale();
     const isIntl = isInternational(nationalite);
     const currency = isIntl ? "$" : "FCFA";
-    const numLocale = isIntl ? "en-US" : "fr-FR";
+    // Locale fr-FR (espace fine séparateur milliers) pour TOUS les montants,
+    // cohérent avec FeeConfigManagement / StudentManagement.
+    const numLocale = "fr-FR";
 
     const INTL_PROGRAM_TYPES: ServiceType[] = ["language_program_intl", "partial_scholarship_intl", "full_scholarship_intl"];
 
@@ -386,7 +391,7 @@ export default function PaymentOverview({
                             <div className="shrink-0 text-right">
                                 <p className="text-sm font-semibold tabular-nums text-[var(--student-ring-exercise)]">{sPct}%</p>
                                 <p className="text-[10px] text-[var(--student-fg-muted)]">
-                                    {sPaid.toLocaleString(numLocale)} / {service.total.toLocaleString(numLocale)} {currency}
+                                    {fmt(sPaid, isIntl)} / {fmt(service.total, isIntl)}
                                 </p>
                             </div>
                         </div>

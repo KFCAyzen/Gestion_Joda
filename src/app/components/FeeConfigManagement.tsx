@@ -44,10 +44,11 @@ function getCurrencyLabel(serviceType: ServiceType): string {
 }
 
 function fmt(n: number, currency: string = "FCFA") {
-    const locale = currency === "$" ? "en-US" : "fr-FR";
+    // Format fr-FR (espace fine comme séparateur de milliers) pour rester cohérent
+    // avec StudentManagement et PaymentOverview ("$1 499", "100 000 FCFA").
     return currency === "$"
-        ? "$ " + n.toLocaleString(locale)
-        : n.toLocaleString(locale) + " " + currency;
+        ? "$" + n.toLocaleString("fr-FR")
+        : n.toLocaleString("fr-FR") + " " + currency;
 }
 
 function TrancheEditor({

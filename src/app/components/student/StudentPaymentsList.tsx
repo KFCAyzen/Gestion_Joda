@@ -16,9 +16,14 @@ interface StudentPaymentsListProps {
     onBack: () => void;
     getPaymentStatusColor: (status: string) => string;
     onGenerateReceipt: (payment: Payment) => void;
+    isIntl?: boolean;
 }
 
-export default function StudentPaymentsList({ payments, onBack, getPaymentStatusColor, onGenerateReceipt }: StudentPaymentsListProps) {
+function fmtAmount(n: number, isIntl: boolean): string {
+    return isIntl ? `$${n.toLocaleString("fr-FR")}` : `${n.toLocaleString("fr-FR")} FCFA`;
+}
+
+export default function StudentPaymentsList({ payments, onBack, getPaymentStatusColor, onGenerateReceipt, isIntl = false }: StudentPaymentsListProps) {
     return (
         <div className="student-pay-surface p-4 sm:p-6">
             <div className="mb-6 flex items-center justify-between border-b pb-4" style={{ borderColor: "var(--student-border)" }}>
@@ -40,7 +45,7 @@ export default function StudentPaymentsList({ payments, onBack, getPaymentStatus
                                         <p className="text-xs" style={{ color: "var(--student-fg-muted)" }}>{pay.date}</p>
                                     </div>
                                     <div className="shrink-0 text-right">
-                                        <p className="text-sm font-bold" style={{ color: "var(--student-ring-exercise)" }}>{pay.amount.toLocaleString()} FCFA</p>
+                                        <p className="text-sm font-bold" style={{ color: "var(--student-ring-exercise)" }}>{fmtAmount(pay.amount, isIntl)}</p>
                                         <span className={`rounded-full px-2 py-0.5 text-xs ${getPaymentStatusColor(pay.status)}`}>{pay.status}</span>
                                     </div>
                                 </div>
