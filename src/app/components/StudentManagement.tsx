@@ -112,6 +112,7 @@ export default function StudentManagement() {
     const [operationMessage, setOperationMessage] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [genderFilter, setGenderFilter] = useState("all");
+    const [profileFilter, setProfileFilter] = useState("all");
     const [formData, setFormData] = useState(emptyFormData);
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 20;
@@ -282,9 +283,15 @@ export default function StudentManagement() {
 
             const matchesGender = genderFilter === "all" || student.sexe === genderFilter;
 
-            return matchesSearch && matchesGender;
+            const intl = isInternational(student.nationalite);
+            const matchesProfile =
+                profileFilter === "all" ||
+                (profileFilter === "international" && intl) ||
+                (profileFilter === "local" && !intl);
+
+            return matchesSearch && matchesGender && matchesProfile;
         });
-    }, [genderFilter, searchTerm, students]);
+    }, [genderFilter, profileFilter, searchTerm, students]);
 
     // Pagination
     const totalPages = Math.ceil(filteredStudents.length / pageSize);
@@ -297,7 +304,7 @@ export default function StudentManagement() {
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, genderFilter]);
+    }, [searchTerm, genderFilter, profileFilter]);
 
     const stats = useMemo(() => {
         return {
@@ -737,7 +744,7 @@ export default function StudentManagement() {
                                     <div>
                                         <CardTitle>{t("list.title")}</CardTitle>
                                     </div>
-                                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
+                                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_160px] md:items-end">
                                         <SearchBar
                                             value={searchTerm}
                                             onChange={setSearchTerm}
@@ -752,6 +759,16 @@ export default function StudentManagement() {
                                                 { value: "F", label: t("list.filterWomen") },
                                             ]}
                                             placeholder={t("list.filterAll")}
+                                        />
+                                        <FilterSelect
+                                            label={t("list.filterProfile")}
+                                            value={profileFilter}
+                                            onChange={setProfileFilter}
+                                            options={[
+                                                { value: "local", label: t("list.filterLocal") },
+                                                { value: "international", label: t("list.filterInternational") },
+                                            ]}
+                                            placeholder={t("list.filterProfileAll")}
                                         />
                                     </div>
                                 </CardHeader>

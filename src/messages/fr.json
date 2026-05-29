@@ -223,6 +223,19 @@
       "activitiesPlaceholder": "Décrire les activités réalisées dans la journée…",
       "confirmDeleteTitle": "Supprimer ce rapport ?",
       "confirmDeleteDesc": "Cette action est irréversible.",
+      "filters": {
+        "title": "Filtres",
+        "reset": "Réinitialiser",
+        "from": "Du",
+        "to": "Au",
+        "department": "Département",
+        "country": "Pays",
+        "employee": "Employé",
+        "allDepartments": "Tous les départements",
+        "allCountries": "Tous les pays",
+        "noDepartments": "Aucun département",
+        "noCountries": "Aucun pays détecté"
+      },
       "col": {
         "date": "Date",
         "activities": "Activités",
@@ -479,6 +492,10 @@
       "filterAll": "Tous les profils",
       "filterMen": "Hommes",
       "filterWomen": "Femmes",
+      "filterProfile": "Profil",
+      "filterProfileAll": "Tous",
+      "filterLocal": "Local",
+      "filterInternational": "International",
       "empty": "Aucun étudiant trouvé",
       "emptyHint": "Ajustez les filtres ou ajoutez un nouveau profil.",
       "colName": "Nom",
@@ -2396,7 +2413,9 @@
       "pinHint": "Votre code à 6 chiffres a été remis par l'administration.",
       "submit": "Continuer"
     },
+    "remaining": "Restants aujourd'hui",
     "form": {
+      "title": "Nouveau rapport",
       "description": "Renseignez les détails de votre journée de travail.",
       "date": "Date",
       "hours": "Heures travaillées",

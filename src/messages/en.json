@@ -223,6 +223,19 @@
       "activitiesPlaceholder": "Describe today's activities…",
       "confirmDeleteTitle": "Delete this report?",
       "confirmDeleteDesc": "This action cannot be undone.",
+      "filters": {
+        "title": "Filters",
+        "reset": "Reset",
+        "from": "From",
+        "to": "To",
+        "department": "Department",
+        "country": "Country",
+        "employee": "Employee",
+        "allDepartments": "All departments",
+        "allCountries": "All countries",
+        "noDepartments": "No department",
+        "noCountries": "No country detected"
+      },
       "col": {
         "date": "Date",
         "activities": "Activities",
@@ -479,6 +492,10 @@
       "filterAll": "All profiles",
       "filterMen": "Men",
       "filterWomen": "Women",
+      "filterProfile": "Profile",
+      "filterProfileAll": "All",
+      "filterLocal": "Local",
+      "filterInternational": "International",
       "empty": "No students found",
       "emptyHint": "Adjust filters or add a new profile.",
       "colName": "Name",
@@ -2396,7 +2413,9 @@
       "pinHint": "Your 6-digit PIN was provided by the administration.",
       "submit": "Continue"
     },
+    "remaining": "Remaining today",
     "form": {
+      "title": "New report",
       "description": "Fill in the details of your work day.",
       "date": "Date",
       "hours": "Hours worked",
