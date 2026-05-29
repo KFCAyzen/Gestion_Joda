@@ -6,6 +6,9 @@ import {
     Briefcase,
     CalendarDays,
     ClipboardList,
+    Copy,
+    KeyRound,
+    Link2,
     Loader2,
     Pencil,
     Plus,
@@ -13,6 +16,7 @@ import {
     Trash2,
     Users as UsersIcon,
 } from "lucide-react";
+import { useLocale } from "next-intl";
 import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
@@ -326,6 +330,7 @@ function EmployeesPanel({
     onSuccess: (msg: string) => void;
 }) {
     const t = useTranslations("hrManagement");
+    const locale = useLocale();
     const create = useCreateEmployee();
     const update = useUpdateEmployee();
     const del = useDeleteEmployee();
@@ -333,6 +338,44 @@ function EmployeesPanel({
     const [editing, setEditing] = useState<Employee | null>(null);
     const [form, setForm] = useState<EmployeeFormState>(emptyEmployeeForm);
     const [confirmDel, setConfirmDel] = useState<Employee | null>(null);
+    const [pinByEmployee, setPinByEmployee] = useState<Record<string, string>>({});
+    const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+
+    const publicLink = useMemo(() => {
+        if (typeof window === "undefined") return "";
+        return `${window.location.origin}/${locale}/rapport`;
+    }, [locale]);
+
+    const copyToClipboard = async (text: string, successMsg: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            onSuccess(successMsg);
+        } catch (e) {
+            onError(e);
+        }
+    };
+
+    const handleRegeneratePin = async (employee: Employee) => {
+        setRegeneratingId(employee.id);
+        try {
+            const res = await fetch(`/api/hr/employees/${employee.id}/regenerate-pin`, { method: "POST" });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json?.error || "Regenerate failed");
+            const newPin = json?.employee?.report_pin as string | undefined;
+            if (newPin) {
+                setPinByEmployee((prev) => ({ ...prev, [employee.id]: newPin }));
+                await copyToClipboard(newPin, t("employees.pinRegenerated", { pin: newPin }));
+            } else {
+                onSuccess(t("employees.pinRegeneratedNoValue"));
+            }
+        } catch (e) {
+            onError(e);
+        } finally {
+            setRegeneratingId(null);
+        }
+    };
+
+    const displayedPin = (e: Employee) => pinByEmployee[e.id] ?? (e.report_pin ? "••••••" : "—");
 
     const openCreate = () => {
         setEditing(null);
@@ -407,10 +450,21 @@ function EmployeesPanel({
                     </CardTitle>
                     <CardDescription>{t("employees.description")}</CardDescription>
                 </div>
-                <Button onClick={openCreate}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t("employees.add")}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={() => copyToClipboard(publicLink, t("employees.publicLinkCopied"))}
+                        disabled={!publicLink}
+                        title={publicLink}
+                    >
+                        <Link2 className="w-4 h-4 mr-2" />
+                        {t("employees.copyPublicLink")}
+                    </Button>
+                    <Button onClick={openCreate}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        {t("employees.add")}
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -422,15 +476,16 @@ function EmployeesPanel({
                             <TableHead>{t("employees.col.department")}</TableHead>
                             <TableHead>{t("employees.col.hiredAt")}</TableHead>
                             <TableHead>{t("employees.col.salary")}</TableHead>
+                            <TableHead>{t("employees.col.pin")}</TableHead>
                             <TableHead>{t("employees.col.status")}</TableHead>
                             <TableHead className="text-right">{t("employees.col.actions")}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <LoadingRow cols={8} />
+                            <LoadingRow cols={9} />
                         ) : employees.length === 0 ? (
-                            <EmptyRow cols={8} label={t("employees.empty")} />
+                            <EmptyRow cols={9} label={t("employees.empty")} />
                         ) : (
                             employees.map((e) => (
                                 <TableRow key={e.id}>
@@ -443,10 +498,47 @@ function EmployeesPanel({
                                     <TableCell>{e.date_embauche}</TableCell>
                                     <TableCell>{fmtMoney(e.salaire_base)}</TableCell>
                                     <TableCell>
+                                        <div
+                                            className="flex items-center gap-1"
+                                            title={pinByEmployee[e.id] ? undefined : t("employees.pinHiddenHint")}
+                                        >
+                                            <code className="font-mono text-sm">{displayedPin(e)}</code>
+                                            {pinByEmployee[e.id] && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-6 w-6 p-0"
+                                                    title={t("employees.copyPin")}
+                                                    onClick={() =>
+                                                        copyToClipboard(
+                                                            pinByEmployee[e.id]!,
+                                                            t("employees.pinCopied")
+                                                        )
+                                                    }
+                                                >
+                                                    <Copy className="w-3 h-3" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
                                         <StatusBadge status={e.statut} />
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleRegeneratePin(e)}
+                                                disabled={regeneratingId === e.id}
+                                                title={t("employees.regeneratePin")}
+                                            >
+                                                {regeneratingId === e.id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <KeyRound className="w-4 h-4" />
+                                                )}
+                                            </Button>
                                             <Button size="sm" variant="ghost" onClick={() => openEdit(e)}>
                                                 <Pencil className="w-4 h-4" />
                                             </Button>

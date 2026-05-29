@@ -24,6 +24,7 @@ export interface Employee {
   statut: EmployeeStatus;
   user_id: string | null;
   notes: string | null;
+  report_pin: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -127,6 +127,7 @@
         "department": "Department",
         "hiredAt": "Hired on",
         "salary": "Base salary",
+        "pin": "Report PIN",
         "status": "Status",
         "actions": "Actions"
       },
@@ -140,7 +141,15 @@
         "actif": "Active",
         "suspendu": "Suspended",
         "inactif": "Inactive"
-      }
+      },
+      "copyPublicLink": "Copy public link",
+      "publicLinkCopied": "Public link copied to clipboard",
+      "copyPin": "Copy PIN",
+      "pinCopied": "PIN copied to clipboard",
+      "regeneratePin": "Regenerate PIN",
+      "pinRegenerated": "New PIN generated and copied: {pin}",
+      "pinRegeneratedNoValue": "PIN regenerated",
+      "pinHiddenHint": "PIN is hashed on the server. Click Regenerate to obtain a new PIN to share."
     },
     "leaves": {
       "title": "Leave requests",
@@ -2360,6 +2369,52 @@
       "next": "Next",
       "back": "Back",
       "step": "Step {current} of {total}"
+    }
+  },
+  "publicReport": {
+    "title": "Daily report",
+    "subtitle": "Submit your daily activity report",
+    "selectEmployee": "Select an employee",
+    "loading": "Loading…",
+    "noEmployees": "No employee available",
+    "welcome": "Welcome, {name}",
+    "logout": "Sign out",
+    "submitSuccess": "Report submitted successfully",
+    "login": {
+      "title": "Identification",
+      "description": "Pick your name and enter your personal PIN to submit a report.",
+      "employee": "Employee",
+      "pin": "Personal PIN",
+      "pinHint": "Your 6-digit PIN was provided by the administration.",
+      "submit": "Continue"
+    },
+    "form": {
+      "description": "Fill in the details of your work day.",
+      "date": "Date",
+      "hours": "Hours worked",
+      "activities": "Activities completed",
+      "activitiesPlaceholder": "Describe today's tasks and activities…",
+      "observations": "Observations",
+      "submit": "Send report"
+    },
+    "history": {
+      "title": "My recent reports",
+      "description": "Your last 60 submitted reports.",
+      "col": {
+        "date": "Date",
+        "hours": "Hours",
+        "activities": "Activities"
+      },
+      "empty": "No report yet"
+    },
+    "errors": {
+      "missingFields": "Please fill in every field",
+      "invalidCredentials": "Invalid credentials",
+      "network": "Network error, please retry",
+      "activitiesRequired": "Please describe your activities",
+      "invalidHours": "Invalid hours",
+      "submitFailed": "Failed to submit the report",
+      "dailyLimit": "Limit reached: you can submit at most 2 reports per day."
     }
   }
 }

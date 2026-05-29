@@ -127,6 +127,7 @@
         "department": "Département",
         "hiredAt": "Date d'embauche",
         "salary": "Salaire de base",
+        "pin": "Code rapport",
         "status": "Statut",
         "actions": "Actions"
       },
@@ -140,7 +141,15 @@
         "actif": "Actif",
         "suspendu": "Suspendu",
         "inactif": "Inactif"
-      }
+      },
+      "copyPublicLink": "Copier le lien public",
+      "publicLinkCopied": "Lien public copié dans le presse-papiers",
+      "copyPin": "Copier le code",
+      "pinCopied": "Code copié dans le presse-papiers",
+      "regeneratePin": "Régénérer le code",
+      "pinRegenerated": "Nouveau code généré et copié : {pin}",
+      "pinRegeneratedNoValue": "Code régénéré",
+      "pinHiddenHint": "Code haché côté serveur. Cliquez sur Régénérer pour obtenir un nouveau code à transmettre."
     },
     "leaves": {
       "title": "Demandes de congés",
@@ -2360,6 +2369,52 @@
       "next": "Suivant",
       "back": "Retour",
       "step": "Étape {current} sur {total}"
+    }
+  },
+  "publicReport": {
+    "title": "Rapport quotidien",
+    "subtitle": "Soumettez votre rapport d'activité quotidien",
+    "selectEmployee": "Choisir un employé",
+    "loading": "Chargement…",
+    "noEmployees": "Aucun employé disponible",
+    "welcome": "Bienvenue, {name}",
+    "logout": "Se déconnecter",
+    "submitSuccess": "Rapport envoyé avec succès",
+    "login": {
+      "title": "Identification",
+      "description": "Sélectionnez votre nom et saisissez votre code personnel pour soumettre un rapport.",
+      "employee": "Employé",
+      "pin": "Code personnel",
+      "pinHint": "Votre code à 6 chiffres a été remis par l'administration.",
+      "submit": "Continuer"
+    },
+    "form": {
+      "description": "Renseignez les détails de votre journée de travail.",
+      "date": "Date",
+      "hours": "Heures travaillées",
+      "activities": "Activités réalisées",
+      "activitiesPlaceholder": "Décrivez vos tâches et activités du jour…",
+      "observations": "Observations",
+      "submit": "Envoyer le rapport"
+    },
+    "history": {
+      "title": "Mes rapports récents",
+      "description": "Vos 60 derniers rapports envoyés.",
+      "col": {
+        "date": "Date",
+        "hours": "Heures",
+        "activities": "Activités"
+      },
+      "empty": "Aucun rapport pour le moment"
+    },
+    "errors": {
+      "missingFields": "Veuillez remplir tous les champs",
+      "invalidCredentials": "Identifiants invalides",
+      "network": "Erreur réseau, réessayez",
+      "activitiesRequired": "Veuillez décrire vos activités",
+      "invalidHours": "Heures invalides",
+      "submitFailed": "Échec de l'envoi du rapport",
+      "dailyLimit": "Limite atteinte : vous ne pouvez envoyer que 2 rapports par jour."
     }
   }
 }
