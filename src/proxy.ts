@@ -25,7 +25,10 @@ export default async function proxy(request: NextRequest) {
   const isLoginPage = pathnameWithoutLocale === '/login' || pathnameWithoutLocale === '';
   const isAuthCallback = pathnameWithoutLocale.startsWith('/auth/callback');
   const isEtudiantPortal = pathnameWithoutLocale === '/etudiant';
+  const isRegisterPage = pathnameWithoutLocale === '/register';
+  const isPublicReport = pathnameWithoutLocale === '/rapport';
   const isApiRoute = pathname.startsWith('/api/');
+  const isPublicRoute = isLoginPage || isAuthCallback || isEtudiantPortal || isRegisterPage || isPublicReport;
 
   let supabaseResponse = NextResponse.next({ request });
 
@@ -62,7 +65,7 @@ export default async function proxy(request: NextRequest) {
     });
     
     // Allow access to public routes only
-    if (!isLoginPage && !isAuthCallback && !isEtudiantPortal && !isApiRoute) {
+    if (!isPublicRoute && !isApiRoute) {
       return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
     }
     
@@ -97,8 +100,8 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
   }
 
-  // Protect all routes except login and etudiant portal
-  if (!user && !isLoginPage && !isEtudiantPortal) {
+  // Protect all routes except public ones (login, etudiant portal, register, rapport)
+  if (!user && !isPublicRoute) {
     const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
