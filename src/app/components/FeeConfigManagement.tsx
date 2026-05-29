@@ -13,6 +13,7 @@ import {
     PaymentConfigTranche,
     ServiceType,
     getTotalMontant,
+    DEFAULT_PAYMENT_CONFIGS,
 } from "../types/payment-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,7 +125,7 @@ function ServiceConfigCard({
     onSaved,
 }: {
     serviceType: ServiceType;
-    onSaved: () => void;
+    onSaved: () => void | Promise<void>;
 }) {
     const { user } = useAuth();
     const { getConfig } = usePaymentConfig();
@@ -142,7 +143,26 @@ function ServiceConfigCard({
     const reset = () =>
         setDraft({ ...original, tranches: original.tranches.map((t) => ({ ...t })) });
 
+    // Réinitialise aux valeurs canoniques de DEFAULT_PAYMENT_CONFIGS
+    // (utile quand la DB contient encore d'anciennes valeurs hors-spec — typiquement
+    // pour les services internationaux passés en USD).
+    const resetToDefaults = () => {
+        const canonical = DEFAULT_PAYMENT_CONFIGS[serviceType];
+        setDraft({
+            ...canonical,
+            tranches: canonical.tranches.map((t) => ({ ...t })),
+        });
+    };
+
+    const isCanonical =
+        draft.label === DEFAULT_PAYMENT_CONFIGS[serviceType].label &&
+        JSON.stringify(draft.tranches) === JSON.stringify(DEFAULT_PAYMENT_CONFIGS[serviceType].tranches) &&
+        draft.grace_days === DEFAULT_PAYMENT_CONFIGS[serviceType].grace_days &&
+        draft.daily_penalty === DEFAULT_PAYMENT_CONFIGS[serviceType].daily_penalty &&
+        draft.deadline_offset_days === DEFAULT_PAYMENT_CONFIGS[serviceType].deadline_offset_days;
+
     const hasChanges =
+        draft.label !== original.label ||
         JSON.stringify(draft.tranches) !== JSON.stringify(original.tranches) ||
         draft.grace_days !== original.grace_days ||
         draft.daily_penalty !== original.daily_penalty ||
@@ -167,7 +187,11 @@ function ServiceConfigCard({
                 .upsert(payload, { onConflict: "service_type" });
 
             if (error) {
-                showNotification(t("messages.saveError", { error: error.message }), "error");
+                showNotification({
+                    title: t("messages.saveErrorTitle"),
+                    message: t("messages.saveError", { error: error.message }),
+                    type: "error",
+                });
                 return;
             }
 
@@ -179,10 +203,22 @@ function ServiceConfigCard({
                 );
             }
 
-            showNotification(t("messages.saveSuccess", { label: draft.label }), "success");
-            onSaved();
+            // Le toast s'affiche avant le refresh : feedback immédiat.
+            showNotification({
+                title: t("messages.saveSuccessTitle"),
+                message: t("messages.saveSuccess", { label: draft.label }),
+                type: "success",
+            });
+            // On attend que le contexte ait rechargé les configs pour que `original`
+            // reflète les nouvelles valeurs avant de réactiver le bouton "Enregistrer"
+            // (sinon il reste cliquable une fraction de seconde après le save).
+            await onSaved();
         } catch {
-            showNotification(t("messages.unexpectedError"), "error");
+            showNotification({
+                title: t("messages.unexpectedErrorTitle"),
+                message: t("messages.unexpectedError"),
+                type: "error",
+            });
         } finally {
             setSaving(false);
         }
@@ -278,7 +314,7 @@ function ServiceConfigCard({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-3 border-t pt-4">
+                <div className="flex flex-wrap items-center gap-3 border-t pt-4">
                     <Button
                         onClick={handleSave}
                         disabled={saving || !hasChanges}
@@ -299,6 +335,19 @@ function ServiceConfigCard({
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
                             {t("actions.cancel")}
+                        </Button>
+                    )}
+                    {!isCanonical && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={resetToDefaults}
+                            className="gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300"
+                            title="Recharger les valeurs de référence (montants, libellés, devise canoniques)"
+                        >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Réinitialiser par défaut
                         </Button>
                     )}
                     {hasChanges && (

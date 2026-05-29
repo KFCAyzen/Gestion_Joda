@@ -2172,8 +2172,11 @@
     "total": "Total : {amount}",
     "messages": {
       "saveError": "Erreur lors de la sauvegarde : {error}",
+      "saveErrorTitle": "Sauvegarde impossible",
       "saveSuccess": "Configuration \"{label}\" sauvegardée",
-      "unexpectedError": "Erreur inattendue lors de la sauvegarde"
+      "saveSuccessTitle": "Configuration enregistrée",
+      "unexpectedError": "Erreur inattendue lors de la sauvegarde",
+      "unexpectedErrorTitle": "Erreur inattendue"
     }
   },
   "documentUpload": {

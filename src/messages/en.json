@@ -2172,8 +2172,11 @@
     "total": "Total: {amount}",
     "messages": {
       "saveError": "Save error: {error}",
+      "saveErrorTitle": "Save failed",
       "saveSuccess": "Configuration \"{label}\" saved",
-      "unexpectedError": "Unexpected error while saving"
+      "saveSuccessTitle": "Configuration saved",
+      "unexpectedError": "Unexpected error while saving",
+      "unexpectedErrorTitle": "Unexpected error"
     }
   },
   "documentUpload": {
