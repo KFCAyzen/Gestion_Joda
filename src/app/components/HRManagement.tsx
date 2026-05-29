@@ -7,12 +7,15 @@ import {
     CalendarDays,
     ClipboardList,
     Copy,
+    Filter as FilterIcon,
+    Globe,
     KeyRound,
     Link2,
     Loader2,
     Pencil,
     Plus,
     Receipt,
+    RotateCcw,
     Trash2,
     Users as UsersIcon,
 } from "lucide-react";
@@ -44,7 +47,12 @@ import {
 } from "@/components/ui/table";
 import { getFriendlyErrorMessage } from "../lib/feedback";
 import PhoneInput from "./shared/PhoneInput";
-import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhoneNumber, splitPhoneNumber } from "../lib/phone";
+import {
+    DEFAULT_PHONE_COUNTRY_CODE,
+    PHONE_COUNTRY_CODES,
+    normalizePhoneNumber,
+    splitPhoneNumber,
+} from "../lib/phone";
 import {
     useEmployees,
     useCreateEmployee,
@@ -1298,6 +1306,10 @@ function ReportsPanel({
     const create = useCreateDailyReport();
     const del = useDeleteDailyReport();
     const [filterEmp, setFilterEmp] = useState<string>("all");
+    const [filterDept, setFilterDept] = useState<string>("all");
+    const [filterCountry, setFilterCountry] = useState<string>("all");
+    const [filterFrom, setFilterFrom] = useState<string>("");
+    const [filterTo, setFilterTo] = useState<string>("");
     const [modalOpen, setModalOpen] = useState(false);
     const [confirmDel, setConfirmDel] = useState<DailyReport | null>(null);
     const [form, setForm] = useState({
@@ -1308,10 +1320,78 @@ function ReportsPanel({
         observations: "",
     });
 
-    const filtered = useMemo(
-        () => (filterEmp === "all" ? reports : reports.filter((r) => r.employee_id === filterEmp)),
-        [reports, filterEmp]
-    );
+    const employeeById = useMemo(() => {
+        const m = new Map<string, Employee>();
+        for (const e of employees) m.set(e.id, e);
+        return m;
+    }, [employees]);
+
+    const employeeCountryCode = useMemo(() => {
+        const m = new Map<string, string>();
+        for (const e of employees) {
+            if (e.telephone) {
+                const { countryCode } = splitPhoneNumber(e.telephone);
+                if (countryCode) m.set(e.id, countryCode);
+            }
+        }
+        return m;
+    }, [employees]);
+
+    const availableDepartments = useMemo(() => {
+        const set = new Set<string>();
+        for (const e of employees) {
+            const d = (e.departement || "").trim();
+            if (d) set.add(d);
+        }
+        return Array.from(set).sort((a, b) => a.localeCompare(b));
+    }, [employees]);
+
+    const availableCountries = useMemo(() => {
+        const codes = new Set<string>();
+        for (const code of employeeCountryCode.values()) codes.add(code);
+        // Map code -> first matching label
+        const labelByCode = new Map<string, string>();
+        for (const entry of PHONE_COUNTRY_CODES) {
+            if (codes.has(entry.code) && !labelByCode.has(entry.code)) {
+                labelByCode.set(entry.code, entry.country);
+            }
+        }
+        return Array.from(codes)
+            .map((code) => ({ code, country: labelByCode.get(code) || code }))
+            .sort((a, b) => a.country.localeCompare(b.country));
+    }, [employeeCountryCode]);
+
+    const hasActiveFilters =
+        filterEmp !== "all" ||
+        filterDept !== "all" ||
+        filterCountry !== "all" ||
+        Boolean(filterFrom) ||
+        Boolean(filterTo);
+
+    const resetFilters = () => {
+        setFilterEmp("all");
+        setFilterDept("all");
+        setFilterCountry("all");
+        setFilterFrom("");
+        setFilterTo("");
+    };
+
+    const filtered = useMemo(() => {
+        return reports.filter((r) => {
+            if (filterEmp !== "all" && r.employee_id !== filterEmp) return false;
+            if (filterFrom && r.date < filterFrom) return false;
+            if (filterTo && r.date > filterTo) return false;
+            if (filterDept !== "all") {
+                const emp = employeeById.get(r.employee_id);
+                if (!emp || (emp.departement || "") !== filterDept) return false;
+            }
+            if (filterCountry !== "all") {
+                const code = employeeCountryCode.get(r.employee_id);
+                if (code !== filterCountry) return false;
+            }
+            return true;
+        });
+    }, [reports, filterEmp, filterDept, filterCountry, filterFrom, filterTo, employeeById, employeeCountryCode]);
 
     const openCreate = () => {
         setForm({
@@ -1358,38 +1438,164 @@ function ReportsPanel({
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
-                <div>
-                    <CardTitle className="flex items-center gap-2">
-                        <ClipboardList className="w-5 h-5" />
-                        {t("reports.title")}
-                    </CardTitle>
-                    <CardDescription>{t("reports.description")}</CardDescription>
-                </div>
-                <div className="flex gap-2 items-center">
-                    <Select value={filterEmp} onValueChange={(v) => setFilterEmp(v || "all")}>
-                        <SelectTrigger className="w-56">
-                            <SelectValue>
-                                {(value: string) => {
-                                    if (value === "all" || !value) return t("reports.allEmployees");
-                                    const e = employees.find((x) => x.id === value);
-                                    return e ? `${e.prenom} ${e.nom}` : t("reports.allEmployees");
-                                }}
-                            </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">{t("reports.allEmployees")}</SelectItem>
-                            {employees.map((e) => (
-                                <SelectItem key={e.id} value={e.id}>
-                                    {e.prenom} {e.nom}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+            <CardHeader className="space-y-4">
+                <div className="flex flex-row items-start justify-between gap-3 flex-wrap">
+                    <div>
+                        <CardTitle className="flex items-center gap-2">
+                            <ClipboardList className="w-5 h-5" />
+                            {t("reports.title")}
+                        </CardTitle>
+                        <CardDescription>{t("reports.description")}</CardDescription>
+                    </div>
                     <Button onClick={openCreate} disabled={employees.length === 0}>
                         <Plus className="w-4 h-4 mr-2" />
                         {t("reports.add")}
                     </Button>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-3">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                            <FilterIcon className="w-4 h-4" />
+                            {t("reports.filters.title")}
+                            {hasActiveFilters && (
+                                <span className="rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 px-2 py-0.5 text-[10px] font-semibold">
+                                    {filtered.length}/{reports.length}
+                                </span>
+                            )}
+                        </div>
+                        {hasActiveFilters && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={resetFilters}
+                                className="h-7 text-xs text-slate-500 hover:text-slate-700"
+                            >
+                                <RotateCcw className="w-3 h-3 mr-1" />
+                                {t("reports.filters.reset")}
+                            </Button>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                        <div className="space-y-1">
+                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                <CalendarDays className="w-3 h-3" />
+                                {t("reports.filters.from")}
+                            </Label>
+                            <Input
+                                type="date"
+                                value={filterFrom}
+                                onChange={(e) => setFilterFrom(e.target.value)}
+                                className="h-9 text-sm"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                <CalendarDays className="w-3 h-3" />
+                                {t("reports.filters.to")}
+                            </Label>
+                            <Input
+                                type="date"
+                                value={filterTo}
+                                onChange={(e) => setFilterTo(e.target.value)}
+                                className="h-9 text-sm"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                <Briefcase className="w-3 h-3" />
+                                {t("reports.filters.department")}
+                            </Label>
+                            <Select value={filterDept} onValueChange={(v) => setFilterDept(v || "all")}>
+                                <SelectTrigger className="h-9 text-sm">
+                                    <SelectValue>
+                                        {(value: string) =>
+                                            value === "all" || !value
+                                                ? t("reports.filters.allDepartments")
+                                                : value
+                                        }
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t("reports.filters.allDepartments")}</SelectItem>
+                                    {availableDepartments.length === 0 ? (
+                                        <SelectItem value="__none" disabled>
+                                            {t("reports.filters.noDepartments")}
+                                        </SelectItem>
+                                    ) : (
+                                        availableDepartments.map((d) => (
+                                            <SelectItem key={d} value={d}>
+                                                {d}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                <Globe className="w-3 h-3" />
+                                {t("reports.filters.country")}
+                            </Label>
+                            <Select
+                                value={filterCountry}
+                                onValueChange={(v) => setFilterCountry(v || "all")}
+                            >
+                                <SelectTrigger className="h-9 text-sm">
+                                    <SelectValue>
+                                        {(value: string) => {
+                                            if (value === "all" || !value)
+                                                return t("reports.filters.allCountries");
+                                            const c = availableCountries.find((x) => x.code === value);
+                                            return c ? `${c.country} (${c.code})` : value;
+                                        }}
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t("reports.filters.allCountries")}</SelectItem>
+                                    {availableCountries.length === 0 ? (
+                                        <SelectItem value="__none" disabled>
+                                            {t("reports.filters.noCountries")}
+                                        </SelectItem>
+                                    ) : (
+                                        availableCountries.map((c) => (
+                                            <SelectItem key={c.code} value={c.code}>
+                                                {c.country} ({c.code})
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                <UsersIcon className="w-3 h-3" />
+                                {t("reports.filters.employee")}
+                            </Label>
+                            <Select value={filterEmp} onValueChange={(v) => setFilterEmp(v || "all")}>
+                                <SelectTrigger className="h-9 text-sm">
+                                    <SelectValue>
+                                        {(value: string) => {
+                                            if (value === "all" || !value)
+                                                return t("reports.allEmployees");
+                                            const e = employees.find((x) => x.id === value);
+                                            return e ? `${e.prenom} ${e.nom}` : t("reports.allEmployees");
+                                        }}
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t("reports.allEmployees")}</SelectItem>
+                                    {employees.map((e) => (
+                                        <SelectItem key={e.id} value={e.id}>
+                                            {e.prenom} {e.nom}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
