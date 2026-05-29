@@ -25,6 +25,7 @@ import { EmptyState } from "./student/EmptyState";
 import { Skeleton } from "./student/Skeleton";
 import { ActivityRings } from "./student/ActivityRings";
 import { DossierRoadmap } from "./student/DossierRoadmap";
+import { StudentReceivedDocuments } from "./student/StudentReceivedDocuments";
 
 // ── Zustand store (état UI)
 import { useStudentPortalStore } from "../lib/stores/student-portal.store";
@@ -600,6 +601,8 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                     />
                     {dossier ? (
                         <>
+                            <StudentReceivedDocuments studentId={studentId} />
+
                             <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
                                 <div className="space-y-6">
                                     <Card className="student-surface rounded-[2rem] border-0 shadow-none bg-transparent ring-0">

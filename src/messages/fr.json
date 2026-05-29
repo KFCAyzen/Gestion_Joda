@@ -1628,7 +1628,8 @@
       "status": "Statut du dossier",
       "notes": "Notes & Commentaires",
       "notesPlaceholder": "Ajouter des notes ou observations...",
-      "documents": "Documents"
+      "documents": "Documents",
+      "sendDocuments": "Documents envoyés à l'étudiant"
     },
     "actions": {
       "back": "Retour",
@@ -2419,5 +2420,51 @@
       "submitFailed": "Échec de l'envoi du rapport",
       "dailyLimit": "Limite atteinte : vous ne pouvez envoyer que 2 rapports par jour."
     }
+  },
+  "staffDocuments": {
+    "sender": {
+      "title": "Envoyer un document à l'étudiant",
+      "description": "Le document sera disponible immédiatement dans le portail de {name}.",
+      "titleLabel": "Titre",
+      "titlePlaceholder": "Ex : Lettre d'admission, attestation, visa…",
+      "descriptionLabel": "Description (facultatif)",
+      "descriptionPlaceholder": "Précisez le contexte ou les instructions pour l'étudiant",
+      "fileLabel": "Fichier",
+      "pickFile": "Choisir un fichier (PDF, JPG, PNG)",
+      "removeFile": "Retirer",
+      "send": "Envoyer à l'étudiant",
+      "sending": "Envoi en cours…"
+    },
+    "history": {
+      "title": "Documents déjà envoyés",
+      "loading": "Chargement…",
+      "empty": "Aucun document envoyé pour l'instant.",
+      "downloaded": "Téléchargé",
+      "notDownloaded": "Non téléchargé",
+      "view": "Voir",
+      "delete": "Supprimer"
+    },
+    "confirmDelete": {
+      "title": "Supprimer ce document ?",
+      "description": "« {title} » sera retiré du portail de l'étudiant. Action irréversible.",
+      "confirm": "Supprimer"
+    },
+    "notifications": {
+      "sentTitle": "Document envoyé",
+      "sentMessage": "Le document est désormais visible côté {name}.",
+      "deletedTitle": "Document supprimé",
+      "deletedMessage": "Le document n'est plus accessible à l'étudiant.",
+      "errorTitle": "Erreur",
+      "sendError": "Impossible d'envoyer le document.",
+      "deleteError": "Suppression impossible.",
+      "invalidFile": "Fichier invalide."
+    }
+  },
+  "studentReceivedDocuments": {
+    "title": "Documents reçus de l'équipe",
+    "loading": "Chargement…",
+    "empty": "Aucun document reçu pour l'instant.",
+    "download": "Télécharger",
+    "new": "Nouveau"
   }
 }

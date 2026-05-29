@@ -23,6 +23,7 @@ import { logActivity } from "../utils/activityLogger";
 import { SearchBar, FilterSelect, LoadingState } from "./shared";
 import ConfirmDialog from "./ConfirmDialog";
 import DocumentManagement from "./DocumentManagement";
+import StaffDocumentsSender from "./StaffDocumentsSender";
 import ProtectedRoute from "./ProtectedRoute";
 
 interface ScholarshipFile {
@@ -367,10 +368,17 @@ export default function ScholarshipFileManagement() {
                     </div>
 
                     {/* Colonne droite : documents */}
-                    <div className="lg:col-span-2">
+                    <div className="space-y-6 lg:col-span-2">
                         <div className="joda-surface">
                             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t("detail.documents")}</p>
                             <DocumentManagement
+                                studentId={selectedFile.student_id}
+                                studentName={selectedFile.studentName}
+                            />
+                        </div>
+                        <div className="joda-surface">
+                            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t("detail.sendDocuments")}</p>
+                            <StaffDocumentsSender
                                 studentId={selectedFile.student_id}
                                 studentName={selectedFile.studentName}
                             />

@@ -26,6 +26,8 @@ export type ActivityType =
   | "document_upload"
   | "document_validate"
   | "document_reject"
+  | "staff_document_sent"
+  | "staff_document_deleted"
   | "user_create"
   | "user_update"
   | "user_delete"

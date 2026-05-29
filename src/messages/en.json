@@ -1628,7 +1628,8 @@
       "status": "File status",
       "notes": "Notes & Comments",
       "notesPlaceholder": "Add notes or observations...",
-      "documents": "Documents"
+      "documents": "Documents",
+      "sendDocuments": "Documents sent to student"
     },
     "actions": {
       "back": "Back",
@@ -2419,5 +2420,51 @@
       "submitFailed": "Failed to submit the report",
       "dailyLimit": "Limit reached: you can submit at most 2 reports per day."
     }
+  },
+  "staffDocuments": {
+    "sender": {
+      "title": "Send a document to the student",
+      "description": "The document will be immediately available in {name}'s portal.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. Admission letter, certificate, visa…",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "Add context or instructions for the student",
+      "fileLabel": "File",
+      "pickFile": "Pick a file (PDF, JPG, PNG)",
+      "removeFile": "Remove",
+      "send": "Send to student",
+      "sending": "Sending…"
+    },
+    "history": {
+      "title": "Documents already sent",
+      "loading": "Loading…",
+      "empty": "No documents sent yet.",
+      "downloaded": "Downloaded",
+      "notDownloaded": "Not downloaded",
+      "view": "View",
+      "delete": "Delete"
+    },
+    "confirmDelete": {
+      "title": "Delete this document?",
+      "description": "\"{title}\" will be removed from the student's portal. This cannot be undone.",
+      "confirm": "Delete"
+    },
+    "notifications": {
+      "sentTitle": "Document sent",
+      "sentMessage": "The document is now visible to {name}.",
+      "deletedTitle": "Document removed",
+      "deletedMessage": "The document is no longer available to the student.",
+      "errorTitle": "Error",
+      "sendError": "Could not send the document.",
+      "deleteError": "Could not delete the document.",
+      "invalidFile": "Invalid file."
+    }
+  },
+  "studentReceivedDocuments": {
+    "title": "Documents received from the team",
+    "loading": "Loading…",
+    "empty": "No documents received yet.",
+    "download": "Download",
+    "new": "New"
   }
 }
