@@ -74,8 +74,28 @@ export function getFriendlyErrorMessage(error: unknown, options?: FriendlyErrorO
         return "Trop de tentatives en peu de temps. Attendez un moment avant de recommencer.";
     }
 
+    if (
+        message.includes("should be different from the old password") ||
+        message.includes("new password should be different") ||
+        message.includes("same as the old password")
+    ) {
+        return "Le nouveau mot de passe doit être différent de l'ancien. Choisissez-en un autre.";
+    }
+
+    if (message.includes("weak password") || message.includes("compromised password") || message.includes("pwned")) {
+        return "Ce mot de passe est trop faible ou a été compromis. Choisissez-en un plus robuste.";
+    }
+
+    if (
+        message.includes("password should be at least") ||
+        message.includes("password is too short") ||
+        (message.includes("password") && message.includes("characters"))
+    ) {
+        return "Le mot de passe est trop court. Utilisez au moins 8 caractères.";
+    }
+
     if (message.includes("password")) {
-        return "Le mot de passe ne respecte pas les exigences de sécurité. Utilisez au moins 8 caractères avec majuscule, chiffre et symbole.";
+        return "Le mot de passe n'a pas pu être modifié. Vérifiez vos informations puis réessayez.";
     }
 
     return fallback;
