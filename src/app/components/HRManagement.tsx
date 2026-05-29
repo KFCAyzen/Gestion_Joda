@@ -298,6 +298,22 @@ const emptyEmployeeForm: EmployeeFormState = {
     notes: "",
 };
 
+const MATRICULE_PREFIX = "EMP-";
+const MATRICULE_PAD = 4;
+
+function nextMatricule(employees: Employee[]): string {
+    const re = new RegExp(`^${MATRICULE_PREFIX}(\\d+)$`);
+    let max = 0;
+    for (const e of employees) {
+        const m = e.matricule?.match(re);
+        if (m) {
+            const n = parseInt(m[1], 10);
+            if (!Number.isNaN(n) && n > max) max = n;
+        }
+    }
+    return `${MATRICULE_PREFIX}${String(max + 1).padStart(MATRICULE_PAD, "0")}`;
+}
+
 function EmployeesPanel({
     employees,
     loading,
@@ -320,7 +336,7 @@ function EmployeesPanel({
 
     const openCreate = () => {
         setEditing(null);
-        setForm(emptyEmployeeForm);
+        setForm({ ...emptyEmployeeForm, matricule: nextMatricule(employees) });
         setModalOpen(true);
     };
 
@@ -459,7 +475,12 @@ function EmployeesPanel({
             >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Field label={t("employees.col.matricule")}>
-                        <Input value={form.matricule} onChange={(e) => setForm({ ...form, matricule: e.target.value })} />
+                        <Input
+                            value={form.matricule}
+                            readOnly
+                            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                            title={t("employees.matriculeAutoHint")}
+                        />
                     </Field>
                     <Field label={t("employees.col.status")}>
                         <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as EmployeeStatus })}>
@@ -737,7 +758,12 @@ function LeavesPanel({
                     <Field label={t("leaves.col.employee")} required>
                         <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v || "" })}>
                             <SelectTrigger>
-                                <SelectValue placeholder={t("leaves.selectEmployee")} />
+                                <SelectValue placeholder={t("leaves.selectEmployee")}>
+                                    {(value: string) => {
+                                        const e = employees.find((x) => x.id === value);
+                                        return e ? `${e.prenom} ${e.nom}` : t("leaves.selectEmployee");
+                                    }}
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                                 {employees.map((e) => (
@@ -997,7 +1023,12 @@ function PayrollPanel({
                     <Field label={t("leaves.col.employee")} required>
                         <Select value={form.employee_id} onValueChange={(v) => v && handleEmployeeChange(v)}>
                             <SelectTrigger>
-                                <SelectValue placeholder={t("leaves.selectEmployee")} />
+                                <SelectValue placeholder={t("leaves.selectEmployee")}>
+                                    {(value: string) => {
+                                        const e = employeesById.get(value);
+                                        return e ? `${e.prenom} ${e.nom}` : t("leaves.selectEmployee");
+                                    }}
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                                 {employees.map((e) => (
@@ -1186,7 +1217,13 @@ function ReportsPanel({
                 <div className="flex gap-2 items-center">
                     <Select value={filterEmp} onValueChange={(v) => setFilterEmp(v || "all")}>
                         <SelectTrigger className="w-56">
-                            <SelectValue />
+                            <SelectValue>
+                                {(value: string) => {
+                                    if (value === "all" || !value) return t("reports.allEmployees");
+                                    const e = employees.find((x) => x.id === value);
+                                    return e ? `${e.prenom} ${e.nom}` : t("reports.allEmployees");
+                                }}
+                            </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">{t("reports.allEmployees")}</SelectItem>
@@ -1246,7 +1283,12 @@ function ReportsPanel({
                         <Field label={t("leaves.col.employee")} required>
                             <Select value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v || "" })}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder={t("leaves.selectEmployee")} />
+                                    <SelectValue placeholder={t("leaves.selectEmployee")}>
+                                        {(value: string) => {
+                                            const e = employees.find((x) => x.id === value);
+                                            return e ? `${e.prenom} ${e.nom}` : t("leaves.selectEmployee");
+                                        }}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {employees.map((e) => (

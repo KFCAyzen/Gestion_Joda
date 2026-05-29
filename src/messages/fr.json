@@ -117,6 +117,7 @@
       "addTitle": "Nouvel employé",
       "editTitle": "Modifier l'employé",
       "empty": "Aucun employé enregistré",
+      "matriculeAutoHint": "Le matricule est généré automatiquement",
       "confirmDeleteTitle": "Supprimer cet employé ?",
       "confirmDeleteDesc": "Toutes les données associées (congés, fiches de paie, rapports) de {name} seront aussi supprimées.",
       "col": {
@@ -181,7 +182,7 @@
     },
     "payroll": {
       "title": "Fiches de paie",
-      "description": "Génération mensuelle des salaires",
+      "description": "Génération mensuelle des salaires — crée automatiquement une sortie « salaires » dans la comptabilité",
       "add": "Nouvelle fiche",
       "addTitle": "Nouvelle fiche de paie",
       "empty": "Aucune fiche de paie",

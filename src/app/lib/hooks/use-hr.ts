@@ -207,7 +207,10 @@ export function useCreatePayslip() {
       if (error) throw error;
       return data as Payslip;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: PAYSLIPS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PAYSLIPS_KEY });
+      qc.invalidateQueries({ queryKey: ['sorties_comptables'] });
+    },
   });
 }
 
@@ -236,7 +239,10 @@ export function useDeletePayslip() {
       const { error } = await supabase.from('payslips').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: PAYSLIPS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PAYSLIPS_KEY });
+      qc.invalidateQueries({ queryKey: ['sorties_comptables'] });
+    },
   });
 }
 

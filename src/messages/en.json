@@ -117,6 +117,7 @@
       "addTitle": "New employee",
       "editTitle": "Edit employee",
       "empty": "No employee yet",
+      "matriculeAutoHint": "The code is generated automatically",
       "confirmDeleteTitle": "Delete this employee?",
       "confirmDeleteDesc": "All related data (leaves, payslips, reports) for {name} will also be removed.",
       "col": {
@@ -181,7 +182,7 @@
     },
     "payroll": {
       "title": "Payslips",
-      "description": "Monthly salary generation",
+      "description": "Monthly salary generation — automatically creates a \"salaries\" expense in accounting",
       "add": "New payslip",
       "addTitle": "New payslip",
       "empty": "No payslip",
