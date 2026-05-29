@@ -102,6 +102,15 @@ export default function UserManagement() {
             return;
         }
 
+        const trimmedUsername = formData.username.trim();
+        if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
+            const message = t("messages.usernameInvalid");
+            setFeedback(message, "");
+            showNotification({ title: t("messages.usernameInvalidTitle"), message, type: "warning" });
+            setIsCreating(false);
+            return;
+        }
+
         if (formData.password.trim().length < 8) {
             const message = t("messages.passwordTooShort");
             setFeedback(message, "");
@@ -629,6 +638,8 @@ export default function UserManagement() {
                                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                                 placeholder="nom_utilisateur"
                                                 required
+                                                minLength={3}
+                                                maxLength={50}
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -681,10 +692,14 @@ export default function UserManagement() {
                                                 <SelectContent>
                                                     <SelectItem value="student">{t("roles.student")}</SelectItem>
                                                     <SelectItem value="agent">Agent</SelectItem>
-                                                    {currentUser?.role === "super_admin" && (
+                                                    {(currentUser?.role === "admin" || currentUser?.role === "super_admin") && (
                                                         <>
                                                             <SelectItem value="supervisor">{t("roles.supervisor")}</SelectItem>
                                                             <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                                                        </>
+                                                    )}
+                                                    {currentUser?.role === "super_admin" && (
+                                                        <>
                                                             <SelectItem value="super_admin">{t("roles.superAdmin")}</SelectItem>
                                                         </>
                                                     )}
@@ -699,6 +714,7 @@ export default function UserManagement() {
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                 required
+                                                minLength={8}
                                             />
                                             <p className="text-xs text-slate-500 dark:text-slate-400">
                                                 {t("create.passwordHint")}

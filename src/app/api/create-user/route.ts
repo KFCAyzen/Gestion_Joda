@@ -9,8 +9,8 @@ import { sendSmsToPhone } from "@/app/lib/smsService";
 const createUserBodySchema = z.object({
     name: z.string().min(1),
     email: z.string().email(),
-    username: z.string().min(2),
-    password: z.string().min(6),
+    username: z.string().min(3).max(50),
+    password: z.string().min(8),
     role: z.enum(["student", "agent", "supervisor", "admin", "super_admin"]),
     authEmail: z.string().email().optional().nullable(),
     telephone: z.string().optional().nullable(),
@@ -96,7 +96,7 @@ async function handleCreateUser(req: NextRequest, session: AuthSession) {
             name,
             role,
             telephone: telephone || null,
-            must_change_password: role === "student",
+            must_change_password: true,
             is_active: true,
         },
         app_metadata:  { role },
@@ -122,7 +122,7 @@ async function handleCreateUser(req: NextRequest, session: AuthSession) {
         role,
         telephone: telephone || null,
         password_hash: "managed_by_supabase_auth",
-        must_change_password: role === "student",
+        must_change_password: true,
         is_active: true,
     }, { onConflict: 'id' });
 

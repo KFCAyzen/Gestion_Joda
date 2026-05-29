@@ -19,7 +19,7 @@ export const createUserSchema = userSchema.omit({
   created_at: true,
   updated_at: true,
 }).extend({
-  password: z.string().min(6),
+  password: z.string().min(8, 'Minimum 8 caractères'),
 });
 
 export const updateUserSchema = createUserSchema.partial();
@@ -32,13 +32,13 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   username: z.string().min(3, 'Minimum 3 caractères').max(50),
   email: z.string().email('Email invalide'),
-  password: z.string().min(6, 'Minimum 6 caractères'),
+  password: z.string().min(8, 'Minimum 8 caractères'),
   name: z.string().optional(),
 });
 
 export const changePasswordSchema = z.object({
   oldPassword: z.string().min(1, 'Ancien mot de passe requis'),
-  newPassword: z.string().min(6, 'Minimum 6 caractères'),
+  newPassword: z.string().min(8, 'Minimum 8 caractères'),
 });
 
 export type User = z.infer<typeof userSchema>;

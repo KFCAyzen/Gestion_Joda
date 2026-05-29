@@ -1338,6 +1338,8 @@
       "roleRequired": "Select a role before creating the account.",
       "passwordTooShortTitle": "Password too short",
       "passwordTooShort": "The temporary password must contain at least 8 characters.",
+      "usernameInvalidTitle": "Invalid username",
+      "usernameInvalid": "Username must be between 3 and 50 characters.",
       "createTitle": "User creation",
       "createError": "Unable to create this user right now.",
       "createCatchError": "User creation failed. Try again in a moment.",
