@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
+import { useAuth } from "../context/AuthContext";
 import { useNotificationContext } from "../context/NotificationContext";
 import { getFriendlyErrorMessage } from "../lib/feedback";
 
@@ -99,6 +100,7 @@ function PasswordInput({
 export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswordModalProps) {
     const t = useTranslations("changePasswordFlow");
     const supabase = createClient();
+    const { refreshProfile } = useAuth();
     const { showNotification } = useNotificationContext();
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -147,12 +149,10 @@ export default function ChangePasswordModal({ onPasswordChanged }: ChangePasswor
                 throw new Error(t("errors.profileUpdate"));
             }
 
-            const saved = localStorage.getItem("currentUser");
-            if (saved) {
-                const currentUser = JSON.parse(saved);
-                currentUser.mustChangePassword = false;
-                localStorage.setItem("currentUser", JSON.stringify(currentUser));
-            }
+            // Recharge le profil depuis la DB pour que l'AuthContext reflète
+            // immédiatement must_change_password=false (évite la race condition
+            // avec TOKEN_REFRESHED qui pourrait relire l'ancienne valeur true).
+            await refreshProfile();
 
             showNotification({
                 title: t("notifications.activatedTitle"),

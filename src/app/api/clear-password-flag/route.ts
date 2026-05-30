@@ -18,6 +18,17 @@ async function handleClearPasswordFlag(_req: NextRequest, session: AuthSession) 
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Efface aussi le flag dans raw_user_meta_data de auth.users.
+    // Si le trigger handle_new_user refire (re-insert ou conflict),
+    // il lira false depuis les métadonnées et ne remettra pas le flag à true.
+    const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(
+        session.user.id,
+        { user_metadata: { must_change_password: false } },
+    );
+    if (metaError) {
+        console.warn("[clear-password-flag] meta update failed (non-bloquant):", metaError.message);
+    }
+
     return NextResponse.json({ success: true });
 }
 

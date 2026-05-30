@@ -67,6 +67,7 @@ interface AuthContextType {
     resetUserPassword: (userId: string, newPassword: string) => Promise<boolean>;
     canResetPassword: (targetUser: AuthUser) => boolean;
     refreshUsers: () => Promise<void>;
+    refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -460,6 +461,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 resetUserPassword,
                 changePassword,
                 refreshUsers,
+                refreshProfile: async () => {
+                    const { data: { user: authUser } } = await supabase.auth.getUser();
+                    if (authUser) await loadUserProfile(authUser.id);
+                },
             }}
         >
             {children}
