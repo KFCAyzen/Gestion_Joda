@@ -82,7 +82,8 @@
     "common": {
       "cancel": "Cancel",
       "save": "Save",
-      "create": "Create"
+      "create": "Create",
+      "close": "Close"
     },
     "unknownEmployee": "Unknown employee",
     "stats": {
@@ -200,6 +201,7 @@
       "addTitle": "New payslip",
       "empty": "No payslip",
       "computedNet": "Computed net pay",
+      "exportPdf": "Export as PDF",
       "confirmDeleteTitle": "Delete this payslip?",
       "confirmDeleteDesc": "This action cannot be undone.",
       "col": {
@@ -223,6 +225,10 @@
       "activitiesPlaceholder": "Describe today's activities…",
       "confirmDeleteTitle": "Delete this report?",
       "confirmDeleteDesc": "This action cannot be undone.",
+      "view": "View report",
+      "viewTitle": "Report details",
+      "viewHint": "Click to view details",
+      "submittedAt": "Submitted at",
       "filters": {
         "title": "Filters",
         "reset": "Reset",

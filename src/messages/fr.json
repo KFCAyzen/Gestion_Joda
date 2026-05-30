@@ -82,7 +82,8 @@
     "common": {
       "cancel": "Annuler",
       "save": "Enregistrer",
-      "create": "Créer"
+      "create": "Créer",
+      "close": "Fermer"
     },
     "unknownEmployee": "Employé inconnu",
     "stats": {
@@ -200,6 +201,7 @@
       "addTitle": "Nouvelle fiche de paie",
       "empty": "Aucune fiche de paie",
       "computedNet": "Net à payer calculé",
+      "exportPdf": "Exporter en PDF",
       "confirmDeleteTitle": "Supprimer cette fiche ?",
       "confirmDeleteDesc": "Cette action est irréversible.",
       "col": {
@@ -223,6 +225,10 @@
       "activitiesPlaceholder": "Décrire les activités réalisées dans la journée…",
       "confirmDeleteTitle": "Supprimer ce rapport ?",
       "confirmDeleteDesc": "Cette action est irréversible.",
+      "view": "Voir le rapport",
+      "viewTitle": "Détail du rapport",
+      "viewHint": "Cliquer pour voir le détail",
+      "submittedAt": "Envoyé le",
       "filters": {
         "title": "Filtres",
         "reset": "Réinitialiser",

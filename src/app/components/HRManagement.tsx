@@ -5,8 +5,10 @@ import { useTranslations } from "next-intl";
 import {
     Briefcase,
     CalendarDays,
+    Check,
     ClipboardList,
     Copy,
+    Eye,
     Filter as FilterIcon,
     Globe,
     KeyRound,
@@ -18,6 +20,7 @@ import {
     RotateCcw,
     Trash2,
     Users as UsersIcon,
+    X as XIcon,
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useAuth } from "../context/AuthContext";
@@ -46,6 +49,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { getFriendlyErrorMessage } from "../lib/feedback";
+import { DropdownMenu } from "./shared";
 import PhoneInput from "./shared/PhoneInput";
 import {
     DEFAULT_PHONE_COUNTRY_CODE,
@@ -223,14 +227,14 @@ function HRManagementInner() {
 // ─── UI helpers ────────────────────────────────────────────────────────────
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
     return (
-        <Card>
+        <Card className="joda-surface border-0 shadow-none">
             <CardContent className="p-4 flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                     {icon}
                 </div>
                 <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-                    <p className="text-xl font-semibold">{value}</p>
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{label}</p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{value}</p>
                 </div>
             </CardContent>
         </Card>
@@ -276,8 +280,10 @@ function LoadingRow({ cols }: { cols: number }) {
 function EmptyRow({ cols, label }: { cols: number; label: string }) {
     return (
         <TableRow>
-            <TableCell colSpan={cols} className="text-center py-8 text-slate-400">
-                {label}
+            <TableCell colSpan={cols} className="p-0">
+                <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-6 py-10 text-center my-2">
+                    <p className="text-base font-medium text-slate-700 dark:text-slate-300">{label}</p>
+                </div>
             </TableCell>
         </TableRow>
     );
@@ -503,7 +509,7 @@ function EmployeesPanel({
     };
 
     return (
-        <Card>
+        <Card className="joda-surface border-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-3">
                 <div>
                     <CardTitle className="flex items-center gap-2">
@@ -587,31 +593,32 @@ function EmployeesPanel({
                                         <StatusBadge status={e.statut} />
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => handleRegeneratePin(e)}
-                                                disabled={regeneratingId === e.id}
-                                                title={t("employees.regeneratePin")}
-                                            >
-                                                {regeneratingId === e.id ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <KeyRound className="w-4 h-4" />
-                                                )}
-                                            </Button>
-                                            <Button size="sm" variant="ghost" onClick={() => openEdit(e)}>
-                                                <Pencil className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => setConfirmDel(e)}
-                                                className="text-rose-600"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                        <div className="flex justify-end">
+                                            <DropdownMenu
+                                                actions={[
+                                                    {
+                                                        label: t("employees.regeneratePin"),
+                                                        icon: regeneratingId === e.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <KeyRound className="w-4 h-4" />
+                                                        ),
+                                                        onClick: () => handleRegeneratePin(e),
+                                                        disabled: regeneratingId === e.id,
+                                                    },
+                                                    {
+                                                        label: t("employees.editTitle"),
+                                                        icon: <Pencil className="w-4 h-4" />,
+                                                        onClick: () => openEdit(e),
+                                                    },
+                                                    {
+                                                        label: t("employees.confirmDeleteTitle"),
+                                                        icon: <Trash2 className="w-4 h-4" />,
+                                                        onClick: () => setConfirmDel(e),
+                                                        variant: "danger",
+                                                    },
+                                                ]}
+                                            />
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -836,7 +843,7 @@ function LeavesPanel({
     };
 
     return (
-        <Card>
+        <Card className="joda-surface border-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="flex items-center gap-2">
@@ -880,30 +887,31 @@ function LeavesPanel({
                                         <LeaveStatusBadge status={l.statut} />
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex justify-end gap-1">
-                                            {l.statut === "en_attente" && (
-                                                <>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={() => handleReview(l.id, "approuve")}
-                                                        className="text-emerald-600"
-                                                    >
-                                                        {t("leaves.approve")}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={() => handleReview(l.id, "rejete")}
-                                                        className="text-rose-600"
-                                                    >
-                                                        {t("leaves.reject")}
-                                                    </Button>
-                                                </>
-                                            )}
-                                            <Button size="sm" variant="ghost" onClick={() => setConfirmDel(l)} className="text-rose-600">
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                        <div className="flex justify-end">
+                                            <DropdownMenu
+                                                actions={[
+                                                    ...(l.statut === "en_attente"
+                                                        ? [
+                                                              {
+                                                                  label: t("leaves.approve"),
+                                                                  icon: <Check className="w-4 h-4" />,
+                                                                  onClick: () => handleReview(l.id, "approuve"),
+                                                              },
+                                                              {
+                                                                  label: t("leaves.reject"),
+                                                                  icon: <XIcon className="w-4 h-4" />,
+                                                                  onClick: () => handleReview(l.id, "rejete"),
+                                                              },
+                                                          ]
+                                                        : []),
+                                                    {
+                                                        label: t("leaves.confirmDeleteTitle"),
+                                                        icon: <Trash2 className="w-4 h-4" />,
+                                                        onClick: () => setConfirmDel(l),
+                                                        variant: "danger" as const,
+                                                    },
+                                                ]}
+                                            />
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -1116,7 +1124,7 @@ function PayrollPanel({
     };
 
     return (
-        <Card>
+        <Card className="joda-surface border-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="flex items-center gap-2">
@@ -1162,13 +1170,22 @@ function PayrollPanel({
                                     <TableCell>{p.jours_absences}</TableCell>
                                     <TableCell className="font-semibold">{fmtMoney(p.net_a_payer)}</TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button size="sm" variant="ghost" onClick={() => handleExportPdf(p)}>
-                                                PDF
-                                            </Button>
-                                            <Button size="sm" variant="ghost" onClick={() => setConfirmDel(p)} className="text-rose-600">
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                        <div className="flex justify-end">
+                                            <DropdownMenu
+                                                actions={[
+                                                    {
+                                                        label: t("payroll.exportPdf"),
+                                                        icon: <Receipt className="w-4 h-4" />,
+                                                        onClick: () => handleExportPdf(p),
+                                                    },
+                                                    {
+                                                        label: t("payroll.confirmDeleteTitle"),
+                                                        icon: <Trash2 className="w-4 h-4" />,
+                                                        onClick: () => setConfirmDel(p),
+                                                        variant: "danger" as const,
+                                                    },
+                                                ]}
+                                            />
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -1312,6 +1329,7 @@ function ReportsPanel({
     const [filterTo, setFilterTo] = useState<string>("");
     const [modalOpen, setModalOpen] = useState(false);
     const [confirmDel, setConfirmDel] = useState<DailyReport | null>(null);
+    const [viewing, setViewing] = useState<DailyReport | null>(null);
     const [form, setForm] = useState({
         employee_id: "",
         date: new Date().toISOString().slice(0, 10),
@@ -1437,7 +1455,7 @@ function ReportsPanel({
     };
 
     return (
-        <Card>
+        <Card className="joda-surface border-0 shadow-none">
             <CardHeader className="space-y-4">
                 <div className="flex flex-row items-start justify-between gap-3 flex-wrap">
                     <div>
@@ -1617,16 +1635,35 @@ function ReportsPanel({
                             <EmptyRow cols={6} label={t("reports.empty")} />
                         ) : (
                             filtered.map((r) => (
-                                <TableRow key={r.id}>
+                                <TableRow
+                                    key={r.id}
+                                    onClick={() => setViewing(r)}
+                                    className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                    title={t("reports.viewHint")}
+                                >
                                     <TableCell>{r.date}</TableCell>
                                     <TableCell>{employeeLabel(r.employee_id)}</TableCell>
                                     <TableCell className="max-w-md truncate">{r.activites}</TableCell>
                                     <TableCell>{r.heures_travaillees}h</TableCell>
                                     <TableCell className="max-w-xs truncate">{r.observations ?? "—"}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button size="sm" variant="ghost" onClick={() => setConfirmDel(r)} className="text-rose-600">
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex justify-end">
+                                            <DropdownMenu
+                                                actions={[
+                                                    {
+                                                        label: t("reports.view"),
+                                                        icon: <Eye className="w-4 h-4" />,
+                                                        onClick: () => setViewing(r),
+                                                    },
+                                                    {
+                                                        label: t("reports.confirmDeleteTitle"),
+                                                        icon: <Trash2 className="w-4 h-4" />,
+                                                        onClick: () => setConfirmDel(r),
+                                                        variant: "danger" as const,
+                                                    },
+                                                ]}
+                                            />
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -1700,6 +1737,69 @@ function ReportsPanel({
                         {t("common.create")}
                     </Button>
                 </div>
+            </Modal>
+
+            <Modal
+                isOpen={!!viewing}
+                onClose={() => setViewing(null)}
+                title={t("reports.viewTitle")}
+                size="lg"
+            >
+                {viewing && (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                    {t("leaves.col.employee")}
+                                </p>
+                                <p className="font-medium">{employeeLabel(viewing.employee_id)}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                    {t("reports.col.date")}
+                                </p>
+                                <p className="font-medium">{viewing.date}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                    {t("reports.col.hours")}
+                                </p>
+                                <p className="font-medium">{viewing.heures_travaillees}h</p>
+                            </div>
+                            {viewing.created_at && (
+                                <div>
+                                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                                        {t("reports.submittedAt")}
+                                    </p>
+                                    <p className="font-medium">
+                                        {new Date(viewing.created_at).toLocaleString()}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                {t("reports.col.activities")}
+                            </p>
+                            <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3 text-sm whitespace-pre-wrap break-words">
+                                {viewing.activites || "—"}
+                            </div>
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                {t("reports.col.observations")}
+                            </p>
+                            <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3 text-sm whitespace-pre-wrap break-words">
+                                {viewing.observations || "—"}
+                            </div>
+                        </div>
+                        <div className="flex justify-end pt-2">
+                            <Button variant="outline" onClick={() => setViewing(null)}>
+                                {t("common.close")}
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
 
             <ConfirmDialog
