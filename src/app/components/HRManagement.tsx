@@ -1471,149 +1471,123 @@ function ReportsPanel({
                     </Button>
                 </div>
 
-                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-3">
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                            <FilterIcon className="w-4 h-4" />
-                            {t("reports.filters.title")}
-                            {hasActiveFilters && (
-                                <span className="rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 px-2 py-0.5 text-[10px] font-semibold">
-                                    {filtered.length}/{reports.length}
-                                </span>
-                            )}
-                        </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 pr-1">
+                        <FilterIcon className="w-3.5 h-3.5" />
                         {hasActiveFilters && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={resetFilters}
-                                className="h-7 text-xs text-slate-500 hover:text-slate-700"
-                            >
-                                <RotateCcw className="w-3 h-3 mr-1" />
-                                {t("reports.filters.reset")}
-                            </Button>
+                            <span className="rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 px-1.5 py-0.5 text-[10px] font-semibold leading-none">
+                                {filtered.length}/{reports.length}
+                            </span>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-                        <div className="space-y-1">
-                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                                <CalendarDays className="w-3 h-3" />
-                                {t("reports.filters.from")}
-                            </Label>
-                            <Input
-                                type="date"
-                                value={filterFrom}
-                                onChange={(e) => setFilterFrom(e.target.value)}
-                                className="h-9 text-sm"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                                <CalendarDays className="w-3 h-3" />
-                                {t("reports.filters.to")}
-                            </Label>
-                            <Input
-                                type="date"
-                                value={filterTo}
-                                onChange={(e) => setFilterTo(e.target.value)}
-                                className="h-9 text-sm"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                                <Briefcase className="w-3 h-3" />
-                                {t("reports.filters.department")}
-                            </Label>
-                            <Select value={filterDept} onValueChange={(v) => setFilterDept(v || "all")}>
-                                <SelectTrigger className="h-9 text-sm">
-                                    <SelectValue>
-                                        {(value: string) =>
-                                            value === "all" || !value
-                                                ? t("reports.filters.allDepartments")
-                                                : value
-                                        }
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{t("reports.filters.allDepartments")}</SelectItem>
-                                    {availableDepartments.length === 0 ? (
-                                        <SelectItem value="__none" disabled>
-                                            {t("reports.filters.noDepartments")}
-                                        </SelectItem>
-                                    ) : (
-                                        availableDepartments.map((d) => (
-                                            <SelectItem key={d} value={d}>
-                                                {d}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                                <Globe className="w-3 h-3" />
-                                {t("reports.filters.country")}
-                            </Label>
-                            <Select
-                                value={filterCountry}
-                                onValueChange={(v) => setFilterCountry(v || "all")}
-                            >
-                                <SelectTrigger className="h-9 text-sm">
-                                    <SelectValue>
-                                        {(value: string) => {
-                                            if (value === "all" || !value)
-                                                return t("reports.filters.allCountries");
-                                            const c = availableCountries.find((x) => x.code === value);
-                                            return c ? `${c.country} (${c.code})` : value;
-                                        }}
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{t("reports.filters.allCountries")}</SelectItem>
-                                    {availableCountries.length === 0 ? (
-                                        <SelectItem value="__none" disabled>
-                                            {t("reports.filters.noCountries")}
-                                        </SelectItem>
-                                    ) : (
-                                        availableCountries.map((c) => (
-                                            <SelectItem key={c.code} value={c.code}>
-                                                {c.country} ({c.code})
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1">
-                            <Label className="text-[11px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                                <UsersIcon className="w-3 h-3" />
-                                {t("reports.filters.employee")}
-                            </Label>
-                            <Select value={filterEmp} onValueChange={(v) => setFilterEmp(v || "all")}>
-                                <SelectTrigger className="h-9 text-sm">
-                                    <SelectValue>
-                                        {(value: string) => {
-                                            if (value === "all" || !value)
-                                                return t("reports.allEmployees");
-                                            const e = employees.find((x) => x.id === value);
-                                            return e ? `${e.prenom} ${e.nom}` : t("reports.allEmployees");
-                                        }}
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{t("reports.allEmployees")}</SelectItem>
-                                    {employees.map((e) => (
-                                        <SelectItem key={e.id} value={e.id}>
-                                            {e.prenom} {e.nom}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                    <Input
+                        type="date"
+                        value={filterFrom}
+                        onChange={(e) => setFilterFrom(e.target.value)}
+                        className="h-8 text-xs w-[130px]"
+                        title={t("reports.filters.from")}
+                    />
+                    <Input
+                        type="date"
+                        value={filterTo}
+                        onChange={(e) => setFilterTo(e.target.value)}
+                        className="h-8 text-xs w-[130px]"
+                        title={t("reports.filters.to")}
+                    />
+
+                    <Select value={filterDept} onValueChange={(v) => setFilterDept(v || "all")}>
+                        <SelectTrigger className="h-8 text-xs w-[140px]" title={t("reports.filters.department")}>
+                            <Briefcase className="w-3 h-3 mr-1 text-slate-400 shrink-0" />
+                            <SelectValue>
+                                {(value: string) =>
+                                    value === "all" || !value
+                                        ? t("reports.filters.allDepartments")
+                                        : value
+                                }
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">{t("reports.filters.allDepartments")}</SelectItem>
+                            {availableDepartments.length === 0 ? (
+                                <SelectItem value="__none" disabled>
+                                    {t("reports.filters.noDepartments")}
+                                </SelectItem>
+                            ) : (
+                                availableDepartments.map((d) => (
+                                    <SelectItem key={d} value={d}>
+                                        {d}
+                                    </SelectItem>
+                                ))
+                            )}
+                        </SelectContent>
+                    </Select>
+
+                    <Select
+                        value={filterCountry}
+                        onValueChange={(v) => setFilterCountry(v || "all")}
+                    >
+                        <SelectTrigger className="h-8 text-xs w-[140px]" title={t("reports.filters.country")}>
+                            <Globe className="w-3 h-3 mr-1 text-slate-400 shrink-0" />
+                            <SelectValue>
+                                {(value: string) => {
+                                    if (value === "all" || !value)
+                                        return t("reports.filters.allCountries");
+                                    const c = availableCountries.find((x) => x.code === value);
+                                    return c ? `${c.country} (${c.code})` : value;
+                                }}
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">{t("reports.filters.allCountries")}</SelectItem>
+                            {availableCountries.length === 0 ? (
+                                <SelectItem value="__none" disabled>
+                                    {t("reports.filters.noCountries")}
+                                </SelectItem>
+                            ) : (
+                                availableCountries.map((c) => (
+                                    <SelectItem key={c.code} value={c.code}>
+                                        {c.country} ({c.code})
+                                    </SelectItem>
+                                ))
+                            )}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={filterEmp} onValueChange={(v) => setFilterEmp(v || "all")}>
+                        <SelectTrigger className="h-8 text-xs w-[160px]" title={t("reports.filters.employee")}>
+                            <UsersIcon className="w-3 h-3 mr-1 text-slate-400 shrink-0" />
+                            <SelectValue>
+                                {(value: string) => {
+                                    if (value === "all" || !value)
+                                        return t("reports.allEmployees");
+                                    const e = employees.find((x) => x.id === value);
+                                    return e ? `${e.prenom} ${e.nom}` : t("reports.allEmployees");
+                                }}
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">{t("reports.allEmployees")}</SelectItem>
+                            {employees.map((e) => (
+                                <SelectItem key={e.id} value={e.id}>
+                                    {e.prenom} {e.nom}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {hasActiveFilters && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={resetFilters}
+                            className="h-8 px-2 text-xs text-slate-500 hover:text-slate-700"
+                            title={t("reports.filters.reset")}
+                        >
+                            <RotateCcw className="w-3 h-3" />
+                        </Button>
+                    )}
                 </div>
             </CardHeader>
             <CardContent>
