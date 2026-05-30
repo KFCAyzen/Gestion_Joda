@@ -15,10 +15,13 @@ import {
     Link2,
     Loader2,
     Pencil,
+    Play,
     Plus,
     Receipt,
     RotateCcw,
+    Settings2,
     Trash2,
+    User,
     Users as UsersIcon,
     X as XIcon,
 } from "lucide-react";
@@ -72,7 +75,10 @@ import {
     useDailyReports,
     useCreateDailyReport,
     useDeleteDailyReport,
+    useGenerateDuePayslips,
 } from "../lib/hooks/use-hr";
+import HRConfigPanel from "./rh/HRConfigPanel";
+import EmployeeDetailModal from "./rh/EmployeeDetailModal";
 import type {
     Employee,
     EmployeeStatus,
@@ -82,7 +88,7 @@ import type {
     DailyReport,
 } from "../types/hr";
 
-const TABS = ["employees", "leaves", "payroll", "reports"] as const;
+const TABS = ["employees", "leaves", "payroll", "reports", "config"] as const;
 type TabId = (typeof TABS)[number];
 
 const LEAVE_TYPES: LeaveType[] = ["annuel", "maladie", "maternite", "paternite", "sans_solde", "autre"];
@@ -136,6 +142,8 @@ function HRManagementInner() {
         return e ? `${e.prenom} ${e.nom}` : t("unknownEmployee");
     };
 
+    const [detailEmployee, setDetailEmployee] = useState<Employee | null>(null);
+
     return (
         <div className="space-y-6">
             {/* En-tête stats */}
@@ -176,6 +184,9 @@ function HRManagementInner() {
                 <TabButton active={tab === "reports"} onClick={() => setTab("reports")} icon={<ClipboardList className="w-4 h-4" />}>
                     {t("tabs.reports")}
                 </TabButton>
+                <TabButton active={tab === "config"} onClick={() => setTab("config")} icon={<Settings2 className="w-4 h-4" />}>
+                    {t("tabs.config")}
+                </TabButton>
             </div>
 
             {/* Panels */}
@@ -183,6 +194,7 @@ function HRManagementInner() {
                 <EmployeesPanel
                     employees={employees}
                     loading={employeesQ.isLoading}
+                    onView={(e) => setDetailEmployee(e)}
                     onError={(e) => showNotification(getFriendlyErrorMessage(e), "error")}
                     onSuccess={(msg) => showNotification(msg, "success")}
                 />
@@ -220,6 +232,21 @@ function HRManagementInner() {
                     onSuccess={(msg) => showNotification(msg, "success")}
                 />
             )}
+            {tab === "config" && (
+                <HRConfigPanel
+                    employees={employees}
+                    onError={(e) => showNotification(getFriendlyErrorMessage(e), "error")}
+                    onSuccess={(msg) => showNotification(msg, "success")}
+                />
+            )}
+
+            <EmployeeDetailModal
+                employee={detailEmployee}
+                onClose={() => setDetailEmployee(null)}
+                creatorId={user?.id ?? ""}
+                onError={(e) => showNotification(getFriendlyErrorMessage(e), "error")}
+                onSuccess={(msg) => showNotification(msg, "success")}
+            />
         </div>
     );
 }
@@ -339,11 +366,13 @@ function nextMatricule(employees: Employee[]): string {
 function EmployeesPanel({
     employees,
     loading,
+    onView,
     onError,
     onSuccess,
 }: {
     employees: Employee[];
     loading: boolean;
+    onView: (e: Employee) => void;
     onError: (e: unknown) => void;
     onSuccess: (msg: string) => void;
 }) {
@@ -596,6 +625,11 @@ function EmployeesPanel({
                                         <div className="flex justify-end">
                                             <DropdownMenu
                                                 actions={[
+                                                    {
+                                                        label: t("employees.viewDetail"),
+                                                        icon: <User className="w-4 h-4" />,
+                                                        onClick: () => onView(e),
+                                                    },
                                                     {
                                                         label: t("employees.regeneratePin"),
                                                         icon: regeneratingId === e.id ? (
@@ -1033,6 +1067,7 @@ function PayrollPanel({
     const t = useTranslations("hrManagement");
     const create = useCreatePayslip();
     const del = useDeletePayslip();
+    const generate = useGenerateDuePayslips();
     const now = new Date();
     const [modalOpen, setModalOpen] = useState(false);
     const [confirmDel, setConfirmDel] = useState<Payslip | null>(null);
@@ -1093,6 +1128,7 @@ function PayrollPanel({
                 net_a_payer: net,
                 notes: form.notes.trim() || null,
                 created_by: creatorId || null,
+                auto_generated: false,
             });
             onSuccess(t("messages.payslipCreated"));
             setModalOpen(false);
@@ -1133,10 +1169,32 @@ function PayrollPanel({
                     </CardTitle>
                     <CardDescription>{t("payroll.description")}</CardDescription>
                 </div>
-                <Button onClick={openCreate} disabled={employees.length === 0}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t("payroll.add")}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={async () => {
+                            try {
+                                const res = await generate.mutateAsync();
+                                onSuccess(t("payroll.generated", { n: res.generated.length }));
+                            } catch (e) {
+                                onError(e);
+                            }
+                        }}
+                        disabled={generate.isPending}
+                        title={t("payroll.generateHint")}
+                    >
+                        {generate.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                            <Play className="w-4 h-4 mr-2" />
+                        )}
+                        {t("payroll.generate")}
+                    </Button>
+                    <Button onClick={openCreate} disabled={employees.length === 0}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        {t("payroll.add")}
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -1149,14 +1207,15 @@ function PayrollPanel({
                             <TableHead>{t("payroll.col.deductions")}</TableHead>
                             <TableHead>{t("payroll.col.absences")}</TableHead>
                             <TableHead>{t("payroll.col.net")}</TableHead>
+                            <TableHead>{t("detail.paymentDate")}</TableHead>
                             <TableHead className="text-right">{t("employees.col.actions")}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <LoadingRow cols={8} />
+                            <LoadingRow cols={9} />
                         ) : payslips.length === 0 ? (
-                            <EmptyRow cols={8} label={t("payroll.empty")} />
+                            <EmptyRow cols={9} label={t("payroll.empty")} />
                         ) : (
                             payslips.map((p) => (
                                 <TableRow key={p.id}>
@@ -1169,6 +1228,12 @@ function PayrollPanel({
                                     <TableCell>{fmtMoney(p.deductions)}</TableCell>
                                     <TableCell>{p.jours_absences}</TableCell>
                                     <TableCell className="font-semibold">{fmtMoney(p.net_a_payer)}</TableCell>
+                                    <TableCell>
+                                        {p.payment_date ?? "—"}
+                                        {p.auto_generated && (
+                                            <Badge className="ml-2 bg-blue-100 text-blue-700 text-xs">{t("detail.auto")}</Badge>
+                                        )}
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end">
                                             <DropdownMenu

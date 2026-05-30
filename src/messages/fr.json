@@ -96,7 +96,8 @@
       "employees": "Employés",
       "leaves": "Congés",
       "payroll": "Paie",
-      "reports": "Rapports journaliers"
+      "reports": "Rapports journaliers",
+      "config": "Configuration"
     },
     "messages": {
       "employeeCreated": "Employé créé",
@@ -154,7 +155,8 @@
       "pinSentSms": "PIN envoyé par SMS",
       "pinSentBoth": "PIN envoyé par e-mail et SMS",
       "pinSentNone": "PIN non envoyé (e-mail/téléphone manquant)",
-      "pinHiddenHint": "Code haché côté serveur. Cliquez sur Régénérer pour obtenir un nouveau code à transmettre."
+      "pinHiddenHint": "Code haché côté serveur. Cliquez sur Régénérer pour obtenir un nouveau code à transmettre.",
+      "viewDetail": "Voir le dossier"
     },
     "leaves": {
       "title": "Demandes de congés",
@@ -204,6 +206,9 @@
       "exportPdf": "Exporter en PDF",
       "confirmDeleteTitle": "Supprimer cette fiche ?",
       "confirmDeleteDesc": "Cette action est irréversible.",
+      "generate": "Générer la paie",
+      "generateHint": "Crée les fiches de paie dues pour les échéanciers configurés (et leur sortie comptable en attente)",
+      "generated": "{n} fiche(s) de paie générée(s)",
       "col": {
         "period": "Période",
         "month": "Mois",
@@ -248,6 +253,116 @@
         "hours": "Heures",
         "observations": "Observations"
       }
+    },
+    "config": {
+      "title": "Configuration de la paye",
+      "description": "Règles de déduction, échéanciers de paiement, primes et salaires personnalisés",
+      "tabs": {
+        "rules": "Règles de déduction",
+        "schedules": "Échéanciers",
+        "payConfigs": "Primes & salaires"
+      },
+      "rules": {
+        "add": "Nouvelle règle",
+        "addTitle": "Nouvelle règle de déduction",
+        "editTitle": "Modifier la règle",
+        "empty": "Aucune règle configurée",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "created": "Règle créée",
+        "updated": "Règle mise à jour",
+        "deleted": "Règle supprimée",
+        "active": "Active",
+        "inactive": "Inactive",
+        "activeLabel": "Règle active",
+        "amountTypeLabel": "Type de montant",
+        "ofBase": "du salaire de base",
+        "selectRule": "Choisir une règle",
+        "confirmDeleteTitle": "Supprimer cette règle ?",
+        "confirmDeleteDesc": "La règle « {label} » sera supprimée. Les déductions déjà appliquées ne sont pas affectées.",
+        "col": {
+          "code": "Code",
+          "label": "Libellé",
+          "type": "Type",
+          "amount": "Montant",
+          "status": "Statut"
+        },
+        "type": {
+          "absence_non_justifiee": "Absence non justifiée",
+          "retard": "Retard",
+          "manquement_personnalise": "Manquement personnalisé"
+        },
+        "amountType": {
+          "fixed": "Montant fixe (FCFA)",
+          "percent_base": "% du salaire de base"
+        }
+      },
+      "schedules": {
+        "add": "Nouvel échéancier",
+        "addTitle": "Nouvel échéancier de paie",
+        "editTitle": "Modifier l'échéancier",
+        "empty": "Aucun échéancier configuré",
+        "created": "Échéancier créé",
+        "updated": "Échéancier mis à jour",
+        "deleted": "Échéancier supprimé",
+        "scopeAll": "Tous les employés",
+        "scopeDept": "Département",
+        "scopeEmp": "Employé",
+        "selectDept": "Choisir un département",
+        "dayOf": "Le {day} du mois",
+        "dayHint": "Si le jour dépasse la fin du mois (ex. 31 en février), la paie sera générée le dernier jour du mois.",
+        "confirmDeleteTitle": "Supprimer cet échéancier ?",
+        "confirmDeleteDesc": "L'échéancier « {label} » sera supprimé. Les fiches déjà générées sont conservées.",
+        "col": {
+          "label": "Libellé",
+          "scope": "Cible",
+          "day": "Jour",
+          "lastRun": "Dernière exécution",
+          "status": "Statut"
+        }
+      },
+      "payConfigs": {
+        "customSalary": "Salaire personnalisé",
+        "recurringBonus": "Primes récurrentes",
+        "effective": "Salaire effectif",
+        "editBtn": "Configurer",
+        "editTitle": "Paye de {name}",
+        "saved": "Configuration enregistrée",
+        "hint": "Le salaire personnalisé prime sur le salaire de base. Les primes récurrentes s'ajoutent à chaque fiche générée automatiquement."
+      }
+    },
+    "detail": {
+      "tabs": {
+        "overview": "Vue d'ensemble",
+        "reports": "Rapports",
+        "leaves": "Congés",
+        "payroll": "Paye",
+        "deductions": "Déductions"
+      },
+      "stats": {
+        "hoursWorked": "Heures cumulées",
+        "approvedDays": "Jours approuvés",
+        "pendingLeaves": "Congés en attente",
+        "totalPaid": "Total versé",
+        "salary": "Salaire de base",
+        "totalDeductions": "Déductions",
+        "payslipCount": "Fiches émises",
+        "reportCount": "Rapports envoyés"
+      },
+      "paymentDate": "Date de paiement",
+      "auto": "Auto",
+      "deductionHint": "Enregistrez ici les manquements de l'employé. Ils seront automatiquement intégrés à la prochaine fiche de paie générée.",
+      "noRulesYet": "Configurez d'abord une règle dans l'onglet Configuration.",
+      "addDeduction": "Ajouter une déduction",
+      "motif": "Motif",
+      "motifOptional": "Motif (optionnel)",
+      "linked": "Lié",
+      "linkedYes": "Sur fiche",
+      "noDeductions": "Aucune déduction enregistrée",
+      "deductionAdded": "Déduction enregistrée",
+      "deductionDeleted": "Déduction supprimée",
+      "confirmDeleteDeduction": "Supprimer cette déduction ?",
+      "confirmDeleteDeductionDesc": "Cette déduction non encore intégrée à une fiche de paie sera supprimée."
     }
   },
   "auth": {

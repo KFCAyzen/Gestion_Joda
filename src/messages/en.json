@@ -96,7 +96,8 @@
       "employees": "Employees",
       "leaves": "Leaves",
       "payroll": "Payroll",
-      "reports": "Daily reports"
+      "reports": "Daily reports",
+      "config": "Configuration"
     },
     "messages": {
       "employeeCreated": "Employee created",
@@ -154,7 +155,8 @@
       "pinSentSms": "PIN sent by SMS",
       "pinSentBoth": "PIN sent by email and SMS",
       "pinSentNone": "PIN not sent (missing email/phone)",
-      "pinHiddenHint": "PIN is hashed on the server. Click Regenerate to obtain a new PIN to share."
+      "pinHiddenHint": "PIN is hashed on the server. Click Regenerate to obtain a new PIN to share.",
+      "viewDetail": "View profile"
     },
     "leaves": {
       "title": "Leave requests",
@@ -204,6 +206,9 @@
       "exportPdf": "Export as PDF",
       "confirmDeleteTitle": "Delete this payslip?",
       "confirmDeleteDesc": "This action cannot be undone.",
+      "generate": "Generate payroll",
+      "generateHint": "Creates payslips due for the configured schedules (and a pending accounting expense)",
+      "generated": "{n} payslip(s) generated",
       "col": {
         "period": "Period",
         "month": "Month",
@@ -248,6 +253,116 @@
         "hours": "Hours",
         "observations": "Observations"
       }
+    },
+    "config": {
+      "title": "Payroll configuration",
+      "description": "Deduction rules, payment schedules, recurring bonuses and custom salaries",
+      "tabs": {
+        "rules": "Deduction rules",
+        "schedules": "Schedules",
+        "payConfigs": "Bonuses & salaries"
+      },
+      "rules": {
+        "add": "New rule",
+        "addTitle": "New deduction rule",
+        "editTitle": "Edit rule",
+        "empty": "No rule configured",
+        "edit": "Edit",
+        "delete": "Delete",
+        "created": "Rule created",
+        "updated": "Rule updated",
+        "deleted": "Rule deleted",
+        "active": "Active",
+        "inactive": "Inactive",
+        "activeLabel": "Rule active",
+        "amountTypeLabel": "Amount type",
+        "ofBase": "of base salary",
+        "selectRule": "Select a rule",
+        "confirmDeleteTitle": "Delete this rule?",
+        "confirmDeleteDesc": "Rule \"{label}\" will be removed. Already-applied deductions are not affected.",
+        "col": {
+          "code": "Code",
+          "label": "Label",
+          "type": "Type",
+          "amount": "Amount",
+          "status": "Status"
+        },
+        "type": {
+          "absence_non_justifiee": "Unjustified absence",
+          "retard": "Late arrival",
+          "manquement_personnalise": "Custom misconduct"
+        },
+        "amountType": {
+          "fixed": "Fixed amount (FCFA)",
+          "percent_base": "% of base salary"
+        }
+      },
+      "schedules": {
+        "add": "New schedule",
+        "addTitle": "New payment schedule",
+        "editTitle": "Edit schedule",
+        "empty": "No schedule configured",
+        "created": "Schedule created",
+        "updated": "Schedule updated",
+        "deleted": "Schedule deleted",
+        "scopeAll": "All employees",
+        "scopeDept": "Department",
+        "scopeEmp": "Employee",
+        "selectDept": "Select a department",
+        "dayOf": "Day {day} of month",
+        "dayHint": "If the day exceeds the end of the month (e.g. 31 in February), payroll will be generated on the last day.",
+        "confirmDeleteTitle": "Delete this schedule?",
+        "confirmDeleteDesc": "Schedule \"{label}\" will be removed. Already-generated payslips are preserved.",
+        "col": {
+          "label": "Label",
+          "scope": "Target",
+          "day": "Day",
+          "lastRun": "Last run",
+          "status": "Status"
+        }
+      },
+      "payConfigs": {
+        "customSalary": "Custom salary",
+        "recurringBonus": "Recurring bonus",
+        "effective": "Effective salary",
+        "editBtn": "Configure",
+        "editTitle": "{name}'s payroll",
+        "saved": "Configuration saved",
+        "hint": "Custom salary overrides base salary. Recurring bonuses are added to every auto-generated payslip."
+      }
+    },
+    "detail": {
+      "tabs": {
+        "overview": "Overview",
+        "reports": "Reports",
+        "leaves": "Leaves",
+        "payroll": "Payroll",
+        "deductions": "Deductions"
+      },
+      "stats": {
+        "hoursWorked": "Total hours",
+        "approvedDays": "Approved days",
+        "pendingLeaves": "Pending leaves",
+        "totalPaid": "Total paid",
+        "salary": "Base salary",
+        "totalDeductions": "Deductions",
+        "payslipCount": "Payslips issued",
+        "reportCount": "Reports submitted"
+      },
+      "paymentDate": "Payment date",
+      "auto": "Auto",
+      "deductionHint": "Record employee misconduct here. It will be automatically included in the next auto-generated payslip.",
+      "noRulesYet": "Configure a rule first in the Configuration tab.",
+      "addDeduction": "Add deduction",
+      "motif": "Reason",
+      "motifOptional": "Reason (optional)",
+      "linked": "Linked",
+      "linkedYes": "On payslip",
+      "noDeductions": "No deduction recorded",
+      "deductionAdded": "Deduction recorded",
+      "deductionDeleted": "Deduction deleted",
+      "confirmDeleteDeduction": "Delete this deduction?",
+      "confirmDeleteDeductionDesc": "This deduction (not yet on a payslip) will be removed."
     }
   },
   "auth": {

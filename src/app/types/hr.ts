@@ -57,6 +57,9 @@ export interface Payslip {
   net_a_payer: number;
   notes: string | null;
   created_by: string | null;
+  payment_date: string | null;
+  auto_generated: boolean;
+  schedule_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -69,6 +72,65 @@ export interface DailyReport {
   heures_travaillees: number;
   observations: string | null;
   created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ─── Paye / Déductions / Échéancier ────────────────────────────────────────
+
+export type DeductionType =
+  | 'absence_non_justifiee'
+  | 'retard'
+  | 'manquement_personnalise';
+
+export type DeductionAmountType = 'fixed' | 'percent_base';
+
+export interface DeductionRule {
+  id: string;
+  code: string;
+  label: string;
+  type: DeductionType;
+  amount_type: DeductionAmountType;
+  amount: number;
+  actif: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeductionOccurrence {
+  id: string;
+  employee_id: string;
+  rule_id: string;
+  date: string;
+  montant: number;
+  motif: string | null;
+  payslip_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ScheduleScope = 'all' | 'department' | 'employee';
+
+export interface PaymentSchedule {
+  id: string;
+  label: string;
+  scope: ScheduleScope;
+  target_department: string | null;
+  target_employee_id: string | null;
+  day_of_month: number;
+  actif: boolean;
+  last_run_period: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmployeePayConfig {
+  id: string;
+  employee_id: string;
+  primes_recurrentes: number;
+  salaire_personnalise: number | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }

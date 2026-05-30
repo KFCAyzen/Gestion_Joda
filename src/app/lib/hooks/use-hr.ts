@@ -5,6 +5,10 @@ import type {
   LeaveRequest,
   Payslip,
   DailyReport,
+  DeductionRule,
+  DeductionOccurrence,
+  PaymentSchedule,
+  EmployeePayConfig,
 } from '../../types/hr';
 import {
   createEmployeeSchema,
@@ -15,6 +19,13 @@ import {
   updatePayslipSchema,
   createDailyReportSchema,
   updateDailyReportSchema,
+  createDeductionRuleSchema,
+  updateDeductionRuleSchema,
+  createDeductionOccurrenceSchema,
+  updateDeductionOccurrenceSchema,
+  createPaymentScheduleSchema,
+  updatePaymentScheduleSchema,
+  upsertEmployeePayConfigSchema,
   type EmployeeInput,
   type EmployeeUpdate,
   type LeaveRequestInput,
@@ -23,6 +34,13 @@ import {
   type PayslipUpdate,
   type DailyReportInput,
   type DailyReportUpdate,
+  type DeductionRuleInput,
+  type DeductionRuleUpdate,
+  type DeductionOccurrenceInput,
+  type DeductionOccurrenceUpdate,
+  type PaymentScheduleInput,
+  type PaymentScheduleUpdate,
+  type EmployeePayConfigInput,
 } from '../schemas/hr.schema';
 
 const supabase = createClient();
@@ -31,6 +49,10 @@ export const EMPLOYEES_KEY = ['hr', 'employees'] as const;
 export const LEAVE_REQUESTS_KEY = ['hr', 'leave_requests'] as const;
 export const PAYSLIPS_KEY = ['hr', 'payslips'] as const;
 export const DAILY_REPORTS_KEY = ['hr', 'daily_reports'] as const;
+export const DEDUCTION_RULES_KEY = ['hr', 'deduction_rules'] as const;
+export const DEDUCTION_OCC_KEY = ['hr', 'deduction_occurrences'] as const;
+export const PAYMENT_SCHEDULES_KEY = ['hr', 'payment_schedules'] as const;
+export const PAY_CONFIGS_KEY = ['hr', 'pay_configs'] as const;
 
 // ─── Employees ─────────────────────────────────────────────────────────────
 export function useEmployees() {
@@ -314,5 +336,247 @@ export function useDeleteDailyReport() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: DAILY_REPORTS_KEY }),
+  });
+}
+
+// ─── Deduction rules ───────────────────────────────────────────────────────
+export function useDeductionRules() {
+  return useQuery({
+    queryKey: DEDUCTION_RULES_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hr_deduction_rules')
+        .select('*')
+        .order('label', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as DeductionRule[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateDeductionRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: DeductionRuleInput) => {
+      const parsed = createDeductionRuleSchema.parse(input);
+      const { data, error } = await supabase
+        .from('hr_deduction_rules')
+        .insert(parsed)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as DeductionRule;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: DEDUCTION_RULES_KEY }),
+  });
+}
+
+export function useUpdateDeductionRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: DeductionRuleUpdate }) => {
+      const parsed = updateDeductionRuleSchema.parse(data);
+      const { data: row, error } = await supabase
+        .from('hr_deduction_rules')
+        .update(parsed)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return row as DeductionRule;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: DEDUCTION_RULES_KEY }),
+  });
+}
+
+export function useDeleteDeductionRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('hr_deduction_rules').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: DEDUCTION_RULES_KEY }),
+  });
+}
+
+// ─── Deduction occurrences ────────────────────────────────────────────────
+export function useDeductionOccurrences() {
+  return useQuery({
+    queryKey: DEDUCTION_OCC_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hr_deduction_occurrences')
+        .select('*')
+        .order('date', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as DeductionOccurrence[];
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useCreateDeductionOccurrence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: DeductionOccurrenceInput) => {
+      const parsed = createDeductionOccurrenceSchema.parse(input);
+      const { data, error } = await supabase
+        .from('hr_deduction_occurrences')
+        .insert(parsed)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as DeductionOccurrence;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: DEDUCTION_OCC_KEY }),
+  });
+}
+
+export function useUpdateDeductionOccurrence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: DeductionOccurrenceUpdate }) => {
+      const parsed = updateDeductionOccurrenceSchema.parse(data);
+      const { data: row, error } = await supabase
+        .from('hr_deduction_occurrences')
+        .update(parsed)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return row as DeductionOccurrence;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: DEDUCTION_OCC_KEY }),
+  });
+}
+
+export function useDeleteDeductionOccurrence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('hr_deduction_occurrences').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: DEDUCTION_OCC_KEY }),
+  });
+}
+
+// ─── Payment schedules ─────────────────────────────────────────────────────
+export function usePaymentSchedules() {
+  return useQuery({
+    queryKey: PAYMENT_SCHEDULES_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hr_payment_schedules')
+        .select('*')
+        .order('day_of_month', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as PaymentSchedule[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreatePaymentSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: PaymentScheduleInput) => {
+      const parsed = createPaymentScheduleSchema.parse(input);
+      const payload = {
+        ...parsed,
+        target_department: parsed.scope === 'department' ? parsed.target_department : null,
+        target_employee_id: parsed.scope === 'employee' ? parsed.target_employee_id : null,
+      };
+      const { data, error } = await supabase
+        .from('hr_payment_schedules')
+        .insert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as PaymentSchedule;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: PAYMENT_SCHEDULES_KEY }),
+  });
+}
+
+export function useUpdatePaymentSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: PaymentScheduleUpdate }) => {
+      const parsed = updatePaymentScheduleSchema.parse(data);
+      const { data: row, error } = await supabase
+        .from('hr_payment_schedules')
+        .update(parsed)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return row as PaymentSchedule;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: PAYMENT_SCHEDULES_KEY }),
+  });
+}
+
+export function useDeletePaymentSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('hr_payment_schedules').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: PAYMENT_SCHEDULES_KEY }),
+  });
+}
+
+// ─── Employee pay configs ─────────────────────────────────────────────────
+export function useEmployeePayConfigs() {
+  return useQuery({
+    queryKey: PAY_CONFIGS_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hr_employee_pay_config')
+        .select('*');
+      if (error) throw error;
+      return (data ?? []) as EmployeePayConfig[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpsertEmployeePayConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: EmployeePayConfigInput) => {
+      const parsed = upsertEmployeePayConfigSchema.parse(input);
+      const { data, error } = await supabase
+        .from('hr_employee_pay_config')
+        .upsert(parsed, { onConflict: 'employee_id' })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as EmployeePayConfig;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: PAY_CONFIGS_KEY }),
+  });
+}
+
+// ─── Payslip generation (auto) ────────────────────────────────────────────
+export function useGenerateDuePayslips() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/hr/generate-payslips', { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Génération échouée');
+      return json as { generated: Array<{ payslip_id: string; employee_id: string; net_a_payer: number }> };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PAYSLIPS_KEY });
+      qc.invalidateQueries({ queryKey: PAYMENT_SCHEDULES_KEY });
+      qc.invalidateQueries({ queryKey: DEDUCTION_OCC_KEY });
+      qc.invalidateQueries({ queryKey: ['sorties_comptables'] });
+    },
   });
 }
