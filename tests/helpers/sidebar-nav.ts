@@ -17,6 +17,7 @@ const NAV_TO_SECTION: Record<string, string> = {
   facturation: 'ressources',
   cours_langues: 'ressources',
   comptabilite: 'finance',
+  hr: 'rh',
   users: 'administration',
   activity_logs: 'administration',
   fee_config: 'administration',

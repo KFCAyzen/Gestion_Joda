@@ -1,6 +1,6 @@
 # Suite de tests fonctionnels — Gestion Joda
 
-Tests E2E Playwright couvrant les 22 modules du document [`TESTS_FONCTIONNELS.md`](../TESTS_FONCTIONNELS.md).
+Tests E2E Playwright couvrant les 23 modules du document [`TESTS_FONCTIONNELS.md`](../TESTS_FONCTIONNELS.md).
 
 ## Prérequis
 
@@ -63,10 +63,10 @@ npx playwright test -g "TC-AUTH-001"
 
 ```
 tests/
-├── e2e/                        # 22 fichiers .spec.ts (un par module)
+├── e2e/                        # 23 fichiers .spec.ts (un par module)
 │   ├── 01-auth.spec.ts
 │   ├── 02-etudiants.spec.ts
-│   └── ... 03 à 22
+│   └── ... 03 à 23
 ├── fixtures/
 │   └── authenticated.ts        # Fixtures auth par rôle (admin/agent/supervisor/student)
 ├── helpers/
@@ -107,7 +107,7 @@ Après une exécution :
 Voir [`TESTIDS.md`](./TESTIDS.md) pour la liste complète. Composants instrumentés :
 
 - **LoginPage** : `login-identifier`, `login-password`, `login-submit`, `login-forgot-btn`, `forgot-input`, `forgot-submit`, `forgot-cancel`, `theme-toggle`, `lang-switcher`, `lang-option-{fr|en}`
-- **AppShell** : `nav-{routeId}` (home/clients/reservations/dossiers/facturation/com/newsletter/chambres/cours_langues/comptabilite/users/activity_logs/fee_config/storage/performance), `btn-logout`, `btn-notifications`, `notif-badge`, `mobile-menu-toggle`, `page-title`
+- **AppShell** : `nav-{routeId}` (home/clients/reservations/dossiers/facturation/com/newsletter/chambres/cours_langues/comptabilite/hr/users/activity_logs/fee_config/storage/performance), `btn-logout`, `btn-notifications`, `notif-badge`, `mobile-menu-toggle`, `page-title`
 - **ConfirmDialog** : `confirm-dialog`, `confirm-title`, `confirm-description`, `confirm-yes`, `confirm-cancel`
 - **Portail étudiant** : `portal-bell`, `portal-bell-badge`, `portal-theme-toggle`, `portal-logout`, `portal-tab-{dashboard|payments|documents|dossier|messaging}`
 

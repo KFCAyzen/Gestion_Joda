@@ -6,7 +6,7 @@
 .DESCRIPTION
     - Verifie les prerequis (Node, .env.local, dependances)
     - Installe les navigateurs Playwright si necessaire
-    - Lance les 22 fichiers de tests sequentiellement (module 1 a 22)
+    - Lance les 23 fichiers de tests sequentiellement (module 1 a 23)
     - Genere un rapport HTML consolide dans tests/.report
     - Affiche un resume global
 
@@ -137,12 +137,13 @@ $moduleDefs = @(
     @{ Num = 20; Title = 'Internationalisation'  ; Spec = 'tests/e2e/20-i18n.spec.ts' }
     @{ Num = 21; Title = 'Securite'              ; Spec = 'tests/e2e/21-securite.spec.ts' }
     @{ Num = 22; Title = 'Cron'                  ; Spec = 'tests/e2e/22-cron.spec.ts' }
+    @{ Num = 23; Title = 'Ressources humaines'   ; Spec = 'tests/e2e/23-rh.spec.ts' }
 )
 
 if ($Module) {
     $modulesToRun = @($moduleDefs | Where-Object { $_.Num -eq $Module })
     if ($modulesToRun.Count -eq 0) {
-        Write-Fail "Module $Module inconnu (1-22)"
+        Write-Fail "Module $Module inconnu (1-23)"
         exit 1
     }
 } else {

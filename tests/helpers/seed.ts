@@ -141,6 +141,14 @@ export async function cleanupTestData(): Promise<void> {
   try { await sb.from('documents').delete().like('url', `%${TEST_PREFIX}%`); } catch {}
   try { await sb.from('entrees_comptables').delete().like('description', `${TEST_PREFIX}%`); } catch {}
   try { await sb.from('sorties_comptables').delete().like('description', `${TEST_PREFIX}%`); } catch {}
+
+  // RH : les tables enfants (payslips, leave_requests, daily_reports…) référencent
+  // employee_id ; on supprime d'abord les employés de test puis on laisse les FK
+  // ON DELETE CASCADE faire le ménage. On nettoie aussi par sécurité les lignes
+  // orphelines préfixées (au cas où la cascade ne serait pas définie partout).
+  try { await sb.from('hr_deduction_rules').delete().like('code', `${TEST_PREFIX}%`); } catch {}
+  try { await sb.from('hr_payment_schedules').delete().like('label', `${TEST_PREFIX}%`); } catch {}
+  try { await sb.from('employees').delete().like('nom', `${TEST_PREFIX}%`); } catch {}
   try { await sb.from('dossier_bourses').delete().like('notes_internes', `${TEST_PREFIX}%`); } catch {}
   try { await sb.from('applications').delete().like('notes', `${TEST_PREFIX}%`); } catch {}
   try { await sb.from('students').delete().like('email', `${TEST_PREFIX}%`); } catch {}

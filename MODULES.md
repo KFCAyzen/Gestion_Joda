@@ -25,11 +25,14 @@
 | **Cours de Langues** | ✅ CRUD complet | ✅ CRUD complet | ✅ Lecture + inscription | ❌ |
 | **Communication** | ✅ Email + SMS | ✅ Email + SMS | ✅ Email + SMS | ❌ |
 | **Config. Frais** | ✅ CRUD complet | ✅ CRUD complet | ❌ | ❌ |
+| **Ressources Humaines** | ✅ CRUD complet | ✅ CRUD complet | ❌ Aucun accès | ❌ |
 | **Utilisateurs** | ✅ CRUD complet | ✅ Créer/Lire<br>❌ Supprimer | ❌ Aucun accès | ❌ |
 | **Logs Activités** | ✅ Lecture | ✅ Lecture | ❌ Aucun accès | ❌ |
 | **Performances** | ✅ Lecture | ✅ Lecture | ✅ Lecture | ❌ |
 | **Monitoring Stockage** | ✅ Lecture | ❌ | ❌ | ❌ |
 | **Portail Étudiant** | ❌ | ❌ | ❌ | ✅ Accès complet |
+
+> **Rôle `supervisor`** (non listé en colonne) : accès **lecture/écriture au module Ressources Humaines** (`requiredRole="supervisor"`), en plus des accès de consultation communs. C'est le rôle minimal pour gérer employés, congés, paie et rapports.
 
 ---
 
@@ -615,6 +618,60 @@
 
 ---
 
+## RESSOURCES HUMAINES (RH / PAIE)
+
+### Composants
+- `HRManagement.tsx` — Conteneur principal du module (route `/rh`), garde `ProtectedRoute requiredRole="supervisor"`
+- `components/rh/EmployeeDetailModal.tsx` — Fiche employé détaillée (profil étendu 23 champs : état civil, identité, adresse, contact d'urgence, contrat) + assistant de création en 5 étapes
+- `components/rh/HRConfigPanel.tsx` — Configuration de la paie (règles de retenue, échéanciers, config par employé)
+- `PublicReportPage.tsx` — Portail public de saisie de rapport journalier (route `/rapport`, sans session, accès par PIN employé)
+
+### Sources de données (TanStack Query — `lib/hooks/use-hr.ts`)
+- `useEmployees()` / `useCreateEmployee()` / `useUpdateEmployee()` / `useDeleteEmployee()`
+- `useLeaveRequests()` / `useCreateLeaveRequest()` / `useReviewLeaveRequest()` / `useDeleteLeaveRequest()`
+- `usePayslips()` / `useCreatePayslip()` / `useUpdatePayslip()` / `useDeletePayslip()` / `useGenerateDuePayslips()`
+- `useDailyReports()` / `useCreateDailyReport()` / `useUpdateDailyReport()` / `useDeleteDailyReport()`
+- `useDeductionRules()`, `useDeductionOccurrences()`, `usePaymentSchedules()`, `useEmployeePayConfigs()` (+ mutations associées)
+
+> Le CRUD employés/congés/paie/rapports passe **directement par le client Supabase** (RLS), pas par des routes API. Seules la génération automatique, le portail public et la régénération de PIN sont des routes serveur (service-role / RPC).
+
+### Tables Supabase
+- `employees` — Fiches employés (profil étendu, `report_pin_hash`, `salaire_base`, `statut`)
+- `leave_requests` — Demandes de congé (type, dates, statut `en_attente`/`approuve`/`rejete`, reviewer)
+- `payslips` — Fiches de paie (mois/année, salaire base, primes, déductions, net à payer, `auto_generated`, `schedule_id`)
+- `daily_reports` — Rapports journaliers d'activité (saisis par le staff ou via le portail public)
+- `hr_deduction_rules` — Règles de retenue (code, type, montant fixe ou % du salaire de base)
+- `hr_deduction_occurrences` — Occurrences de retenue appliquées à un employé (liées à une fiche de paie)
+- `hr_payment_schedules` — Échéanciers de paie (portée `all`/`department`/`employee`, jour du mois)
+- `hr_employee_pay_config` — Config de paie par employé (primes récurrentes, salaire personnalisé)
+
+### Onglets (`HRManagement`)
+| Onglet (`tab`) | Contenu |
+|---|---|
+| **Employés** (`employees`) | Liste + stats (actifs), création/édition, fiche détaillée, régénération du PIN de rapport |
+| **Congés** (`leaves`) | Demandes de congé, validation/rejet avec commentaire reviewer |
+| **Paie** (`payroll`) | Fiches de paie + génération automatique des paies dues |
+| **Rapports** (`reports`) | Rapports journaliers d'activité (heures travaillées, activités, observations) |
+| **Configuration** (`config`) | Règles de retenue, échéanciers de paie, config de paie par employé (`HRConfigPanel`) |
+
+### Génération automatique des fiches de paie
+1. `POST /api/hr/generate-payslips` (`requireRole(['supervisor','admin','super_admin'])`)
+2. Appel RPC `hr_generate_due_payslips(target_user, target_year, target_month)` — génère les paies dues selon les échéanciers (`hr_payment_schedules`), applique les retenues, et calcule le net à payer
+3. Sans `year`/`month` dans le corps → génère **toutes** les paies dues ; avec → cible un mois précis
+4. Chaque fiche de paie crée une **sortie comptable** liée (migration `link_payslips_to_sorties.sql`)
+
+### Portail public de rapport journalier (`/rapport`)
+Permet à un employé sans compte de soumettre son rapport quotidien via un PIN :
+1. `GET /api/hr/public/employees` + `/api/hr/public/list` — liste des employés actifs (sélection)
+2. `POST /api/hr/public/verify` — vérifie `employee_id` + `pin` via RPC `hr_verify_report_pin` (401 si invalide)
+3. `POST /api/hr/public/submit` — enregistre le rapport journalier
+4. PIN régénérable côté admin : `POST /api/hr/employees/[id]/regenerate-pin`
+
+### Migrations associées
+`add_hr_module.sql`, `add_hr_employee_profile_fields.sql`, `add_hr_payroll_config.sql`, `add_report_pin_to_employees.sql`, `link_payslips_to_sorties.sql`, `update_hr_generate_due_payslips_targeted.sql`
+
+---
+
 ## API Routes
 
 | Route | Méthode | Description | Auth requise |
@@ -636,6 +693,12 @@
 | `/api/student-payments` | GET | Récupère les paiements de l'étudiant connecté | `requireAuth` |
 | `/api/cron/check-late-payments` | GET | Détecte retards + notifie + met à jour statuts | `x-api-key` header |
 | `/api/auth/exchange` | POST | Échange tokens OAuth (callback Supabase) | Public |
+| `/api/hr/generate-payslips` | POST | Génère les fiches de paie dues (RPC `hr_generate_due_payslips`) | `requireRole` (supervisor+) |
+| `/api/hr/employees/[id]/regenerate-pin` | POST | Régénère le PIN de saisie de rapport d'un employé | `requireRole` (supervisor+) |
+| `/api/hr/public/employees` | GET | Liste publique des employés actifs (portail rapport) | Public |
+| `/api/hr/public/list` | GET | Liste publique des employés (sélection portail) | Public |
+| `/api/hr/public/verify` | POST | Vérifie le PIN employé (RPC `hr_verify_report_pin`) | Public (PIN) |
+| `/api/hr/public/submit` | POST | Soumet un rapport journalier depuis le portail public | Public (PIN) |
 
 ---
 
@@ -658,6 +721,14 @@
 | `custom_categories` | Catégories personnalisées (entrées & sorties) |
 | `notifications` | Notifications et alertes in-app |
 | `messages` | Messages staff → étudiant |
+| `employees` | Fiches employés (profil RH étendu, PIN de rapport, salaire) |
+| `leave_requests` | Demandes de congé des employés |
+| `payslips` | Fiches de paie (liées aux sorties comptables) |
+| `daily_reports` | Rapports journaliers d'activité des employés |
+| `hr_deduction_rules` | Règles de retenue sur salaire |
+| `hr_deduction_occurrences` | Retenues appliquées à un employé |
+| `hr_payment_schedules` | Échéanciers de génération automatique des paies |
+| `hr_employee_pay_config` | Configuration de paie par employé |
 
 ---
 
@@ -669,6 +740,7 @@
 | Opérations | Candidatures, Étudiants, Dossiers | Tous |
 | Ressources | Universités, Frais, Cours de Langues | Tous (lecture) |
 | Finance | Comptabilité | `admin`, `super_admin` |
+| RH | Ressources Humaines (employés, congés, paie, rapports) | `supervisor`, `admin`, `super_admin` |
 | Communication | Messages & SMS | `agent`, `admin`, `super_admin` |
 | Configuration | Config. Frais | `admin`, `super_admin` |
 | Administration | Utilisateurs, Logs Activités | `admin`, `super_admin` |
@@ -700,11 +772,11 @@
 ### Fichiers et structure
 ```
 tests/
-├── e2e/                         # 22 fichiers .spec.ts (un par module métier)
+├── e2e/                         # 23 fichiers .spec.ts (un par module métier)
 │   ├── 01-auth.spec.ts          # Authentification + i18n + thème
 │   ├── 02-etudiants.spec.ts     # Gestion étudiants
 │   ├── ...                      # 03-22 : un par module
-│   └── 22-cron.spec.ts          # Endpoints cron
+│   └── 23-rh.spec.ts            # Ressources humaines (employés, paie, portail PIN)
 ├── fixtures/
 │   └── authenticated.ts         # Fixtures `adminPage`, `agentPage`, `studentPage`, … (storageState)
 ├── helpers/
@@ -758,7 +830,7 @@ Mot de passe commun : `TestJoda!2026` (constante `TEST_PASSWORD` dans `tests/hel
 Ajoutés dans le code app pour fiabiliser les sélecteurs E2E (indépendants de la langue et du style) :
 
 - **LoginPage** : `login-identifier`, `login-password`, `login-submit`, `login-forgot-btn`, `forgot-input`, `forgot-submit`, `forgot-cancel`, `theme-toggle`, `lang-switcher`, `lang-option-{fr|en}`
-- **AppShell** : `nav-{routeId}` × 15, `sidebar-section-{sectionId}` × 7, `btn-logout`, `btn-notifications`, `notif-badge`, `page-title`, `mobile-menu-toggle`
+- **AppShell** : `nav-{routeId}` × 16 (dont `nav-hr`), `sidebar-section-{sectionId}` × 8 (dont `sidebar-section-rh`), `btn-logout`, `btn-notifications`, `notif-badge`, `page-title`, `mobile-menu-toggle`
 - **ConfirmDialog** : `confirm-dialog`, `confirm-title`, `confirm-description`, `confirm-yes`, `confirm-cancel`
 - **Portail étudiant** : `portal-bell`, `portal-bell-badge`, `portal-theme-toggle`, `portal-logout`, `portal-tab-{dashboard|payments|documents|dossier|messaging}`
 
@@ -766,21 +838,22 @@ Liste complète dans [`tests/TESTIDS.md`](tests/TESTIDS.md).
 
 ### Couverture
 
-22 modules couverts, ~80 cas de tests :
+23 modules couverts, ~88 cas de tests :
 
 | # | Module testé | Tests | # | Module testé | Tests |
 |---|---|---|---|---|---|
-| 1 | Authentification | 9 | 12 | Newsletter | 3 |
-| 2 | Étudiants | 5 | 13 | Logs activités | 3 |
-| 3 | Candidatures | 3 | 14 | Notifications | 3 |
-| 4 | Universités | 4 | 15 | Performances | 3 |
-| 5 | Utilisateurs staff | 3 | 16 | Stockage | 3 |
-| 6 | Dossiers | 3 | 17 | Portail étudiant | 5 |
-| 7 | Paiements | 4 | 18 | Documents (staff) | 1 |
-| 8 | Cours langues | 3 | 19 | Tableau de bord | 4 |
-| 9 | Comptabilité | 3 | 20 | i18n & thème | 2 |
-| 10 | Configuration frais | 2 | 21 | Sécurité / RBAC | 6 |
-| 11 | Communication | 5 | 22 | Cron / API | 2 |
+| 1 | Authentification | 9 | 13 | Logs activités | 3 |
+| 2 | Étudiants | 5 | 14 | Notifications | 3 |
+| 3 | Candidatures | 3 | 15 | Performances | 3 |
+| 4 | Universités | 4 | 16 | Stockage | 3 |
+| 5 | Utilisateurs staff | 3 | 17 | Portail étudiant | 5 |
+| 6 | Dossiers | 3 | 18 | Documents (staff) | 1 |
+| 7 | Paiements | 4 | 19 | Tableau de bord | 4 |
+| 8 | Cours langues | 3 | 20 | i18n & thème | 2 |
+| 9 | Comptabilité | 3 | 21 | Sécurité / RBAC | 6 |
+| 10 | Configuration frais | 2 | 22 | Cron / API | 2 |
+| 11 | Communication | 5 | 23 | Ressources humaines | 8 |
+| 12 | Newsletter | 3 | | | |
 
 Documentation détaillée : [`TESTS_FONCTIONNELS.md`](TESTS_FONCTIONNELS.md) (cas de tests métier), [`tests/RAPPORT_EXECUTION.md`](tests/RAPPORT_EXECUTION.md) (résultats des runs).
 
