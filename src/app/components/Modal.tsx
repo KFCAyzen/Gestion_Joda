@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -30,19 +32,24 @@ export default function Modal({
     size = "md",
     showCloseButton = true,
 }: ModalProps) {
-    if (!isOpen) return null;
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
-    return (
+    if (!isOpen || !mounted) return null;
+
+    const node = (
         <AnimatePresence>
             <motion.div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={onClose}
             >
                 <motion.div
-                    className={`w-full ${sizeClasses[size]} rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl`}
+                    className={`w-full ${sizeClasses[size]} my-auto rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl`}
                     initial={{ scale: 0.94, y: 20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
                     exit={{ scale: 0.94, opacity: 0 }}
@@ -64,4 +71,6 @@ export default function Modal({
             </motion.div>
         </AnimatePresence>
     );
+
+    return createPortal(node, document.body);
 }
