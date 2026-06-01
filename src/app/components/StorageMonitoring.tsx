@@ -73,26 +73,46 @@ export default function StorageMonitoring() {
         users: usersRes.count || 0,
       });
 
-      // Statistiques du stockage (documents uploadés)
-      const { data: documents } = await supabase
-        .from("documents")
-        .select("url");
+      // Statistiques réelles du stockage : on parcourt le bucket `student-documents`
+      // et on somme la taille effective de chaque fichier (metadata.size), au lieu
+      // d'une estimation. Les fichiers sont rangés par dossier (student_id) → on
+      // descend récursivement dans chaque sous-dossier.
+      const BUCKET = "student-documents";
+      const walkBucket = async (
+        prefix = ""
+      ): Promise<{ size: number; count: number }> => {
+        const { data: entries, error } = await supabase.storage
+          .from(BUCKET)
+          .list(prefix, { limit: 1000, sortBy: { column: "name", order: "asc" } });
+        if (error || !entries) return { size: 0, count: 0 };
 
-      if (documents && documents.length > 0) {
-        // Estimation basée sur le nombre de documents
-        // En production, vous devriez utiliser l'API Storage de Supabase
-        const estimatedAvgSize = 1.5 * 1024 * 1024; // 1.5 MB par document en moyenne
-        const totalSize = documents.length * estimatedAvgSize;
-        
-        setStorageStats({
-          totalFiles: documents.length,
-          totalSize: totalSize,
-          averageFileSize: estimatedAvgSize,
-          largestFile: FILE_LIMITS.MAX_FILE_SIZE_BYTES,
-          documentsCount: documents.length,
-          documentsSize: totalSize,
-        });
-      }
+        let size = 0;
+        let count = 0;
+        for (const entry of entries) {
+          // Un dossier n'a ni id ni metadata ; un fichier porte metadata.size.
+          const isFolder = entry.id === null || entry.metadata == null;
+          if (isFolder) {
+            const sub = await walkBucket(prefix ? `${prefix}/${entry.name}` : entry.name);
+            size += sub.size;
+            count += sub.count;
+          } else {
+            size += (entry.metadata?.size as number) ?? 0;
+            count += 1;
+          }
+        }
+        return { size, count };
+      };
+
+      const { size: totalSize, count: totalFiles } = await walkBucket();
+
+      setStorageStats({
+        totalFiles,
+        totalSize,
+        averageFileSize: totalFiles > 0 ? totalSize / totalFiles : 0,
+        largestFile: FILE_LIMITS.MAX_FILE_SIZE_BYTES,
+        documentsCount: totalFiles,
+        documentsSize: totalSize,
+      });
 
       setLastRefresh(new Date());
     } catch (error) {
