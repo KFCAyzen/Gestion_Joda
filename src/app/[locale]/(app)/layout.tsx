@@ -217,8 +217,12 @@ function AppShell({ children }: { children: ReactNode }) {
     }, [user, router]);
 
     useEffect(() => {
-        if (user?.mustChangePassword && user.role !== "student" && !passwordJustChanged) {
+        if (!user) return;
+        if (user.mustChangePassword && user.role !== "student" && !passwordJustChanged) {
             setShowPasswordChange(true);
+        } else if (!user.mustChangePassword) {
+            // Ferme le modal dès que le flag est effacé (ex : TOKEN_REFRESHED après clear-password-flag)
+            setShowPasswordChange(false);
         }
     }, [user, passwordJustChanged]);
 

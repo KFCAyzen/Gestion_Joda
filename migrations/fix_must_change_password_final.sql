@@ -98,13 +98,31 @@ SET
 WHERE role IN ('super_admin', 'admin', 'supervisor', 'agent')
   AND must_change_password = true;
 
--- ── D. Vérification ─────────────────────────────────────────────────────────
+-- ── D. Nettoyer raw_user_meta_data dans auth.users ─────────────────────────
+-- Sans ce nettoyage, si le trigger refirais sur un futur INSERT avec conflit,
+-- il lirait must_change_password=true depuis les métadonnées et écraserait false.
+
+UPDATE auth.users
+SET raw_user_meta_data = jsonb_set(
+    COALESCE(raw_user_meta_data, '{}'::jsonb),
+    '{must_change_password}',
+    'false'::jsonb
+)
+WHERE id IN (
+    SELECT id FROM public.users
+    WHERE role IN ('super_admin', 'admin', 'supervisor', 'agent')
+);
+
+-- ── E. Vérification finale ───────────────────────────────────────────────────
 
 SELECT
-    email,
-    role,
-    must_change_password,
-    updated_at
-FROM public.users
-WHERE role IN ('super_admin', 'admin', 'supervisor', 'agent')
-ORDER BY role DESC, email;
+    u.email,
+    pu.role,
+    pu.must_change_password                               AS db_flag,
+    u.raw_user_meta_data ->> 'must_change_password'      AS meta_flag,
+    pu.updated_at
+FROM public.users pu
+JOIN auth.users u ON u.id = pu.id
+WHERE pu.role IN ('super_admin', 'admin', 'supervisor', 'agent')
+ORDER BY pu.role DESC, u.email;
+-- Attendu : db_flag = false ET meta_flag = false pour tous
