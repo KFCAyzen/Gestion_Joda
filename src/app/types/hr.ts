@@ -1,5 +1,22 @@
 export type EmployeeStatus = 'actif' | 'suspendu' | 'inactif';
 
+export type Sexe = 'M' | 'F' | 'autre';
+export type SituationMatrimoniale =
+  | 'celibataire'
+  | 'marie'
+  | 'divorce'
+  | 'veuf'
+  | 'union_libre';
+export type TypePiece = 'cni' | 'passeport' | 'permis' | 'recepisse' | 'autre';
+export type TypeContrat =
+  | 'cdi'
+  | 'cdd'
+  | 'stage'
+  | 'consultant'
+  | 'interim'
+  | 'temps_partiel';
+export type TypeHoraire = 'temps_plein' | 'temps_partiel' | 'flexible' | 'poste';
+
 export type LeaveType =
   | 'annuel'
   | 'maladie'
@@ -25,6 +42,33 @@ export interface Employee {
   user_id: string | null;
   notes: string | null;
   report_pin: string | null;
+  // État civil & identité
+  date_naissance: string | null;
+  lieu_naissance: string | null;
+  sexe: Sexe | null;
+  nationalite: string | null;
+  situation_matrimoniale: SituationMatrimoniale | null;
+  nombre_enfants: number | null;
+  type_piece: TypePiece | null;
+  numero_piece: string | null;
+  date_expiration_piece: string | null;
+  lieu_emission_piece: string | null;
+  // Adresse
+  adresse: string | null;
+  quartier: string | null;
+  ville: string | null;
+  pays: string | null;
+  // Contact d'urgence
+  urgence_nom: string | null;
+  urgence_lien: string | null;
+  urgence_telephone: string | null;
+  urgence_email: string | null;
+  // Contrat & emploi
+  type_contrat: TypeContrat | null;
+  date_fin_contrat: string | null;
+  periode_essai_mois: number | null;
+  superieur_id: string | null;
+  type_horaire: TypeHoraire | null;
   created_at: string;
   updated_at: string;
 }

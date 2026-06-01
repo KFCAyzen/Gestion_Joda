@@ -137,7 +137,76 @@
         "firstname": "First name",
         "lastname": "Last name",
         "phone": "Phone",
-        "notes": "Notes"
+        "notes": "Notes",
+        "choose": "Choose…",
+        "birthDate": "Date of birth",
+        "birthPlace": "Place of birth",
+        "sex": "Sex",
+        "sexOptions": {
+          "M": "Male",
+          "F": "Female",
+          "autre": "Other"
+        },
+        "nationality": "Nationality",
+        "maritalStatus": "Marital status",
+        "maritalOptions": {
+          "celibataire": "Single",
+          "marie": "Married",
+          "divorce": "Divorced",
+          "veuf": "Widowed",
+          "union_libre": "Civil union"
+        },
+        "childrenCount": "Number of children",
+        "idType": "ID document type",
+        "idTypeOptions": {
+          "cni": "National ID",
+          "passeport": "Passport",
+          "permis": "Driver's license",
+          "recepisse": "Receipt",
+          "autre": "Other"
+        },
+        "idNumber": "ID number",
+        "idIssuePlace": "Issued at",
+        "idExpiry": "Expiry date",
+        "address": "Address",
+        "neighborhood": "Neighborhood",
+        "city": "City",
+        "country": "Country",
+        "emergencyName": "Emergency contact name",
+        "emergencyRelation": "Relationship",
+        "emergencyRelationHint": "Spouse, parent, sibling…",
+        "emergencyPhone": "Emergency phone",
+        "emergencyEmail": "Emergency email",
+        "contractType": "Contract type",
+        "contractOptions": {
+          "cdi": "Permanent",
+          "cdd": "Fixed-term",
+          "stage": "Internship",
+          "consultant": "Consultant",
+          "interim": "Temp",
+          "temps_partiel": "Part-time"
+        },
+        "endDate": "Contract end date",
+        "probationMonths": "Probation (months)",
+        "supervisor": "Supervisor",
+        "scheduleType": "Work schedule",
+        "scheduleOptions": {
+          "temps_plein": "Full-time",
+          "temps_partiel": "Part-time",
+          "flexible": "Flexible",
+          "poste": "Shift"
+        }
+      },
+      "wizard": {
+        "previous": "Previous",
+        "next": "Next",
+        "steps": {
+          "identity": "Identity",
+          "civil": "Personal",
+          "address": "Contact",
+          "emergency": "Emergency",
+          "contract": "Contract"
+        }
       },
       "status": {
         "actif": "Active",
@@ -209,6 +278,12 @@
       "generate": "Generate payroll",
       "generateHint": "Creates payslips due for the configured schedules (and a pending accounting expense)",
       "generated": "{n} payslip(s) generated",
+      "generateTitle": "Generate payroll",
+      "generateDesc": "Choose the generation mode.",
+      "modeAuto": "Current month (auto)",
+      "modeAutoHint": "Honors schedules: only generates if the payment date has arrived and the month hasn't been processed yet.",
+      "modeTarget": "Targeted period",
+      "modeTargetHint": "Pick a specific month/year. Bypasses the date guard so you can generate ahead of time or back-fill a missed month. Existing payslips for the same employee/month are never duplicated.",
       "col": {
         "period": "Period",
         "month": "Month",

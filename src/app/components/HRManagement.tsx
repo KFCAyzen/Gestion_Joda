@@ -318,6 +318,7 @@ function EmptyRow({ cols, label }: { cols: number; label: string }) {
 
 // ─── Employees panel ───────────────────────────────────────────────────────
 type EmployeeFormState = {
+    // Identité pro
     matricule: string;
     nom: string;
     prenom: string;
@@ -330,6 +331,40 @@ type EmployeeFormState = {
     salaire_base: string;
     statut: EmployeeStatus;
     notes: string;
+    // État civil & identité
+    date_naissance: string;
+    lieu_naissance: string;
+    sexe: "" | "M" | "F" | "autre";
+    nationalite: string;
+    situation_matrimoniale:
+        | ""
+        | "celibataire"
+        | "marie"
+        | "divorce"
+        | "veuf"
+        | "union_libre";
+    nombre_enfants: string;
+    type_piece: "" | "cni" | "passeport" | "permis" | "recepisse" | "autre";
+    numero_piece: string;
+    date_expiration_piece: string;
+    lieu_emission_piece: string;
+    // Adresse
+    adresse: string;
+    quartier: string;
+    ville: string;
+    pays: string;
+    // Contact d'urgence
+    urgence_nom: string;
+    urgence_lien: string;
+    urgence_phoneCountryCode: string;
+    urgence_telephone: string;
+    urgence_email: string;
+    // Contrat & emploi
+    type_contrat: "" | "cdi" | "cdd" | "stage" | "consultant" | "interim" | "temps_partiel";
+    date_fin_contrat: string;
+    periode_essai_mois: string;
+    superieur_id: string;
+    type_horaire: "" | "temps_plein" | "temps_partiel" | "flexible" | "poste";
 };
 
 const emptyEmployeeForm: EmployeeFormState = {
@@ -345,6 +380,30 @@ const emptyEmployeeForm: EmployeeFormState = {
     salaire_base: "0",
     statut: "actif",
     notes: "",
+    date_naissance: "",
+    lieu_naissance: "",
+    sexe: "",
+    nationalite: "",
+    situation_matrimoniale: "",
+    nombre_enfants: "0",
+    type_piece: "",
+    numero_piece: "",
+    date_expiration_piece: "",
+    lieu_emission_piece: "",
+    adresse: "",
+    quartier: "",
+    ville: "",
+    pays: "",
+    urgence_nom: "",
+    urgence_lien: "",
+    urgence_phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
+    urgence_telephone: "",
+    urgence_email: "",
+    type_contrat: "",
+    date_fin_contrat: "",
+    periode_essai_mois: "",
+    superieur_id: "",
+    type_horaire: "",
 };
 
 const MATRICULE_PREFIX = "EMP-";
@@ -384,6 +443,7 @@ function EmployeesPanel({
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<Employee | null>(null);
     const [form, setForm] = useState<EmployeeFormState>(emptyEmployeeForm);
+    const [step, setStep] = useState(0);
     const [confirmDel, setConfirmDel] = useState<Employee | null>(null);
     const [pinByEmployee, setPinByEmployee] = useState<Record<string, string>>({});
     const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
@@ -443,12 +503,14 @@ function EmployeesPanel({
     const openCreate = () => {
         setEditing(null);
         setForm({ ...emptyEmployeeForm, matricule: nextMatricule(employees) });
+        setStep(0);
         setModalOpen(true);
     };
 
     const openEdit = (e: Employee) => {
         setEditing(e);
         const { countryCode, localNumber } = splitPhoneNumber(e.telephone);
+        const urgence = splitPhoneNumber(e.urgence_telephone);
         setForm({
             matricule: e.matricule ?? "",
             nom: e.nom,
@@ -462,7 +524,32 @@ function EmployeesPanel({
             salaire_base: String(e.salaire_base),
             statut: e.statut,
             notes: e.notes ?? "",
+            date_naissance: e.date_naissance ?? "",
+            lieu_naissance: e.lieu_naissance ?? "",
+            sexe: e.sexe ?? "",
+            nationalite: e.nationalite ?? "",
+            situation_matrimoniale: e.situation_matrimoniale ?? "",
+            nombre_enfants: e.nombre_enfants != null ? String(e.nombre_enfants) : "0",
+            type_piece: e.type_piece ?? "",
+            numero_piece: e.numero_piece ?? "",
+            date_expiration_piece: e.date_expiration_piece ?? "",
+            lieu_emission_piece: e.lieu_emission_piece ?? "",
+            adresse: e.adresse ?? "",
+            quartier: e.quartier ?? "",
+            ville: e.ville ?? "",
+            pays: e.pays ?? "",
+            urgence_nom: e.urgence_nom ?? "",
+            urgence_lien: e.urgence_lien ?? "",
+            urgence_phoneCountryCode: urgence.countryCode,
+            urgence_telephone: urgence.localNumber,
+            urgence_email: e.urgence_email ?? "",
+            type_contrat: e.type_contrat ?? "",
+            date_fin_contrat: e.date_fin_contrat ?? "",
+            periode_essai_mois: e.periode_essai_mois != null ? String(e.periode_essai_mois) : "",
+            superieur_id: e.superieur_id ?? "",
+            type_horaire: e.type_horaire ?? "",
         });
+        setStep(0);
         setModalOpen(true);
     };
 
@@ -480,6 +567,30 @@ function EmployeesPanel({
                 salaire_base: parseInt(form.salaire_base || "0", 10) || 0,
                 statut: form.statut,
                 notes: form.notes.trim() || null,
+                date_naissance: form.date_naissance || null,
+                lieu_naissance: form.lieu_naissance.trim() || null,
+                sexe: form.sexe || null,
+                nationalite: form.nationalite.trim() || null,
+                situation_matrimoniale: form.situation_matrimoniale || null,
+                nombre_enfants: parseInt(form.nombre_enfants || "0", 10) || 0,
+                type_piece: form.type_piece || null,
+                numero_piece: form.numero_piece.trim() || null,
+                date_expiration_piece: form.date_expiration_piece || null,
+                lieu_emission_piece: form.lieu_emission_piece.trim() || null,
+                adresse: form.adresse.trim() || null,
+                quartier: form.quartier.trim() || null,
+                ville: form.ville.trim() || null,
+                pays: form.pays.trim() || null,
+                urgence_nom: form.urgence_nom.trim() || null,
+                urgence_lien: form.urgence_lien.trim() || null,
+                urgence_telephone:
+                    normalizePhoneNumber(form.urgence_phoneCountryCode, form.urgence_telephone) || null,
+                urgence_email: form.urgence_email.trim() || null,
+                type_contrat: form.type_contrat || null,
+                date_fin_contrat: form.date_fin_contrat || null,
+                periode_essai_mois: form.periode_essai_mois ? parseInt(form.periode_essai_mois, 10) : null,
+                superieur_id: form.superieur_id || null,
+                type_horaire: form.type_horaire || null,
             };
             if (editing) {
                 await update.mutateAsync({ id: editing.id, data: payload });
@@ -668,87 +779,18 @@ function EmployeesPanel({
                 title={editing ? t("employees.editTitle") : t("employees.addTitle")}
                 size="lg"
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Field label={t("employees.col.matricule")}>
-                        <Input
-                            value={form.matricule}
-                            readOnly
-                            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
-                            title={t("employees.matriculeAutoHint")}
-                        />
-                    </Field>
-                    <Field label={t("employees.col.status")}>
-                        <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as EmployeeStatus })}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {EMPLOYEE_STATUSES.map((s) => (
-                                    <SelectItem key={s} value={s}>
-                                        {t(`employees.status.${s}`)}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </Field>
-                    <Field label={t("employees.form.firstname")} required>
-                        <Input value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} />
-                    </Field>
-                    <Field label={t("employees.form.lastname")} required>
-                        <Input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
-                    </Field>
-                    <Field label={t("employees.col.position")} required>
-                        <Input value={form.poste} onChange={(e) => setForm({ ...form, poste: e.target.value })} />
-                    </Field>
-                    <Field label={t("employees.col.department")}>
-                        <Input value={form.departement} onChange={(e) => setForm({ ...form, departement: e.target.value })} />
-                    </Field>
-                    <Field label="Email">
-                        <Input
-                            type="email"
-                            value={form.email}
-                            onChange={(e) => setForm({ ...form, email: e.target.value })}
-                        />
-                    </Field>
-                    <Field label={t("employees.form.phone")}>
-                        <PhoneInput
-                            id="employee-telephone"
-                            countryCode={form.phoneCountryCode}
-                            value={form.telephone}
-                            onCountryCodeChange={(value) => setForm({ ...form, phoneCountryCode: value })}
-                            onValueChange={(value) => setForm({ ...form, telephone: value })}
-                        />
-                    </Field>
-                    <Field label={t("employees.col.hiredAt")} required>
-                        <Input
-                            type="date"
-                            value={form.date_embauche}
-                            onChange={(e) => setForm({ ...form, date_embauche: e.target.value })}
-                        />
-                    </Field>
-                    <Field label={t("employees.col.salary") + " (FCFA)"} required>
-                        <Input
-                            type="number"
-                            min="0"
-                            value={form.salaire_base}
-                            onChange={(e) => setForm({ ...form, salaire_base: e.target.value })}
-                        />
-                    </Field>
-                    <div className="md:col-span-2">
-                        <Field label={t("employees.form.notes")}>
-                            <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-                        </Field>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-2 mt-6">
-                    <Button variant="outline" onClick={() => setModalOpen(false)}>
-                        {t("common.cancel")}
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
-                        {(create.isPending || update.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {editing ? t("common.save") : t("common.create")}
-                    </Button>
-                </div>
+                <EmployeeWizard
+                    form={form}
+                    setForm={setForm}
+                    step={step}
+                    setStep={setStep}
+                    employees={employees}
+                    editingId={editing?.id ?? null}
+                    onCancel={() => setModalOpen(false)}
+                    onSubmit={handleSubmit}
+                    isPending={create.isPending || update.isPending}
+                    editing={!!editing}
+                />
             </Modal>
 
             <ConfirmDialog
@@ -764,6 +806,572 @@ function EmployeesPanel({
                 isLoading={del.isPending}
             />
         </Card>
+    );
+}
+
+// ─── Employee wizard (multi-step form) ─────────────────────────────────────
+const WIZARD_STEPS = ["identity", "civil", "address", "emergency", "contract"] as const;
+type WizardStepKey = (typeof WIZARD_STEPS)[number];
+
+const SEXE_OPTIONS = ["M", "F", "autre"] as const;
+const SITUATION_OPTIONS = [
+    "celibataire",
+    "marie",
+    "divorce",
+    "veuf",
+    "union_libre",
+] as const;
+const PIECE_OPTIONS = ["cni", "passeport", "permis", "recepisse", "autre"] as const;
+const CONTRAT_OPTIONS = [
+    "cdi",
+    "cdd",
+    "stage",
+    "consultant",
+    "interim",
+    "temps_partiel",
+] as const;
+const HORAIRE_OPTIONS = ["temps_plein", "temps_partiel", "flexible", "poste"] as const;
+
+function EmployeeWizard({
+    form,
+    setForm,
+    step,
+    setStep,
+    employees,
+    editingId,
+    onCancel,
+    onSubmit,
+    isPending,
+    editing,
+}: {
+    form: EmployeeFormState;
+    setForm: React.Dispatch<React.SetStateAction<EmployeeFormState>>;
+    step: number;
+    setStep: React.Dispatch<React.SetStateAction<number>>;
+    employees: Employee[];
+    editingId: string | null;
+    onCancel: () => void;
+    onSubmit: () => Promise<void>;
+    isPending: boolean;
+    editing: boolean;
+}) {
+    const t = useTranslations("hrManagement");
+
+    const supervisorOptions = useMemo(
+        () => employees.filter((e) => e.id !== editingId),
+        [employees, editingId]
+    );
+
+    const stepValid = (i: number): string | null => {
+        if (i === 0) {
+            if (!form.prenom.trim()) return t("employees.form.firstname");
+            if (!form.nom.trim()) return t("employees.form.lastname");
+            if (!form.poste.trim()) return t("employees.col.position");
+        }
+        if (i === 4) {
+            if (!form.date_embauche) return t("employees.col.hiredAt");
+            if (!form.salaire_base) return t("employees.col.salary");
+            if (form.type_contrat === "cdd" && !form.date_fin_contrat) {
+                return t("employees.form.endDate");
+            }
+        }
+        return null;
+    };
+
+    const next = () => {
+        const missing = stepValid(step);
+        if (missing) return;
+        setStep((s) => Math.min(s + 1, WIZARD_STEPS.length - 1));
+    };
+    const prev = () => setStep((s) => Math.max(s - 1, 0));
+
+    const isLast = step === WIZARD_STEPS.length - 1;
+
+    return (
+        <div className="space-y-5">
+            <Stepper step={step} setStep={setStep} stepValid={stepValid} />
+
+            {step === 0 && <StepIdentity form={form} setForm={setForm} />}
+            {step === 1 && <StepCivil form={form} setForm={setForm} />}
+            {step === 2 && <StepAddress form={form} setForm={setForm} />}
+            {step === 3 && <StepEmergency form={form} setForm={setForm} />}
+            {step === 4 && (
+                <StepContract form={form} setForm={setForm} supervisorOptions={supervisorOptions} />
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                <Button variant="ghost" onClick={onCancel} disabled={isPending}>
+                    {t("common.cancel")}
+                </Button>
+                <div className="flex gap-2">
+                    {step > 0 && (
+                        <Button variant="outline" onClick={prev} disabled={isPending}>
+                            {t("employees.wizard.previous")}
+                        </Button>
+                    )}
+                    {!isLast && (
+                        <Button onClick={next} disabled={!!stepValid(step)}>
+                            {t("employees.wizard.next")}
+                        </Button>
+                    )}
+                    {isLast && (
+                        <Button onClick={onSubmit} disabled={isPending || !!stepValid(step)}>
+                            {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            {editing ? t("common.save") : t("common.create")}
+                        </Button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Stepper({
+    step,
+    setStep,
+    stepValid,
+}: {
+    step: number;
+    setStep: React.Dispatch<React.SetStateAction<number>>;
+    stepValid: (i: number) => string | null;
+}) {
+    const t = useTranslations("hrManagement");
+    return (
+        <div className="flex flex-wrap items-center gap-1 text-xs">
+            {WIZARD_STEPS.map((key, i) => {
+                const done = i < step;
+                const active = i === step;
+                const goable = i <= step || (i === step + 1 && !stepValid(step));
+                return (
+                    <button
+                        key={key}
+                        type="button"
+                        onClick={() => goable && setStep(i)}
+                        disabled={!goable}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition ${
+                            active
+                                ? "bg-rose-600 text-white"
+                                : done
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                        } ${goable ? "cursor-pointer hover:opacity-90" : "cursor-not-allowed opacity-70"}`}
+                    >
+                        <span className="w-5 h-5 inline-flex items-center justify-center rounded-full bg-white/30 text-[10px] font-semibold">
+                            {done ? <Check className="w-3 h-3" /> : i + 1}
+                        </span>
+                        <span className="hidden sm:inline">{t(`employees.wizard.steps.${key}`)}</span>
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+function StepIdentity({
+    form,
+    setForm,
+}: {
+    form: EmployeeFormState;
+    setForm: React.Dispatch<React.SetStateAction<EmployeeFormState>>;
+}) {
+    const t = useTranslations("hrManagement");
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label={t("employees.col.matricule")}>
+                <Input
+                    value={form.matricule}
+                    readOnly
+                    className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                    title={t("employees.matriculeAutoHint")}
+                />
+            </Field>
+            <Field label={t("employees.col.status")}>
+                <Select
+                    value={form.statut}
+                    onValueChange={(v) =>
+                        setForm((f) => ({ ...f, statut: (v as EmployeeStatus) ?? "actif" }))
+                    }
+                >
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {EMPLOYEE_STATUSES.map((s) => (
+                            <SelectItem key={s} value={s}>
+                                {t(`employees.status.${s}`)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </Field>
+            <Field label={t("employees.form.firstname")} required>
+                <Input
+                    value={form.prenom}
+                    onChange={(e) => setForm((f) => ({ ...f, prenom: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.lastname")} required>
+                <Input
+                    value={form.nom}
+                    onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.col.position")} required>
+                <Input
+                    value={form.poste}
+                    onChange={(e) => setForm((f) => ({ ...f, poste: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.col.department")}>
+                <Input
+                    value={form.departement}
+                    onChange={(e) => setForm((f) => ({ ...f, departement: e.target.value }))}
+                />
+            </Field>
+        </div>
+    );
+}
+
+function StepCivil({
+    form,
+    setForm,
+}: {
+    form: EmployeeFormState;
+    setForm: React.Dispatch<React.SetStateAction<EmployeeFormState>>;
+}) {
+    const t = useTranslations("hrManagement");
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label={t("employees.form.birthDate")}>
+                <Input
+                    type="date"
+                    value={form.date_naissance}
+                    onChange={(e) => setForm((f) => ({ ...f, date_naissance: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.birthPlace")}>
+                <Input
+                    value={form.lieu_naissance}
+                    onChange={(e) => setForm((f) => ({ ...f, lieu_naissance: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.sex")}>
+                <Select
+                    value={form.sexe || undefined}
+                    onValueChange={(v) =>
+                        setForm((f) => ({ ...f, sexe: ((v as typeof f.sexe) ?? "") || "" }))
+                    }
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder={t("employees.form.choose")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {SEXE_OPTIONS.map((s) => (
+                            <SelectItem key={s} value={s}>
+                                {t(`employees.form.sexOptions.${s}`)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </Field>
+            <Field label={t("employees.form.nationality")}>
+                <Input
+                    value={form.nationalite}
+                    onChange={(e) => setForm((f) => ({ ...f, nationalite: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.maritalStatus")}>
+                <Select
+                    value={form.situation_matrimoniale || undefined}
+                    onValueChange={(v) =>
+                        setForm((f) => ({
+                            ...f,
+                            situation_matrimoniale:
+                                ((v as typeof f.situation_matrimoniale) ?? "") || "",
+                        }))
+                    }
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder={t("employees.form.choose")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {SITUATION_OPTIONS.map((s) => (
+                            <SelectItem key={s} value={s}>
+                                {t(`employees.form.maritalOptions.${s}`)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </Field>
+            <Field label={t("employees.form.childrenCount")}>
+                <Input
+                    type="number"
+                    min="0"
+                    value={form.nombre_enfants}
+                    onChange={(e) => setForm((f) => ({ ...f, nombre_enfants: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.idType")}>
+                <Select
+                    value={form.type_piece || undefined}
+                    onValueChange={(v) =>
+                        setForm((f) => ({ ...f, type_piece: ((v as typeof f.type_piece) ?? "") || "" }))
+                    }
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder={t("employees.form.choose")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {PIECE_OPTIONS.map((p) => (
+                            <SelectItem key={p} value={p}>
+                                {t(`employees.form.idTypeOptions.${p}`)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </Field>
+            <Field label={t("employees.form.idNumber")}>
+                <Input
+                    value={form.numero_piece}
+                    onChange={(e) => setForm((f) => ({ ...f, numero_piece: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.idIssuePlace")}>
+                <Input
+                    value={form.lieu_emission_piece}
+                    onChange={(e) => setForm((f) => ({ ...f, lieu_emission_piece: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.idExpiry")}>
+                <Input
+                    type="date"
+                    value={form.date_expiration_piece}
+                    onChange={(e) =>
+                        setForm((f) => ({ ...f, date_expiration_piece: e.target.value }))
+                    }
+                />
+            </Field>
+        </div>
+    );
+}
+
+function StepAddress({
+    form,
+    setForm,
+}: {
+    form: EmployeeFormState;
+    setForm: React.Dispatch<React.SetStateAction<EmployeeFormState>>;
+}) {
+    const t = useTranslations("hrManagement");
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Email">
+                <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.phone")}>
+                <PhoneInput
+                    id="employee-telephone"
+                    countryCode={form.phoneCountryCode}
+                    value={form.telephone}
+                    onCountryCodeChange={(value) =>
+                        setForm((f) => ({ ...f, phoneCountryCode: value }))
+                    }
+                    onValueChange={(value) => setForm((f) => ({ ...f, telephone: value }))}
+                />
+            </Field>
+            <div className="md:col-span-2">
+                <Field label={t("employees.form.address")}>
+                    <Input
+                        value={form.adresse}
+                        onChange={(e) => setForm((f) => ({ ...f, adresse: e.target.value }))}
+                    />
+                </Field>
+            </div>
+            <Field label={t("employees.form.neighborhood")}>
+                <Input
+                    value={form.quartier}
+                    onChange={(e) => setForm((f) => ({ ...f, quartier: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.city")}>
+                <Input
+                    value={form.ville}
+                    onChange={(e) => setForm((f) => ({ ...f, ville: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.country")}>
+                <Input
+                    value={form.pays}
+                    onChange={(e) => setForm((f) => ({ ...f, pays: e.target.value }))}
+                />
+            </Field>
+        </div>
+    );
+}
+
+function StepEmergency({
+    form,
+    setForm,
+}: {
+    form: EmployeeFormState;
+    setForm: React.Dispatch<React.SetStateAction<EmployeeFormState>>;
+}) {
+    const t = useTranslations("hrManagement");
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label={t("employees.form.emergencyName")}>
+                <Input
+                    value={form.urgence_nom}
+                    onChange={(e) => setForm((f) => ({ ...f, urgence_nom: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.emergencyRelation")}>
+                <Input
+                    value={form.urgence_lien}
+                    onChange={(e) => setForm((f) => ({ ...f, urgence_lien: e.target.value }))}
+                    placeholder={t("employees.form.emergencyRelationHint")}
+                />
+            </Field>
+            <Field label={t("employees.form.emergencyPhone")}>
+                <PhoneInput
+                    id="employee-urgence-telephone"
+                    countryCode={form.urgence_phoneCountryCode}
+                    value={form.urgence_telephone}
+                    onCountryCodeChange={(value) =>
+                        setForm((f) => ({ ...f, urgence_phoneCountryCode: value }))
+                    }
+                    onValueChange={(value) => setForm((f) => ({ ...f, urgence_telephone: value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.emergencyEmail")}>
+                <Input
+                    type="email"
+                    value={form.urgence_email}
+                    onChange={(e) => setForm((f) => ({ ...f, urgence_email: e.target.value }))}
+                />
+            </Field>
+        </div>
+    );
+}
+
+function StepContract({
+    form,
+    setForm,
+    supervisorOptions,
+}: {
+    form: EmployeeFormState;
+    setForm: React.Dispatch<React.SetStateAction<EmployeeFormState>>;
+    supervisorOptions: Employee[];
+}) {
+    const t = useTranslations("hrManagement");
+    const isCdd = form.type_contrat === "cdd";
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label={t("employees.form.contractType")}>
+                <Select
+                    value={form.type_contrat || undefined}
+                    onValueChange={(v) =>
+                        setForm((f) => ({
+                            ...f,
+                            type_contrat: ((v as typeof f.type_contrat) ?? "") || "",
+                        }))
+                    }
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder={t("employees.form.choose")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {CONTRAT_OPTIONS.map((c) => (
+                            <SelectItem key={c} value={c}>
+                                {t(`employees.form.contractOptions.${c}`)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </Field>
+            <Field label={t("employees.form.scheduleType")}>
+                <Select
+                    value={form.type_horaire || undefined}
+                    onValueChange={(v) =>
+                        setForm((f) => ({
+                            ...f,
+                            type_horaire: ((v as typeof f.type_horaire) ?? "") || "",
+                        }))
+                    }
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder={t("employees.form.choose")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {HORAIRE_OPTIONS.map((h) => (
+                            <SelectItem key={h} value={h}>
+                                {t(`employees.form.scheduleOptions.${h}`)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </Field>
+            <Field label={t("employees.col.hiredAt")} required>
+                <Input
+                    type="date"
+                    value={form.date_embauche}
+                    onChange={(e) => setForm((f) => ({ ...f, date_embauche: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.endDate")} required={isCdd}>
+                <Input
+                    type="date"
+                    value={form.date_fin_contrat}
+                    onChange={(e) => setForm((f) => ({ ...f, date_fin_contrat: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.probationMonths")}>
+                <Input
+                    type="number"
+                    min="0"
+                    value={form.periode_essai_mois}
+                    onChange={(e) => setForm((f) => ({ ...f, periode_essai_mois: e.target.value }))}
+                />
+            </Field>
+            <Field label={t("employees.form.supervisor")}>
+                <Select
+                    value={form.superieur_id || undefined}
+                    onValueChange={(v) => setForm((f) => ({ ...f, superieur_id: v ?? "" }))}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder={t("employees.form.choose")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {supervisorOptions.map((e) => (
+                            <SelectItem key={e.id} value={e.id}>
+                                {e.prenom} {e.nom}
+                                {e.poste ? ` — ${e.poste}` : ""}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </Field>
+            <Field label={t("employees.col.salary") + " (FCFA)"} required>
+                <Input
+                    type="number"
+                    min="0"
+                    value={form.salaire_base}
+                    onChange={(e) => setForm((f) => ({ ...f, salaire_base: e.target.value }))}
+                />
+            </Field>
+            <div className="md:col-span-2">
+                <Field label={t("employees.form.notes")}>
+                    <Input
+                        value={form.notes}
+                        onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                    />
+                </Field>
+            </div>
+        </div>
     );
 }
 
@@ -1070,6 +1678,10 @@ function PayrollPanel({
     const generate = useGenerateDuePayslips();
     const now = new Date();
     const [modalOpen, setModalOpen] = useState(false);
+    const [generateOpen, setGenerateOpen] = useState(false);
+    const [genMode, setGenMode] = useState<"auto" | "target">("auto");
+    const [genYear, setGenYear] = useState<number>(now.getFullYear());
+    const [genMonth, setGenMonth] = useState<number>(now.getMonth() + 1);
     const [confirmDel, setConfirmDel] = useState<Payslip | null>(null);
     const [form, setForm] = useState({
         employee_id: "",
@@ -1172,13 +1784,11 @@ function PayrollPanel({
                 <div className="flex flex-wrap gap-2">
                     <Button
                         variant="outline"
-                        onClick={async () => {
-                            try {
-                                const res = await generate.mutateAsync();
-                                onSuccess(t("payroll.generated", { n: res.generated.length }));
-                            } catch (e) {
-                                onError(e);
-                            }
+                        onClick={() => {
+                            setGenMode("auto");
+                            setGenYear(now.getFullYear());
+                            setGenMonth(now.getMonth() + 1);
+                            setGenerateOpen(true);
                         }}
                         disabled={generate.isPending}
                         title={t("payroll.generateHint")}
@@ -1362,6 +1972,101 @@ function PayrollPanel({
                 description={t("payroll.confirmDeleteDesc")}
                 isLoading={del.isPending}
             />
+
+            <Modal
+                isOpen={generateOpen}
+                onClose={() => setGenerateOpen(false)}
+                title={t("payroll.generateTitle")}
+                description={t("payroll.generateDesc")}
+                size="md"
+            >
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-2">
+                        <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <input
+                                type="radio"
+                                name="gen-mode"
+                                checked={genMode === "auto"}
+                                onChange={() => setGenMode("auto")}
+                                className="mt-1"
+                            />
+                            <div className="text-sm">
+                                <div className="font-semibold">{t("payroll.modeAuto")}</div>
+                                <div className="text-slate-500 dark:text-slate-400">
+                                    {t("payroll.modeAutoHint")}
+                                </div>
+                            </div>
+                        </label>
+                        <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <input
+                                type="radio"
+                                name="gen-mode"
+                                checked={genMode === "target"}
+                                onChange={() => setGenMode("target")}
+                                className="mt-1"
+                            />
+                            <div className="text-sm flex-1">
+                                <div className="font-semibold">{t("payroll.modeTarget")}</div>
+                                <div className="text-slate-500 dark:text-slate-400">
+                                    {t("payroll.modeTargetHint")}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    {genMode === "target" && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <Field label={t("payroll.col.month")} required>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    max="12"
+                                    value={genMonth}
+                                    onChange={(e) =>
+                                        setGenMonth(Math.min(12, Math.max(1, parseInt(e.target.value, 10) || 1)))
+                                    }
+                                />
+                            </Field>
+                            <Field label={t("payroll.col.year")} required>
+                                <Input
+                                    type="number"
+                                    min="2020"
+                                    max="2100"
+                                    value={genYear}
+                                    onChange={(e) =>
+                                        setGenYear(parseInt(e.target.value, 10) || now.getFullYear())
+                                    }
+                                />
+                            </Field>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                    <Button variant="outline" onClick={() => setGenerateOpen(false)} disabled={generate.isPending}>
+                        {t("common.cancel")}
+                    </Button>
+                    <Button
+                        onClick={async () => {
+                            try {
+                                const res = await generate.mutateAsync(
+                                    genMode === "target"
+                                        ? { year: genYear, month: genMonth }
+                                        : undefined
+                                );
+                                onSuccess(t("payroll.generated", { n: res.generated.length }));
+                                setGenerateOpen(false);
+                            } catch (e) {
+                                onError(e);
+                            }
+                        }}
+                        disabled={generate.isPending}
+                    >
+                        {generate.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        {t("payroll.generate")}
+                    </Button>
+                </div>
+            </Modal>
         </Card>
     );
 }

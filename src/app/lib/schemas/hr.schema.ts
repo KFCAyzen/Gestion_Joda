@@ -2,6 +2,28 @@ import { z } from 'zod';
 
 export const employeeStatusEnum = z.enum(['actif', 'suspendu', 'inactif']);
 
+export const sexeEnum = z.enum(['M', 'F', 'autre']);
+export const situationMatrimonialeEnum = z.enum([
+  'celibataire',
+  'marie',
+  'divorce',
+  'veuf',
+  'union_libre',
+]);
+export const typePieceEnum = z.enum(['cni', 'passeport', 'permis', 'recepisse', 'autre']);
+export const typeContratEnum = z.enum([
+  'cdi',
+  'cdd',
+  'stage',
+  'consultant',
+  'interim',
+  'temps_partiel',
+]);
+export const typeHoraireEnum = z.enum(['temps_plein', 'temps_partiel', 'flexible', 'poste']);
+
+const nullableString = z.string().nullable().optional().or(z.literal(''));
+const nullableDate = z.string().nullable().optional().or(z.literal(''));
+
 export const leaveTypeEnum = z.enum([
   'annuel',
   'maladie',
@@ -28,17 +50,56 @@ export const employeeSchema = z.object({
   statut: employeeStatusEnum.default('actif'),
   user_id: z.string().uuid().nullable().optional(),
   notes: z.string().nullable().optional(),
+  // État civil & identité
+  date_naissance: nullableDate,
+  lieu_naissance: nullableString,
+  sexe: sexeEnum.nullable().optional(),
+  nationalite: nullableString,
+  situation_matrimoniale: situationMatrimonialeEnum.nullable().optional(),
+  nombre_enfants: z.number().int().min(0).nullable().optional(),
+  type_piece: typePieceEnum.nullable().optional(),
+  numero_piece: nullableString,
+  date_expiration_piece: nullableDate,
+  lieu_emission_piece: nullableString,
+  // Adresse
+  adresse: nullableString,
+  quartier: nullableString,
+  ville: nullableString,
+  pays: nullableString,
+  // Contact d'urgence
+  urgence_nom: nullableString,
+  urgence_lien: nullableString,
+  urgence_telephone: nullableString,
+  urgence_email: z.string().email().nullable().optional().or(z.literal('')),
+  // Contrat & emploi
+  type_contrat: typeContratEnum.nullable().optional(),
+  date_fin_contrat: nullableDate,
+  periode_essai_mois: z.number().int().min(0).nullable().optional(),
+  superieur_id: z.string().uuid().nullable().optional(),
+  type_horaire: typeHoraireEnum.nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });
 
-export const createEmployeeSchema = employeeSchema.omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+export const createEmployeeSchema = employeeSchema
+  .omit({
+    id: true,
+    created_at: true,
+    updated_at: true,
+  })
+  .superRefine((val, ctx) => {
+    if (val.type_contrat === 'cdd' && !val.date_fin_contrat) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['date_fin_contrat'],
+        message: 'Date de fin requise pour un CDD',
+      });
+    }
+  });
 
-export const updateEmployeeSchema = createEmployeeSchema.partial();
+export const updateEmployeeSchema = employeeSchema
+  .omit({ id: true, created_at: true, updated_at: true })
+  .partial();
 
 // ─── Leave request ─────────────────────────────────────────────────────────
 export const leaveRequestSchema = z.object({

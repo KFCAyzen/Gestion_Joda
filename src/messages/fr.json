@@ -137,7 +137,76 @@
         "firstname": "Prénom",
         "lastname": "Nom",
         "phone": "Téléphone",
-        "notes": "Notes"
+        "notes": "Notes",
+        "choose": "Choisir…",
+        "birthDate": "Date de naissance",
+        "birthPlace": "Lieu de naissance",
+        "sex": "Sexe",
+        "sexOptions": {
+          "M": "Masculin",
+          "F": "Féminin",
+          "autre": "Autre"
+        },
+        "nationality": "Nationalité",
+        "maritalStatus": "Situation matrimoniale",
+        "maritalOptions": {
+          "celibataire": "Célibataire",
+          "marie": "Marié(e)",
+          "divorce": "Divorcé(e)",
+          "veuf": "Veuf/Veuve",
+          "union_libre": "Union libre"
+        },
+        "childrenCount": "Nombre d'enfants",
+        "idType": "Type de pièce d'identité",
+        "idTypeOptions": {
+          "cni": "CNI",
+          "passeport": "Passeport",
+          "permis": "Permis de conduire",
+          "recepisse": "Récépissé",
+          "autre": "Autre"
+        },
+        "idNumber": "Numéro de pièce",
+        "idIssuePlace": "Lieu d'émission",
+        "idExpiry": "Date d'expiration",
+        "address": "Adresse",
+        "neighborhood": "Quartier",
+        "city": "Ville",
+        "country": "Pays",
+        "emergencyName": "Nom du contact d'urgence",
+        "emergencyRelation": "Lien de parenté",
+        "emergencyRelationHint": "Conjoint, parent, frère…",
+        "emergencyPhone": "Téléphone d'urgence",
+        "emergencyEmail": "E-mail d'urgence",
+        "contractType": "Type de contrat",
+        "contractOptions": {
+          "cdi": "CDI",
+          "cdd": "CDD",
+          "stage": "Stage",
+          "consultant": "Consultant",
+          "interim": "Intérim",
+          "temps_partiel": "Temps partiel"
+        },
+        "endDate": "Date de fin de contrat",
+        "probationMonths": "Période d'essai (mois)",
+        "supervisor": "Supérieur hiérarchique",
+        "scheduleType": "Type d'horaire",
+        "scheduleOptions": {
+          "temps_plein": "Temps plein",
+          "temps_partiel": "Temps partiel",
+          "flexible": "Flexible",
+          "poste": "Posté"
+        }
+      },
+      "wizard": {
+        "previous": "Précédent",
+        "next": "Suivant",
+        "steps": {
+          "identity": "Identité",
+          "civil": "État civil",
+          "address": "Coordonnées",
+          "emergency": "Urgence",
+          "contract": "Contrat"
+        }
       },
       "status": {
         "actif": "Actif",
@@ -209,6 +278,12 @@
       "generate": "Générer la paie",
       "generateHint": "Crée les fiches de paie dues pour les échéanciers configurés (et leur sortie comptable en attente)",
       "generated": "{n} fiche(s) de paie générée(s)",
+      "generateTitle": "Générer la paie",
+      "generateDesc": "Choisissez le mode de génération.",
+      "modeAuto": "Mois courant (auto)",
+      "modeAutoHint": "Respecte les échéanciers : ne génère que si la date de paiement est arrivée et si le mois n'a pas déjà été traité.",
+      "modeTarget": "Période ciblée",
+      "modeTargetHint": "Choisissez un mois/année précis. Ignore le garde-fou de date pour générer en avance ou rattraper un mois manqué. Les fiches déjà existantes pour le même employé/mois ne sont jamais dupliquées.",
       "col": {
         "period": "Période",
         "month": "Mois",

@@ -566,8 +566,12 @@ export function useUpsertEmployeePayConfig() {
 export function useGenerateDuePayslips() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
-      const res = await fetch('/api/hr/generate-payslips', { method: 'POST' });
+    mutationFn: async (params?: { year?: number; month?: number }) => {
+      const res = await fetch('/api/hr/generate-payslips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params ?? {}),
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Génération échouée');
       return json as { generated: Array<{ payslip_id: string; employee_id: string; net_a_payer: number }> };
