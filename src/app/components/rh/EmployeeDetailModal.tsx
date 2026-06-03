@@ -6,14 +6,15 @@ import {
     BadgePercent,
     CalendarDays,
     ClipboardList,
+    History as HistoryIcon,
     Loader2,
     Mail,
     Phone,
     Plus,
+    Printer,
     Receipt,
     Trash2,
     UserCircle2,
-    Wallet,
 } from "lucide-react";
 import Modal from "../Modal";
 import ConfirmDialog from "../ConfirmDialog";
@@ -37,6 +38,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import {
+    useEmployees,
     useDailyReports,
     useLeaveRequests,
     usePayslips,
@@ -45,9 +47,21 @@ import {
     useCreateDeductionOccurrence,
     useDeleteDeductionOccurrence,
 } from "../../lib/hooks/use-hr";
-import type { Employee, DeductionRule } from "../../types/hr";
+import type {
+    Employee,
+    DeductionRule,
+    DailyReport,
+    LeaveRequest,
+    Payslip,
+    DeductionOccurrence,
+} from "../../types/hr";
+import {
+    printEmployeeDossier,
+    type DossierSection,
+    type DossierHistoryRow,
+} from "../../lib/printEmployeeDossier";
 
-type DetailTab = "overview" | "reports" | "leaves" | "payroll" | "deductions";
+type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions";
 
 function fmtMoney(n: number): string {
     return n.toLocaleString("fr-FR") + " FCFA";
@@ -56,6 +70,8 @@ function fmtMoney(n: number): string {
 function monthLabel(m: number): string {
     return ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."][m - 1] ?? `${m}`;
 }
+
+type TFn = (key: string, values?: Record<string, string | number>) => string;
 
 export default function EmployeeDetailModal({
     employee,
@@ -73,6 +89,7 @@ export default function EmployeeDetailModal({
     const t = useTranslations("hrManagement");
     const [tab, setTab] = useState<DetailTab>("overview");
 
+    const employeesQ = useEmployees();
     const reportsQ = useDailyReports();
     const leavesQ = useLeaveRequests();
     const payslipsQ = usePayslips();
@@ -83,12 +100,78 @@ export default function EmployeeDetailModal({
     const leaves = useMemo(() => (leavesQ.data ?? []).filter((l) => l.employee_id === employee?.id), [leavesQ.data, employee]);
     const payslips = useMemo(() => (payslipsQ.data ?? []).filter((p) => p.employee_id === employee?.id), [payslipsQ.data, employee]);
     const occurrences = useMemo(() => (occQ.data ?? []).filter((o) => o.employee_id === employee?.id), [occQ.data, employee]);
+    const rules = rulesQ.data ?? [];
+
+    const supervisorName = useMemo(() => {
+        if (!employee?.superieur_id) return null;
+        const sup = (employeesQ.data ?? []).find((e) => e.id === employee.superieur_id);
+        return sup ? `${sup.prenom} ${sup.nom}` : null;
+    }, [employeesQ.data, employee]);
+
+    const rulesById = useMemo(() => new Map(rules.map((r) => [r.id, r])), [rules]);
 
     const totalHours = reports.reduce((sum, r) => sum + (r.heures_travaillees || 0), 0);
     const approvedLeaves = leaves.filter((l) => l.statut === "approuve").reduce((s, l) => s + l.nb_jours, 0);
     const pendingLeaves = leaves.filter((l) => l.statut === "en_attente").length;
     const totalPaid = payslips.reduce((s, p) => s + p.net_a_payer, 0);
     const totalDeductions = occurrences.reduce((s, o) => s + o.montant, 0);
+
+    const sections = useMemo<DossierSection[]>(
+        () => (employee ? buildProfileSections(employee, supervisorName, t as TFn) : []),
+        [employee, supervisorName, t]
+    );
+
+    const history = useMemo<DossierHistoryRow[]>(
+        () =>
+            employee
+                ? buildHistory(t as TFn, { reports, leaves, payslips, occurrences, rulesById })
+                : [],
+        [employee, t, reports, leaves, payslips, occurrences, rulesById]
+    );
+
+    const stats = useMemo(
+        () => [
+            { label: t("detail.stats.hoursWorked"), value: `${totalHours} h` },
+            { label: t("detail.stats.approvedDays"), value: String(approvedLeaves) },
+            { label: t("detail.stats.pendingLeaves"), value: String(pendingLeaves) },
+            { label: t("detail.stats.totalPaid"), value: fmtMoney(totalPaid) },
+            { label: t("detail.stats.salary"), value: fmtMoney(employee?.salaire_base ?? 0) },
+            { label: t("detail.stats.totalDeductions"), value: fmtMoney(totalDeductions) },
+            { label: t("detail.stats.payslipCount"), value: String(payslips.length) },
+            { label: t("detail.stats.reportCount"), value: String(reports.length) },
+        ],
+        [t, totalHours, approvedLeaves, pendingLeaves, totalPaid, employee, totalDeductions, payslips.length, reports.length]
+    );
+
+    const handlePrint = () => {
+        if (!employee) return;
+        printEmployeeDossier({
+            docTitle: t("detail.print.docTitle"),
+            fullName: `${employee.prenom} ${employee.nom}`,
+            subtitle: employee.poste + (employee.departement ? ` · ${employee.departement}` : ""),
+            matriculeLabel: t("employees.col.matricule"),
+            matricule: employee.matricule ?? "—",
+            statusLabel: t(`employees.status.${employee.statut}`),
+            profileTitle: t("detail.print.profileTitle"),
+            sections,
+            statsTitle: t("detail.print.statsTitle"),
+            stats,
+            notesTitle: t("detail.print.notesTitle"),
+            notes: employee.notes ?? "",
+            historyTitle: t("detail.print.historyTitle"),
+            historyHeaders: {
+                date: t("detail.history.col.date"),
+                type: t("detail.history.col.type"),
+                detail: t("detail.history.col.detail"),
+                amount: t("detail.history.col.amount"),
+            },
+            history,
+            historyEmpty: t("detail.history.empty"),
+            generatedOn: t("detail.print.generatedOn", {
+                date: new Date().toLocaleString("fr-FR"),
+            }),
+        });
+    };
 
     if (!employee) return null;
 
@@ -101,6 +184,14 @@ export default function EmployeeDetailModal({
             size="xl"
         >
             <div className="space-y-4">
+                {/* Toolbar */}
+                <div className="flex justify-end">
+                    <Button size="sm" variant="outline" onClick={handlePrint}>
+                        <Printer className="w-4 h-4 mr-1.5" />
+                        {t("detail.print.button")}
+                    </Button>
+                </div>
+
                 {/* Header info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <InfoCard icon={<UserCircle2 className="w-4 h-4" />} label={t("employees.col.matricule")} value={employee.matricule ?? "—"} />
@@ -113,6 +204,9 @@ export default function EmployeeDetailModal({
                 <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700">
                     <DetailTabBtn active={tab === "overview"} onClick={() => setTab("overview")} icon={<UserCircle2 className="w-4 h-4" />}>
                         {t("detail.tabs.overview")}
+                    </DetailTabBtn>
+                    <DetailTabBtn active={tab === "history"} onClick={() => setTab("history")} icon={<HistoryIcon className="w-4 h-4" />}>
+                        {t("detail.tabs.history")} ({history.length})
                     </DetailTabBtn>
                     <DetailTabBtn active={tab === "reports"} onClick={() => setTab("reports")} icon={<ClipboardList className="w-4 h-4" />}>
                         {t("detail.tabs.reports")} ({reports.length})
@@ -129,15 +223,60 @@ export default function EmployeeDetailModal({
                 </div>
 
                 {tab === "overview" && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <StatBox label={t("detail.stats.hoursWorked")} value={`${totalHours} h`} />
-                        <StatBox label={t("detail.stats.approvedDays")} value={String(approvedLeaves)} />
-                        <StatBox label={t("detail.stats.pendingLeaves")} value={String(pendingLeaves)} />
-                        <StatBox label={t("detail.stats.totalPaid")} value={fmtMoney(totalPaid)} />
-                        <StatBox label={t("detail.stats.salary")} value={fmtMoney(employee.salaire_base)} />
-                        <StatBox label={t("detail.stats.totalDeductions")} value={fmtMoney(totalDeductions)} highlight={totalDeductions > 0} />
-                        <StatBox label={t("detail.stats.payslipCount")} value={String(payslips.length)} />
-                        <StatBox label={t("detail.stats.reportCount")} value={String(reports.length)} />
+                    <div className="space-y-5 max-h-[460px] overflow-auto pr-1">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <StatBox label={t("detail.stats.hoursWorked")} value={`${totalHours} h`} />
+                            <StatBox label={t("detail.stats.approvedDays")} value={String(approvedLeaves)} />
+                            <StatBox label={t("detail.stats.pendingLeaves")} value={String(pendingLeaves)} />
+                            <StatBox label={t("detail.stats.totalPaid")} value={fmtMoney(totalPaid)} />
+                            <StatBox label={t("detail.stats.salary")} value={fmtMoney(employee.salaire_base)} />
+                            <StatBox label={t("detail.stats.totalDeductions")} value={fmtMoney(totalDeductions)} highlight={totalDeductions > 0} />
+                            <StatBox label={t("detail.stats.payslipCount")} value={String(payslips.length)} />
+                            <StatBox label={t("detail.stats.reportCount")} value={String(reports.length)} />
+                        </div>
+
+                        {/* Profil détaillé */}
+                        {sections.map((section) => (
+                            <ProfileSection key={section.title} title={section.title} rows={section.rows} />
+                        ))}
+
+                        {employee.notes && (
+                            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                                <p className="text-xs uppercase tracking-wide text-rose-600 font-semibold mb-1.5">
+                                    {t("detail.print.notesTitle")}
+                                </p>
+                                <p className="text-sm whitespace-pre-wrap">{employee.notes}</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {tab === "history" && (
+                    <div className="max-h-[460px] overflow-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>{t("detail.history.col.date")}</TableHead>
+                                    <TableHead>{t("detail.history.col.type")}</TableHead>
+                                    <TableHead>{t("detail.history.col.detail")}</TableHead>
+                                    <TableHead className="text-right">{t("detail.history.col.amount")}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {history.length === 0 ? (
+                                    <TableRow><TableCell colSpan={4} className="text-center py-6 text-slate-400">{t("detail.history.empty")}</TableCell></TableRow>
+                                ) : (
+                                    history.map((h, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell className="whitespace-nowrap">{h.date}</TableCell>
+                                            <TableCell className="whitespace-nowrap">{h.type}</TableCell>
+                                            <TableCell className="max-w-md truncate" title={h.detail}>{h.detail}</TableCell>
+                                            <TableCell className="text-right whitespace-nowrap">{h.amount}</TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
                     </div>
                 )}
 
@@ -292,6 +431,24 @@ function StatBox({ label, value, highlight }: { label: string; value: string; hi
         <div className={`rounded-lg border px-3 py-2 ${highlight ? "border-rose-300 bg-rose-50 dark:bg-rose-900/20" : "border-slate-200 dark:border-slate-700 bg-white/40 dark:bg-slate-900/40"}`}>
             <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
             <p className="mt-1 text-lg font-semibold">{value}</p>
+        </div>
+    );
+}
+
+function ProfileSection({ title, rows }: { title: string; rows: { label: string; value: string }[] }) {
+    return (
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
+                <p className="text-xs uppercase tracking-wide text-rose-600 font-semibold">{title}</p>
+            </div>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                {rows.map((r) => (
+                    <div key={r.label} className="flex justify-between gap-3 px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <dt className="text-xs text-slate-500 dark:text-slate-400">{r.label}</dt>
+                        <dd className="text-sm font-medium text-right break-words">{r.value}</dd>
+                    </div>
+                ))}
+            </dl>
         </div>
     );
 }
@@ -482,4 +639,148 @@ function DeductionsSection({
             />
         </div>
     );
+}
+
+// ─── Builders profil & historique ───────────────────────────────────────────
+function buildProfileSections(
+    e: Employee,
+    supervisorName: string | null,
+    t: TFn
+): DossierSection[] {
+    const dash = "—";
+    const v = (val: string | number | null | undefined): string =>
+        val === null || val === undefined || val === "" ? dash : String(val);
+    const opt = (prefix: string, key: string | null | undefined): string =>
+        key ? t(`${prefix}.${key}`) : dash;
+
+    const sections: DossierSection[] = [
+        {
+            title: t("detail.sections.identity"),
+            rows: [
+                { label: t("employees.col.matricule"), value: v(e.matricule) },
+                { label: t("employees.col.position"), value: v(e.poste) },
+                { label: t("employees.col.department"), value: v(e.departement) },
+                { label: t("employees.col.status"), value: opt("employees.status", e.statut) },
+                { label: t("employees.col.salary"), value: fmtMoney(e.salaire_base) },
+            ],
+        },
+        {
+            title: t("detail.sections.civil"),
+            rows: [
+                { label: t("employees.form.birthDate"), value: v(e.date_naissance) },
+                { label: t("employees.form.birthPlace"), value: v(e.lieu_naissance) },
+                { label: t("employees.form.sex"), value: opt("employees.form.sexOptions", e.sexe) },
+                { label: t("employees.form.nationality"), value: v(e.nationalite) },
+                { label: t("employees.form.maritalStatus"), value: opt("employees.form.maritalOptions", e.situation_matrimoniale) },
+                { label: t("employees.form.childrenCount"), value: v(e.nombre_enfants) },
+                { label: t("employees.form.idType"), value: opt("employees.form.idTypeOptions", e.type_piece) },
+                { label: t("employees.form.idNumber"), value: v(e.numero_piece) },
+                { label: t("employees.form.idIssuePlace"), value: v(e.lieu_emission_piece) },
+                { label: t("employees.form.idExpiry"), value: v(e.date_expiration_piece) },
+            ],
+        },
+        {
+            title: t("detail.sections.address"),
+            rows: [
+                { label: "Email", value: v(e.email) },
+                { label: t("employees.form.phone"), value: v(e.telephone) },
+                { label: t("employees.form.address"), value: v(e.adresse) },
+                { label: t("employees.form.neighborhood"), value: v(e.quartier) },
+                { label: t("employees.form.city"), value: v(e.ville) },
+                { label: t("employees.form.country"), value: v(e.pays) },
+            ],
+        },
+        {
+            title: t("detail.sections.emergency"),
+            rows: [
+                { label: t("employees.form.emergencyName"), value: v(e.urgence_nom) },
+                { label: t("employees.form.emergencyRelation"), value: v(e.urgence_lien) },
+                { label: t("employees.form.emergencyPhone"), value: v(e.urgence_telephone) },
+                { label: t("employees.form.emergencyEmail"), value: v(e.urgence_email) },
+            ],
+        },
+        {
+            title: t("detail.sections.contract"),
+            rows: [
+                { label: t("employees.form.contractType"), value: opt("employees.form.contractOptions", e.type_contrat) },
+                { label: t("employees.form.scheduleType"), value: opt("employees.form.scheduleOptions", e.type_horaire) },
+                { label: t("employees.col.hiredAt"), value: v(e.date_embauche) },
+                { label: t("employees.form.endDate"), value: v(e.date_fin_contrat) },
+                { label: t("employees.form.probationMonths"), value: v(e.periode_essai_mois) },
+                { label: t("detail.supervisor"), value: v(supervisorName) },
+            ],
+        },
+    ];
+    return sections;
+}
+
+function buildHistory(
+    t: TFn,
+    data: {
+        reports: DailyReport[];
+        leaves: LeaveRequest[];
+        payslips: Payslip[];
+        occurrences: DeductionOccurrence[];
+        rulesById: Map<string, DeductionRule>;
+    }
+): DossierHistoryRow[] {
+    const rows: Array<DossierHistoryRow & { sort: string }> = [];
+
+    for (const r of data.reports) {
+        rows.push({
+            sort: r.date,
+            date: r.date,
+            type: t("detail.history.types.report"),
+            detail: t("detail.history.reportDetail", {
+                hours: r.heures_travaillees,
+                activities: r.activites,
+            }),
+            amount: "",
+        });
+    }
+
+    for (const l of data.leaves) {
+        rows.push({
+            sort: l.date_debut,
+            date: l.date_debut,
+            type: t("detail.history.types.leave"),
+            detail: t("detail.history.leaveDetail", {
+                type: t(`leaves.type.${l.type}`),
+                from: l.date_debut,
+                to: l.date_fin,
+                days: l.nb_jours,
+                status: t(`leaves.status.${l.statut}`),
+            }),
+            amount: "",
+        });
+    }
+
+    for (const p of data.payslips) {
+        const sortDate = p.payment_date ?? `${p.annee}-${String(p.mois).padStart(2, "0")}-01`;
+        rows.push({
+            sort: sortDate,
+            date: p.payment_date ?? `${monthLabel(p.mois)} ${p.annee}`,
+            type: t("detail.history.types.payslip"),
+            detail: t("detail.history.payslipDetail", {
+                period: `${monthLabel(p.mois)} ${p.annee}`,
+                net: fmtMoney(p.net_a_payer),
+            }),
+            amount: fmtMoney(p.net_a_payer),
+        });
+    }
+
+    for (const o of data.occurrences) {
+        const rule = data.rulesById.get(o.rule_id);
+        const label = rule?.label ?? t("detail.history.types.deduction");
+        rows.push({
+            sort: o.date,
+            date: o.date,
+            type: t("detail.history.types.deduction"),
+            detail: o.motif ? `${label} — ${o.motif}` : label,
+            amount: `- ${fmtMoney(o.montant)}`,
+        });
+    }
+
+    rows.sort((a, b) => (a.sort < b.sort ? 1 : a.sort > b.sort ? -1 : 0));
+    return rows.map((r) => ({ date: r.date, type: r.type, detail: r.detail, amount: r.amount }));
 }

@@ -409,6 +409,7 @@
     "detail": {
       "tabs": {
         "overview": "Overview",
+        "history": "History",
         "reports": "Reports",
         "leaves": "Leaves",
         "payroll": "Payroll",
@@ -437,7 +438,44 @@
       "deductionAdded": "Deduction recorded",
       "deductionDeleted": "Deduction deleted",
       "confirmDeleteDeduction": "Delete this deduction?",
-      "confirmDeleteDeductionDesc": "This deduction (not yet on a payslip) will be removed."
+      "confirmDeleteDeductionDesc": "This deduction (not yet on a payslip) will be removed.",
+      "sections": {
+        "identity": "Professional identity",
+        "civil": "Civil status & identity",
+        "address": "Contact details",
+        "emergency": "Emergency contact",
+        "contract": "Contract & employment"
+      },
+      "notProvided": "Not provided",
+      "supervisor": "Line manager",
+      "history": {
+        "title": "Employee history",
+        "empty": "No event recorded for this employee.",
+        "col": {
+          "date": "Date",
+          "type": "Type",
+          "detail": "Detail",
+          "amount": "Amount"
+        },
+        "types": {
+          "report": "Daily report",
+          "leave": "Leave",
+          "payslip": "Payslip",
+          "deduction": "Deduction"
+        },
+        "reportDetail": "{hours} h — {activities}",
+        "leaveDetail": "{type} · {from} → {to} ({days} d) · {status}",
+        "payslipDetail": "Payroll {period} — net {net}"
+      },
+      "print": {
+        "button": "Print dossier",
+        "docTitle": "Employee dossier",
+        "profileTitle": "Detailed profile",
+        "statsTitle": "Summary",
+        "historyTitle": "History",
+        "notesTitle": "Notes",
+        "generatedOn": "Document generated on {date}"
+      }
     }
   },
   "auth": {

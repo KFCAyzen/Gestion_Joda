@@ -409,6 +409,7 @@
     "detail": {
       "tabs": {
         "overview": "Vue d'ensemble",
+        "history": "Historique",
         "reports": "Rapports",
         "leaves": "Congés",
         "payroll": "Paye",
@@ -437,7 +438,44 @@
       "deductionAdded": "Déduction enregistrée",
       "deductionDeleted": "Déduction supprimée",
       "confirmDeleteDeduction": "Supprimer cette déduction ?",
-      "confirmDeleteDeductionDesc": "Cette déduction non encore intégrée à une fiche de paie sera supprimée."
+      "confirmDeleteDeductionDesc": "Cette déduction non encore intégrée à une fiche de paie sera supprimée.",
+      "sections": {
+        "identity": "Identité professionnelle",
+        "civil": "État civil & identité",
+        "address": "Coordonnées",
+        "emergency": "Contact d'urgence",
+        "contract": "Contrat & emploi"
+      },
+      "notProvided": "Non renseigné",
+      "supervisor": "Supérieur hiérarchique",
+      "history": {
+        "title": "Historique de l'employé",
+        "empty": "Aucun événement enregistré pour cet employé.",
+        "col": {
+          "date": "Date",
+          "type": "Type",
+          "detail": "Détail",
+          "amount": "Montant"
+        },
+        "types": {
+          "report": "Rapport journalier",
+          "leave": "Congé",
+          "payslip": "Fiche de paie",
+          "deduction": "Déduction"
+        },
+        "reportDetail": "{hours} h — {activities}",
+        "leaveDetail": "{type} · {from} → {to} ({days} j) · {status}",
+        "payslipDetail": "Paie {period} — net {net}"
+      },
+      "print": {
+        "button": "Imprimer le dossier",
+        "docTitle": "Dossier employé",
+        "profileTitle": "Profil détaillé",
+        "statsTitle": "Synthèse",
+        "historyTitle": "Historique",
+        "notesTitle": "Notes",
+        "generatedOn": "Document généré le {date}"
+      }
     }
   },
   "auth": {
