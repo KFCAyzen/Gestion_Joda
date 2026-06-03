@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { payslipReference } from './payslipRef';
 
 // ─── Company info ────────────────────────────────────────────────────────────
 const COMPANY = {
@@ -588,6 +589,14 @@ export const generatePayslip = async (
   doc.setTextColor(31, 41, 55);
   doc.text('Employé', 15, startY);
 
+  // Référence de la fiche (identifiant lisible et stable)
+  const reference = payslipReference(payslip);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(220, 38, 38);
+  doc.text(`Réf. : ${reference}`, 195, startY, { align: 'right' });
+  doc.setTextColor(31, 41, 55);
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   const empY = startY + 6;
@@ -659,5 +668,5 @@ export const generatePayslip = async (
   doc.text('Signature employeur', 155, sigY + 5, { align: 'center' });
 
   addFooter(doc);
-  doc.save(`Fiche_paie_${employee.nom}_${moisLabel}_${payslip.annee}.pdf`);
+  doc.save(`Fiche_paie_${reference}_${employee.nom}.pdf`);
 };

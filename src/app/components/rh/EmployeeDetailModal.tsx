@@ -68,6 +68,7 @@ import {
 import { printEmployeeReports } from "../../lib/printEmployeeReports";
 import { printEmployeeEvaluation } from "../../lib/printEmployeeEvaluation";
 import { printEmployeeAnnualReport } from "../../lib/printEmployeeAnnualReport";
+import { payslipReference } from "../../lib/payslipRef";
 import { EVAL_CRITERIA, fmtNote, overallAverage } from "../../lib/hrEvaluation";
 
 type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions" | "evaluations" | "annual";
@@ -631,6 +632,7 @@ export default function EmployeeDetailModal({
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>{t("payroll.col.reference")}</TableHead>
                                     <TableHead>{t("payroll.col.period")}</TableHead>
                                     <TableHead>{t("payroll.col.base")}</TableHead>
                                     <TableHead>{t("payroll.col.bonus")}</TableHead>
@@ -641,10 +643,11 @@ export default function EmployeeDetailModal({
                             </TableHeader>
                             <TableBody>
                                 {payslips.length === 0 ? (
-                                    <TableRow><TableCell colSpan={6} className="text-center py-6 text-slate-400">{t("payroll.empty")}</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={7} className="text-center py-6 text-slate-400">{t("payroll.empty")}</TableCell></TableRow>
                                 ) : (
                                     payslips.map((p) => (
                                         <TableRow key={p.id}>
+                                            <TableCell className="font-mono text-xs text-gray-600">{payslipReference(p)}</TableCell>
                                             <TableCell>{monthLabel(p.mois)} {p.annee}</TableCell>
                                             <TableCell>{fmtMoney(p.salaire_base)}</TableCell>
                                             <TableCell>{fmtMoney(p.primes)}</TableCell>

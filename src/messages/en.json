@@ -307,6 +307,7 @@
       "modeTarget": "Targeted period",
       "modeTargetHint": "Pick a specific month/year. Bypasses the date guard so you can generate ahead of time or back-fill a missed month. Existing payslips for the same employee/month are never duplicated.",
       "col": {
+        "reference": "Ref.",
         "period": "Period",
         "month": "Month",
         "year": "Year",

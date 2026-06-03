@@ -307,6 +307,7 @@
       "modeTarget": "Période ciblée",
       "modeTargetHint": "Choisissez un mois/année précis. Ignore le garde-fou de date pour générer en avance ou rattraper un mois manqué. Les fiches déjà existantes pour le même employé/mois ne sont jamais dupliquées.",
       "col": {
+        "reference": "Réf.",
         "period": "Période",
         "month": "Mois",
         "year": "Année",

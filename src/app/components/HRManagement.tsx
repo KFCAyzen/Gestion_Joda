@@ -83,6 +83,7 @@ import {
 import HRConfigPanel from "./rh/HRConfigPanel";
 import EmployeeDetailModal from "./rh/EmployeeDetailModal";
 import { printEmployeesReport } from "../lib/printEmployeesReport";
+import { payslipReference } from "../lib/payslipRef";
 import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../lib/hrEvaluation";
 import type {
     Employee,
@@ -2149,6 +2150,7 @@ function PayrollPanel({
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>{t("payroll.col.reference")}</TableHead>
                             <TableHead>{t("leaves.col.employee")}</TableHead>
                             <TableHead>{t("payroll.col.period")}</TableHead>
                             <TableHead>{t("payroll.col.base")}</TableHead>
@@ -2162,12 +2164,13 @@ function PayrollPanel({
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <LoadingRow cols={9} />
+                            <LoadingRow cols={10} />
                         ) : payslips.length === 0 ? (
-                            <EmptyRow cols={9} label={t("payroll.empty")} />
+                            <EmptyRow cols={10} label={t("payroll.empty")} />
                         ) : (
                             payslips.map((p) => (
                                 <TableRow key={p.id}>
+                                    <TableCell className="font-mono text-xs text-gray-600">{payslipReference(p)}</TableCell>
                                     <TableCell>{employeesById.get(p.employee_id)?.prenom} {employeesById.get(p.employee_id)?.nom ?? "—"}</TableCell>
                                     <TableCell>
                                         {monthLabel(p.mois)} {p.annee}
