@@ -117,11 +117,12 @@ export async function downloadReceipt(
             <div class="company-sub">Travel consulting and assistance company — Study scholarships in China</div>
             <div class="company-info">
               220 Handan Road, Yangpu District, Shanghai 200433 — People's Republic of China<br>
-              Email : contact@joda-company.com &nbsp;|&nbsp; Tel : +86 180 5289 2460 / +86 183 0187 0211
+              Email : contact@joda-company.com &nbsp;|&nbsp; Tel : +86 180 5289 2460 / +86 183 0187 0211<br>
+              NIU : M022517611037A
             </div>`
         : `<div class="company-name">JODA COMPANY</div>
             <div class="company-sub">Entreprise de conseil et assistance voyage — Bourse d'étude en Chine</div>
-            <div class="company-info">BP 2525 Douala Makepe entrée Marie Lumière &nbsp;|&nbsp; contact@joda-company.com</div>`;
+            <div class="company-info">BP 2525 Douala Makepe entrée Marie Lumière &nbsp;|&nbsp; contact@joda-company.com &nbsp;|&nbsp; NIU : M022517611037A</div>`;
 
     const quittance = (copy: 'ORIGINAL' | 'DUPLICATA') => `
     <div class="quittance">

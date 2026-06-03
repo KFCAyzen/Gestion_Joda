@@ -163,7 +163,8 @@ export default function ReceiptGenerator({ payment, student, onClose }: ReceiptG
                           <div class="company-tagline">Entreprise de conseil et assistance voyage — Bourse d'étude en Chine</div>
                           <div class="company-info">
                             BP 2525 Douala Makepe entrée Marie Lumière<br>
-                            Email : contact@joda-company.com
+                            Email : contact@joda-company.com<br>
+                            NIU : M022517611037A
                           </div>
                         </td>
                       </tr>

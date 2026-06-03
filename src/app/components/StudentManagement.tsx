@@ -184,6 +184,7 @@ export default function StudentManagement() {
       <div>
         <div class="brand-name">JODA COMPANY</div>
         <div class="brand-sub">Gestion de Bourses &amp; Cours de Langue — Douala, Cameroun</div>
+        <div class="brand-sub">NIU : M022517611037A</div>
       </div>
     </div>
     <div class="header-doc">

@@ -28,6 +28,7 @@ export interface EmployeeReportsData {
 const COMPANY = {
   name: "JODA COMPANY",
   tagline: "Gestion des bourses d'études en Chine",
+  niu: "M022517611037A",
 };
 
 function esc(value: string): string {
@@ -194,6 +195,7 @@ export function printEmployeeReports(data: EmployeeReportsData): void {
     <div>
       <div class="company-name">${esc(COMPANY.name)}</div>
       <div class="company-tag">${esc(COMPANY.tagline)}</div>
+      <div class="company-tag">NIU : ${esc(COMPANY.niu)}</div>
     </div>
     <div class="doc-meta">
       <div class="doc-title">${esc(data.docTitle)}</div>

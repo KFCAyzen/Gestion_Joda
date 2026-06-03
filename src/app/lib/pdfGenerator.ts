@@ -249,6 +249,7 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   doc.setTextColor(...DARK);
   doc.text(`Tel.    : ${COMPANY.phone}`,   marginL,        29);
   doc.text(`Web     : ${COMPANY.website}`, marginL + colW, 29);
+  if (COMPANY.nui) doc.text(`NIU     : ${COMPANY.nui}`, marginL + 2 * colW, 29);
 
   // ── Titre du document — sous le bandeau
   const titleY = headerH + 11;
