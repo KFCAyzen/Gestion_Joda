@@ -5,14 +5,14 @@ import { computeCameroonPayroll } from './cameroonPayroll';
 
 // ─── Company info ────────────────────────────────────────────────────────────
 const COMPANY = {
-  name:    'JODA COMPANY',
+  name:    'JODA COMPANY SARL',
   tagline: "Gestion des bourses d'études en Chine",
   phone:   '+237 6 59 19 92 16',
   website: 'joda-company.com',
   email:   'jodacompany2@gmail.com',
-  address: 'Makepe entrée Marie lumière, Douala',
+  address: 'BP 2525, Makepé entrée Marie Lumière, Douala',
   // Identifiants légaux employeur — à renseigner pour figurer sur les bulletins de paie.
-  nui:     '',
+  nui:     'M022517611037A',
   cnps:    '',
   rccm:    '',
 };
