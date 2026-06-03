@@ -671,6 +671,7 @@ function buildProfileSections(
                 { label: t("employees.form.birthPlace"), value: v(e.lieu_naissance) },
                 { label: t("employees.form.sex"), value: opt("employees.form.sexOptions", e.sexe) },
                 { label: t("employees.form.nationality"), value: v(e.nationalite) },
+                { label: t("employees.form.preferredLanguage"), value: opt("employees.form.languageOptions", e.langue_preferee) },
                 { label: t("employees.form.maritalStatus"), value: opt("employees.form.maritalOptions", e.situation_matrimoniale) },
                 { label: t("employees.form.childrenCount"), value: v(e.nombre_enfants) },
                 { label: t("employees.form.idType"), value: opt("employees.form.idTypeOptions", e.type_piece) },

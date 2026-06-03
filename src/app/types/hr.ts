@@ -16,6 +16,13 @@ export type TypeContrat =
   | 'interim'
   | 'temps_partiel';
 export type TypeHoraire = 'temps_plein' | 'temps_partiel' | 'flexible' | 'poste';
+export type LanguePreferee =
+  | 'francais'
+  | 'anglais'
+  | 'chinois'
+  | 'espagnol'
+  | 'arabe'
+  | 'autre';
 
 export type LeaveType =
   | 'annuel'
@@ -47,6 +54,7 @@ export interface Employee {
   lieu_naissance: string | null;
   sexe: Sexe | null;
   nationalite: string | null;
+  langue_preferee: LanguePreferee | null;
   situation_matrimoniale: SituationMatrimoniale | null;
   nombre_enfants: number | null;
   type_piece: TypePiece | null;

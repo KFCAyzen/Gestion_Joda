@@ -148,6 +148,15 @@
           "autre": "Other"
         },
         "nationality": "Nationality",
+        "preferredLanguage": "Preferred language",
+        "languageOptions": {
+          "francais": "French",
+          "anglais": "English",
+          "chinois": "Chinese (Mandarin)",
+          "espagnol": "Spanish",
+          "arabe": "Arabic",
+          "autre": "Other"
+        },
         "maritalStatus": "Marital status",
         "maritalOptions": {
           "celibataire": "Single",

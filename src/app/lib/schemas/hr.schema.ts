@@ -20,6 +20,14 @@ export const typeContratEnum = z.enum([
   'temps_partiel',
 ]);
 export const typeHoraireEnum = z.enum(['temps_plein', 'temps_partiel', 'flexible', 'poste']);
+export const languePrefereeEnum = z.enum([
+  'francais',
+  'anglais',
+  'chinois',
+  'espagnol',
+  'arabe',
+  'autre',
+]);
 
 const nullableString = z.string().nullable().optional().or(z.literal(''));
 const nullableDate = z.string().nullable().optional().or(z.literal(''));
@@ -55,6 +63,7 @@ export const employeeSchema = z.object({
   lieu_naissance: nullableString,
   sexe: sexeEnum.nullable().optional(),
   nationalite: nullableString,
+  langue_preferee: languePrefereeEnum.nullable().optional(),
   situation_matrimoniale: situationMatrimonialeEnum.nullable().optional(),
   nombre_enfants: z.number().int().min(0).nullable().optional(),
   type_piece: typePieceEnum.nullable().optional(),

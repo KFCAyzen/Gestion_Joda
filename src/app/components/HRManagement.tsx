@@ -336,6 +336,14 @@ type EmployeeFormState = {
     lieu_naissance: string;
     sexe: "" | "M" | "F" | "autre";
     nationalite: string;
+    langue_preferee:
+        | ""
+        | "francais"
+        | "anglais"
+        | "chinois"
+        | "espagnol"
+        | "arabe"
+        | "autre";
     situation_matrimoniale:
         | ""
         | "celibataire"
@@ -384,6 +392,7 @@ const emptyEmployeeForm: EmployeeFormState = {
     lieu_naissance: "",
     sexe: "",
     nationalite: "",
+    langue_preferee: "",
     situation_matrimoniale: "",
     nombre_enfants: "0",
     type_piece: "",
@@ -528,6 +537,7 @@ function EmployeesPanel({
             lieu_naissance: e.lieu_naissance ?? "",
             sexe: e.sexe ?? "",
             nationalite: e.nationalite ?? "",
+            langue_preferee: e.langue_preferee ?? "",
             situation_matrimoniale: e.situation_matrimoniale ?? "",
             nombre_enfants: e.nombre_enfants != null ? String(e.nombre_enfants) : "0",
             type_piece: e.type_piece ?? "",
@@ -571,6 +581,7 @@ function EmployeesPanel({
                 lieu_naissance: form.lieu_naissance.trim() || null,
                 sexe: form.sexe || null,
                 nationalite: form.nationalite.trim() || null,
+                langue_preferee: form.langue_preferee || null,
                 situation_matrimoniale: form.situation_matrimoniale || null,
                 nombre_enfants: parseInt(form.nombre_enfants || "0", 10) || 0,
                 type_piece: form.type_piece || null,
@@ -831,6 +842,14 @@ const CONTRAT_OPTIONS = [
     "temps_partiel",
 ] as const;
 const HORAIRE_OPTIONS = ["temps_plein", "temps_partiel", "flexible", "poste"] as const;
+const LANGUE_OPTIONS = [
+    "francais",
+    "anglais",
+    "chinois",
+    "espagnol",
+    "arabe",
+    "autre",
+] as const;
 
 function EmployeeWizard({
     form,
@@ -1079,6 +1098,28 @@ function StepCivil({
                     value={form.nationalite}
                     onChange={(e) => setForm((f) => ({ ...f, nationalite: e.target.value }))}
                 />
+            </Field>
+            <Field label={t("employees.form.preferredLanguage")}>
+                <Select
+                    value={form.langue_preferee || undefined}
+                    onValueChange={(v) =>
+                        setForm((f) => ({
+                            ...f,
+                            langue_preferee: ((v as typeof f.langue_preferee) ?? "") || "",
+                        }))
+                    }
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder={t("employees.form.choose")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {LANGUE_OPTIONS.map((l) => (
+                            <SelectItem key={l} value={l}>
+                                {t(`employees.form.languageOptions.${l}`)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </Field>
             <Field label={t("employees.form.maritalStatus")}>
                 <Select
