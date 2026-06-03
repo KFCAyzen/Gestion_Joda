@@ -147,22 +147,9 @@ export function useSendChatMessage(userId: string) {
       faqId?: string;
       locale?: string;
     }): Promise<ChatMessage | null> => {
-      // Si FAQ : toujours passer par l'API route pour déclencher la réponse ciblée
-      if (!faqId && agentUserId) {
-        const { data, error } = await supabase
-          .from('messages')
-          .insert({
-            from_user_id: userId,
-            to_user_id: agentUserId,
-            subject: 'Réponse étudiant',
-            content,
-            read: false,
-          })
-          .select()
-          .single();
-        if (error) throw error;
-        return data as ChatMessage;
-      }
+      // Tous les messages passent par l'API route : elle notifie le staff
+      // ET déclenche la réponse automatique (FAQ ciblée ou détection sur message libre).
+      // agentUserId permet de cibler l'agent actif sans rediffuser à tout le staff.
       const res = await fetch('/api/student-send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -171,6 +158,7 @@ export function useSendChatMessage(userId: string) {
           content,
           faq_id: faqId ?? null,
           locale: locale ?? 'fr',
+          agent_user_id: agentUserId ?? null,
         }),
       });
       if (!res.ok) throw new Error('Erreur envoi message');
