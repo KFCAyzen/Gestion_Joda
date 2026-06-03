@@ -77,6 +77,8 @@ export interface Employee {
   periode_essai_mois: number | null;
   superieur_id: string | null;
   type_horaire: TypeHoraire | null;
+  // Identifiant social (paie)
+  numero_cnps: string | null;
   created_at: string;
   updated_at: string;
 }

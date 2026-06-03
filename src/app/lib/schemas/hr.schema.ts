@@ -86,6 +86,8 @@ export const employeeSchema = z.object({
   periode_essai_mois: z.number().int().min(0).nullable().optional(),
   superieur_id: z.string().uuid().nullable().optional(),
   type_horaire: typeHoraireEnum.nullable().optional(),
+  // Identifiant social (paie)
+  numero_cnps: nullableString,
   created_at: z.string(),
   updated_at: z.string(),
 });

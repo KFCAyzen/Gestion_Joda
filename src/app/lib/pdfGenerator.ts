@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { payslipReference } from './payslipRef';
+import { computeCameroonPayroll } from './cameroonPayroll';
 
 // ─── Company info ────────────────────────────────────────────────────────────
 const COMPANY = {
@@ -10,7 +11,10 @@ const COMPANY = {
   website: 'joda-company.com',
   email:   'jodacompany2@gmail.com',
   address: 'Makepe entrée Marie lumière, Douala',
+  // Identifiants légaux employeur — à renseigner pour figurer sur les bulletins de paie.
   nui:     '',
+  cnps:    '',
+  rccm:    '',
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -558,6 +562,7 @@ interface PayslipPdfData {
   jours_absences: number;
   net_a_payer: number;
   notes?: string | null;
+  payment_date?: string | null;
 }
 
 interface PayslipEmployeeData {
@@ -567,12 +572,107 @@ interface PayslipEmployeeData {
   poste: string;
   departement?: string | null;
   date_embauche: string;
+  // Champs enrichis (optionnels — l'appelant passe l'objet Employee complet)
+  numero_cnps?: string | null;
+  situation_matrimoniale?: 'celibataire' | 'marie' | 'divorce' | 'veuf' | 'union_libre' | null;
+  nombre_enfants?: number | null;
+  type_piece?: 'cni' | 'passeport' | 'permis' | 'recepisse' | 'autre' | null;
+  numero_piece?: string | null;
+  type_contrat?: 'cdi' | 'cdd' | 'stage' | 'consultant' | 'interim' | 'temps_partiel' | null;
+  type_horaire?: 'temps_plein' | 'temps_partiel' | 'flexible' | 'poste' | null;
+  date_fin_contrat?: string | null;
 }
 
 const MOIS_FR = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
+
+const SITUATION_FR: Record<string, string> = {
+  celibataire: 'Célibataire', marie: 'Marié(e)', divorce: 'Divorcé(e)',
+  veuf: 'Veuf(ve)', union_libre: 'Union libre',
+};
+const CONTRAT_FR: Record<string, string> = {
+  cdi: 'CDI', cdd: 'CDD', stage: 'Stage', consultant: 'Consultant',
+  interim: 'Intérim', temps_partiel: 'Temps partiel',
+};
+const HORAIRE_FR: Record<string, string> = {
+  temps_plein: 'Temps plein', temps_partiel: 'Temps partiel',
+  flexible: 'Flexible', poste: 'Posté',
+};
+const PIECE_FR: Record<string, string> = {
+  cni: 'CNI', passeport: 'Passeport', permis: 'Permis',
+  recepisse: 'Récépissé', autre: 'Autre',
+};
+
+// Ancienneté (« X an(s) Y mois ») depuis la date d'embauche jusqu'à aujourd'hui.
+function computeSeniority(dateEmbauche: string): string {
+  const start = new Date(dateEmbauche);
+  if (isNaN(start.getTime())) return '';
+  const now = new Date();
+  let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  if (now.getDate() < start.getDate()) months -= 1;
+  if (months < 0) months = 0;
+  const years = Math.floor(months / 12);
+  const rem = months % 12;
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} an${years > 1 ? 's' : ''}`);
+  if (rem > 0) parts.push(`${rem} mois`);
+  return parts.length ? parts.join(' ') : 'moins d\'un mois';
+}
+
+// Montant entier converti en toutes lettres (français) — mention obligatoire d'un bulletin.
+function numberToFrenchWords(value: number): string {
+  let n = Math.round(value);
+  if (n === 0) return 'zéro';
+  if (n < 0) return 'moins ' + numberToFrenchWords(-n);
+
+  const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf',
+    'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+  const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+
+  const below1000 = (num: number): string => {
+    let str = '';
+    const h = Math.floor(num / 100);
+    const rest = num % 100;
+    if (h > 0) {
+      if (h > 1) str += units[h] + ' ';
+      str += 'cent';
+      if (h > 1 && rest === 0) str += 's';
+      if (rest > 0) str += ' ';
+    }
+    if (rest > 0) {
+      if (rest < 20) {
+        str += units[rest];
+      } else {
+        const t = Math.floor(rest / 10);
+        const u = rest % 10;
+        if (t === 7 || t === 9) {
+          str += tens[t];
+          str += (t === 7 && u === 1) ? ' et onze' : '-' + units[10 + u];
+        } else {
+          str += tens[t];
+          if (u === 1 && t !== 8) str += ' et un';
+          else if (u > 0) str += '-' + units[u];
+          else if (t === 8) str += 's';
+        }
+      }
+    }
+    return str.trim();
+  };
+
+  const milliards = Math.floor(n / 1_000_000_000);
+  const millions = Math.floor((n % 1_000_000_000) / 1_000_000);
+  const milliers = Math.floor((n % 1_000_000) / 1000);
+  const reste = n % 1000;
+
+  let out = '';
+  if (milliards > 0) out += (milliards > 1 ? below1000(milliards) + ' ' : 'un ') + 'milliard' + (milliards > 1 ? 's ' : ' ');
+  if (millions > 0) out += (millions > 1 ? below1000(millions) + ' ' : 'un ') + 'million' + (millions > 1 ? 's ' : ' ');
+  if (milliers > 0) out += (milliers > 1 ? below1000(milliers) + ' ' : '') + 'mille ';
+  if (reste > 0) out += below1000(reste);
+  return out.trim();
+}
 
 export const generatePayslip = async (
   payslip: PayslipPdfData,
@@ -583,59 +683,185 @@ export const generatePayslip = async (
   const moisLabel = MOIS_FR[payslip.mois - 1] ?? String(payslip.mois);
   const startY = addHeader(doc, `FICHE DE PAIE — ${moisLabel.toUpperCase()} ${payslip.annee}`, logo);
 
-  // Bloc employé
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(31, 41, 55);
-  doc.text('Employé', 15, startY);
-
-  // Référence de la fiche (identifiant lisible et stable)
   const reference = payslipReference(payslip);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(220, 38, 38);
-  doc.text(`Réf. : ${reference}`, 195, startY, { align: 'right' });
-  doc.setTextColor(31, 41, 55);
 
+  // Formatage des nombres pour les colonnes (séparateur d'espace, sans suffixe).
+  const fmtNum = (v: number): string =>
+    Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+  // ── Bandeau d'identification : Réf. + Période + Date de paiement
+  const headBandY = startY - 4;
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(15, headBandY, 180, 9, 1.5, 1.5, 'FD');
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  const empY = startY + 6;
-  doc.text(`Nom complet : ${employee.prenom} ${employee.nom}`, 15, empY);
-  doc.text(`Poste       : ${employee.poste}`, 15, empY + 5);
-  if (employee.departement) {
-    doc.text(`Département : ${employee.departement}`, 15, empY + 10);
-  }
-  if (employee.matricule) {
-    doc.text(`Matricule   : ${employee.matricule}`, 120, empY);
-  }
-  doc.text(`Embauché le : ${formatDate(employee.date_embauche)}`, 120, empY + 5);
+  doc.setTextColor(107, 114, 128);
+  doc.text('Référence', 19, headBandY + 3.5);
+  doc.text('Période de paie', 86, headBandY + 3.5);
+  doc.text('Date de paiement', 150, headBandY + 3.5);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(31, 41, 55);
+  doc.text(reference, 19, headBandY + 7);
+  doc.text(`${moisLabel} ${payslip.annee}`, 86, headBandY + 7);
+  doc.text(payslip.payment_date ? formatDate(payslip.payment_date) : '—', 150, headBandY + 7);
 
-  // Tableau récap
-  const tableY = empY + 22;
+  // ── Identité de l'employé (colonnes Employé / Emploi)
+  const employeeLines: Array<[string, string]> = [];
+  const emp = (label: string, value: string | null | undefined) => {
+    if (value != null && String(value).trim() !== '') employeeLines.push([label, String(value)]);
+  };
+  emp('Nom & prénom', `${employee.prenom} ${employee.nom}`);
+  emp('Matricule', employee.matricule);
+  emp('N° CNPS', employee.numero_cnps);
+  if (employee.situation_matrimoniale) {
+    const enf = employee.nombre_enfants ? ` — ${employee.nombre_enfants} enfant(s)` : '';
+    emp('Situation familiale', `${SITUATION_FR[employee.situation_matrimoniale] ?? ''}${enf}`);
+  }
+  if (employee.numero_piece) {
+    const tp = employee.type_piece ? `${PIECE_FR[employee.type_piece] ?? ''} ` : '';
+    emp('Pièce d\'identité', `${tp}${employee.numero_piece}`);
+  }
+
+  const jobLines: Array<[string, string]> = [];
+  const job = (label: string, value: string | null | undefined) => {
+    if (value != null && String(value).trim() !== '') jobLines.push([label, String(value)]);
+  };
+  job('Poste', employee.poste);
+  job('Département', employee.departement);
+  job('Type de contrat', employee.type_contrat ? CONTRAT_FR[employee.type_contrat] : null);
+  job('Type d\'horaire', employee.type_horaire ? HORAIRE_FR[employee.type_horaire] : null);
+  job('Date d\'embauche', formatDate(employee.date_embauche));
+  job('Ancienneté', computeSeniority(employee.date_embauche));
+  if (employee.date_fin_contrat) job('Fin de contrat', formatDate(employee.date_fin_contrat));
+
+  const idRows: any[] = [];
+  const maxLen = Math.max(employeeLines.length, jobLines.length);
+  for (let i = 0; i < maxLen; i++) {
+    const l = employeeLines[i] ?? ['', ''];
+    const r = jobLines[i] ?? ['', ''];
+    idRows.push([
+      { content: l[0], styles: { fontStyle: 'bold', textColor: [107, 114, 128] } },
+      l[1],
+      { content: r[0], styles: { fontStyle: 'bold', textColor: [107, 114, 128] } },
+      r[1],
+    ]);
+  }
+
+  // Identifiants légaux employeur (affichés seulement si renseignés)
+  let idTableY = headBandY + 13;
+  const employerLegal = [
+    COMPANY.nui && `NUI : ${COMPANY.nui}`,
+    COMPANY.cnps && `N° CNPS employeur : ${COMPANY.cnps}`,
+    COMPANY.rccm && `RCCM : ${COMPANY.rccm}`,
+  ].filter(Boolean).join('      ');
+  if (employerLegal) {
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(107, 114, 128);
+    doc.text(employerLegal, 15, headBandY + 12.5);
+    idTableY = headBandY + 16;
+  }
+
   autoTable(doc, {
-    startY: tableY,
-    head: [['Désignation', 'Montant (FCFA)']],
-    body: [
-      ['Salaire de base', formatCurrency(payslip.salaire_base)],
-      ['Primes', formatCurrency(payslip.primes)],
-      ['Retenues', `- ${formatCurrency(payslip.deductions)}`],
-      [`Jours d'absence (${payslip.jours_absences} j)`,
-       `- ${formatCurrency(Math.round(payslip.salaire_base / 30) * payslip.jours_absences)}`],
-    ],
-    theme: 'striped',
+    startY: idTableY,
+    head: [[
+      { content: 'EMPLOYÉ', colSpan: 2 },
+      { content: 'EMPLOI', colSpan: 2 },
+    ]],
+    body: idRows,
+    theme: 'grid',
     headStyles: {
-      fillColor: [220, 38, 38],
-      textColor: 255,
-      fontStyle: 'bold',
-      fontSize: 10,
+      fillColor: [243, 244, 246], textColor: [55, 65, 81],
+      fontStyle: 'bold', fontSize: 8, halign: 'left',
     },
-    styles: { fontSize: 9.5, cellPadding: 3.5 },
-    columnStyles: { 1: { halign: 'right' } },
+    styles: {
+      fontSize: 8, cellPadding: 1.6, textColor: [31, 41, 55],
+      lineColor: [226, 232, 240], lineWidth: 0.1,
+    },
+    columnStyles: {
+      0: { cellWidth: 30 }, 1: { cellWidth: 60 },
+      2: { cellWidth: 30 }, 3: { cellWidth: 60 },
+    },
     margin: { left: 15, right: 15 },
   });
 
-  // Net à payer
-  const netY = ((doc as any).lastAutoTable?.finalY ?? tableY + 40) + 10;
+  // ── Détail de la rémunération : ventilation légale (CNPS + impôts sur salaire)
+  const pr = computeCameroonPayroll({
+    salaireBase: payslip.salaire_base,
+    primes: payslip.primes,
+    joursAbsences: payslip.jours_absences,
+    autresRetenues: payslip.deductions,
+  });
+  const base = payslip.salaire_base;
+  const primes = payslip.primes;
+  const pct = (v: number) => v.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' %';
+
+  type Cell = { content: string; styles?: Record<string, unknown> };
+  const subtotalStyle = { fontStyle: 'bold', fillColor: [243, 244, 246] };
+  const subRow = (label: string, col: 3 | 4, val: number): Cell[] => [
+    { content: label, styles: subtotalStyle },
+    { content: '', styles: subtotalStyle },
+    { content: '', styles: subtotalStyle },
+    { content: col === 3 ? fmtNum(val) : '', styles: subtotalStyle },
+    { content: col === 4 ? fmtNum(val) : '', styles: subtotalStyle },
+  ];
+  const gain = (label: string, baseCol: string, val: number): Cell[] => [
+    { content: label }, { content: baseCol }, { content: '' }, { content: fmtNum(val) }, { content: '' },
+  ];
+  const ret = (label: string, baseCol: string, taux: string, val: number): Cell[] => [
+    { content: label }, { content: baseCol }, { content: taux }, { content: '' }, { content: fmtNum(val) },
+  ];
+
+  const payBody: Cell[][] = [];
+  payBody.push(gain('Salaire de base', fmtNum(base), base));
+  if (primes > 0) payBody.push(gain('Primes et indemnités', '', primes));
+  payBody.push(subRow('SALAIRE BRUT', 3, pr.brut));
+  payBody.push(ret('CNPS — Pension (PVID)', fmtNum(Math.min(pr.brut, 750000)), pct(4.2), pr.pvid));
+  payBody.push(ret('Crédit Foncier (CFC)', fmtNum(pr.brut), pct(1), pr.cfc));
+  payBody.push(ret('IRPP', '', 'barème', pr.irpp));
+  payBody.push(ret('CAC (sur IRPP)', fmtNum(pr.irpp), pct(10), pr.cac));
+  payBody.push(ret('Redevance audiovisuelle (RAV)', '', 'barème', pr.rav));
+  payBody.push(ret('Taxe de dév. local (TDL)', '', 'barème', pr.tdl));
+  if (pr.absenceDeduction > 0) payBody.push(ret(`Absences (${payslip.jours_absences} j)`, '', '', pr.absenceDeduction));
+  if (pr.autresRetenues > 0) payBody.push(ret('Retenues diverses', '', '', pr.autresRetenues));
+  payBody.push(subRow('TOTAL DES RETENUES', 4, pr.totalRetenues));
+
+  const payTitleY = ((doc as any).lastAutoTable?.finalY ?? startY + 40) + 7;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(31, 41, 55);
+  doc.text('DÉTAIL DE LA RÉMUNÉRATION', 15, payTitleY);
+  autoTable(doc, {
+    startY: payTitleY + 3,
+    head: [['Rubrique', 'Base', 'Taux', 'Gains', 'Retenues']],
+    body: payBody as any,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [220, 38, 38], textColor: 255, fontStyle: 'bold',
+      fontSize: 8, halign: 'right',
+    },
+    styles: {
+      fontSize: 8.5, cellPadding: 2.2, textColor: [31, 41, 55],
+      lineColor: [226, 232, 240], lineWidth: 0.1,
+    },
+    columnStyles: {
+      0: { cellWidth: 64, halign: 'left' },
+      1: { cellWidth: 30, halign: 'right' },
+      2: { cellWidth: 20, halign: 'right' },
+      3: { cellWidth: 33, halign: 'right' },
+      4: { cellWidth: 33, halign: 'right' },
+    },
+    margin: { left: 15, right: 15 },
+    didParseCell: (data: any) => {
+      if (data.section === 'head' && data.column.index === 0) data.cell.styles.halign = 'left';
+    },
+  });
+
+  // ── Net à payer (cohérent avec la ventilation : brut − total retenues)
+  const netY = ((doc as any).lastAutoTable?.finalY ?? payTitleY + 40) + 8;
   doc.setFillColor(254, 242, 242);
   doc.roundedRect(15, netY, 180, 14, 2, 2, 'F');
   doc.setFontSize(11);
@@ -643,29 +869,60 @@ export const generatePayslip = async (
   doc.setTextColor(31, 41, 55);
   doc.text('NET À PAYER', 20, netY + 9);
   doc.setTextColor(220, 38, 38);
-  doc.text(formatCurrency(payslip.net_a_payer), 190, netY + 9, { align: 'right' });
+  doc.text(formatCurrency(pr.netAPayer), 190, netY + 9, { align: 'right' });
 
-  // Notes
+  // ── Montant en toutes lettres
+  doc.setTextColor(75, 85, 99);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'italic');
+  const enLettres = `Arrêté le présent bulletin à la somme de : ${numberToFrenchWords(pr.netAPayer)} francs CFA.`;
+  const lettresSplit = doc.splitTextToSize(enLettres, 180);
+  doc.text(lettresSplit, 15, netY + 20);
+  let contentEndY = netY + 20 + lettresSplit.length * 4.5;
+
+  // ── Charges patronales (à titre indicatif)
+  doc.setTextColor(107, 114, 128);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  const chargesLine =
+    `Charges patronales (indicatif) : PVID ${fmtNum(pr.employer.pvid)} · Prest. familiales ${fmtNum(pr.employer.prestationsFamiliales)} · ` +
+    `Risques pro ${fmtNum(pr.employer.risquesPro)} · CFC ${fmtNum(pr.employer.cfc)} · FNE ${fmtNum(pr.employer.fne)} = ${fmtNum(pr.employer.total)} FCFA. ` +
+    `Coût total employeur : ${fmtNum(pr.coutTotalEmployeur)} FCFA.`;
+  const chargesSplit = doc.splitTextToSize(chargesLine, 180);
+  doc.text(chargesSplit, 15, contentEndY + 1);
+  contentEndY = contentEndY + 1 + chargesSplit.length * 3.6;
+
+  // ── Notes
   if (payslip.notes) {
     doc.setTextColor(31, 41, 55);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('Notes', 15, netY + 24);
+    doc.text('Observations', 15, contentEndY + 4);
     doc.setFont('helvetica', 'normal');
     const split = doc.splitTextToSize(payslip.notes, 180);
-    doc.text(split, 15, netY + 30);
+    doc.text(split, 15, contentEndY + 9);
+    contentEndY = contentEndY + 9 + split.length * 4.5;
   }
 
-  // Signatures
-  const sigY = 240;
+  // ── Signatures — position dynamique, sans chevaucher le contenu
+  const sigY = Math.min(Math.max(contentEndY + 18, 235), 262);
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.3);
   doc.line(25, sigY, 85, sigY);
   doc.line(125, sigY, 185, sigY);
   doc.setFontSize(8.5);
   doc.setTextColor(107, 114, 128);
-  doc.text('Signature employé', 55, sigY + 5, { align: 'center' });
-  doc.text('Signature employeur', 155, sigY + 5, { align: 'center' });
+  doc.text("Signature de l'employé", 55, sigY + 5, { align: 'center' });
+  doc.text("Signature de l'employeur", 155, sigY + 5, { align: 'center' });
+
+  // ── Mention légale
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    'Bulletin de paie à conserver sans limitation de durée.',
+    105, Math.min(sigY + 13, 278), { align: 'center' },
+  );
 
   addFooter(doc);
   doc.save(`Fiche_paie_${reference}_${employee.nom}.pdf`);

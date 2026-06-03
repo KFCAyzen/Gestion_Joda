@@ -84,6 +84,7 @@ import HRConfigPanel from "./rh/HRConfigPanel";
 import EmployeeDetailModal from "./rh/EmployeeDetailModal";
 import { printEmployeesReport } from "../lib/printEmployeesReport";
 import { payslipReference } from "../lib/payslipRef";
+import { computeCameroonPayroll } from "../lib/cameroonPayroll";
 import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../lib/hrEvaluation";
 import type {
     Employee,
@@ -612,6 +613,7 @@ type EmployeeFormState = {
     periode_essai_mois: string;
     superieur_id: string;
     type_horaire: "" | "temps_plein" | "temps_partiel" | "flexible" | "poste";
+    numero_cnps: string;
 };
 
 const emptyEmployeeForm: EmployeeFormState = {
@@ -652,6 +654,7 @@ const emptyEmployeeForm: EmployeeFormState = {
     periode_essai_mois: "",
     superieur_id: "",
     type_horaire: "",
+    numero_cnps: "",
 };
 
 const MATRICULE_PREFIX = "EMP-";
@@ -797,6 +800,7 @@ function EmployeesPanel({
             periode_essai_mois: e.periode_essai_mois != null ? String(e.periode_essai_mois) : "",
             superieur_id: e.superieur_id ?? "",
             type_horaire: e.type_horaire ?? "",
+            numero_cnps: e.numero_cnps ?? "",
         });
         setStep(0);
         setModalOpen(true);
@@ -841,6 +845,7 @@ function EmployeesPanel({
                 periode_essai_mois: form.periode_essai_mois ? parseInt(form.periode_essai_mois, 10) : null,
                 superieur_id: form.superieur_id || null,
                 type_horaire: form.type_horaire || null,
+                numero_cnps: form.numero_cnps.trim() || null,
             };
             if (editing) {
                 await update.mutateAsync({ id: editing.id, data: payload });
@@ -1703,6 +1708,13 @@ function StepContract({
                     onChange={(e) => setForm((f) => ({ ...f, salaire_base: e.target.value }))}
                 />
             </Field>
+            <Field label={t("employees.form.cnps")}>
+                <Input
+                    value={form.numero_cnps}
+                    onChange={(e) => setForm((f) => ({ ...f, numero_cnps: e.target.value }))}
+                    placeholder={t("employees.form.cnpsPlaceholder")}
+                />
+            </Field>
             <div className="md:col-span-2">
                 <Field label={t("employees.form.notes")}>
                     <Input
@@ -2034,14 +2046,13 @@ function PayrollPanel({
         notes: "",
     });
 
-    const net = useMemo(() => {
-        const b = parseInt(form.salaire_base || "0", 10) || 0;
-        const p = parseInt(form.primes || "0", 10) || 0;
-        const d = parseInt(form.deductions || "0", 10) || 0;
-        const ja = parseInt(form.jours_absences || "0", 10) || 0;
-        const dailyRate = Math.round(b / 30);
-        return Math.max(0, b + p - d - dailyRate * ja);
-    }, [form]);
+    const payroll = useMemo(() => computeCameroonPayroll({
+        salaireBase: parseInt(form.salaire_base || "0", 10) || 0,
+        primes: parseInt(form.primes || "0", 10) || 0,
+        joursAbsences: parseInt(form.jours_absences || "0", 10) || 0,
+        autresRetenues: parseInt(form.deductions || "0", 10) || 0,
+    }), [form]);
+    const net = payroll.netAPayer;
 
     const openCreate = () => {
         const first = employees[0];
@@ -2291,9 +2302,37 @@ function PayrollPanel({
                         </Field>
                     </div>
                 </div>
-                <div className="mt-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
-                    <span className="text-sm text-slate-600 dark:text-slate-300">{t("payroll.computedNet")}</span>
-                    <span className="text-lg font-semibold">{fmtMoney(net)}</span>
+                <div className="mt-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 space-y-1 text-sm">
+                    <div className="flex justify-between">
+                        <span className="text-slate-600 dark:text-slate-300">{t("payroll.breakdown.brut")}</span>
+                        <span className="font-medium">{fmtMoney(payroll.brut)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                        <span>CNPS / PVID (4,2%)</span><span>- {fmtMoney(payroll.pvid)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                        <span>IRPP + CAC</span><span>- {fmtMoney(payroll.irpp + payroll.cac)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                        <span>CFC (1%)</span><span>- {fmtMoney(payroll.cfc)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                        <span>RAV + TDL</span><span>- {fmtMoney(payroll.rav + payroll.tdl)}</span>
+                    </div>
+                    {payroll.absenceDeduction > 0 && (
+                        <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                            <span>{t("payroll.col.absences")}</span><span>- {fmtMoney(payroll.absenceDeduction)}</span>
+                        </div>
+                    )}
+                    {payroll.autresRetenues > 0 && (
+                        <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                            <span>{t("payroll.col.deductions")}</span><span>- {fmtMoney(payroll.autresRetenues)}</span>
+                        </div>
+                    )}
+                    <div className="flex justify-between items-center pt-2 mt-1 border-t border-slate-200 dark:border-slate-700">
+                        <span className="text-slate-600 dark:text-slate-300">{t("payroll.computedNet")}</span>
+                        <span className="text-lg font-semibold">{fmtMoney(net)}</span>
+                    </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-6">
                     <Button variant="outline" onClick={() => setModalOpen(false)}>
