@@ -186,3 +186,34 @@ export interface EmployeePayConfig {
   created_at: string;
   updated_at: string;
 }
+
+// ─── Évaluations (notation par critères) ────────────────────────────────────
+export type EvaluationCritere =
+  | 'qualite'
+  | 'productivite'
+  | 'ponctualite'
+  | 'equipe'
+  | 'communication'
+  | 'initiative'
+  | 'discipline';
+
+export interface EmployeeEvaluation {
+  id: string;
+  employee_id: string;
+  date_evaluation: string;
+  periode: string | null;
+  note_qualite: number;
+  note_productivite: number;
+  note_ponctualite: number;
+  note_equipe: number;
+  note_communication: number;
+  note_initiative: number;
+  note_discipline: number;
+  note_globale: number;
+  points_forts: string | null;
+  axes_amelioration: string | null;
+  commentaire: string | null;
+  evaluateur_id: string | null;
+  created_at: string;
+  updated_at: string;
+}

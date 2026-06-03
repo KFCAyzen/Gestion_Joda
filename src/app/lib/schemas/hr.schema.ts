@@ -290,6 +290,36 @@ export const upsertEmployeePayConfigSchema = employeePayConfigSchema.omit({
   updated_at: true,
 });
 
+// ─── Employee evaluation ─────────────────────────────────────────────────────
+const noteCritere = z.number().int().min(1, 'Note 1 à 5').max(5, 'Note 1 à 5');
+
+export const employeeEvaluationSchema = z.object({
+  id: z.string().uuid(),
+  employee_id: z.string().uuid(),
+  date_evaluation: z.string().min(1, 'Date requise'),
+  periode: z.string().nullable().optional(),
+  note_qualite: noteCritere,
+  note_productivite: noteCritere,
+  note_ponctualite: noteCritere,
+  note_equipe: noteCritere,
+  note_communication: noteCritere,
+  note_initiative: noteCritere,
+  note_discipline: noteCritere,
+  note_globale: z.number().min(0).max(5),
+  points_forts: z.string().nullable().optional(),
+  axes_amelioration: z.string().nullable().optional(),
+  commentaire: z.string().nullable().optional(),
+  evaluateur_id: z.string().uuid().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const createEmployeeEvaluationSchema = employeeEvaluationSchema.omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 export type EmployeeInput = z.infer<typeof createEmployeeSchema>;
 export type EmployeeUpdate = z.infer<typeof updateEmployeeSchema>;
 export type LeaveRequestInput = z.infer<typeof createLeaveRequestSchema>;
@@ -305,3 +335,4 @@ export type DeductionOccurrenceUpdate = z.infer<typeof updateDeductionOccurrence
 export type PaymentScheduleInput = z.infer<typeof createPaymentScheduleSchema>;
 export type PaymentScheduleUpdate = z.infer<typeof updatePaymentScheduleSchema>;
 export type EmployeePayConfigInput = z.infer<typeof upsertEmployeePayConfigSchema>;
+export type EmployeeEvaluationInput = z.infer<typeof createEmployeeEvaluationSchema>;

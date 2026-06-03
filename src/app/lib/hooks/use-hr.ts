@@ -9,6 +9,7 @@ import type {
   DeductionOccurrence,
   PaymentSchedule,
   EmployeePayConfig,
+  EmployeeEvaluation,
 } from '../../types/hr';
 import {
   createEmployeeSchema,
@@ -26,6 +27,7 @@ import {
   createPaymentScheduleSchema,
   updatePaymentScheduleSchema,
   upsertEmployeePayConfigSchema,
+  createEmployeeEvaluationSchema,
   type EmployeeInput,
   type EmployeeUpdate,
   type LeaveRequestInput,
@@ -41,6 +43,7 @@ import {
   type PaymentScheduleInput,
   type PaymentScheduleUpdate,
   type EmployeePayConfigInput,
+  type EmployeeEvaluationInput,
 } from '../schemas/hr.schema';
 
 const supabase = createClient();
@@ -53,6 +56,7 @@ export const DEDUCTION_RULES_KEY = ['hr', 'deduction_rules'] as const;
 export const DEDUCTION_OCC_KEY = ['hr', 'deduction_occurrences'] as const;
 export const PAYMENT_SCHEDULES_KEY = ['hr', 'payment_schedules'] as const;
 export const PAY_CONFIGS_KEY = ['hr', 'pay_configs'] as const;
+export const EVALUATIONS_KEY = ['hr', 'evaluations'] as const;
 
 // ─── Employees ─────────────────────────────────────────────────────────────
 export function useEmployees() {
@@ -118,6 +122,7 @@ export function useDeleteEmployee() {
       qc.invalidateQueries({ queryKey: LEAVE_REQUESTS_KEY });
       qc.invalidateQueries({ queryKey: PAYSLIPS_KEY });
       qc.invalidateQueries({ queryKey: DAILY_REPORTS_KEY });
+      qc.invalidateQueries({ queryKey: EVALUATIONS_KEY });
     },
   });
 }
@@ -559,6 +564,53 @@ export function useUpsertEmployeePayConfig() {
       return data as EmployeePayConfig;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: PAY_CONFIGS_KEY }),
+  });
+}
+
+// ─── Employee evaluations ──────────────────────────────────────────────────
+export function useEmployeeEvaluations() {
+  return useQuery({
+    queryKey: EVALUATIONS_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hr_employee_evaluations')
+        .select('*')
+        .order('date_evaluation', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as EmployeeEvaluation[];
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useCreateEmployeeEvaluation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: EmployeeEvaluationInput) => {
+      const parsed = createEmployeeEvaluationSchema.parse(input);
+      const { data, error } = await supabase
+        .from('hr_employee_evaluations')
+        .insert(parsed)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as EmployeeEvaluation;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: EVALUATIONS_KEY }),
+  });
+}
+
+export function useDeleteEmployeeEvaluation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('hr_employee_evaluations')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: EVALUATIONS_KEY }),
   });
 }
 

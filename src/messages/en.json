@@ -97,6 +97,7 @@
       "leaves": "Leaves",
       "payroll": "Payroll",
       "reports": "Daily reports",
+      "evaluations": "Evaluations",
       "config": "Configuration"
     },
     "messages": {
@@ -427,6 +428,27 @@
         "hint": "Custom salary overrides base salary. Recurring bonuses are added to every auto-generated payslip."
       }
     },
+    "evaluationsOverview": {
+      "title": "Evaluations — global view",
+      "description": "Summary and ranking of evaluations over a period",
+      "summaryTitle": "Summary",
+      "totalEvaluations": "Evaluations",
+      "employeesEvaluated": "Employees evaluated",
+      "globalAverage": "Global average rating",
+      "byCriterion": "Averages by criterion",
+      "rankingTitle": "Employee ranking",
+      "empty": "No evaluation for this period",
+      "col": {
+        "rank": "Rank",
+        "count": "# eval.",
+        "average": "Average rating"
+      },
+      "print": {
+        "button": "Print summary",
+        "docTitle": "Evaluations summary",
+        "generatedOn": "Document generated on {date}"
+      }
+    },
     "detail": {
       "tabs": {
         "overview": "Overview",
@@ -434,7 +456,8 @@
         "reports": "Reports",
         "leaves": "Leaves",
         "payroll": "Payroll",
-        "deductions": "Deductions"
+        "deductions": "Deductions",
+        "evaluations": "Evaluations"
       },
       "stats": {
         "hoursWorked": "Total hours",
@@ -444,7 +467,8 @@
         "salary": "Base salary",
         "totalDeductions": "Deductions",
         "payslipCount": "Payslips issued",
-        "reportCount": "Reports submitted"
+        "reportCount": "Reports submitted",
+        "lastRating": "Latest rating"
       },
       "paymentDate": "Payment date",
       "auto": "Auto",
@@ -482,11 +506,13 @@
           "report": "Daily report",
           "leave": "Leave",
           "payslip": "Payslip",
-          "deduction": "Deduction"
+          "deduction": "Deduction",
+          "evaluation": "Evaluation"
         },
         "reportDetail": "{hours} h — {activities}",
         "leaveDetail": "{type} · {from} → {to} ({days} d) · {status}",
-        "payslipDetail": "Payroll {period} — net {net}"
+        "payslipDetail": "Payroll {period} — net {net}",
+        "evaluationDetail": "Overall rating {note}/5 · {period}"
       },
       "print": {
         "button": "Print dossier",
@@ -506,6 +532,38 @@
         "periodLabel": "Period",
         "allPeriods": "All periods",
         "reportCount": "Number of reports"
+      },
+      "evaluations": {
+        "hint": "Rate the employee on each criterion (1 to 5). The overall rating is the average of the criteria.",
+        "add": "New evaluation",
+        "date": "Date",
+        "period": "Period",
+        "periodHint": "e.g. H1 2026",
+        "criteriaTitle": "Criteria",
+        "score": "Rating",
+        "criteria": {
+          "qualite": "Quality of work",
+          "productivite": "Productivity",
+          "ponctualite": "Punctuality & attendance",
+          "equipe": "Teamwork",
+          "communication": "Communication",
+          "initiative": "Initiative & autonomy",
+          "discipline": "Compliance with rules"
+        },
+        "overall": "Overall rating",
+        "strengths": "Strengths",
+        "improvements": "Areas for improvement",
+        "comment": "General comment",
+        "evaluator": "Evaluator",
+        "added": "Evaluation saved",
+        "deleted": "Evaluation deleted",
+        "empty": "No evaluation recorded",
+        "confirmDelete": "Delete this evaluation?",
+        "confirmDeleteDesc": "This evaluation will be permanently deleted.",
+        "print": {
+          "button": "Print evaluation",
+          "docTitle": "Evaluation sheet"
+        }
       }
     }
   },

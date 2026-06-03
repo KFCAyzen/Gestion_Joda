@@ -97,6 +97,7 @@
       "leaves": "Congés",
       "payroll": "Paie",
       "reports": "Rapports journaliers",
+      "evaluations": "Évaluations",
       "config": "Configuration"
     },
     "messages": {
@@ -427,6 +428,27 @@
         "hint": "Le salaire personnalisé prime sur le salaire de base. Les primes récurrentes s'ajoutent à chaque fiche générée automatiquement."
       }
     },
+    "evaluationsOverview": {
+      "title": "Évaluations — vue globale",
+      "description": "Synthèse et classement des évaluations sur une période",
+      "summaryTitle": "Synthèse",
+      "totalEvaluations": "Évaluations",
+      "employeesEvaluated": "Employés évalués",
+      "globalAverage": "Note moyenne globale",
+      "byCriterion": "Moyennes par critère",
+      "rankingTitle": "Classement des employés",
+      "empty": "Aucune évaluation sur cette période",
+      "col": {
+        "rank": "Rang",
+        "count": "Nb éval.",
+        "average": "Note moyenne"
+      },
+      "print": {
+        "button": "Imprimer la synthèse",
+        "docTitle": "Synthèse des évaluations",
+        "generatedOn": "Document généré le {date}"
+      }
+    },
     "detail": {
       "tabs": {
         "overview": "Vue d'ensemble",
@@ -434,7 +456,8 @@
         "reports": "Rapports",
         "leaves": "Congés",
         "payroll": "Paye",
-        "deductions": "Déductions"
+        "deductions": "Déductions",
+        "evaluations": "Évaluations"
       },
       "stats": {
         "hoursWorked": "Heures cumulées",
@@ -444,7 +467,8 @@
         "salary": "Salaire de base",
         "totalDeductions": "Déductions",
         "payslipCount": "Fiches émises",
-        "reportCount": "Rapports envoyés"
+        "reportCount": "Rapports envoyés",
+        "lastRating": "Dernière note"
       },
       "paymentDate": "Date de paiement",
       "auto": "Auto",
@@ -482,11 +506,13 @@
           "report": "Rapport journalier",
           "leave": "Congé",
           "payslip": "Fiche de paie",
-          "deduction": "Déduction"
+          "deduction": "Déduction",
+          "evaluation": "Évaluation"
         },
         "reportDetail": "{hours} h — {activities}",
         "leaveDetail": "{type} · {from} → {to} ({days} j) · {status}",
-        "payslipDetail": "Paie {period} — net {net}"
+        "payslipDetail": "Paie {period} — net {net}",
+        "evaluationDetail": "Note globale {note}/5 · {period}"
       },
       "print": {
         "button": "Imprimer le dossier",
@@ -506,6 +532,38 @@
         "periodLabel": "Période",
         "allPeriods": "Toutes périodes",
         "reportCount": "Nombre de rapports"
+      },
+      "evaluations": {
+        "hint": "Notez l'employé sur chaque critère (1 à 5). La note globale est la moyenne des critères.",
+        "add": "Nouvelle évaluation",
+        "date": "Date",
+        "period": "Période",
+        "periodHint": "ex. 1er semestre 2026",
+        "criteriaTitle": "Critères",
+        "score": "Note",
+        "criteria": {
+          "qualite": "Qualité du travail",
+          "productivite": "Productivité",
+          "ponctualite": "Ponctualité & assiduité",
+          "equipe": "Travail en équipe",
+          "communication": "Communication",
+          "initiative": "Initiative & autonomie",
+          "discipline": "Respect des règles"
+        },
+        "overall": "Note globale",
+        "strengths": "Points forts",
+        "improvements": "Axes d'amélioration",
+        "comment": "Commentaire général",
+        "evaluator": "Évaluateur",
+        "added": "Évaluation enregistrée",
+        "deleted": "Évaluation supprimée",
+        "empty": "Aucune évaluation enregistrée",
+        "confirmDelete": "Supprimer cette évaluation ?",
+        "confirmDeleteDesc": "Cette évaluation sera définitivement supprimée.",
+        "print": {
+          "button": "Imprimer l'évaluation",
+          "docTitle": "Fiche d'évaluation"
+        }
       }
     }
   },

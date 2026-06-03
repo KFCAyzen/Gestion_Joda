@@ -21,6 +21,7 @@ import {
     Receipt,
     RotateCcw,
     Settings2,
+    Star,
     Trash2,
     User,
     Users as UsersIcon,
@@ -77,10 +78,12 @@ import {
     useCreateDailyReport,
     useDeleteDailyReport,
     useGenerateDuePayslips,
+    useEmployeeEvaluations,
 } from "../lib/hooks/use-hr";
 import HRConfigPanel from "./rh/HRConfigPanel";
 import EmployeeDetailModal from "./rh/EmployeeDetailModal";
 import { printEmployeesReport } from "../lib/printEmployeesReport";
+import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../lib/hrEvaluation";
 import type {
     Employee,
     EmployeeStatus,
@@ -90,7 +93,7 @@ import type {
     DailyReport,
 } from "../types/hr";
 
-const TABS = ["employees", "leaves", "payroll", "reports", "config"] as const;
+const TABS = ["employees", "leaves", "payroll", "reports", "evaluations", "config"] as const;
 type TabId = (typeof TABS)[number];
 
 const LEAVE_TYPES: LeaveType[] = ["annuel", "maladie", "maternite", "paternite", "sans_solde", "autre"];
@@ -186,6 +189,9 @@ function HRManagementInner() {
                 <TabButton active={tab === "reports"} onClick={() => setTab("reports")} icon={<ClipboardList className="w-4 h-4" />}>
                     {t("tabs.reports")}
                 </TabButton>
+                <TabButton active={tab === "evaluations"} onClick={() => setTab("evaluations")} icon={<Star className="w-4 h-4" />}>
+                    {t("tabs.evaluations")}
+                </TabButton>
                 <TabButton active={tab === "config"} onClick={() => setTab("config")} icon={<Settings2 className="w-4 h-4" />}>
                     {t("tabs.config")}
                 </TabButton>
@@ -232,6 +238,12 @@ function HRManagementInner() {
                     creatorId={user?.id ?? ""}
                     onError={(e) => showNotification(getFriendlyErrorMessage(e), "error")}
                     onSuccess={(msg) => showNotification(msg, "success")}
+                />
+            )}
+            {tab === "evaluations" && (
+                <EvaluationsOverviewPanel
+                    employees={employees}
+                    onView={(e) => setDetailEmployee(e)}
                 />
             )}
             {tab === "config" && (
@@ -315,6 +327,230 @@ function EmptyRow({ cols, label }: { cols: number; label: string }) {
                 </div>
             </TableCell>
         </TableRow>
+    );
+}
+
+// ─── Evaluations overview panel (vue globale sur une période) ───────────────
+function StarsInline({ value }: { value: number }) {
+    const full = Math.round(value);
+    return (
+        <span className="inline-flex items-center gap-0.5 align-middle">
+            {[1, 2, 3, 4, 5].map((n) => (
+                <Star
+                    key={n}
+                    className={`w-3.5 h-3.5 ${n <= full ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}`}
+                />
+            ))}
+        </span>
+    );
+}
+
+function EvaluationsOverviewPanel({
+    employees,
+    onView,
+}: {
+    employees: Employee[];
+    onView: (e: Employee) => void;
+}) {
+    const t = useTranslations("hrManagement");
+    const evalQ = useEmployeeEvaluations();
+    const [periodFrom, setPeriodFrom] = useState("");
+    const [periodTo, setPeriodTo] = useState("");
+
+    const employeesById = useMemo(() => {
+        const m = new Map<string, Employee>();
+        for (const e of employees) m.set(e.id, e);
+        return m;
+    }, [employees]);
+
+    const inPeriod = useMemo(() => {
+        return (evalQ.data ?? []).filter((ev) => {
+            if (periodFrom && ev.date_evaluation < periodFrom) return false;
+            if (periodTo && ev.date_evaluation > periodTo) return false;
+            return true;
+        });
+    }, [evalQ.data, periodFrom, periodTo]);
+
+    // Agrégat par employé, trié par note moyenne décroissante
+    const ranking = useMemo(() => {
+        const byEmp = new Map<string, typeof inPeriod>();
+        for (const ev of inPeriod) {
+            const arr = byEmp.get(ev.employee_id) ?? [];
+            arr.push(ev);
+            byEmp.set(ev.employee_id, arr);
+        }
+        const rows = Array.from(byEmp.entries()).map(([empId, evals]) => ({
+            employee: employeesById.get(empId) ?? null,
+            empId,
+            count: evals.length,
+            avg: overallAverage(evals),
+            crit: criterionAverages(evals),
+        }));
+        rows.sort((a, b) => b.avg - a.avg);
+        return rows;
+    }, [inPeriod, employeesById]);
+
+    const globalAvg = useMemo(() => overallAverage(inPeriod), [inPeriod]);
+    const globalCrit = useMemo(() => criterionAverages(inPeriod), [inPeriod]);
+
+    const periodText =
+        periodFrom || periodTo
+            ? `${periodFrom || "…"} → ${periodTo || "…"}`
+            : t("detail.reportsPrint.allPeriods");
+
+    const handlePrint = () => {
+        printEmployeesReport({
+            docTitle: t("evaluationsOverview.print.docTitle"),
+            subtitle: `${t("detail.reportsPrint.periodLabel")}: ${periodText}`,
+            summaryTitle: t("evaluationsOverview.summaryTitle"),
+            summary: [
+                { label: t("evaluationsOverview.totalEvaluations"), value: String(inPeriod.length) },
+                { label: t("evaluationsOverview.employeesEvaluated"), value: String(ranking.length) },
+                { label: t("evaluationsOverview.globalAverage"), value: `${fmtNote(globalAvg)} / 5` },
+                ...EVAL_CRITERIA.map((c) => ({
+                    label: t(`detail.evaluations.criteria.${c.code}`),
+                    value: `${fmtNote(globalCrit[c.code] ?? 0)} / 5`,
+                })),
+            ],
+            tableTitle: t("evaluationsOverview.rankingTitle"),
+            columns: [
+                { key: "rank", label: t("evaluationsOverview.col.rank") },
+                { key: "name", label: t("employees.col.name") },
+                { key: "department", label: t("employees.col.department") },
+                { key: "count", label: t("evaluationsOverview.col.count"), align: "right" },
+                { key: "avg", label: t("evaluationsOverview.col.average"), align: "right" },
+            ],
+            rows: ranking.map((r, i) => ({
+                cells: [
+                    String(i + 1),
+                    r.employee ? `${r.employee.prenom} ${r.employee.nom}` : t("unknownEmployee"),
+                    r.employee?.departement ?? "—",
+                    String(r.count),
+                    `${fmtNote(r.avg)} / 5`,
+                ],
+            })),
+            emptyLabel: t("evaluationsOverview.empty"),
+            generatedOn: t("evaluationsOverview.print.generatedOn", {
+                date: new Date().toLocaleString("fr-FR"),
+            }),
+        });
+    };
+
+    return (
+        <Card className="joda-surface border-0 shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+                <div>
+                    <CardTitle className="flex items-center gap-2">
+                        <Star className="w-5 h-5" />
+                        {t("evaluationsOverview.title")}
+                    </CardTitle>
+                    <CardDescription>{t("evaluationsOverview.description")}</CardDescription>
+                </div>
+                <Button variant="outline" onClick={handlePrint} disabled={inPeriod.length === 0}>
+                    <Printer className="w-4 h-4 mr-2" />
+                    {t("evaluationsOverview.print.button")}
+                </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {/* Filtre période */}
+                <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="space-y-1">
+                        <Label className="text-xs">{t("detail.reportsPrint.from")}</Label>
+                        <Input type="date" value={periodFrom} max={periodTo || undefined} onChange={(e) => setPeriodFrom(e.target.value)} className="w-auto" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs">{t("detail.reportsPrint.to")}</Label>
+                        <Input type="date" value={periodTo} min={periodFrom || undefined} onChange={(e) => setPeriodTo(e.target.value)} className="w-auto" />
+                    </div>
+                    {(periodFrom || periodTo) && (
+                        <Button size="sm" variant="ghost" onClick={() => { setPeriodFrom(""); setPeriodTo(""); }}>
+                            {t("detail.reportsPrint.reset")}
+                        </Button>
+                    )}
+                </div>
+
+                {/* Synthèse globale */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <StatCard icon={<Star className="w-5 h-5" />} label={t("evaluationsOverview.totalEvaluations")} value={inPeriod.length} />
+                    <StatCard icon={<UsersIcon className="w-5 h-5" />} label={t("evaluationsOverview.employeesEvaluated")} value={ranking.length} />
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/40 dark:bg-slate-900/40 p-4 flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600">
+                            <Star className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("evaluationsOverview.globalAverage")}</p>
+                            <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                                {inPeriod.length ? `${fmtNote(globalAvg)} / 5` : "—"}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Moyennes par critère */}
+                {inPeriod.length > 0 && (
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                        <p className="text-xs uppercase tracking-wide text-rose-600 font-semibold mb-2">{t("evaluationsOverview.byCriterion")}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+                            {EVAL_CRITERIA.map((c) => (
+                                <div key={c.code} className="flex items-center justify-between gap-2">
+                                    <span className="text-sm text-slate-600 dark:text-slate-300">{t(`detail.evaluations.criteria.${c.code}`)}</span>
+                                    <span className="flex items-center gap-2">
+                                        <StarsInline value={globalCrit[c.code] ?? 0} />
+                                        <span className="text-sm font-medium w-12 text-right">{fmtNote(globalCrit[c.code] ?? 0)}</span>
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Classement */}
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-12">{t("evaluationsOverview.col.rank")}</TableHead>
+                            <TableHead>{t("employees.col.name")}</TableHead>
+                            <TableHead>{t("employees.col.department")}</TableHead>
+                            <TableHead className="text-right">{t("evaluationsOverview.col.count")}</TableHead>
+                            <TableHead>{t("evaluationsOverview.col.average")}</TableHead>
+                            <TableHead className="text-right">{t("employees.col.actions")}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {evalQ.isLoading ? (
+                            <LoadingRow cols={6} />
+                        ) : ranking.length === 0 ? (
+                            <EmptyRow cols={6} label={t("evaluationsOverview.empty")} />
+                        ) : (
+                            ranking.map((r, i) => (
+                                <TableRow key={r.empId}>
+                                    <TableCell className="font-semibold text-slate-500">{i + 1}</TableCell>
+                                    <TableCell className="font-medium">
+                                        {r.employee ? `${r.employee.prenom} ${r.employee.nom}` : t("unknownEmployee")}
+                                    </TableCell>
+                                    <TableCell>{r.employee?.departement ?? "—"}</TableCell>
+                                    <TableCell className="text-right">{r.count}</TableCell>
+                                    <TableCell>
+                                        <span className="flex items-center gap-2">
+                                            <StarsInline value={r.avg} />
+                                            <span className="text-sm font-semibold">{fmtNote(r.avg)}</span>
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {r.employee && (
+                                            <Button size="sm" variant="ghost" onClick={() => onView(r.employee!)}>
+                                                <Eye className="w-4 h-4 mr-1" />
+                                                {t("employees.viewDetail")}
+                                            </Button>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
     );
 }
 

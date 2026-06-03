@@ -13,6 +13,7 @@ import {
     Plus,
     Printer,
     Receipt,
+    Star,
     Trash2,
     UserCircle2,
 } from "lucide-react";
@@ -46,6 +47,9 @@ import {
     useDeductionOccurrences,
     useCreateDeductionOccurrence,
     useDeleteDeductionOccurrence,
+    useEmployeeEvaluations,
+    useCreateEmployeeEvaluation,
+    useDeleteEmployeeEvaluation,
 } from "../../lib/hooks/use-hr";
 import type {
     Employee,
@@ -54,6 +58,7 @@ import type {
     LeaveRequest,
     Payslip,
     DeductionOccurrence,
+    EmployeeEvaluation,
 } from "../../types/hr";
 import {
     printEmployeeDossier,
@@ -61,8 +66,10 @@ import {
     type DossierHistoryRow,
 } from "../../lib/printEmployeeDossier";
 import { printEmployeeReports } from "../../lib/printEmployeeReports";
+import { printEmployeeEvaluation } from "../../lib/printEmployeeEvaluation";
+import { EVAL_CRITERIA, fmtNote } from "../../lib/hrEvaluation";
 
-type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions";
+type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions" | "evaluations";
 
 function fmtMoney(n: number): string {
     return n.toLocaleString("fr-FR") + " FCFA";
@@ -98,12 +105,16 @@ export default function EmployeeDetailModal({
     const payslipsQ = usePayslips();
     const rulesQ = useDeductionRules();
     const occQ = useDeductionOccurrences();
+    const evalQ = useEmployeeEvaluations();
 
     const reports = useMemo(() => (reportsQ.data ?? []).filter((r) => r.employee_id === employee?.id), [reportsQ.data, employee]);
     const leaves = useMemo(() => (leavesQ.data ?? []).filter((l) => l.employee_id === employee?.id), [leavesQ.data, employee]);
     const payslips = useMemo(() => (payslipsQ.data ?? []).filter((p) => p.employee_id === employee?.id), [payslipsQ.data, employee]);
     const occurrences = useMemo(() => (occQ.data ?? []).filter((o) => o.employee_id === employee?.id), [occQ.data, employee]);
+    const evaluations = useMemo(() => (evalQ.data ?? []).filter((ev) => ev.employee_id === employee?.id), [evalQ.data, employee]);
     const rules = rulesQ.data ?? [];
+
+    const lastEvaluation = evaluations[0] ?? null;
 
     const supervisorName = useMemo(() => {
         if (!employee?.superieur_id) return null;
@@ -127,9 +138,9 @@ export default function EmployeeDetailModal({
     const history = useMemo<DossierHistoryRow[]>(
         () =>
             employee
-                ? buildHistory(t as TFn, { reports, leaves, payslips, occurrences, rulesById })
+                ? buildHistory(t as TFn, { reports, leaves, payslips, occurrences, evaluations, rulesById })
                 : [],
-        [employee, t, reports, leaves, payslips, occurrences, rulesById]
+        [employee, t, reports, leaves, payslips, occurrences, evaluations, rulesById]
     );
 
     const stats = useMemo(
@@ -142,8 +153,9 @@ export default function EmployeeDetailModal({
             { label: t("detail.stats.totalDeductions"), value: fmtMoney(totalDeductions) },
             { label: t("detail.stats.payslipCount"), value: String(payslips.length) },
             { label: t("detail.stats.reportCount"), value: String(reports.length) },
+            { label: t("detail.stats.lastRating"), value: lastEvaluation ? `${fmtNote(lastEvaluation.note_globale)} / 5` : "—" },
         ],
-        [t, totalHours, approvedLeaves, pendingLeaves, totalPaid, employee, totalDeductions, payslips.length, reports.length]
+        [t, totalHours, approvedLeaves, pendingLeaves, totalPaid, employee, totalDeductions, payslips.length, reports.length, lastEvaluation]
     );
 
     const handlePrint = () => {
@@ -220,6 +232,46 @@ export default function EmployeeDetailModal({
         });
     };
 
+    const evaluatorName = (ev: EmployeeEvaluation): string => {
+        if (!ev.evaluateur_id) return "—";
+        const u = (employeesQ.data ?? []).find((e) => e.user_id === ev.evaluateur_id);
+        return u ? `${u.prenom} ${u.nom}` : "—";
+    };
+
+    const handlePrintEvaluation = (ev: EmployeeEvaluation) => {
+        if (!employee) return;
+        printEmployeeEvaluation({
+            docTitle: t("detail.evaluations.print.docTitle"),
+            fullName: `${employee.prenom} ${employee.nom}`,
+            subtitle: employee.poste + (employee.departement ? ` · ${employee.departement}` : ""),
+            matriculeLabel: t("employees.col.matricule"),
+            matricule: employee.matricule ?? "—",
+            dateLabel: t("detail.evaluations.date"),
+            date: ev.date_evaluation,
+            periodLabel: t("detail.evaluations.period"),
+            period: ev.periode || t("detail.reportsPrint.allPeriods"),
+            evaluatorLabel: t("detail.evaluations.evaluator"),
+            evaluator: evaluatorName(ev),
+            criteriaTitle: t("detail.evaluations.criteriaTitle"),
+            criteria: EVAL_CRITERIA.map((c) => ({
+                label: t(`detail.evaluations.criteria.${c.code}`),
+                score: ev[c.col],
+                max: 5,
+            })),
+            overallLabel: t("detail.evaluations.overall"),
+            overall: `${fmtNote(ev.note_globale)} / 5`,
+            scoreHeader: t("detail.evaluations.score"),
+            blocks: [
+                { title: t("detail.evaluations.strengths"), body: ev.points_forts ?? "" },
+                { title: t("detail.evaluations.improvements"), body: ev.axes_amelioration ?? "" },
+                { title: t("detail.evaluations.comment"), body: ev.commentaire ?? "" },
+            ],
+            generatedOn: t("detail.print.generatedOn", {
+                date: new Date().toLocaleString("fr-FR"),
+            }),
+        });
+    };
+
     if (!employee) return null;
 
     return (
@@ -267,6 +319,9 @@ export default function EmployeeDetailModal({
                     <DetailTabBtn active={tab === "deductions"} onClick={() => setTab("deductions")} icon={<BadgePercent className="w-4 h-4" />}>
                         {t("detail.tabs.deductions")} ({occurrences.length})
                     </DetailTabBtn>
+                    <DetailTabBtn active={tab === "evaluations"} onClick={() => setTab("evaluations")} icon={<Star className="w-4 h-4" />}>
+                        {t("detail.tabs.evaluations")} ({evaluations.length})
+                    </DetailTabBtn>
                 </div>
 
                 {tab === "overview" && (
@@ -280,6 +335,7 @@ export default function EmployeeDetailModal({
                             <StatBox label={t("detail.stats.totalDeductions")} value={fmtMoney(totalDeductions)} highlight={totalDeductions > 0} />
                             <StatBox label={t("detail.stats.payslipCount")} value={String(payslips.length)} />
                             <StatBox label={t("detail.stats.reportCount")} value={String(reports.length)} />
+                            <StatBox label={t("detail.stats.lastRating")} value={lastEvaluation ? `${fmtNote(lastEvaluation.note_globale)} / 5` : "—"} />
                         </div>
 
                         {/* Profil détaillé */}
@@ -462,6 +518,18 @@ export default function EmployeeDetailModal({
                         rules={rulesQ.data ?? []}
                         occurrences={occurrences}
                         creatorId={creatorId}
+                        onError={onError}
+                        onSuccess={onSuccess}
+                    />
+                )}
+
+                {tab === "evaluations" && (
+                    <EvaluationsSection
+                        employeeId={employee.id}
+                        evaluations={evaluations}
+                        creatorId={creatorId}
+                        evaluatorName={evaluatorName}
+                        onPrint={handlePrintEvaluation}
                         onError={onError}
                         onSuccess={onSuccess}
                     />
@@ -723,6 +791,232 @@ function DeductionsSection({
     );
 }
 
+// ─── Evaluations sub-section (notation par critères) ─────────────────────────
+function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                    key={n}
+                    type="button"
+                    disabled={!onChange}
+                    onClick={() => onChange?.(n)}
+                    className={onChange ? "cursor-pointer" : "cursor-default"}
+                    aria-label={String(n)}
+                >
+                    <Star
+                        className={`w-4 h-4 ${n <= value ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}`}
+                    />
+                </button>
+            ))}
+        </div>
+    );
+}
+
+const emptyEvalForm = {
+    date_evaluation: new Date().toISOString().slice(0, 10),
+    periode: "",
+    note_qualite: 3,
+    note_productivite: 3,
+    note_ponctualite: 3,
+    note_equipe: 3,
+    note_communication: 3,
+    note_initiative: 3,
+    note_discipline: 3,
+    points_forts: "",
+    axes_amelioration: "",
+    commentaire: "",
+};
+
+function EvaluationsSection({
+    employeeId,
+    evaluations,
+    creatorId,
+    evaluatorName,
+    onPrint,
+    onError,
+    onSuccess,
+}: {
+    employeeId: string;
+    evaluations: EmployeeEvaluation[];
+    creatorId: string;
+    evaluatorName: (ev: EmployeeEvaluation) => string;
+    onPrint: (ev: EmployeeEvaluation) => void;
+    onError: (e: unknown) => void;
+    onSuccess: (msg: string) => void;
+}) {
+    const t = useTranslations("hrManagement");
+    const create = useCreateEmployeeEvaluation();
+    const del = useDeleteEmployeeEvaluation();
+    const [adding, setAdding] = useState(false);
+    const [confirmDel, setConfirmDel] = useState<string | null>(null);
+    const [form, setForm] = useState(emptyEvalForm);
+
+    const noteGlobale = useMemo(() => {
+        const scores = EVAL_CRITERIA.map((c) => form[c.col]);
+        const avg = scores.reduce((s, n) => s + n, 0) / scores.length;
+        return Math.round(avg * 100) / 100;
+    }, [form]);
+
+    const reset = () => setForm(emptyEvalForm);
+
+    const handleSubmit = async () => {
+        try {
+            await create.mutateAsync({
+                employee_id: employeeId,
+                date_evaluation: form.date_evaluation,
+                periode: form.periode.trim() || null,
+                note_qualite: form.note_qualite,
+                note_productivite: form.note_productivite,
+                note_ponctualite: form.note_ponctualite,
+                note_equipe: form.note_equipe,
+                note_communication: form.note_communication,
+                note_initiative: form.note_initiative,
+                note_discipline: form.note_discipline,
+                note_globale: noteGlobale,
+                points_forts: form.points_forts.trim() || null,
+                axes_amelioration: form.axes_amelioration.trim() || null,
+                commentaire: form.commentaire.trim() || null,
+                evaluateur_id: creatorId || null,
+            });
+            onSuccess(t("detail.evaluations.added"));
+            setAdding(false);
+            reset();
+        } catch (e) {
+            onError(e);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!confirmDel) return;
+        try {
+            await del.mutateAsync(confirmDel);
+            onSuccess(t("detail.evaluations.deleted"));
+            setConfirmDel(null);
+        } catch (e) {
+            onError(e);
+        }
+    };
+
+    return (
+        <div className="space-y-3">
+            <div className="flex justify-between items-center">
+                <p className="text-xs text-slate-500">{t("detail.evaluations.hint")}</p>
+                {!adding && (
+                    <Button size="sm" onClick={() => setAdding(true)}>
+                        <Plus className="w-4 h-4 mr-1" /> {t("detail.evaluations.add")}
+                    </Button>
+                )}
+            </div>
+
+            {adding && (
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-3 bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                            <Label className="text-xs">{t("detail.evaluations.date")}</Label>
+                            <Input type="date" value={form.date_evaluation} onChange={(e) => setForm({ ...form, date_evaluation: e.target.value })} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs">{t("detail.evaluations.period")}</Label>
+                            <Input value={form.periode} placeholder={t("detail.evaluations.periodHint")} onChange={(e) => setForm({ ...form, periode: e.target.value })} />
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                        {EVAL_CRITERIA.map((c) => (
+                            <div key={c.code} className="flex items-center justify-between gap-3 px-3 py-2">
+                                <span className="text-sm">{t(`detail.evaluations.criteria.${c.code}`)}</span>
+                                <div className="flex items-center gap-2">
+                                    <StarRating value={form[c.col]} onChange={(v) => setForm((f) => ({ ...f, [c.col]: v }))} />
+                                    <span className="text-xs text-slate-500 w-8 text-right">{form[c.col]} / 5</span>
+                                </div>
+                            </div>
+                        ))}
+                        <div className="flex items-center justify-between gap-3 px-3 py-2 bg-slate-100/60 dark:bg-slate-800/60">
+                            <span className="text-sm font-semibold">{t("detail.evaluations.overall")}</span>
+                            <span className="text-sm font-bold text-rose-600">{fmtNote(noteGlobale)} / 5</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                        <div className="space-y-1">
+                            <Label className="text-xs">{t("detail.evaluations.strengths")}</Label>
+                            <Input value={form.points_forts} onChange={(e) => setForm({ ...form, points_forts: e.target.value })} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs">{t("detail.evaluations.improvements")}</Label>
+                            <Input value={form.axes_amelioration} onChange={(e) => setForm({ ...form, axes_amelioration: e.target.value })} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs">{t("detail.evaluations.comment")}</Label>
+                            <Input value={form.commentaire} onChange={(e) => setForm({ ...form, commentaire: e.target.value })} />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => { setAdding(false); reset(); }}>{t("common.cancel")}</Button>
+                        <Button size="sm" onClick={handleSubmit} disabled={create.isPending}>
+                            {create.isPending && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                            {t("common.create")}
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            <div className="max-h-[360px] overflow-auto space-y-2">
+                {evaluations.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-sm">{t("detail.evaluations.empty")}</div>
+                ) : (
+                    evaluations.map((ev) => (
+                        <div key={ev.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <StarRating value={Math.round(ev.note_globale)} />
+                                    <span className="text-sm font-bold text-rose-600">{fmtNote(ev.note_globale)} / 5</span>
+                                    <span className="text-xs text-slate-500">{ev.date_evaluation}{ev.periode ? ` · ${ev.periode}` : ""}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title={t("detail.evaluations.print.button")} onClick={() => onPrint(ev)}>
+                                        <Printer className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setConfirmDel(ev.id)}>
+                                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1">
+                                {EVAL_CRITERIA.map((c) => (
+                                    <div key={c.code} className="flex items-center justify-between gap-2 text-xs">
+                                        <span className="text-slate-500 truncate">{t(`detail.evaluations.criteria.${c.code}`)}</span>
+                                        <span className="font-medium">{ev[c.col]}/5</span>
+                                    </div>
+                                ))}
+                            </div>
+                            {(ev.points_forts || ev.axes_amelioration || ev.commentaire) && (
+                                <div className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                                    {ev.points_forts && <p><span className="font-semibold">{t("detail.evaluations.strengths")}:</span> {ev.points_forts}</p>}
+                                    {ev.axes_amelioration && <p><span className="font-semibold">{t("detail.evaluations.improvements")}:</span> {ev.axes_amelioration}</p>}
+                                    {ev.commentaire && <p><span className="font-semibold">{t("detail.evaluations.comment")}:</span> {ev.commentaire}</p>}
+                                </div>
+                            )}
+                            <p className="mt-2 text-[11px] text-slate-400">{t("detail.evaluations.evaluator")}: {evaluatorName(ev)}</p>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            <ConfirmDialog
+                isOpen={!!confirmDel}
+                onClose={() => setConfirmDel(null)}
+                onConfirm={handleDelete}
+                title={t("detail.evaluations.confirmDelete")}
+                description={t("detail.evaluations.confirmDeleteDesc")}
+                isLoading={del.isPending}
+            />
+        </div>
+    );
+}
+
 // ─── Builders profil & historique ───────────────────────────────────────────
 function buildProfileSections(
     e: Employee,
@@ -804,6 +1098,7 @@ function buildHistory(
         leaves: LeaveRequest[];
         payslips: Payslip[];
         occurrences: DeductionOccurrence[];
+        evaluations: EmployeeEvaluation[];
         rulesById: Map<string, DeductionRule>;
     }
 ): DossierHistoryRow[] {
@@ -861,6 +1156,19 @@ function buildHistory(
             type: t("detail.history.types.deduction"),
             detail: o.motif ? `${label} — ${o.motif}` : label,
             amount: `- ${fmtMoney(o.montant)}`,
+        });
+    }
+
+    for (const ev of data.evaluations) {
+        rows.push({
+            sort: ev.date_evaluation,
+            date: ev.date_evaluation,
+            type: t("detail.history.types.evaluation"),
+            detail: t("detail.history.evaluationDetail", {
+                note: fmtNote(ev.note_globale),
+                period: ev.periode || "—",
+            }),
+            amount: `${fmtNote(ev.note_globale)} / 5`,
         });
     }
 
