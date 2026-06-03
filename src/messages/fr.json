@@ -457,7 +457,8 @@
         "leaves": "Congés",
         "payroll": "Paye",
         "deductions": "Déductions",
-        "evaluations": "Évaluations"
+        "evaluations": "Évaluations",
+        "annual": "Bilan annuel"
       },
       "stats": {
         "hoursWorked": "Heures cumulées",
@@ -563,6 +564,22 @@
         "print": {
           "button": "Imprimer l'évaluation",
           "docTitle": "Fiche d'évaluation"
+        }
+      },
+      "annual": {
+        "year": "Année",
+        "summaryTitle": "Synthèse annuelle",
+        "monthlyTitle": "Détail mensuel",
+        "totalNet": "Net versé",
+        "total": "Total",
+        "empty": "Aucune donnée pour cette année",
+        "col": {
+          "month": "Mois",
+          "leaveDays": "Congés (j)"
+        },
+        "print": {
+          "button": "Imprimer le bilan",
+          "docTitle": "Bilan annuel"
         }
       }
     }

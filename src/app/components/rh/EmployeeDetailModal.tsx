@@ -67,9 +67,19 @@ import {
 } from "../../lib/printEmployeeDossier";
 import { printEmployeeReports } from "../../lib/printEmployeeReports";
 import { printEmployeeEvaluation } from "../../lib/printEmployeeEvaluation";
-import { EVAL_CRITERIA, fmtNote } from "../../lib/hrEvaluation";
+import { printEmployeeAnnualReport } from "../../lib/printEmployeeAnnualReport";
+import { EVAL_CRITERIA, fmtNote, overallAverage } from "../../lib/hrEvaluation";
 
-type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions" | "evaluations";
+type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions" | "evaluations" | "annual";
+
+interface MonthlyStat {
+    mois: number;
+    hours: number;
+    reports: number;
+    leaveDays: number;
+    net: number;
+    deductions: number;
+}
 
 function fmtMoney(n: number): string {
     return n.toLocaleString("fr-FR") + " FCFA";
@@ -98,6 +108,7 @@ export default function EmployeeDetailModal({
     const [tab, setTab] = useState<DetailTab>("overview");
     const [periodFrom, setPeriodFrom] = useState("");
     const [periodTo, setPeriodTo] = useState("");
+    const [bilanYear, setBilanYear] = useState(new Date().getFullYear());
 
     const employeesQ = useEmployees();
     const reportsQ = useDailyReports();
@@ -129,6 +140,84 @@ export default function EmployeeDetailModal({
     const pendingLeaves = leaves.filter((l) => l.statut === "en_attente").length;
     const totalPaid = payslips.reduce((s, p) => s + p.net_a_payer, 0);
     const totalDeductions = occurrences.reduce((s, o) => s + o.montant, 0);
+
+    // Années disponibles (à partir des données) + année courante
+    const availableYears = useMemo(() => {
+        const ys = new Set<number>();
+        const fromDate = (d?: string | null) => {
+            const y = d ? parseInt(d.slice(0, 4), 10) : NaN;
+            if (!Number.isNaN(y)) ys.add(y);
+        };
+        reports.forEach((r) => fromDate(r.date));
+        leaves.forEach((l) => fromDate(l.date_debut));
+        occurrences.forEach((o) => fromDate(o.date));
+        evaluations.forEach((ev) => fromDate(ev.date_evaluation));
+        payslips.forEach((p) => ys.add(p.annee));
+        ys.add(new Date().getFullYear());
+        return Array.from(ys).sort((a, b) => b - a);
+    }, [reports, leaves, occurrences, evaluations, payslips]);
+
+    // Détail mensuel du bilan annuel (12 mois)
+    const monthly = useMemo<MonthlyStat[]>(() => {
+        const yStr = String(bilanYear);
+        const inYear = (d?: string | null) => !!d && d.slice(0, 4) === yStr;
+        const monthOf = (d: string) => parseInt(d.slice(5, 7), 10);
+        const rows: MonthlyStat[] = Array.from({ length: 12 }, (_, i) => ({
+            mois: i + 1,
+            hours: 0,
+            reports: 0,
+            leaveDays: 0,
+            net: 0,
+            deductions: 0,
+        }));
+        for (const r of reports) {
+            if (!inYear(r.date)) continue;
+            const m = monthOf(r.date);
+            if (m >= 1 && m <= 12) {
+                rows[m - 1].hours += r.heures_travaillees || 0;
+                rows[m - 1].reports += 1;
+            }
+        }
+        for (const l of leaves) {
+            if (l.statut !== "approuve" || !inYear(l.date_debut)) continue;
+            const m = monthOf(l.date_debut);
+            if (m >= 1 && m <= 12) rows[m - 1].leaveDays += l.nb_jours;
+        }
+        for (const p of payslips) {
+            if (p.annee !== bilanYear) continue;
+            if (p.mois >= 1 && p.mois <= 12) rows[p.mois - 1].net += p.net_a_payer;
+        }
+        for (const o of occurrences) {
+            if (!inYear(o.date)) continue;
+            const m = monthOf(o.date);
+            if (m >= 1 && m <= 12) rows[m - 1].deductions += o.montant;
+        }
+        return rows;
+    }, [bilanYear, reports, leaves, payslips, occurrences]);
+
+    const annualEvaluations = useMemo(
+        () => evaluations.filter((ev) => ev.date_evaluation.slice(0, 4) === String(bilanYear)),
+        [evaluations, bilanYear]
+    );
+
+    const annual = useMemo(() => {
+        const sum = monthly.reduce(
+            (acc, m) => ({
+                hours: acc.hours + m.hours,
+                reports: acc.reports + m.reports,
+                leaveDays: acc.leaveDays + m.leaveDays,
+                net: acc.net + m.net,
+                deductions: acc.deductions + m.deductions,
+            }),
+            { hours: 0, reports: 0, leaveDays: 0, net: 0, deductions: 0 }
+        );
+        return {
+            ...sum,
+            payslips: payslips.filter((p) => p.annee === bilanYear).length,
+            evalCount: annualEvaluations.length,
+            evalAvg: overallAverage(annualEvaluations),
+        };
+    }, [monthly, payslips, bilanYear, annualEvaluations]);
 
     const sections = useMemo<DossierSection[]>(
         () => (employee ? buildProfileSections(employee, supervisorName, t as TFn) : []),
@@ -232,6 +321,66 @@ export default function EmployeeDetailModal({
         });
     };
 
+    const handlePrintAnnual = () => {
+        if (!employee) return;
+        printEmployeeAnnualReport({
+            docTitle: t("detail.annual.print.docTitle"),
+            fullName: `${employee.prenom} ${employee.nom}`,
+            subtitle: employee.poste + (employee.departement ? ` · ${employee.departement}` : ""),
+            matriculeLabel: t("employees.col.matricule"),
+            matricule: employee.matricule ?? "—",
+            yearLabel: t("detail.annual.year"),
+            year: String(bilanYear),
+            summaryTitle: t("detail.annual.summaryTitle"),
+            summary: [
+                { label: t("detail.stats.hoursWorked"), value: `${annual.hours} h` },
+                { label: t("detail.stats.reportCount"), value: String(annual.reports) },
+                { label: t("detail.stats.approvedDays"), value: String(annual.leaveDays) },
+                { label: t("detail.stats.payslipCount"), value: String(annual.payslips) },
+                { label: t("detail.annual.totalNet"), value: fmtMoney(annual.net) },
+                { label: t("detail.stats.totalDeductions"), value: fmtMoney(annual.deductions) },
+                { label: t("detail.tabs.evaluations"), value: String(annual.evalCount) },
+                { label: t("detail.stats.lastRating"), value: annual.evalCount ? `${fmtNote(annual.evalAvg)} / 5` : "—" },
+            ],
+            monthlyTitle: t("detail.annual.monthlyTitle"),
+            columns: [
+                { label: t("detail.annual.col.month") },
+                { label: t("detail.stats.hoursWorked"), align: "right" },
+                { label: t("detail.tabs.reports"), align: "right" },
+                { label: t("detail.annual.col.leaveDays"), align: "right" },
+                { label: t("detail.annual.totalNet"), align: "right" },
+                { label: t("detail.tabs.deductions"), align: "right" },
+            ],
+            rows: [
+                ...monthly.map((m) => ({
+                    cells: [
+                        monthLabel(m.mois),
+                        `${m.hours}`,
+                        `${m.reports}`,
+                        `${m.leaveDays}`,
+                        fmtMoney(m.net),
+                        fmtMoney(m.deductions),
+                    ],
+                })),
+                {
+                    total: true,
+                    cells: [
+                        t("detail.annual.total"),
+                        `${annual.hours}`,
+                        `${annual.reports}`,
+                        `${annual.leaveDays}`,
+                        fmtMoney(annual.net),
+                        fmtMoney(annual.deductions),
+                    ],
+                },
+            ],
+            emptyLabel: t("detail.annual.empty"),
+            generatedOn: t("detail.print.generatedOn", {
+                date: new Date().toLocaleString("fr-FR"),
+            }),
+        });
+    };
+
     const evaluatorName = (ev: EmployeeEvaluation): string => {
         if (!ev.evaluateur_id) return "—";
         const u = (employeesQ.data ?? []).find((e) => e.user_id === ev.evaluateur_id);
@@ -321,6 +470,9 @@ export default function EmployeeDetailModal({
                     </DetailTabBtn>
                     <DetailTabBtn active={tab === "evaluations"} onClick={() => setTab("evaluations")} icon={<Star className="w-4 h-4" />}>
                         {t("detail.tabs.evaluations")} ({evaluations.length})
+                    </DetailTabBtn>
+                    <DetailTabBtn active={tab === "annual"} onClick={() => setTab("annual")} icon={<CalendarDays className="w-4 h-4" />}>
+                        {t("detail.tabs.annual")}
                     </DetailTabBtn>
                 </div>
 
@@ -533,6 +685,77 @@ export default function EmployeeDetailModal({
                         onError={onError}
                         onSuccess={onSuccess}
                     />
+                )}
+
+                {tab === "annual" && (
+                    <div className="space-y-4 max-h-[460px] overflow-auto pr-1">
+                        <div className="flex flex-wrap items-end justify-between gap-3">
+                            <div className="space-y-1">
+                                <Label className="text-xs">{t("detail.annual.year")}</Label>
+                                <Select value={String(bilanYear)} onValueChange={(v) => setBilanYear(parseInt(v ?? "", 10) || new Date().getFullYear())}>
+                                    <SelectTrigger className="w-32">
+                                        <SelectValue>{(v: string) => v}</SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableYears.map((y) => (
+                                            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={handlePrintAnnual}>
+                                <Printer className="w-4 h-4 mr-1.5" />
+                                {t("detail.annual.print.button")}
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <StatBox label={t("detail.stats.hoursWorked")} value={`${annual.hours} h`} />
+                            <StatBox label={t("detail.stats.reportCount")} value={String(annual.reports)} />
+                            <StatBox label={t("detail.stats.approvedDays")} value={String(annual.leaveDays)} />
+                            <StatBox label={t("detail.stats.payslipCount")} value={String(annual.payslips)} />
+                            <StatBox label={t("detail.annual.totalNet")} value={fmtMoney(annual.net)} />
+                            <StatBox label={t("detail.stats.totalDeductions")} value={fmtMoney(annual.deductions)} highlight={annual.deductions > 0} />
+                            <StatBox label={t("detail.tabs.evaluations")} value={String(annual.evalCount)} />
+                            <StatBox label={t("detail.stats.lastRating")} value={annual.evalCount ? `${fmtNote(annual.evalAvg)} / 5` : "—"} />
+                        </div>
+
+                        <div>
+                            <p className="text-xs uppercase tracking-wide text-rose-600 font-semibold mb-2">{t("detail.annual.monthlyTitle")}</p>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t("detail.annual.col.month")}</TableHead>
+                                        <TableHead className="text-right">{t("detail.stats.hoursWorked")}</TableHead>
+                                        <TableHead className="text-right">{t("detail.tabs.reports")}</TableHead>
+                                        <TableHead className="text-right">{t("detail.annual.col.leaveDays")}</TableHead>
+                                        <TableHead className="text-right">{t("detail.annual.totalNet")}</TableHead>
+                                        <TableHead className="text-right">{t("detail.tabs.deductions")}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {monthly.map((m) => (
+                                        <TableRow key={m.mois}>
+                                            <TableCell>{monthLabel(m.mois)}</TableCell>
+                                            <TableCell className="text-right">{m.hours}</TableCell>
+                                            <TableCell className="text-right">{m.reports}</TableCell>
+                                            <TableCell className="text-right">{m.leaveDays}</TableCell>
+                                            <TableCell className="text-right">{fmtMoney(m.net)}</TableCell>
+                                            <TableCell className="text-right">{fmtMoney(m.deductions)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                    <TableRow className="font-semibold bg-slate-50 dark:bg-slate-800/60">
+                                        <TableCell>{t("detail.annual.total")}</TableCell>
+                                        <TableCell className="text-right">{annual.hours}</TableCell>
+                                        <TableCell className="text-right">{annual.reports}</TableCell>
+                                        <TableCell className="text-right">{annual.leaveDays}</TableCell>
+                                        <TableCell className="text-right">{fmtMoney(annual.net)}</TableCell>
+                                        <TableCell className="text-right">{fmtMoney(annual.deductions)}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
                 )}
             </div>
         </Modal>

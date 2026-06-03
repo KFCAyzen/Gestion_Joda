@@ -457,7 +457,8 @@
         "leaves": "Leaves",
         "payroll": "Payroll",
         "deductions": "Deductions",
-        "evaluations": "Evaluations"
+        "evaluations": "Evaluations",
+        "annual": "Annual report"
       },
       "stats": {
         "hoursWorked": "Total hours",
@@ -563,6 +564,22 @@
         "print": {
           "button": "Print evaluation",
           "docTitle": "Evaluation sheet"
+        }
+      },
+      "annual": {
+        "year": "Year",
+        "summaryTitle": "Annual summary",
+        "monthlyTitle": "Monthly breakdown",
+        "totalNet": "Net paid",
+        "total": "Total",
+        "empty": "No data for this year",
+        "col": {
+          "month": "Month",
+          "leaveDays": "Leave (days)"
+        },
+        "print": {
+          "button": "Print summary",
+          "docTitle": "Annual report"
         }
       }
     }
