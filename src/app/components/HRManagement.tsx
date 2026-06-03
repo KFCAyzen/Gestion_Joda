@@ -614,6 +614,7 @@ type EmployeeFormState = {
     superieur_id: string;
     type_horaire: "" | "temps_plein" | "temps_partiel" | "flexible" | "poste";
     numero_cnps: string;
+    numero_compte_bancaire: string;
 };
 
 const emptyEmployeeForm: EmployeeFormState = {
@@ -655,6 +656,7 @@ const emptyEmployeeForm: EmployeeFormState = {
     superieur_id: "",
     type_horaire: "",
     numero_cnps: "",
+    numero_compte_bancaire: "",
 };
 
 const MATRICULE_PREFIX = "EMP-";
@@ -801,6 +803,7 @@ function EmployeesPanel({
             superieur_id: e.superieur_id ?? "",
             type_horaire: e.type_horaire ?? "",
             numero_cnps: e.numero_cnps ?? "",
+            numero_compte_bancaire: e.numero_compte_bancaire ?? "",
         });
         setStep(0);
         setModalOpen(true);
@@ -846,6 +849,7 @@ function EmployeesPanel({
                 superieur_id: form.superieur_id || null,
                 type_horaire: form.type_horaire || null,
                 numero_cnps: form.numero_cnps.trim() || null,
+                numero_compte_bancaire: form.numero_compte_bancaire.trim() || null,
             };
             if (editing) {
                 await update.mutateAsync({ id: editing.id, data: payload });
@@ -1713,6 +1717,13 @@ function StepContract({
                     value={form.numero_cnps}
                     onChange={(e) => setForm((f) => ({ ...f, numero_cnps: e.target.value }))}
                     placeholder={t("employees.form.cnpsPlaceholder")}
+                />
+            </Field>
+            <Field label={t("employees.form.bankAccount")}>
+                <Input
+                    value={form.numero_compte_bancaire}
+                    onChange={(e) => setForm((f) => ({ ...f, numero_compte_bancaire: e.target.value }))}
+                    placeholder={t("employees.form.bankAccountPlaceholder")}
                 />
             </Field>
             <div className="md:col-span-2">

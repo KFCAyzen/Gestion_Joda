@@ -142,6 +142,8 @@
         "choose": "Choose…",
         "cnps": "CNPS No.",
         "cnpsPlaceholder": "CNPS insured number",
+        "bankAccount": "Bank account No.",
+        "bankAccountPlaceholder": "Account number (RIB)",
         "birthDate": "Date of birth",
         "birthPlace": "Place of birth",
         "sex": "Sex",

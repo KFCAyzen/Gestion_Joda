@@ -88,6 +88,7 @@ export const employeeSchema = z.object({
   type_horaire: typeHoraireEnum.nullable().optional(),
   // Identifiant social (paie)
   numero_cnps: nullableString,
+  numero_compte_bancaire: nullableString,
   created_at: z.string(),
   updated_at: z.string(),
 });

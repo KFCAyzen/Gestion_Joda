@@ -79,6 +79,7 @@ export interface Employee {
   type_horaire: TypeHoraire | null;
   // Identifiant social (paie)
   numero_cnps: string | null;
+  numero_compte_bancaire: string | null;
   created_at: string;
   updated_at: string;
 }
