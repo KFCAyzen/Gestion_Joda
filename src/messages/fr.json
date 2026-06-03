@@ -234,7 +234,19 @@
       "pinSentBoth": "PIN envoyé par e-mail et SMS",
       "pinSentNone": "PIN non envoyé (e-mail/téléphone manquant)",
       "pinHiddenHint": "Code haché côté serveur. Cliquez sur Régénérer pour obtenir un nouveau code à transmettre.",
-      "viewDetail": "Voir le dossier"
+      "viewDetail": "Voir le dossier",
+      "report": {
+        "print": "Imprimer le rapport",
+        "docTitle": "Rapport des employés",
+        "subtitle": "{count} employé(s)",
+        "summaryTitle": "Synthèse de l'effectif",
+        "summary": {
+          "total": "Total employés",
+          "payroll": "Masse salariale (actifs)"
+        },
+        "tableTitle": "Liste des employés",
+        "generatedOn": "Généré le {date}"
+      }
     },
     "leaves": {
       "title": "Demandes de congés",
@@ -484,6 +496,16 @@
         "historyTitle": "Historique",
         "notesTitle": "Notes",
         "generatedOn": "Document généré le {date}"
+      },
+      "reportsPrint": {
+        "button": "Imprimer les rapports",
+        "docTitle": "Rapports d'activité",
+        "from": "Du",
+        "to": "Au",
+        "reset": "Réinitialiser",
+        "periodLabel": "Période",
+        "allPeriods": "Toutes périodes",
+        "reportCount": "Nombre de rapports"
       }
     }
   },

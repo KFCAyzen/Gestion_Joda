@@ -17,6 +17,7 @@ import {
     Pencil,
     Play,
     Plus,
+    Printer,
     Receipt,
     RotateCcw,
     Settings2,
@@ -79,6 +80,7 @@ import {
 } from "../lib/hooks/use-hr";
 import HRConfigPanel from "./rh/HRConfigPanel";
 import EmployeeDetailModal from "./rh/EmployeeDetailModal";
+import { printEmployeesReport } from "../lib/printEmployeesReport";
 import type {
     Employee,
     EmployeeStatus,
@@ -659,6 +661,58 @@ function EmployeesPanel({
         }
     };
 
+    const handlePrintReport = () => {
+        const count = (s: EmployeeStatus) => employees.filter((e) => e.statut === s).length;
+        const payroll = employees
+            .filter((e) => e.statut === "actif")
+            .reduce((sum, e) => sum + (e.salaire_base || 0), 0);
+        const dateFmt = new Intl.DateTimeFormat(locale, { dateStyle: "long" });
+        const fmtDate = (d?: string | null) => {
+            if (!d) return "—";
+            const parsed = new Date(d);
+            return isNaN(parsed.getTime()) ? d : dateFmt.format(parsed);
+        };
+        const generatedOn = t("employees.report.generatedOn", {
+            date: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date()),
+        });
+
+        printEmployeesReport({
+            docTitle: t("employees.report.docTitle"),
+            subtitle: t("employees.report.subtitle", { count: employees.length }),
+            summaryTitle: t("employees.report.summaryTitle"),
+            summary: [
+                { label: t("employees.report.summary.total"), value: String(employees.length) },
+                { label: t("status.actif"), value: String(count("actif")) },
+                { label: t("status.suspendu"), value: String(count("suspendu")) },
+                { label: t("status.inactif"), value: String(count("inactif")) },
+                { label: t("employees.report.summary.payroll"), value: fmtMoney(payroll) },
+            ],
+            tableTitle: t("employees.report.tableTitle"),
+            columns: [
+                { key: "matricule", label: t("employees.col.matricule") },
+                { key: "name", label: t("employees.col.name") },
+                { key: "position", label: t("employees.col.position") },
+                { key: "department", label: t("employees.col.department") },
+                { key: "hiredAt", label: t("employees.col.hiredAt") },
+                { key: "salary", label: t("employees.col.salary"), align: "right" },
+                { key: "status", label: t("employees.col.status") },
+            ],
+            rows: employees.map((e) => ({
+                cells: [
+                    e.matricule ?? "—",
+                    `${e.prenom} ${e.nom}`,
+                    e.poste,
+                    e.departement ?? "—",
+                    fmtDate(e.date_embauche),
+                    fmtMoney(e.salaire_base),
+                    t(`status.${e.statut}`),
+                ],
+            })),
+            emptyLabel: t("employees.empty"),
+            generatedOn,
+        });
+    };
+
     return (
         <Card className="joda-surface border-0 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-3">
@@ -670,6 +724,14 @@ function EmployeesPanel({
                     <CardDescription>{t("employees.description")}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={handlePrintReport}
+                        disabled={employees.length === 0}
+                    >
+                        <Printer className="w-4 h-4 mr-2" />
+                        {t("employees.report.print")}
+                    </Button>
                     <Button
                         variant="outline"
                         onClick={() => copyToClipboard(publicLink, t("employees.publicLinkCopied"))}

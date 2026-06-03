@@ -234,7 +234,19 @@
       "pinSentBoth": "PIN sent by email and SMS",
       "pinSentNone": "PIN not sent (missing email/phone)",
       "pinHiddenHint": "PIN is hashed on the server. Click Regenerate to obtain a new PIN to share.",
-      "viewDetail": "View profile"
+      "viewDetail": "View profile",
+      "report": {
+        "print": "Print report",
+        "docTitle": "Employee report",
+        "subtitle": "{count} employee(s)",
+        "summaryTitle": "Workforce summary",
+        "summary": {
+          "total": "Total employees",
+          "payroll": "Payroll (active)"
+        },
+        "tableTitle": "Employee list",
+        "generatedOn": "Generated on {date}"
+      }
     },
     "leaves": {
       "title": "Leave requests",
@@ -484,6 +496,16 @@
         "historyTitle": "History",
         "notesTitle": "Notes",
         "generatedOn": "Document generated on {date}"
+      },
+      "reportsPrint": {
+        "button": "Print reports",
+        "docTitle": "Activity reports",
+        "from": "From",
+        "to": "To",
+        "reset": "Reset",
+        "periodLabel": "Period",
+        "allPeriods": "All periods",
+        "reportCount": "Number of reports"
       }
     }
   },

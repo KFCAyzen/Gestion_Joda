@@ -60,6 +60,7 @@ import {
     type DossierSection,
     type DossierHistoryRow,
 } from "../../lib/printEmployeeDossier";
+import { printEmployeeReports } from "../../lib/printEmployeeReports";
 
 type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions";
 
@@ -88,6 +89,8 @@ export default function EmployeeDetailModal({
 }) {
     const t = useTranslations("hrManagement");
     const [tab, setTab] = useState<DetailTab>("overview");
+    const [periodFrom, setPeriodFrom] = useState("");
+    const [periodTo, setPeriodTo] = useState("");
 
     const employeesQ = useEmployees();
     const reportsQ = useDailyReports();
@@ -167,6 +170,50 @@ export default function EmployeeDetailModal({
             },
             history,
             historyEmpty: t("detail.history.empty"),
+            generatedOn: t("detail.print.generatedOn", {
+                date: new Date().toLocaleString("fr-FR"),
+            }),
+        });
+    };
+
+    const reportsInPeriod = useMemo(() => {
+        return reports
+            .filter((r) => {
+                if (periodFrom && r.date < periodFrom) return false;
+                if (periodTo && r.date > periodTo) return false;
+                return true;
+            })
+            .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    }, [reports, periodFrom, periodTo]);
+
+    const handlePrintReports = () => {
+        if (!employee) return;
+        const totalHours = reportsInPeriod.reduce((s, r) => s + (r.heures_travaillees || 0), 0);
+        const periodText =
+            periodFrom || periodTo
+                ? `${periodFrom || "…"} → ${periodTo || "…"}`
+                : t("detail.reportsPrint.allPeriods");
+        printEmployeeReports({
+            docTitle: t("detail.reportsPrint.docTitle"),
+            fullName: `${employee.prenom} ${employee.nom}`,
+            subtitle: employee.poste + (employee.departement ? ` · ${employee.departement}` : ""),
+            matriculeLabel: t("employees.col.matricule"),
+            matricule: employee.matricule ?? "—",
+            periodLabel: t("detail.reportsPrint.periodLabel"),
+            period: periodText,
+            summaryTitle: t("detail.print.statsTitle"),
+            summary: [
+                { label: t("detail.reportsPrint.reportCount"), value: String(reportsInPeriod.length) },
+                { label: t("detail.stats.hoursWorked"), value: `${totalHours} h` },
+            ],
+            observationsLabel: t("reports.col.observations"),
+            entries: reportsInPeriod.map((r) => ({
+                date: r.date,
+                hours: `${r.heures_travaillees} h`,
+                activities: r.activites,
+                observations: r.observations ?? "",
+            })),
+            emptyLabel: t("reports.empty"),
             generatedOn: t("detail.print.generatedOn", {
                 date: new Date().toLocaleString("fr-FR"),
             }),
@@ -281,29 +328,64 @@ export default function EmployeeDetailModal({
                 )}
 
                 {tab === "reports" && (
-                    <div className="max-h-[400px] overflow-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t("reports.col.date")}</TableHead>
-                                    <TableHead>{t("reports.col.hours")}</TableHead>
-                                    <TableHead>{t("reports.col.activities")}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {reports.length === 0 ? (
-                                    <TableRow><TableCell colSpan={3} className="text-center py-6 text-slate-400">{t("reports.empty")}</TableCell></TableRow>
-                                ) : (
-                                    reports.map((r) => (
-                                        <TableRow key={r.id}>
-                                            <TableCell>{r.date}</TableCell>
-                                            <TableCell>{r.heures_travaillees} h</TableCell>
-                                            <TableCell className="max-w-md truncate" title={r.activites}>{r.activites}</TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                    <div className="space-y-3">
+                        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-50/50 dark:bg-slate-800/50">
+                            <div className="space-y-1">
+                                <Label className="text-xs">{t("detail.reportsPrint.from")}</Label>
+                                <Input
+                                    type="date"
+                                    value={periodFrom}
+                                    max={periodTo || undefined}
+                                    onChange={(e) => setPeriodFrom(e.target.value)}
+                                    className="w-auto"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs">{t("detail.reportsPrint.to")}</Label>
+                                <Input
+                                    type="date"
+                                    value={periodTo}
+                                    min={periodFrom || undefined}
+                                    onChange={(e) => setPeriodTo(e.target.value)}
+                                    className="w-auto"
+                                />
+                            </div>
+                            {(periodFrom || periodTo) && (
+                                <Button size="sm" variant="ghost" onClick={() => { setPeriodFrom(""); setPeriodTo(""); }}>
+                                    {t("detail.reportsPrint.reset")}
+                                </Button>
+                            )}
+                            <div className="ml-auto">
+                                <Button size="sm" variant="outline" onClick={handlePrintReports} disabled={reportsInPeriod.length === 0}>
+                                    <Printer className="w-4 h-4 mr-1.5" />
+                                    {t("detail.reportsPrint.button")} ({reportsInPeriod.length})
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="max-h-[360px] overflow-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t("reports.col.date")}</TableHead>
+                                        <TableHead>{t("reports.col.hours")}</TableHead>
+                                        <TableHead>{t("reports.col.activities")}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {reportsInPeriod.length === 0 ? (
+                                        <TableRow><TableCell colSpan={3} className="text-center py-6 text-slate-400">{t("reports.empty")}</TableCell></TableRow>
+                                    ) : (
+                                        reportsInPeriod.map((r) => (
+                                            <TableRow key={r.id}>
+                                                <TableCell>{r.date}</TableCell>
+                                                <TableCell>{r.heures_travaillees} h</TableCell>
+                                                <TableCell className="max-w-md truncate" title={r.activites}>{r.activites}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </div>
                 )}
 
