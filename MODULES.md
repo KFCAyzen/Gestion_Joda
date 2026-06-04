@@ -622,7 +622,8 @@
 
 ### Composants
 - `HRManagement.tsx` — Conteneur principal du module (route `/rh`), garde `ProtectedRoute requiredRole="supervisor"`
-- `components/rh/EmployeeDetailModal.tsx` — Fiche employé détaillée (profil étendu 23 champs : état civil, identité, adresse, contact d'urgence, contrat) + assistant de création en 5 étapes
+- `components/rh/EmployeeDetail.tsx` — Fiche employé détaillée affichée sur une **page dédiée** (route `/rh/employes/[id]`), pas une modale ; profil étendu (état civil, identité, adresse, contact d'urgence, contrat) + onglets historique/paye/évaluations/bilan
+- `[locale]/(app)/rh/employes/[id]/page.tsx` — Route de la page profil employé (garde `ProtectedRoute requiredRole="supervisor"`)
 - `components/rh/HRConfigPanel.tsx` — Configuration de la paie (règles de retenue, échéanciers, config par employé)
 - `PublicReportPage.tsx` — Portail public de saisie de rapport journalier (route `/rapport`, sans session, accès par PIN employé)
 

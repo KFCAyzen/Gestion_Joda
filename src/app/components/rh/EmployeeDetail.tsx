@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+    ArrowLeft,
     BadgePercent,
     CalendarDays,
     ClipboardList,
@@ -17,7 +18,6 @@ import {
     Trash2,
     UserCircle2,
 } from "lucide-react";
-import Modal from "../Modal";
 import ConfirmDialog from "../ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,15 +92,15 @@ function monthLabel(m: number): string {
 
 type TFn = (key: string, values?: Record<string, string | number>) => string;
 
-export default function EmployeeDetailModal({
-    employee,
-    onClose,
+export default function EmployeeDetail({
+    employeeId,
+    onBack,
     onError,
     onSuccess,
     creatorId,
 }: {
-    employee: Employee | null;
-    onClose: () => void;
+    employeeId: string;
+    onBack: () => void;
     onError: (e: unknown) => void;
     onSuccess: (msg: string) => void;
     creatorId: string;
@@ -112,6 +112,10 @@ export default function EmployeeDetailModal({
     const [bilanYear, setBilanYear] = useState(new Date().getFullYear());
 
     const employeesQ = useEmployees();
+    const employee = useMemo(
+        () => (employeesQ.data ?? []).find((e) => e.id === employeeId) ?? null,
+        [employeesQ.data, employeeId]
+    );
     const reportsQ = useDailyReports();
     const leavesQ = useLeaveRequests();
     const payslipsQ = usePayslips();
@@ -422,24 +426,50 @@ export default function EmployeeDetailModal({
         });
     };
 
-    if (!employee) return null;
+    if (employeesQ.isLoading && !employee) {
+        return (
+            <div className="flex items-center justify-center py-24 text-slate-500">
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                {t("detail.loading")}
+            </div>
+        );
+    }
+
+    if (!employee) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+                <p className="text-slate-500">{t("detail.notFound")}</p>
+                <Button variant="outline" onClick={onBack}>
+                    <ArrowLeft className="w-4 h-4 mr-1.5" />
+                    {t("detail.back")}
+                </Button>
+            </div>
+        );
+    }
 
     return (
-        <Modal
-            isOpen={!!employee}
-            onClose={onClose}
-            title={`${employee.prenom} ${employee.nom}`}
-            description={employee.poste + (employee.departement ? ` · ${employee.departement}` : "")}
-            size="xl"
-        >
-            <div className="space-y-4">
-                {/* Toolbar */}
-                <div className="flex justify-end">
-                    <Button size="sm" variant="outline" onClick={handlePrint}>
-                        <Printer className="w-4 h-4 mr-1.5" />
-                        {t("detail.print.button")}
+        <div className="space-y-4">
+            {/* En-tête de page */}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <Button size="sm" variant="outline" onClick={onBack}>
+                        <ArrowLeft className="w-4 h-4 mr-1.5" />
+                        {t("detail.back")}
                     </Button>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                            {`${employee.prenom} ${employee.nom}`}
+                        </h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            {employee.poste + (employee.departement ? ` · ${employee.departement}` : "")}
+                        </p>
+                    </div>
                 </div>
+                <Button size="sm" variant="outline" onClick={handlePrint}>
+                    <Printer className="w-4 h-4 mr-1.5" />
+                    {t("detail.print.button")}
+                </Button>
+            </div>
 
                 {/* Header info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -478,7 +508,7 @@ export default function EmployeeDetailModal({
                 </div>
 
                 {tab === "overview" && (
-                    <div className="space-y-5 max-h-[460px] overflow-auto pr-1">
+                    <div className="space-y-5 overflow-x-auto pr-1">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <StatBox label={t("detail.stats.hoursWorked")} value={`${totalHours} h`} />
                             <StatBox label={t("detail.stats.approvedDays")} value={String(approvedLeaves)} />
@@ -508,7 +538,7 @@ export default function EmployeeDetailModal({
                 )}
 
                 {tab === "history" && (
-                    <div className="max-h-[460px] overflow-auto">
+                    <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -691,7 +721,7 @@ export default function EmployeeDetailModal({
                 )}
 
                 {tab === "annual" && (
-                    <div className="space-y-4 max-h-[460px] overflow-auto pr-1">
+                    <div className="space-y-4 overflow-x-auto pr-1">
                         <div className="flex flex-wrap items-end justify-between gap-3">
                             <div className="space-y-1">
                                 <Label className="text-xs">{t("detail.annual.year")}</Label>
@@ -760,8 +790,7 @@ export default function EmployeeDetailModal({
                         </div>
                     </div>
                 )}
-            </div>
-        </Modal>
+        </div>
     );
 }
 

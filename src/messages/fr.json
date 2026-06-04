@@ -456,6 +456,9 @@
       }
     },
     "detail": {
+      "back": "Retour",
+      "loading": "Chargement du profil...",
+      "notFound": "Employé introuvable.",
       "tabs": {
         "overview": "Vue d'ensemble",
         "history": "Historique",

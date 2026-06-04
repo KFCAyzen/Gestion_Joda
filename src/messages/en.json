@@ -456,6 +456,9 @@
       }
     },
     "detail": {
+      "back": "Back",
+      "loading": "Loading profile...",
+      "notFound": "Employee not found.",
       "tabs": {
         "overview": "Overview",
         "history": "History",

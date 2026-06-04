@@ -81,7 +81,7 @@ import {
     useEmployeeEvaluations,
 } from "../lib/hooks/use-hr";
 import HRConfigPanel from "./rh/HRConfigPanel";
-import EmployeeDetailModal from "./rh/EmployeeDetailModal";
+import { useRouter } from "@/i18n/navigation";
 import { printEmployeesReport } from "../lib/printEmployeesReport";
 import { payslipReference } from "../lib/payslipRef";
 import { computeCameroonPayroll } from "../lib/cameroonPayroll";
@@ -130,6 +130,7 @@ function HRManagementInner() {
     const t = useTranslations("hrManagement");
     const { user } = useAuth();
     const { showNotification } = useNotificationContext();
+    const router = useRouter();
     const [tab, setTab] = useState<TabId>("employees");
 
     const employeesQ = useEmployees();
@@ -149,7 +150,7 @@ function HRManagementInner() {
         return e ? `${e.prenom} ${e.nom}` : t("unknownEmployee");
     };
 
-    const [detailEmployee, setDetailEmployee] = useState<Employee | null>(null);
+    const openEmployee = (e: Employee) => router.push(`/rh/employes/${e.id}`);
 
     return (
         <div className="space-y-6">
@@ -204,7 +205,7 @@ function HRManagementInner() {
                 <EmployeesPanel
                     employees={employees}
                     loading={employeesQ.isLoading}
-                    onView={(e) => setDetailEmployee(e)}
+                    onView={openEmployee}
                     onError={(e) => showNotification(getFriendlyErrorMessage(e), "error")}
                     onSuccess={(msg) => showNotification(msg, "success")}
                 />
@@ -245,7 +246,7 @@ function HRManagementInner() {
             {tab === "evaluations" && (
                 <EvaluationsOverviewPanel
                     employees={employees}
-                    onView={(e) => setDetailEmployee(e)}
+                    onView={openEmployee}
                 />
             )}
             {tab === "config" && (
@@ -255,14 +256,6 @@ function HRManagementInner() {
                     onSuccess={(msg) => showNotification(msg, "success")}
                 />
             )}
-
-            <EmployeeDetailModal
-                employee={detailEmployee}
-                onClose={() => setDetailEmployee(null)}
-                creatorId={user?.id ?? ""}
-                onError={(e) => showNotification(getFriendlyErrorMessage(e), "error")}
-                onSuccess={(msg) => showNotification(msg, "success")}
-            />
         </div>
     );
 }

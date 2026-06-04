@@ -237,7 +237,9 @@ function AppShell({ children }: { children: ReactNode }) {
     }, [user, pathname]);
 
     const activeRouteId = useMemo<RouteId>(() => {
-        const entry = Object.entries(ROUTES).find(([, path]) => pathname.endsWith(path));
+        const entry = Object.entries(ROUTES).find(
+            ([, path]) => pathname.endsWith(path) || pathname.includes(`${path}/`)
+        );
         return (entry?.[0] as RouteId) ?? "home";
     }, [pathname]);
 
