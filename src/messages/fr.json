@@ -2767,47 +2767,84 @@
   "publicReport": {
     "title": "Rapport quotidien",
     "subtitle": "Soumettez votre rapport d'activité quotidien",
-    "selectEmployee": "Choisir un employé",
+    "selectEmployee": "Sélectionnez votre nom",
     "loading": "Chargement…",
     "noEmployees": "Aucun employé disponible",
     "welcome": "Bienvenue, {name}",
-    "logout": "Se déconnecter",
+    "logout": "Quitter",
     "submitSuccess": "Rapport envoyé avec succès",
+    "eyebrow": "Espace employé",
+    "topbarTitle": "Rapport journalier",
+    "topbarSubtitle": "Espace employé",
+    "greeting": "Bonjour,",
+    "dateLabel": "Date",
+    "remainingShort": "Restants",
+    "footer": "© {year} Joda Company · Portail de rapport",
+    "footerShort": "© {year} Joda Company",
+    "todayBadge": "Aujourd'hui",
+    "brand": {
+      "eyebrow": "Rapport journalier",
+      "title": "Votre rapport du jour, en moins d'une minute.",
+      "text": "Identifiez-vous avec votre code PIN, décrivez vos activités, et c'est transmis aux RH — sans compte ni mot de passe.",
+      "fastTitle": "Rapide",
+      "fastText": "Trois champs, un envoi",
+      "secureTitle": "Sécurisé par PIN",
+      "secureText": "Code confidentiel transmis par les RH",
+      "trackTitle": "Suivi automatique",
+      "trackText": "Historique consultable à tout moment"
+    },
     "login": {
       "title": "Identification",
       "description": "Sélectionnez votre nom et saisissez votre code personnel pour soumettre un rapport.",
+      "heading": "Envoyer mon rapport",
+      "headingSubtitle": "Identifiez-vous pour déposer votre rapport d'activité du jour.",
       "employee": "Employé",
-      "pin": "Code personnel",
-      "pinHint": "Votre code à 6 chiffres a été remis par l'administration.",
-      "submit": "Continuer"
+      "pin": "Code PIN",
+      "pinHint": "Code à 6 chiffres transmis par les RH (par SMS ou e-mail).",
+      "submit": "Continuer",
+      "securityNote": "Accès sécurisé et confidentiel. Maximum 2 rapports par jour et par employé."
     },
     "remaining": "Restants aujourd'hui",
     "form": {
       "title": "Nouveau rapport",
-      "description": "Renseignez les détails de votre journée de travail.",
+      "description": "Décrivez vos activités de la journée.",
       "date": "Date",
       "hours": "Heures travaillées",
-      "activities": "Activités réalisées",
-      "activitiesPlaceholder": "Décrivez vos tâches et activités du jour…",
+      "activities": "Activités",
+      "activitiesPlaceholder": "Ex : Suivi de 4 dossiers d'admission, relance des paiements en attente, mise à jour du tableau de bord…",
       "observations": "Observations",
+      "observationsPlaceholder": "Difficultés, remarques, points à signaler (facultatif)…",
       "submit": "Envoyer le rapport"
+    },
+    "limit": {
+      "title": "Limite quotidienne atteinte",
+      "text": "Vous avez envoyé vos 2 rapports pour aujourd'hui. Le formulaire se rouvrira automatiquement demain.",
+      "chip": "Prochain envoi possible demain"
+    },
+    "success": {
+      "title": "Rapport envoyé",
+      "message": "Merci {name}, votre rapport du jour a bien été transmis aux RH.",
+      "remaining": "Il vous reste {count, plural, one {# envoi} other {# envois}} aujourd'hui.",
+      "limitReached": "Vous avez atteint la limite du jour."
     },
     "history": {
       "title": "Mes rapports récents",
-      "description": "Vos 60 derniers rapports envoyés.",
+      "description": "Vos derniers envois enregistrés.",
       "col": {
         "date": "Date",
         "hours": "Heures",
         "activities": "Activités"
       },
-      "empty": "Aucun rapport pour le moment"
+      "empty": "Aucun rapport pour le moment."
     },
     "errors": {
       "missingFields": "Veuillez remplir tous les champs",
+      "noEmployee": "Veuillez sélectionner votre nom.",
+      "pinIncomplete": "Entrez votre code PIN à 6 chiffres.",
       "invalidCredentials": "Identifiants invalides",
       "network": "Erreur réseau, réessayez",
-      "activitiesRequired": "Veuillez décrire vos activités",
-      "invalidHours": "Heures invalides",
+      "activitiesRequired": "Veuillez décrire vos activités.",
+      "invalidHours": "Nombre d'heures invalide (0 à 24).",
       "submitFailed": "Échec de l'envoi du rapport",
       "dailyLimit": "Limite atteinte : vous ne pouvez envoyer que 2 rapports par jour."
     }

@@ -2767,47 +2767,84 @@
   "publicReport": {
     "title": "Daily report",
     "subtitle": "Submit your daily activity report",
-    "selectEmployee": "Select an employee",
+    "selectEmployee": "Select your name",
     "loading": "Loading…",
     "noEmployees": "No employee available",
     "welcome": "Welcome, {name}",
     "logout": "Sign out",
     "submitSuccess": "Report submitted successfully",
+    "eyebrow": "Employee space",
+    "topbarTitle": "Daily report",
+    "topbarSubtitle": "Employee space",
+    "greeting": "Hello,",
+    "dateLabel": "Date",
+    "remainingShort": "Remaining",
+    "footer": "© {year} Joda Company · Report portal",
+    "footerShort": "© {year} Joda Company",
+    "todayBadge": "Today",
+    "brand": {
+      "eyebrow": "Daily report",
+      "title": "Your daily report, in under a minute.",
+      "text": "Identify yourself with your PIN, describe your activities, and it's sent to HR — no account, no password.",
+      "fastTitle": "Fast",
+      "fastText": "Three fields, one submission",
+      "secureTitle": "PIN-secured",
+      "secureText": "Confidential code provided by HR",
+      "trackTitle": "Automatic tracking",
+      "trackText": "History available anytime"
+    },
     "login": {
       "title": "Identification",
       "description": "Pick your name and enter your personal PIN to submit a report.",
+      "heading": "Send my report",
+      "headingSubtitle": "Identify yourself to submit your daily activity report.",
       "employee": "Employee",
-      "pin": "Personal PIN",
-      "pinHint": "Your 6-digit PIN was provided by the administration.",
-      "submit": "Continue"
+      "pin": "PIN code",
+      "pinHint": "6-digit code sent by HR (via SMS or email).",
+      "submit": "Continue",
+      "securityNote": "Secure and confidential access. Maximum 2 reports per day per employee."
     },
     "remaining": "Remaining today",
     "form": {
       "title": "New report",
-      "description": "Fill in the details of your work day.",
+      "description": "Describe your activities for the day.",
       "date": "Date",
       "hours": "Hours worked",
-      "activities": "Activities completed",
-      "activitiesPlaceholder": "Describe today's tasks and activities…",
+      "activities": "Activities",
+      "activitiesPlaceholder": "E.g. Followed up on 4 admission files, chased pending payments, updated the dashboard…",
       "observations": "Observations",
+      "observationsPlaceholder": "Difficulties, remarks, points to flag (optional)…",
       "submit": "Send report"
+    },
+    "limit": {
+      "title": "Daily limit reached",
+      "text": "You have sent your 2 reports for today. The form will reopen automatically tomorrow.",
+      "chip": "Next submission available tomorrow"
+    },
+    "success": {
+      "title": "Report sent",
+      "message": "Thank you {name}, your daily report has been sent to HR.",
+      "remaining": "You have {count, plural, one {# submission} other {# submissions}} left today.",
+      "limitReached": "You have reached today's limit."
     },
     "history": {
       "title": "My recent reports",
-      "description": "Your last 60 submitted reports.",
+      "description": "Your latest saved submissions.",
       "col": {
         "date": "Date",
         "hours": "Hours",
         "activities": "Activities"
       },
-      "empty": "No report yet"
+      "empty": "No report yet."
     },
     "errors": {
       "missingFields": "Please fill in every field",
+      "noEmployee": "Please select your name.",
+      "pinIncomplete": "Enter your 6-digit PIN code.",
       "invalidCredentials": "Invalid credentials",
       "network": "Network error, please retry",
-      "activitiesRequired": "Please describe your activities",
-      "invalidHours": "Invalid hours",
+      "activitiesRequired": "Please describe your activities.",
+      "invalidHours": "Invalid number of hours (0 to 24).",
       "submitFailed": "Failed to submit the report",
       "dailyLimit": "Limit reached: you can submit at most 2 reports per day."
     }
