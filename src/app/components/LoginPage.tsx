@@ -3,23 +3,32 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRouter as useIntlRouter, usePathname } from "@/i18n/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import {
+    User,
+    Mail,
+    Lock,
+    Eye,
+    EyeOff,
+    GraduationCap,
+    Shield,
+    ShieldCheck,
+    Check,
+    ArrowRight,
+    Globe,
+    Moon,
+    Sun,
+    ChevronDown,
+    Users,
+    Sparkles,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "../context/ThemeContext";
-import { locales, defaultLocale } from "@/i18n/config";
+import { locales } from "@/i18n/config";
 import { buildStudentAuthEmail } from "../lib/student-auth";
-import {
-    slideUp,
-    scaleIn,
-    fadeIn,
-    overlayVariants,
-    buttonTap,
-    heroEntrance,
-    titleReveal,
-    staggerContainer,
-    staggerItem,
-} from "../utils/animations";
+
+type Audience = "etudiant" | "equipe";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -29,11 +38,15 @@ export default function LoginPage() {
     const { theme, setTheme } = useTheme();
     const locale = useLocale();
     const t = useTranslations("login");
+    const reduceMotion = useReducedMotion();
+
+    const [audience, setAudience] = useState<Audience>("etudiant");
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [remember, setRemember] = useState(true);
     const [shakeError, setShakeError] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [forgotInput, setForgotInput] = useState("");
@@ -43,14 +56,13 @@ export default function LoginPage() {
     const [showLangMenu, setShowLangMenu] = useState(false);
     const langMenuRef = useRef<HTMLDivElement>(null);
 
-    // Close language menu when clicking outside or pressing Escape
+    const isStudent = audience === "etudiant";
+
+    // Close language menu on Escape
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && showLangMenu) {
-                setShowLangMenu(false);
-            }
+            if (e.key === "Escape" && showLangMenu) setShowLangMenu(false);
         };
-
         if (showLangMenu) {
             document.addEventListener("keydown", handleEscape);
             return () => document.removeEventListener("keydown", handleEscape);
@@ -64,7 +76,6 @@ export default function LoginPage() {
                 setShowLangMenu(false);
             }
         };
-
         if (showLangMenu) {
             document.addEventListener("mousedown", handleClickOutside);
             return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -77,22 +88,8 @@ export default function LoginPage() {
         }
     }, [user, router]);
 
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            document.body.style.overflow = "hidden";
-            document.body.style.position = "fixed";
-            document.body.style.width = "100%";
-            document.body.style.height = "100%";
-            return () => {
-                document.body.style.overflow = "";
-                document.body.style.position = "";
-                document.body.style.width = "";
-                document.body.style.height = "";
-            };
-        }
-    }, []);
-
     const triggerShake = () => {
+        if (reduceMotion) return;
         setShakeError(true);
         setTimeout(() => setShakeError(false), 600);
     };
@@ -107,9 +104,7 @@ export default function LoginPage() {
 
         try {
             const result = await login(resolveEmail(identifier), password);
-
             if (result.success) return; // useEffect handles redirect
-
             setError(result.message || t("errorDefault"));
             triggerShake();
         } catch {
@@ -149,385 +144,401 @@ export default function LoginPage() {
         setForgotChannel("email");
     };
 
-    const toggleTheme = () => {
-        setTheme(theme === "dark" ? "light" : "dark");
-    };
+    const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
     const switchLocale = (newLocale: string) => {
         intlRouter.replace(pathname, { locale: newLocale });
         setShowLangMenu(false);
     };
 
-    const getThemeLabel = () => {
-        return theme === "dark" ? t("lightMode") : t("darkMode");
-    };
+    const getThemeLabel = () => (theme === "dark" ? t("lightMode") : t("darkMode"));
 
-    const EyeIcon = ({ visible }: { visible: boolean }) =>
-        visible ? (
-            <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-            </svg>
-        ) : (
-            <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-        );
-
-    return (
-        <motion.div
-            className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-black"
-            style={{ touchAction: "none" }}
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
-        >
-            <motion.img
-                src="/3353.jpg"
-                alt="Background"
-                className="absolute inset-0 h-full w-full object-cover"
-                initial={{ scale: 1.1, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 1.2, ease: "easeOut" }}
-            />
-            <motion.div className="absolute inset-0 bg-black/70" variants={overlayVariants} initial="initial" animate="animate" />
-
-            {[...Array(6)].map((_, index) => (
-                <motion.div
-                    key={index}
-                    className="absolute rounded-full bg-red-500/20 blur-xl"
-                    style={{
-                        width: 80 + index * 40,
-                        height: 80 + index * 40,
-                        left: `${10 + index * 15}%`,
-                        top: `${20 + (index % 3) * 25}%`,
-                    }}
-                    animate={{ y: [0, -20, 0], opacity: [0.2, 0.5, 0.2], scale: [1, 1.1, 1] }}
-                    transition={{ duration: 3 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.5 }}
-                />
-            ))}
-
-            <motion.div
-                className="relative w-full max-w-5xl h-full sm:h-[85vh] sm:w-[90vw] lg:h-[75vh] lg:w-[80vw]"
-                variants={scaleIn}
-                initial="initial"
-                animate="animate"
-            >
-                {/* Settings Buttons - Top Right */}
-                <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-                    {/* Dark Mode Toggle */}
-                    <motion.button
-                        onClick={toggleTheme}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-lg transition-colors hover:bg-gray-100 dark:bg-gray-800/90 dark:hover:bg-gray-700"
-                        aria-label={getThemeLabel()}
-                        data-testid="theme-toggle"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={buttonTap}
-                    >
-                        {theme === "dark" ? (
-                            <svg className="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                            </svg>
-                        ) : (
-                            <svg className="h-5 w-5 text-gray-700 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                            </svg>
-                        )}
-                    </motion.button>
-
-                    {/* Language Switcher */}
-                    <div className="relative" ref={langMenuRef}>
-                        <motion.button
-                            onClick={() => setShowLangMenu(!showLangMenu)}
-                            className="flex h-10 items-center gap-1.5 rounded-full bg-white/90 px-3 backdrop-blur-sm shadow-lg transition-colors hover:bg-gray-100 dark:bg-gray-800/90 dark:hover:bg-gray-700"
-                            aria-label={t("changeLanguage")}
-                            aria-haspopup="true"
-                            aria-expanded={showLangMenu}
-                            data-testid="lang-switcher"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={buttonTap}
+    // ---- top-right controls (locale + theme) ----
+    const TopControls = (
+        <div className="absolute right-4 top-4 z-30 flex items-center gap-2 sm:right-5 sm:top-5">
+            <div className="relative" ref={langMenuRef}>
+                <button
+                    type="button"
+                    onClick={() => setShowLangMenu(!showLangMenu)}
+                    aria-label={t("changeLanguage")}
+                    aria-haspopup="true"
+                    aria-expanded={showLangMenu}
+                    data-testid="lang-switcher"
+                    className="flex h-[38px] items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 text-[13px] font-semibold text-zinc-800 shadow-[0_1px_2px_rgba(16,16,20,0.05)] transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                >
+                    <Globe className="h-[15px] w-[15px]" />
+                    {locale === "fr" ? "FR" : "EN"}
+                    <ChevronDown className="h-[13px] w-[13px]" />
+                </button>
+                <AnimatePresence>
+                    {showLangMenu && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute right-0 mt-2 w-36 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800"
                         >
-                            <svg className="h-4 w-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                            </svg>
-                            <span className="text-sm font-medium uppercase text-gray-700 dark:text-gray-300">
-                                {locale === "fr" ? "FR" : "EN"}
-                            </span>
-                            <svg className="h-3 w-3 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </motion.button>
-
-                        {/* Language Dropdown */}
-                        <AnimatePresence>
-                            {showLangMenu && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="absolute right-0 mt-2 w-32 rounded-xl bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden z-50"
+                            {locales.map((loc) => (
+                                <button
+                                    key={loc}
+                                    type="button"
+                                    onClick={() => switchLocale(loc)}
+                                    data-testid={`lang-option-${loc}`}
+                                    className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 ${
+                                        locale === loc
+                                            ? "bg-red-50 text-red-600 dark:bg-red-900/20"
+                                            : "text-zinc-700 dark:text-zinc-300"
+                                    }`}
                                 >
-                                    {locales.map((loc) => (
-                                        <button
-                                            key={loc}
-                                            onClick={() => switchLocale(loc)}
-                                            data-testid={`lang-option-${loc}`}
-                                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 ${
-                                                locale === loc ? "text-red-600 bg-red-50 dark:bg-red-900/20" : "text-gray-700 dark:text-gray-300"
-                                            }`}
-                                        >
-                                            <span className="flex h-4 w-4 items-center justify-center text-xs font-bold uppercase">
-                                                {loc === "fr" ? "🇫🇷" : "🇬🇧"}
-                                            </span>
-                                            {loc === "fr" ? t("french") : t("english")}
-                                            {locale === loc && (
-                                                <svg className="ml-auto h-4 w-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                </svg>
-                                            )}
-                                        </button>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                    <span className="text-xs">{loc === "fr" ? "🇫🇷" : "🇬🇧"}</span>
+                                    {loc === "fr" ? t("french") : t("english")}
+                                    {locale === loc && <Check className="ml-auto h-4 w-4 text-red-600" />}
+                                </button>
+                            ))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+            <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={getThemeLabel()}
+                data-testid="theme-toggle"
+                className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-800 shadow-[0_1px_2px_rgba(16,16,20,0.05)] transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            >
+                {theme === "dark" ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4" />}
+            </button>
+        </div>
+    );
+
+    // ---- the shared form (JSX element, not a component — avoids remount/focus loss) ----
+    const staffForm = (
+        <div className="w-full max-w-[360px]">
+            {/* Logo — shown above the form on mobile only (brand panel carries it on desktop) */}
+            <div className="mb-6 lg:hidden">
+                <img src="/Logo.png" alt="Joda Company" className="h-[38px] w-auto object-contain" />
+            </div>
+
+            <div className="mb-5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.13em] text-zinc-400 dark:text-zinc-500">
+                    {t("eyebrow")}
+                </p>
+                <h1 className="mt-1.5 text-[26px] font-semibold tracking-[-0.025em] text-zinc-900 dark:text-zinc-50">
+                    {t("greeting")}
+                </h1>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{t("subtitle")}</p>
+            </div>
+
+            {/* Segmented control — display-only audience hint */}
+            <div
+                role="tablist"
+                aria-label={t("eyebrow")}
+                className="mb-[18px] grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800"
+            >
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={isStudent}
+                    onClick={() => setAudience("etudiant")}
+                    className={`flex h-[38px] items-center justify-center gap-2 rounded-[9px] text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 ${
+                        isStudent
+                            ? "bg-white text-zinc-900 shadow-[0_1px_2px_rgba(16,16,20,0.05)] dark:bg-zinc-950 dark:text-zinc-50"
+                            : "text-zinc-500 dark:text-zinc-400"
+                    }`}
+                >
+                    <GraduationCap
+                        className={`h-[15px] w-[15px] ${isStudent ? "text-red-600" : "text-zinc-400"}`}
+                    />
+                    {t("audienceStudent")}
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={!isStudent}
+                    onClick={() => setAudience("equipe")}
+                    className={`flex h-[38px] items-center justify-center gap-2 rounded-[9px] text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 ${
+                        !isStudent
+                            ? "bg-white text-zinc-900 shadow-[0_1px_2px_rgba(16,16,20,0.05)] dark:bg-zinc-950 dark:text-zinc-50"
+                            : "text-zinc-500 dark:text-zinc-400"
+                    }`}
+                >
+                    <Shield className={`h-[15px] w-[15px] ${!isStudent ? "text-red-600" : "text-zinc-400"}`} />
+                    {t("audienceTeam")}
+                </button>
+            </div>
+
+            <motion.form
+                onSubmit={handleSubmit}
+                className="flex flex-col gap-3.5"
+                animate={shakeError ? { x: [0, -12, 12, -8, 8, -4, 4, 0] } : {}}
+                transition={{ duration: 0.5 }}
+            >
+                <div>
+                    <label
+                        htmlFor="login-identifier"
+                        className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.07em] text-zinc-500 dark:text-zinc-400"
+                    >
+                        {isStudent ? t("identifierStudentLabel") : t("identifierTeamLabel")}
+                    </label>
+                    <div className="group flex h-[50px] items-center gap-2.5 rounded-xl border border-zinc-200 bg-gray-50 px-3.5 transition-all focus-within:border-[#f1a3a3] focus-within:bg-white focus-within:ring-[3px] focus-within:ring-red-100 dark:border-zinc-700 dark:bg-zinc-800/50 dark:focus-within:bg-zinc-800 dark:focus-within:ring-red-900/30">
+                        {isStudent ? (
+                            <User className="h-[18px] w-[18px] shrink-0 text-zinc-400 transition-colors group-focus-within:text-red-600" />
+                        ) : (
+                            <Mail className="h-[18px] w-[18px] shrink-0 text-zinc-400 transition-colors group-focus-within:text-red-600" />
+                        )}
+                        <input
+                            id="login-identifier"
+                            type="text"
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
+                            placeholder={
+                                isStudent
+                                    ? t("identifierStudentPlaceholder")
+                                    : t("identifierTeamPlaceholder")
+                            }
+                            required
+                            autoComplete="username"
+                            inputMode={isStudent ? "text" : "email"}
+                            data-testid="login-identifier"
+                            className="w-full bg-transparent text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                        />
                     </div>
                 </div>
 
-                <motion.div
-                    className="relative h-full w-full overflow-hidden sm:rounded-2xl"
-                    style={{
-                        background: "rgba(0,0,0,0.8)",
-                        backdropFilter: "blur(40px) saturate(180%)",
-                        border: "1px solid rgba(220,38,38,0.3)",
-                        boxShadow: "0 50px 100px rgba(0,0,0,0.8), 0 0 60px rgba(220,38,38,0.25), inset 0 1px 0 rgba(220,38,38,0.15)",
-                    }}
-                    animate={{
-                        boxShadow: [
-                            "0 50px 100px rgba(0,0,0,0.8), 0 0 40px rgba(220,38,38,0.15)",
-                            "0 50px 100px rgba(0,0,0,0.8), 0 0 80px rgba(220,38,38,0.35)",
-                            "0 50px 100px rgba(0,0,0,0.8), 0 0 40px rgba(220,38,38,0.15)",
-                        ],
-                    }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                >
-                    <div className="flex h-full flex-col lg:grid lg:grid-cols-[1.2fr_1fr]">
-                        {/* Panneau image */}
-                        <motion.div
-                            className="relative overflow-hidden h-48 sm:h-2/5 lg:h-full"
-                            initial={{ x: -60, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                <div>
+                    <label
+                        htmlFor="login-password"
+                        className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.07em] text-zinc-500 dark:text-zinc-400"
+                    >
+                        {t("password")}
+                    </label>
+                    <div className="group flex h-[50px] items-center gap-2.5 rounded-xl border border-zinc-200 bg-gray-50 px-3.5 transition-all focus-within:border-[#f1a3a3] focus-within:bg-white focus-within:ring-[3px] focus-within:ring-red-100 dark:border-zinc-700 dark:bg-zinc-800/50 dark:focus-within:bg-zinc-800 dark:focus-within:ring-red-900/30">
+                        <Lock className="h-[18px] w-[18px] shrink-0 text-zinc-400 transition-colors group-focus-within:text-red-600" />
+                        <input
+                            id="login-password"
+                            type={showPassword ? "text" : "password"}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder={t("passwordPlaceholder")}
+                            required
+                            autoComplete="current-password"
+                            data-testid="login-password"
+                            className="w-full bg-transparent text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? t("password") : t("password")}
+                            className="shrink-0 text-zinc-400 transition-colors hover:text-red-600 focus-visible:outline-none focus-visible:text-red-600"
                         >
-                            <motion.img
-                                src="/23704.jpg"
-                                alt="Login visual"
-                                className="absolute inset-0 h-full w-full object-cover"
-                                initial={{ scale: 1.15 }}
-                                animate={{ scale: 1 }}
-                                transition={{ duration: 1.5, ease: "easeOut" }}
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <motion.div className="px-4 text-center" variants={staggerContainer} initial="initial" animate="animate">
-                                    <motion.div
-                                        className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-3xl bg-white p-3 shadow-[0_10px_25px_rgba(0,0,0,0.5)] sm:mb-4 sm:h-24 sm:w-24 sm:p-4 lg:mb-6 lg:h-28 lg:w-28 lg:p-5"
-                                        variants={heroEntrance}
-                                        whileHover={{ rotate: [0, -5, 5, 0], scale: 1.08, transition: { duration: 0.4 } }}
-                                    >
-                                        <img src="/Logo.png" alt="Joda Company Logo" className="h-full w-full object-contain" />
-                                    </motion.div>
-                                    <motion.h1 className="text-xl font-bold tracking-wider text-black lg:text-3xl" variants={titleReveal}>
-                                        Joda Company
-                                    </motion.h1>
-                                    <motion.p className="text-sm font-semibold text-black lg:text-lg" variants={staggerItem}>
-                                        Gestion des bourses
-                                    </motion.p>
-                                </motion.div>
-                            </div>
-                        </motion.div>
-
-                        {/* Panneau formulaire */}
-                        <motion.div
-                            className="flex flex-1 flex-col justify-center overflow-y-auto px-6 py-8 text-gray-900 dark:text-gray-100 sm:p-8 lg:p-10 bg-white/[0.97] dark:bg-slate-900/[0.97]"
-                            style={{ backdropFilter: "blur(20px)" }}
-                            initial={{ x: 60, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-                        >
-                            <motion.div
-                                className="mx-auto w-full max-w-sm self-center"
-                                variants={slideUp}
-                                initial="initial"
-                                animate="animate"
-                            >
-                                <motion.div
-                                    className="mb-6 lg:mb-8"
-                                    initial={{ opacity: 0, y: -20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2, duration: 0.5 }}
-                                >
-                                    <h2 className="mb-1 text-2xl font-light lg:text-3xl">{t("title")}</h2>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{t("subtitle")}</p>
-                                </motion.div>
-
-                                <motion.form
-                                    onSubmit={handleSubmit}
-                                    className="space-y-4"
-                                    animate={shakeError ? { x: [0, -12, 12, -8, 8, -4, 4, 0] } : {}}
-                                    transition={{ duration: 0.5 }}
-                                >
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                            {t("identifier")}
-                                        </label>
-                                        <motion.input
-                                            type="text"
-                                            value={identifier}
-                                            onChange={(e) => setIdentifier(e.target.value)}
-                                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none transition focus:border-red-400 focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30"
-                                            required
-                                            autoComplete="username"
-                                            data-testid="login-identifier"
-                                            whileFocus={{ scale: 1.01 }}
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: 0.3 }}
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                            {t("password")}
-                                        </label>
-                                        <motion.div className="relative" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.38 }}>
-                                            <input
-                                                type={showPassword ? "text" : "password"}
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3.5 pr-12 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none transition focus:border-red-400 focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-900/30"
-                                                placeholder={t("passwordPlaceholder")}
-                                                required
-                                                autoComplete="current-password"
-                                                data-testid="login-password"
-                                            />
-                                            <motion.button
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-red-500"
-                                                whileTap={buttonTap}
-                                            >
-                                                <EyeIcon visible={showPassword} />
-                                            </motion.button>
-                                        </motion.div>
-                                    </div>
-
-                                    <AnimatePresence>
-                                        {error && (
-                                            <motion.div
-                                                variants={slideUp}
-                                                initial="initial"
-                                                animate="animate"
-                                                exit="exit"
-                                                className="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 p-2 text-center text-xs font-medium text-red-500 sm:rounded-xl sm:p-3 sm:text-sm"
-                                            >
-                                                {error}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-
-                                    <motion.button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="w-full rounded-xl bg-red-600 px-4 py-4 text-base font-semibold text-white shadow-[0_16px_32px_rgba(220,38,38,0.35)] transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                        data-testid="login-submit"
-                                        animate={{ opacity: 1, y: 0 }}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={buttonTap}
-                                        initial={{ opacity: 0, y: 15 }}
-                                        transition={{ delay: 0.5 }}
-                                    >
-                                        {loading ? (
-                                            <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
-                                                {t("submitting")}
-                                            </motion.span>
-                                        ) : (
-                                            t("submit")
-                                        )}
-                                    </motion.button>
-                                </motion.form>
-
-                                <motion.div
-                                    className="mt-6 flex flex-col items-center gap-3"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.6 }}
-                                >
-                                    <button
-                                        type="button"
-                                        onClick={() => { setShowForgotPassword(true); setForgotInput(""); setForgotSent(false); }}
-                                        className="text-sm text-gray-400 hover:text-red-600 transition-colors"
-                                        data-testid="login-forgot-btn"
-                                    >
-                                        {t("forgotPassword")}
-                                    </button>
-                                    <div className="flex items-center gap-2 w-full">
-                                        <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-                                        <span className="text-xs text-gray-400">ou</span>
-                                        <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-                                    </div>
-                                    <a
-                                        href={`/${locale}/register`}
-                                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 py-3 text-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-red-300 transition-colors"
-                                    >
-                                        {t("registerLink")}
-                                    </a>
-                                </motion.div>
-                            </motion.div>
-                        </motion.div>
+                            {showPassword ? (
+                                <Eye className="h-[18px] w-[18px]" />
+                            ) : (
+                                <EyeOff className="h-[18px] w-[18px]" />
+                            )}
+                        </button>
                     </div>
-                </motion.div>
-            </motion.div>
+                </div>
+
+                <div className="mt-0.5 flex items-center justify-between">
+                    <button
+                        type="button"
+                        onClick={() => setRemember(!remember)}
+                        className="inline-flex items-center gap-2 text-[13px] text-zinc-500 focus-visible:outline-none dark:text-zinc-400"
+                    >
+                        <span
+                            className={`grid h-[18px] w-[18px] place-items-center rounded-md border transition-colors ${
+                                remember
+                                    ? "border-red-600 bg-red-600 text-white"
+                                    : "border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800"
+                            }`}
+                        >
+                            {remember && <Check className="h-3 w-3" strokeWidth={3} />}
+                        </span>
+                        {t("rememberMe")}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setShowForgotPassword(true);
+                            setForgotInput("");
+                            setForgotSent(false);
+                        }}
+                        data-testid="login-forgot-btn"
+                        className="text-[13px] font-semibold text-red-600 transition-colors hover:text-red-700 focus-visible:outline-none focus-visible:underline"
+                    >
+                        {t("forgotPassword")}
+                    </button>
+                </div>
+
+                <AnimatePresence>
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-center text-[13px] font-medium text-red-600 dark:border-red-800 dark:bg-red-900/20"
+                        >
+                            {error}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <button
+                    type="submit"
+                    disabled={loading}
+                    data-testid="login-submit"
+                    className="mt-1 flex h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-[14.5px] font-semibold text-white shadow-[0_12px_24px_-8px_rgba(220,38,38,0.45)] transition-colors hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    {loading ? t("submitting") : t("submit")}
+                    {!loading && <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.1} />}
+                </button>
+            </motion.form>
+
+            <div className="mt-4 flex items-start gap-2.5 rounded-[9px] border border-zinc-200 bg-gray-50 px-3.5 py-3 dark:border-zinc-700 dark:bg-zinc-800/40">
+                {isStudent ? (
+                    <Sparkles className="mt-px h-[15px] w-[15px] shrink-0 text-zinc-400" />
+                ) : (
+                    <ShieldCheck className="mt-px h-[15px] w-[15px] shrink-0 text-zinc-400" />
+                )}
+                <span className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    {isStudent ? t("noteStudent") : t("noteTeam")}
+                </span>
+            </div>
+
+            <div className="my-4 flex items-center gap-3 text-xs text-zinc-400">
+                <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+                {t("or")}
+                <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+            </div>
+            <a
+                href={`/${locale}/register`}
+                className="flex h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 transition-colors hover:border-zinc-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+                <Users className="h-4 w-4" />
+                {t("createStudentAccount")}
+            </a>
+        </div>
+    );
+
+    return (
+        <motion.div
+            className="fixed inset-0 z-[9999] overflow-y-auto bg-white dark:bg-zinc-950"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+        >
+            {TopControls}
+
+            <div className="grid min-h-full lg:grid-cols-[42%_58%]">
+                {/* Brand panel — desktop only */}
+                <aside className="relative hidden flex-col overflow-hidden border-r border-zinc-200 p-10 dark:border-zinc-800 lg:flex bg-[radial-gradient(120%_80%_at_100%_0%,rgba(220,38,38,0.07),transparent_52%),radial-gradient(90%_70%_at_0%_100%,rgba(220,38,38,0.05),transparent_50%),linear-gradient(160deg,#ffffff,#f7f7f8)] dark:bg-[linear-gradient(160deg,#09090b,#18181b)]">
+                    {/* Watermark */}
+                    <svg
+                        aria-hidden
+                        viewBox="0 0 64 64"
+                        className="pointer-events-none absolute -bottom-20 -left-16 h-[420px] w-[420px] text-red-600 opacity-[0.05]"
+                        fill="currentColor"
+                    >
+                        <path
+                            d="M44 8H20a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h10v28a8 8 0 0 1-16 0v-2a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2a23 23 0 0 0 46 0V10a2 2 0 0 0-2-2z"
+                            opacity=".55"
+                        />
+                        <path d="M40 20 16 30l7.5 2.6L26 41l3.6-5.8z" />
+                    </svg>
+
+                    <div className="relative">
+                        <img src="/Logo.png" alt="Joda Company" className="h-[38px] w-auto object-contain" />
+                    </div>
+
+                    <div className="relative mt-auto">
+                        <h2 className="text-[30px] font-semibold leading-[1.12] tracking-[-0.03em] text-zinc-900 dark:text-zinc-50">
+                            {t("brandTitle")}
+                        </h2>
+                        <p className="mb-7 mt-3 max-w-[300px] text-[14.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                            {t("brandText")}
+                        </p>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px] border border-red-100 bg-red-50 text-red-600 dark:border-red-900/40 dark:bg-red-900/20">
+                                    <GraduationCap className="h-[18px] w-[18px]" />
+                                </div>
+                                <div>
+                                    <div className="text-[14.5px] font-semibold text-zinc-900 dark:text-zinc-100">
+                                        {t("trustStudentsTitle")}
+                                    </div>
+                                    <div className="text-[12.5px] text-zinc-500 dark:text-zinc-400">
+                                        {t("trustStudentsText")}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px] border border-red-100 bg-red-50 text-red-600 dark:border-red-900/40 dark:bg-red-900/20">
+                                    <ShieldCheck className="h-[18px] w-[18px]" />
+                                </div>
+                                <div>
+                                    <div className="text-[14.5px] font-semibold text-zinc-900 dark:text-zinc-100">
+                                        {t("trustSecureTitle")}
+                                    </div>
+                                    <div className="text-[12.5px] text-zinc-500 dark:text-zinc-400">
+                                        {t("trustSecureText")}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Form panel */}
+                <main className="flex items-center justify-center px-7 py-16 sm:px-10 lg:px-12 lg:py-10">
+                    {staffForm}
+                </main>
+            </div>
 
             {/* Forgot password overlay */}
             <AnimatePresence>
                 {showForgotPassword && (
                     <motion.div
-                        className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-4"
+                        className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={closeForgotPassword}
                     >
                         <motion.div
-                            className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl"
-                            initial={{ scale: 0.92, opacity: 0 }}
+                            className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_24px_50px_-16px_rgba(16,16,20,0.2)] dark:border-zinc-800 dark:bg-zinc-900"
+                            initial={{ scale: 0.94, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.92, opacity: 0 }}
+                            exit={{ scale: 0.94, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                             onClick={(e) => e.stopPropagation()}
                         >
                             {forgotSent ? (
-                                    <div className="text-center py-4">
-                                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-                                            <svg className="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        </div>
-                                        <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">{t("credentialsSent")}</h3>
-                                        <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                                            {t("credentialsSentMessage")}
-                                        </p>
-                                        <button
-                                            onClick={closeForgotPassword}
-                                            className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
-                                        >
-                                            {t("backToLogin")}
-                                        </button>
+                                <div className="py-4 text-center">
+                                    <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-green-100 dark:bg-green-900/30">
+                                        <Check className="h-7 w-7 text-green-600" strokeWidth={2.5} />
                                     </div>
+                                    <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                                        {t("credentialsSent")}
+                                    </h3>
+                                    <p className="mb-6 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                                        {t("credentialsSentMessage")}
+                                    </p>
+                                    <button
+                                        onClick={closeForgotPassword}
+                                        className="h-[46px] w-full rounded-xl bg-red-600 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                                    >
+                                        {t("backToLogin")}
+                                    </button>
+                                </div>
                             ) : (
                                 <>
                                     <div className="mb-5">
-                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("forgotTitle")}</h3>
-                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                                            {t("forgotTitle")}
+                                        </h3>
+                                        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                                             {t("forgotDescription")}
                                         </p>
                                     </div>
@@ -538,13 +549,12 @@ export default function LoginPage() {
                                             onChange={(e) => setForgotInput(e.target.value)}
                                             placeholder={t("forgotInputPlaceholder")}
                                             required
-                                            className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 outline-none transition focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
                                             data-testid="forgot-input"
+                                            className="h-[50px] w-full rounded-xl border border-zinc-200 bg-gray-50 px-4 text-sm text-zinc-900 outline-none transition-all focus:border-[#f1a3a3] focus:bg-white focus:ring-[3px] focus:ring-red-100 placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100 dark:focus:bg-zinc-800"
                                         />
-                                        {/* Sélecteur de canal — uniquement pour les étudiants (nom d'utilisateur) */}
                                         {forgotInput.trim() && !forgotIsEmail && (
                                             <div className="space-y-2">
-                                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                                <p className="text-[11px] font-semibold uppercase tracking-[0.07em] text-zinc-500 dark:text-zinc-400">
                                                     {t("channelLabel")}
                                                 </p>
                                                 <div className="grid grid-cols-2 gap-2">
@@ -553,13 +563,11 @@ export default function LoginPage() {
                                                         onClick={() => setForgotChannel("email")}
                                                         className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors ${
                                                             forgotChannel === "email"
-                                                                ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-900/20 dark:border-red-400"
-                                                                : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                                                ? "border-red-500 bg-red-50 text-red-600 dark:border-red-400 dark:bg-red-900/20"
+                                                                : "border-zinc-200 text-zinc-500 hover:bg-gray-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800/50"
                                                         }`}
                                                     >
-                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                                        </svg>
+                                                        <Mail className="h-4 w-4" />
                                                         Email
                                                     </button>
                                                     <button
@@ -567,8 +575,8 @@ export default function LoginPage() {
                                                         onClick={() => setForgotChannel("sms")}
                                                         className={`flex items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition-colors ${
                                                             forgotChannel === "sms"
-                                                                ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-900/20 dark:border-red-400"
-                                                                : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                                                ? "border-red-500 bg-red-50 text-red-600 dark:border-red-400 dark:bg-red-900/20"
+                                                                : "border-zinc-200 text-zinc-500 hover:bg-gray-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800/50"
                                                         }`}
                                                     >
                                                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -582,16 +590,16 @@ export default function LoginPage() {
                                         <button
                                             type="submit"
                                             disabled={forgotLoading}
-                                            className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(220,38,38,0.3)] hover:bg-red-700 disabled:opacity-50 transition-colors"
                                             data-testid="forgot-submit"
+                                            className="h-[50px] w-full rounded-xl bg-red-600 text-sm font-semibold text-white shadow-[0_12px_24px_-8px_rgba(220,38,38,0.45)] transition-colors hover:bg-red-700 disabled:opacity-60"
                                         >
                                             {forgotLoading ? t("sending") : t("sendCredentials")}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={closeForgotPassword}
-                                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:bg-gray-800/50 transition-colors"
                                             data-testid="forgot-cancel"
+                                            className="h-[46px] w-full rounded-xl border border-zinc-200 text-sm font-medium text-zinc-500 transition-colors hover:bg-gray-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800/50"
                                         >
                                             {t("cancel")}
                                         </button>
