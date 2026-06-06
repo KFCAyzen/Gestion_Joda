@@ -432,56 +432,54 @@ export default function LoginPage() {
             {TopControls}
 
             <div className="grid min-h-full lg:grid-cols-[42%_58%]">
-                {/* Brand panel — desktop only */}
-                <aside className="relative hidden flex-col overflow-hidden border-r border-zinc-200 p-10 dark:border-zinc-800 lg:flex bg-[radial-gradient(120%_80%_at_100%_0%,rgba(220,38,38,0.07),transparent_52%),radial-gradient(90%_70%_at_0%_100%,rgba(220,38,38,0.05),transparent_50%),linear-gradient(160deg,#ffffff,#f7f7f8)] dark:bg-[linear-gradient(160deg,#09090b,#18181b)]">
-                    {/* Watermark */}
-                    <svg
+                {/* Brand panel — desktop only: full-bleed photo with elements overlaid */}
+                <aside className="relative hidden flex-col overflow-hidden border-r border-zinc-200 p-10 dark:border-zinc-800 lg:flex">
+                    {/* Full-bleed background photo */}
+                    <img
+                        src="/23704.jpg"
+                        alt=""
                         aria-hidden
-                        viewBox="0 0 64 64"
-                        className="pointer-events-none absolute -bottom-20 -left-16 h-[420px] w-[420px] text-red-600 opacity-[0.05]"
-                        fill="currentColor"
-                    >
-                        <path
-                            d="M44 8H20a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h10v28a8 8 0 0 1-16 0v-2a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2a23 23 0 0 0 46 0V10a2 2 0 0 0-2-2z"
-                            opacity=".55"
-                        />
-                        <path d="M40 20 16 30l7.5 2.6L26 41l3.6-5.8z" />
-                    </svg>
+                        className="absolute inset-0 h-full w-full object-cover object-[30%_25%] dark:brightness-90"
+                    />
+                    {/* Theme-aware legibility veil (white in light, dark in dark) */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/92 via-white/55 to-white/45 dark:from-zinc-950/92 dark:via-zinc-950/60 dark:to-zinc-950/45" />
 
-                    <div className="relative">
+                    {/* Logo */}
+                    <div className="relative shrink-0">
                         <img src="/Logo.png" alt="Joda Company" className="h-[38px] w-auto object-contain" />
                     </div>
 
+                    {/* Headline + trust points */}
                     <div className="relative mt-auto">
                         <h2 className="text-[30px] font-semibold leading-[1.12] tracking-[-0.03em] text-zinc-900 dark:text-zinc-50">
                             {t("brandTitle")}
                         </h2>
-                        <p className="mb-7 mt-3 max-w-[300px] text-[14.5px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                        <p className="mb-7 mt-3 max-w-[300px] text-[14.5px] font-medium leading-relaxed text-zinc-700 dark:text-zinc-300">
                             {t("brandText")}
                         </p>
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
-                                <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px] border border-red-100 bg-red-50 text-red-600 dark:border-red-900/40 dark:bg-red-900/20">
+                                <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px] border border-red-100 bg-red-50 text-red-600 shadow-[0_1px_2px_rgba(16,16,20,0.05)] dark:border-red-900/40 dark:bg-red-900/20">
                                     <GraduationCap className="h-[18px] w-[18px]" />
                                 </div>
                                 <div>
                                     <div className="text-[14.5px] font-semibold text-zinc-900 dark:text-zinc-100">
                                         {t("trustStudentsTitle")}
                                     </div>
-                                    <div className="text-[12.5px] text-zinc-500 dark:text-zinc-400">
+                                    <div className="text-[12.5px] text-zinc-600 dark:text-zinc-400">
                                         {t("trustStudentsText")}
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px] border border-red-100 bg-red-50 text-red-600 dark:border-red-900/40 dark:bg-red-900/20">
+                                <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px] border border-red-100 bg-red-50 text-red-600 shadow-[0_1px_2px_rgba(16,16,20,0.05)] dark:border-red-900/40 dark:bg-red-900/20">
                                     <ShieldCheck className="h-[18px] w-[18px]" />
                                 </div>
                                 <div>
                                     <div className="text-[14.5px] font-semibold text-zinc-900 dark:text-zinc-100">
                                         {t("trustSecureTitle")}
                                     </div>
-                                    <div className="text-[12.5px] text-zinc-500 dark:text-zinc-400">
+                                    <div className="text-[12.5px] text-zinc-600 dark:text-zinc-400">
                                         {t("trustSecureText")}
                                     </div>
                                 </div>
