@@ -69,7 +69,7 @@ import { printEmployeeReports } from "../../lib/printEmployeeReports";
 import { printEmployeeEvaluation } from "../../lib/printEmployeeEvaluation";
 import { printEmployeeAnnualReport } from "../../lib/printEmployeeAnnualReport";
 import { payslipReference } from "../../lib/payslipRef";
-import { EVAL_CRITERIA, fmtNote, overallAverage } from "../../lib/hrEvaluation";
+import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../../lib/hrEvaluation";
 
 type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions" | "evaluations" | "annual";
 
@@ -1106,6 +1106,24 @@ function EvaluationsSection({
     const [adding, setAdding] = useState(false);
     const [confirmDel, setConfirmDel] = useState<string | null>(null);
     const [form, setForm] = useState(emptyEvalForm);
+    const [periodFrom, setPeriodFrom] = useState("");
+    const [periodTo, setPeriodTo] = useState("");
+
+    // Évaluations restreintes à la période sélectionnée (sinon toutes).
+    const filtered = useMemo(
+        () =>
+            evaluations.filter((ev) => {
+                if (periodFrom && ev.date_evaluation < periodFrom) return false;
+                if (periodTo && ev.date_evaluation > periodTo) return false;
+                return true;
+            }),
+        [evaluations, periodFrom, periodTo]
+    );
+
+    // Moyennes calculées automatiquement sur la période : globale + par critère.
+    const periodGlobalAvg = useMemo(() => overallAverage(filtered), [filtered]);
+    const periodCritAvg = useMemo(() => criterionAverages(filtered), [filtered]);
+    const hasPeriod = periodFrom !== "" || periodTo !== "";
 
     const noteGlobale = useMemo(() => {
         const scores = EVAL_CRITERIA.map((c) => form[c.col]);
@@ -1164,6 +1182,58 @@ function EvaluationsSection({
                 )}
             </div>
 
+            {/* Filtre période + moyennes calculées automatiquement */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-3 bg-slate-50/50 dark:bg-slate-800/50">
+                <div className="flex flex-wrap items-end gap-3">
+                    <div className="space-y-1">
+                        <Label className="text-xs">{t("detail.reportsPrint.from")}</Label>
+                        <Input type="date" value={periodFrom} max={periodTo || undefined} onChange={(e) => setPeriodFrom(e.target.value)} className="w-auto" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs">{t("detail.reportsPrint.to")}</Label>
+                        <Input type="date" value={periodTo} min={periodFrom || undefined} onChange={(e) => setPeriodTo(e.target.value)} className="w-auto" />
+                    </div>
+                    {hasPeriod && (
+                        <Button size="sm" variant="ghost" onClick={() => { setPeriodFrom(""); setPeriodTo(""); }}>
+                            {t("detail.reportsPrint.reset")}
+                        </Button>
+                    )}
+                    <span className="ml-auto text-xs text-slate-500">
+                        {t("evaluationsOverview.totalEvaluations")}: <span className="font-semibold text-slate-700 dark:text-slate-200">{filtered.length}</span>
+                    </span>
+                </div>
+
+                {filtered.length === 0 ? (
+                    <p className="text-xs text-slate-400">{hasPeriod ? t("evaluationsOverview.empty") : t("detail.evaluations.empty")}</p>
+                ) : (
+                    <div className="grid gap-3 md:grid-cols-[auto_1fr] md:items-stretch">
+                        <div className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40 p-3">
+                            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600">
+                                <Star className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{t("evaluationsOverview.globalAverage")}</p>
+                                <p className="mt-0.5 text-2xl font-semibold text-rose-600">{fmtNote(periodGlobalAvg)} / 5</p>
+                            </div>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40 p-3">
+                            <p className="text-[11px] uppercase tracking-wide text-rose-600 font-semibold mb-2">{t("evaluationsOverview.byCriterion")}</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                                {EVAL_CRITERIA.map((c) => (
+                                    <div key={c.code} className="flex items-center justify-between gap-2">
+                                        <span className="text-xs text-slate-600 dark:text-slate-300 truncate">{t(`detail.evaluations.criteria.${c.code}`)}</span>
+                                        <span className="flex items-center gap-2">
+                                            <StarRating value={Math.round(periodCritAvg[c.code] ?? 0)} />
+                                            <span className="text-xs font-medium w-9 text-right tabular-nums">{fmtNote(periodCritAvg[c.code] ?? 0)}</span>
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {adding && (
                 <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-3 bg-slate-50/50 dark:bg-slate-800/50">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1219,10 +1289,10 @@ function EvaluationsSection({
             )}
 
             <div className="max-h-[360px] overflow-auto space-y-2">
-                {evaluations.length === 0 ? (
+                {filtered.length === 0 ? (
                     <div className="text-center py-8 text-slate-400 text-sm">{t("detail.evaluations.empty")}</div>
                 ) : (
-                    evaluations.map((ev) => (
+                    filtered.map((ev) => (
                         <div key={ev.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                             <div className="flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">

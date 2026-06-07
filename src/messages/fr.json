@@ -2837,6 +2837,12 @@
       },
       "empty": "Aucun rapport pour le moment."
     },
+    "evaluations": {
+      "title": "Mes évaluations",
+      "description": "Vos évaluations de performance.",
+      "average": "Moyenne",
+      "empty": "Aucune évaluation pour le moment."
+    },
     "errors": {
       "missingFields": "Veuillez remplir tous les champs",
       "noEmployee": "Veuillez sélectionner votre nom.",

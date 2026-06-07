@@ -2837,6 +2837,12 @@
       },
       "empty": "No report yet."
     },
+    "evaluations": {
+      "title": "My evaluations",
+      "description": "Your performance evaluations.",
+      "average": "Average",
+      "empty": "No evaluation yet."
+    },
     "errors": {
       "missingFields": "Please fill in every field",
       "noEmployee": "Please select your name.",

@@ -16,9 +16,11 @@ import {
     LogOut,
     Send,
     Shield,
+    Star,
     User,
     Zap,
 } from "lucide-react";
+import { EVAL_CRITERIA, fmtNote } from "../lib/hrEvaluation";
 
 type PublicEmployee = { id: string; prenom: string; nom: string; poste?: string };
 type PublicReport = {
@@ -29,14 +31,43 @@ type PublicReport = {
     observations: string | null;
     created_at: string;
 };
+type PublicEvaluation = {
+    id: string;
+    date_evaluation: string;
+    periode: string | null;
+    note_qualite: number;
+    note_productivite: number;
+    note_ponctualite: number;
+    note_equipe: number;
+    note_communication: number;
+    note_initiative: number;
+    note_discipline: number;
+    note_globale: number;
+    points_forts: string | null;
+    axes_amelioration: string | null;
+    commentaire: string | null;
+};
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const initials = (e: PublicEmployee) =>
     `${e.prenom?.charAt(0) ?? ""}${e.nom?.charAt(0) ?? ""}`.toUpperCase();
 
-// ============================================================
+// Read-only star rating (1..5)
+function Stars({ value }: { value: number }) {
+    const filled = Math.round(value);
+    return (
+        <span className="inline-flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((n) => (
+                <Star
+                    key={n}
+                    className={`h-3.5 w-3.5 ${n <= filled ? "fill-amber-400 text-amber-400" : "text-zinc-300"}`}
+                />
+            ))}
+        </span>
+    );
+}
+
 // Custom employee select
-// ============================================================
 function EmployeeSelect({
     employees,
     value,
@@ -283,6 +314,7 @@ function BrandPanel() {
 
 export default function PublicReportPage() {
     const t = useTranslations("publicReport");
+    const tev = useTranslations("hrManagement.detail.evaluations");
     const locale = useLocale();
 
     const [employees, setEmployees] = useState<PublicEmployee[]>([]);
@@ -305,6 +337,9 @@ export default function PublicReportPage() {
 
     const [history, setHistory] = useState<PublicReport[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
+
+    const [evaluations, setEvaluations] = useState<PublicEvaluation[]>([]);
+    const [loadingEvals, setLoadingEvals] = useState(false);
 
     const [showSuccess, setShowSuccess] = useState(false);
     const [freshActive, setFreshActive] = useState(false);
@@ -356,6 +391,23 @@ export default function PublicReportPage() {
         }
     };
 
+    const refreshEvaluations = async (emp: PublicEmployee, p: string) => {
+        setLoadingEvals(true);
+        try {
+            const res = await fetch("/api/hr/public/evaluations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ employee_id: emp.id, pin: p }),
+            });
+            const json = await res.json();
+            if (res.ok) setEvaluations(json.evaluations ?? []);
+        } catch {
+            /* ignored */
+        } finally {
+            setLoadingEvals(false);
+        }
+    };
+
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
         setAuthError(null);
@@ -386,6 +438,7 @@ export default function PublicReportPage() {
             const emp: PublicEmployee = json.employee;
             setSession(emp);
             refreshHistory(emp, pinValue);
+            refreshEvaluations(emp, pinValue);
         } catch {
             setAuthError(t("errors.network"));
         } finally {
@@ -452,6 +505,7 @@ export default function PublicReportPage() {
         setPin(["", "", "", "", "", ""]);
         setEmployeeId("");
         setHistory([]);
+        setEvaluations([]);
         setSubmitErr(null);
         setAuthError(null);
         setShowSuccess(false);
@@ -470,6 +524,14 @@ export default function PublicReportPage() {
     );
     const remainingToday = Math.max(0, 2 - todayCount);
     const atLimit = remainingToday <= 0;
+
+    const evalAvg = useMemo(
+        () =>
+            evaluations.length === 0
+                ? 0
+                : evaluations.reduce((s, ev) => s + Number(ev.note_globale), 0) / evaluations.length,
+        [evaluations]
+    );
 
     const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
     const fmtDate = (s: string) =>
@@ -807,6 +869,77 @@ export default function PublicReportPage() {
         </div>
     );
 
+    const evaluationsCard = (
+        <div className="overflow-hidden rounded-[14px] border border-zinc-200 bg-white shadow-[0_4px_12px_-3px_rgba(16,16,20,0.08),0_2px_5px_-3px_rgba(16,16,20,0.05)]">
+            <div className="flex items-center gap-[11px] border-b border-zinc-100 px-5 py-4">
+                <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] border border-amber-100 bg-amber-50 text-amber-500">
+                    <Star className="h-[18px] w-[18px]" />
+                </span>
+                <div className="flex-1">
+                    <div className="text-[14.5px] font-semibold text-zinc-900">{t("evaluations.title")}</div>
+                    <div className="mt-px text-xs text-zinc-500">{t("evaluations.description")}</div>
+                </div>
+                {evaluations.length > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[12px] font-semibold text-amber-700">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        {t("evaluations.average")}: {fmtNote(evalAvg)}/5
+                    </span>
+                )}
+            </div>
+            {loadingEvals ? (
+                <div className="py-10 text-center text-zinc-400">
+                    <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+                </div>
+            ) : evaluations.length === 0 ? (
+                <div className="px-5 py-10 text-center text-zinc-400">
+                    <Star className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                    <p className="text-[13px]">{t("evaluations.empty")}</p>
+                </div>
+            ) : (
+                <div className="divide-y divide-zinc-100">
+                    {evaluations.map((ev) => (
+                        <div key={ev.id} className="px-5 py-4">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <Stars value={ev.note_globale} />
+                                <span className="text-sm font-bold text-red-600 tabular-nums">
+                                    {fmtNote(ev.note_globale)}/5
+                                </span>
+                                <span className="text-xs text-zinc-500">
+                                    {fmtDate(ev.date_evaluation)}
+                                    {ev.periode ? ` · ${ev.periode}` : ""}
+                                </span>
+                            </div>
+                            <div className="mt-2.5 grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                                {EVAL_CRITERIA.map((c) => (
+                                    <div key={c.code} className="flex items-center justify-between gap-2">
+                                        <span className="truncate text-xs text-zinc-500">{tev(`criteria.${c.code}`)}</span>
+                                        <span className="flex items-center gap-2">
+                                            <Stars value={ev[c.col]} />
+                                            <span className="w-7 text-right text-xs font-medium tabular-nums text-zinc-700">{ev[c.col]}/5</span>
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                            {(ev.points_forts || ev.axes_amelioration || ev.commentaire) && (
+                                <div className="mt-2.5 space-y-1 text-[12.5px] leading-relaxed text-zinc-600">
+                                    {ev.points_forts && (
+                                        <p><span className="font-semibold text-zinc-800">{tev("strengths")}:</span> {ev.points_forts}</p>
+                                    )}
+                                    {ev.axes_amelioration && (
+                                        <p><span className="font-semibold text-zinc-800">{tev("improvements")}:</span> {ev.axes_amelioration}</p>
+                                    )}
+                                    {ev.commentaire && (
+                                        <p><span className="font-semibold text-zinc-800">{tev("comment")}:</span> {ev.commentaire}</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <div className="fixed inset-0 z-[9999] flex flex-col overflow-hidden bg-gray-50">
             {styleBlock}
@@ -904,6 +1037,7 @@ export default function PublicReportPage() {
                             {formCard}
                             {historyCard}
                         </div>
+                        {evaluationsCard}
                     </div>
                     <p className="mt-[18px] text-center text-[11px] text-zinc-400">
                         {t("footerShort", { year })}
