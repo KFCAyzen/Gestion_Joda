@@ -2311,18 +2311,6 @@ function PayrollPanel({
                         <span className="text-slate-600 dark:text-slate-300">{t("payroll.breakdown.brut")}</span>
                         <span className="font-medium">{fmtMoney(payroll.brut)}</span>
                     </div>
-                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                        <span>CNPS / PVID (4,2%)</span><span>- {fmtMoney(payroll.pvid)}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                        <span>IRPP + CAC</span><span>- {fmtMoney(payroll.irpp + payroll.cac)}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                        <span>CFC (1%)</span><span>- {fmtMoney(payroll.cfc)}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                        <span>RAV + TDL</span><span>- {fmtMoney(payroll.rav + payroll.tdl)}</span>
-                    </div>
                     {payroll.absenceDeduction > 0 && (
                         <div className="flex justify-between text-slate-500 dark:text-slate-400">
                             <span>{t("payroll.col.absences")}</span><span>- {fmtMoney(payroll.absenceDeduction)}</span>

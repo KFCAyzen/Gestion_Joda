@@ -1,11 +1,12 @@
--- Aligne le net auto-généré sur la ventilation légale camerounaise (CNPS + impôts
--- sur salaire), en MIROIR du moteur TS `src/app/lib/cameroonPayroll.ts`.
--- Toute évolution de taux doit être répercutée des DEUX côtés.
+-- Net auto-généré, en MIROIR du moteur TS `src/app/lib/cameroonPayroll.ts`.
 --
--- ⚠️ Barèmes usuels (CGI + CNPS) — à vérifier annuellement avec un comptable.
+-- ⚠️ Retenues légales DÉSACTIVÉES à la demande de l'entreprise : aucune
+-- cotisation ni impôt sur salaire (CNPS/PVID, CFC, IRPP, CAC, RAV, TDL).
+-- Net à payer = salaire brut − retenues manuelles. Pour réactiver le calcul
+-- légal, restaurer les barèmes depuis l'historique git.
 -- Idempotent : CREATE OR REPLACE.
 
--- 1) Fonction de calcul du net (part salariale), déterministe sur base + primes.
+-- 1) Fonction de calcul du net, déterministe sur base + primes.
 CREATE OR REPLACE FUNCTION hr_compute_cameroon_net(
   p_base int,
   p_primes int,
@@ -16,69 +17,10 @@ LANGUAGE plpgsql
 IMMUTABLE
 AS $$
 DECLARE
-  brut        numeric := GREATEST(COALESCE(p_base, 0), 0) + GREATEST(COALESCE(p_primes, 0), 0);
-  autres      numeric := GREATEST(COALESCE(p_autres, 0), 0);
-  pvid_base   numeric := LEAST(brut, 750000);
-  pvid        numeric := round(pvid_base * 0.042);
-  cfc         numeric := round(brut * 0.01);
-  net_cat     numeric := brut * 12 * 0.70 - (round(LEAST(brut, 750000) * 0.042) * 12) - 500000;
-  irpp_annuel numeric := 0;
-  remaining   numeric;
-  irpp        numeric;
-  cac         numeric;
-  rav         numeric;
-  tdl         numeric;
-  total_ret   numeric;
+  brut   numeric := GREATEST(COALESCE(p_base, 0), 0) + GREATEST(COALESCE(p_primes, 0), 0);
+  autres numeric := GREATEST(COALESCE(p_autres, 0), 0);
 BEGIN
-  -- IRPP annuel progressif sur le revenu net catégoriel
-  IF net_cat > 0 THEN
-    remaining := net_cat;
-    irpp_annuel := irpp_annuel + LEAST(remaining, 2000000) * 0.10;
-    remaining   := remaining - LEAST(remaining, 2000000);
-    IF remaining > 0 THEN
-      irpp_annuel := irpp_annuel + LEAST(remaining, 1000000) * 0.15;
-      remaining   := remaining - LEAST(remaining, 1000000);
-    END IF;
-    IF remaining > 0 THEN
-      irpp_annuel := irpp_annuel + LEAST(remaining, 2000000) * 0.25;
-      remaining   := remaining - LEAST(remaining, 2000000);
-    END IF;
-    IF remaining > 0 THEN
-      irpp_annuel := irpp_annuel + remaining * 0.35;
-    END IF;
-  END IF;
-  irpp := round(irpp_annuel / 12);
-  cac  := round(irpp * 0.10);
-
-  -- RAV — barème mensuel sur le brut
-  rav := CASE
-    WHEN brut <= 50000   THEN 0
-    WHEN brut <= 100000  THEN 750
-    WHEN brut <= 200000  THEN 1950
-    WHEN brut <= 300000  THEN 3250
-    WHEN brut <= 400000  THEN 4550
-    WHEN brut <= 500000  THEN 5850
-    WHEN brut <= 600000  THEN 7150
-    WHEN brut <= 700000  THEN 8450
-    WHEN brut <= 800000  THEN 9750
-    WHEN brut <= 900000  THEN 11050
-    WHEN brut <= 1000000 THEN 12350
-    ELSE 13000 END;
-
-  -- TDL — barème mensuel sur le salaire de base
-  tdl := CASE
-    WHEN COALESCE(p_base, 0) <= 62000  THEN 0
-    WHEN p_base <= 75000   THEN 250
-    WHEN p_base <= 100000  THEN 500
-    WHEN p_base <= 125000  THEN 750
-    WHEN p_base <= 150000  THEN 1000
-    WHEN p_base <= 200000  THEN 1250
-    WHEN p_base <= 250000  THEN 1500
-    WHEN p_base <= 300000  THEN 2000
-    ELSE 2500 END;
-
-  total_ret := pvid + cfc + irpp + cac + rav + tdl + autres;
-  RETURN GREATEST(round(brut - total_ret), 0)::int;
+  RETURN GREATEST(round(brut - autres), 0)::int;
 END;
 $$;
 

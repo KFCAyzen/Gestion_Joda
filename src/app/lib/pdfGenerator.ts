@@ -798,7 +798,6 @@ export const generatePayslip = async (
   });
   const base = payslip.salaire_base;
   const primes = payslip.primes;
-  const pct = (v: number) => v.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' %';
 
   type Cell = { content: string; styles?: Record<string, unknown> };
   const subtotalStyle = { fontStyle: 'bold', fillColor: [243, 244, 246] };
@@ -820,12 +819,6 @@ export const generatePayslip = async (
   payBody.push(gain('Salaire de base', fmtNum(base), base));
   if (primes > 0) payBody.push(gain('Primes et indemnités', '', primes));
   payBody.push(subRow('SALAIRE BRUT', 3, pr.brut));
-  payBody.push(ret('CNPS — Pension (PVID)', fmtNum(Math.min(pr.brut, 750000)), pct(4.2), pr.pvid));
-  payBody.push(ret('Crédit Foncier (CFC)', fmtNum(pr.brut), pct(1), pr.cfc));
-  payBody.push(ret('IRPP', '', 'barème', pr.irpp));
-  payBody.push(ret('CAC (sur IRPP)', fmtNum(pr.irpp), pct(10), pr.cac));
-  payBody.push(ret('Redevance audiovisuelle (RAV)', '', 'barème', pr.rav));
-  payBody.push(ret('Taxe de dév. local (TDL)', '', 'barème', pr.tdl));
   if (pr.absenceDeduction > 0) payBody.push(ret(`Absences (${payslip.jours_absences} j)`, '', '', pr.absenceDeduction));
   if (pr.autresRetenues > 0) payBody.push(ret('Retenues diverses', '', '', pr.autresRetenues));
   payBody.push(subRow('TOTAL DES RETENUES', 4, pr.totalRetenues));
