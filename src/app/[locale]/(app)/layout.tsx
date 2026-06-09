@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -28,6 +28,8 @@ import {
     WalletCards,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { usePermissions } from "../../hooks/usePermissions";
+import type { Permission } from "../../types/permissions";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import SyncStatusIndicator from "../../components/SyncStatusIndicator";
@@ -102,13 +104,40 @@ const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
 type MenuItem = { id: RouteId; label: string; icon: ReactNode };
 type MenuSection = { id: string; label: string; roles?: UserRole[]; items: MenuItem[] };
 
+// Entrées de menu dont l'accès est régi par une permission granulaire. Si l'entrée
+// y figure, sa visibilité dépend de la permission (et non plus du seul rôle de la
+// section) — ce qui permet, p. ex., qu'un « comptable » explicitement autorisé voie
+// la Comptabilité, ou que les Candidatures restent réservées aux comptes autorisés.
+const ITEM_PERMISSIONS: Partial<Record<RouteId, Permission>> = {
+    reservations: "applications.view",
+    clients: "students.view",
+    dossiers: "dossiers.view",
+    chambres: "universities.view",
+    facturation: "payments.view",
+    comptabilite: "accounting.view",
+    users: "users.view",
+    activity_logs: "logs.view",
+    storage: "storage.view",
+};
+
 const iconCls = "w-4 h-4 flex-shrink-0";
+
+// Pastilles compteur sur les entrées de menu (nouveau / activité / attention).
+type BadgeTone = "urgent" | "attention";
+const BADGE_TONES: Record<BadgeTone, string> = {
+    urgent: "bg-gradient-to-r from-rose-500 to-red-500 shadow-[0_4px_12px_rgba(239,68,68,0.4)]",
+    attention: "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_4px_12px_rgba(245,158,11,0.4)]",
+};
+// Dossiers (dossier_bourses) regroupés par phase pour distinguer les deux vues.
+const CANDIDATURE_TODO_STATUSES = ["en_attente", "document_recu", "document_manquant"];
+const DOSSIER_PENDING_STATUSES = ["en_cours", "en_attente_universite", "visa_en_cours"];
 
 
 function AppShell({ children }: { children: ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const { user, logout, loading } = useAuth();
+    const { hasPermission } = usePermissions();
     const supabase = createClient();
     const t = useTranslations('layout');
     const tNav = useTranslations('nav');
@@ -209,6 +238,7 @@ function AppShell({ children }: { children: ReactNode }) {
     const [showUserPasswordChange, setShowUserPasswordChange] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [passwordJustChanged, setPasswordJustChanged] = useState(false);
+    const [menuBadges, setMenuBadges] = useState<Partial<Record<RouteId, { count: number; tone: BadgeTone }>>>({});
 
     useEffect(() => {
         if (user?.role === "student") {
@@ -236,6 +266,28 @@ function AppShell({ children }: { children: ReactNode }) {
             .then(({ count }) => setUnreadCount(count ?? 0));
     }, [user, pathname]);
 
+    // Compteurs « à traiter / en attente / en retard » pour les badges de menu.
+    useEffect(() => {
+        if (!user) return;
+        let cancelled = false;
+        (async () => {
+            const [candidatures, dossiers, fraisRetard] = await Promise.all([
+                supabase.from("dossier_bourses").select("id", { count: "exact", head: true }).in("status", CANDIDATURE_TODO_STATUSES),
+                supabase.from("dossier_bourses").select("id", { count: "exact", head: true }).in("status", DOSSIER_PENDING_STATUSES),
+                supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "retard"),
+            ]);
+            if (cancelled) return;
+            const lateCount = fraisRetard.count ?? 0;
+            setMenuBadges({
+                reservations: { count: candidatures.count ?? 0, tone: "attention" },
+                dossiers: { count: dossiers.count ?? 0, tone: "attention" },
+                facturation: { count: lateCount, tone: "urgent" },
+                comptabilite: { count: lateCount, tone: "urgent" },
+            });
+        })();
+        return () => { cancelled = true; };
+    }, [user, pathname]);
+
     const activeRouteId = useMemo<RouteId>(() => {
         const entry = Object.entries(ROUTES).find(
             ([, path]) => pathname.endsWith(path) || pathname.includes(`${path}/`)
@@ -244,11 +296,22 @@ function AppShell({ children }: { children: ReactNode }) {
     }, [pathname]);
 
     const availableSections = useMemo(() => {
-        return menuSections.filter((section) => {
-            if (!section.roles) return true;
-            return user?.role && section.roles.includes(user.role as UserRole);
-        });
-    }, [user?.role, menuSections]);
+        const roleOk = (section: MenuSection) =>
+            !section.roles || (!!user?.role && section.roles.includes(user.role as UserRole));
+        return menuSections
+            .map((section) => ({
+                ...section,
+                items: section.items.filter((item) => {
+                    const perm = ITEM_PERMISSIONS[item.id];
+                    // Entrée régie par une permission : visible ssi l'utilisateur l'a
+                    // (indépendamment du rôle de la section).
+                    if (perm) return hasPermission(perm);
+                    // Sinon : visibilité par le rôle de la section, comme avant.
+                    return roleOk(section);
+                }),
+            }))
+            .filter((section) => section.items.length > 0);
+    }, [user?.role, menuSections, hasPermission]);
 
     const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
         menuSections.reduce<Record<string, boolean>>((acc, section, index) => {
@@ -273,6 +336,25 @@ function AppShell({ children }: { children: ReactNode }) {
         }
     }, [activeSection]);
 
+    // Au premier chargement des compteurs, déplie les sections qui contiennent un
+    // badge pour que le signal reste visible (sans plier la main de l'utilisateur ensuite).
+    const badgesExpandedRef = useRef(false);
+    useEffect(() => {
+        if (badgesExpandedRef.current) return;
+        const flagged = (Object.entries(menuBadges) as [RouteId, { count: number; tone: BadgeTone }][])
+            .filter(([, b]) => b.count > 0)
+            .map(([id]) => id);
+        if (flagged.length === 0) return;
+        badgesExpandedRef.current = true;
+        setOpenSections((prev) => {
+            const next = { ...prev };
+            menuSections.forEach((section) => {
+                if (section.items.some((item) => flagged.includes(item.id))) next[section.id] = true;
+            });
+            return next;
+        });
+    }, [menuBadges, menuSections]);
+
     const navigateTo = (id: RouteId) => {
         router.push(ROUTES[id]);
         setIsMobileMenuOpen(false);
@@ -283,7 +365,10 @@ function AppShell({ children }: { children: ReactNode }) {
         router.push("/login");
     };
 
-    if (loading || !user) {
+    // Les étudiants n'ont aucun accès à l'espace d'administration (app). On bloque
+    // le rendu des pages internes (et donc tout écran « Accès refusé » transitoire)
+    // tant que la redirection vers /etudiant n'a pas eu lieu.
+    if (loading || !user || user.role === "student") {
         return (
             <div className="gradient-bg app-shell fixed inset-0 flex items-center justify-center">
                 <div className="text-[var(--foreground)] text-base">{t('loading')}</div>
@@ -384,6 +469,19 @@ function AppShell({ children }: { children: ReactNode }) {
                                                 >
                                                     <span className="sidebar-item-icon">{item.icon}</span>
                                                     <span className="truncate text-left">{item.label}</span>
+                                                    {(() => {
+                                                        const badge = menuBadges[item.id];
+                                                        if (!badge || badge.count <= 0) return null;
+                                                        return (
+                                                            <span
+                                                                className={`ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white ${BADGE_TONES[badge.tone]}`}
+                                                                data-testid={`nav-badge-${item.id}`}
+                                                                aria-label={`${badge.count}`}
+                                                            >
+                                                                {badge.count > 99 ? "99+" : badge.count}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </button>
                                             ))}
                                         </div>
