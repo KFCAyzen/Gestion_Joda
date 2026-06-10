@@ -100,6 +100,15 @@ export interface LeaveRequest {
   updated_at: string;
 }
 
+export type PayslipAdjustmentType = 'bonus' | 'deduction';
+
+/** Ligne détaillée d'une prime (ajout) ou d'une retenue (réduction) avec motif. */
+export interface PayslipAdjustment {
+  type: PayslipAdjustmentType;
+  motif: string;
+  montant: number;
+}
+
 export interface Payslip {
   id: string;
   employee_id: string;
@@ -108,6 +117,8 @@ export interface Payslip {
   salaire_base: number;
   primes: number;
   deductions: number;
+  /** Détail ligne par ligne des primes/retenues (motifs). Agrégé dans primes/deductions. */
+  adjustments: PayslipAdjustment[];
   jours_absences: number;
   net_a_payer: number;
   notes: string | null;

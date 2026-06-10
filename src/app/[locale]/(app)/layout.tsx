@@ -341,7 +341,13 @@ function AppShell({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (activeSection) {
-            setOpenSections((prev) => ({ ...prev, [activeSection.id]: true }));
+            // Idempotent : renvoyer `prev` inchangé quand la section est déjà ouverte
+            // permet à React d'éviter un re-rendu. Sans cette garde, un `activeSection`
+            // de référence instable (memos recalculés) provoquerait une boucle de
+            // setState qui fige l'interface.
+            setOpenSections((prev) =>
+                prev[activeSection.id] ? prev : { ...prev, [activeSection.id]: true }
+            );
         }
     }, [activeSection]);
 

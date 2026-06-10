@@ -5,7 +5,9 @@ export const notificationSchema = z.object({
   user_id: z.string().uuid(),
   type: z.enum([
     'document_manquant',
+    'paiement_en_attente',
     'paiement_valide',
+    'paiement_rejete',
     'retard_paiement',
     'mise_a_jour_dossier',
     'message_recu',

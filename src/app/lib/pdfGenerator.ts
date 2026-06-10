@@ -560,6 +560,7 @@ interface PayslipPdfData {
   salaire_base: number;
   primes: number;
   deductions: number;
+  adjustments?: { type: 'bonus' | 'deduction'; motif: string; montant: number }[];
   jours_absences: number;
   net_a_payer: number;
   notes?: string | null;
@@ -815,12 +816,26 @@ export const generatePayslip = async (
     { content: label }, { content: baseCol }, { content: taux }, { content: '' }, { content: fmtNum(val) },
   ];
 
+  // Détail des primes/retenues saisies (motifs). À défaut, on retombe sur les
+  // libellés agrégés (anciennes fiches ou fiches auto-générées sans détail).
+  const adjustments = payslip.adjustments ?? [];
+  const bonusLines = adjustments.filter((a) => a.type === 'bonus' && a.montant > 0);
+  const deductionLines = adjustments.filter((a) => a.type === 'deduction' && a.montant > 0);
+
   const payBody: Cell[][] = [];
   payBody.push(gain('Salaire de base', fmtNum(base), base));
-  if (primes > 0) payBody.push(gain('Primes et indemnités', '', primes));
+  if (bonusLines.length > 0) {
+    bonusLines.forEach((a) => payBody.push(gain(a.motif?.trim() || 'Prime', '', a.montant)));
+  } else if (primes > 0) {
+    payBody.push(gain('Primes et indemnités', '', primes));
+  }
   payBody.push(subRow('SALAIRE BRUT', 3, pr.brut));
   if (pr.absenceDeduction > 0) payBody.push(ret(`Absences (${payslip.jours_absences} j)`, '', '', pr.absenceDeduction));
-  if (pr.autresRetenues > 0) payBody.push(ret('Retenues diverses', '', '', pr.autresRetenues));
+  if (deductionLines.length > 0) {
+    deductionLines.forEach((a) => payBody.push(ret(a.motif?.trim() || 'Retenue', '', '', a.montant)));
+  } else if (pr.autresRetenues > 0) {
+    payBody.push(ret('Retenues diverses', '', '', pr.autresRetenues));
+  }
   payBody.push(subRow('TOTAL DES RETENUES', 4, pr.totalRetenues));
 
   const payTitleY = ((doc as any).lastAutoTable?.finalY ?? startY + 40) + 7;

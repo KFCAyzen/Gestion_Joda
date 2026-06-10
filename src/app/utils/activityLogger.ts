@@ -166,6 +166,8 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   document_upload: "Upload document",
   document_validate: "Validation document",
   document_reject: "Rejet document",
+  staff_document_sent: "Envoi document au personnel",
+  staff_document_deleted: "Suppression document du personnel",
   user_create: "Création utilisateur",
   user_update: "Modification utilisateur",
   user_delete: "Suppression utilisateur",

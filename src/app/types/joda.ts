@@ -174,7 +174,7 @@ export interface SortieComptable {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'document_manquant' | 'paiement_valide' | 'retard_paiement' | 'mise_a_jour_dossier';
+  type: 'document_manquant' | 'paiement_en_attente' | 'paiement_valide' | 'paiement_rejete' | 'retard_paiement' | 'mise_a_jour_dossier';
   titre: string;
   message: string;
   read: boolean;

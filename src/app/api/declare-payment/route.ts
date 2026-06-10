@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
             await supabaseAdmin.from("notifications").insert(
                 staffUsers.map((staff: { id: string }) => ({
                     user_id: staff.id,
-                    type: "paiement_valide",
+                    type: "paiement_en_attente",
                     titre: "Déclaration de paiement",
                     message: `${studentName} a déclaré un ${modeLabel} pour ${typeLabel} — Tranche ${tranche_num}. En attente de validation.`,
                     read: false,

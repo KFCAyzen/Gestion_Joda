@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { createClient } from "../lib/supabase/client";
 import { Permission } from "../types/permissions";
@@ -74,22 +74,31 @@ export function usePermissions() {
   // Rôle effectif : contexte d'auth en priorité, sinon profil en cache (hors-ligne).
   const role = user?.role ?? readCachedRole();
 
-  const hasPermission = (permission: Permission): boolean => {
-    // Une surcharge personnalisée (accord OU refus explicite) prime toujours.
-    const customPerm = customPermissions.find((p) => p.permission === permission);
-    if (customPerm) return customPerm.granted;
+  // ⚠️ Identité stable obligatoire : `hasPermission` est utilisé comme dépendance
+  // de `useMemo`/`useEffect` (ex. filtrage du menu dans le layout). Sans useCallback,
+  // une nouvelle fonction à chaque rendu fait recalculer ces memos et déclenche un
+  // setState en boucle → l'interface se fige (clics sans effet).
+  const hasPermission = useCallback(
+    (permission: Permission): boolean => {
+      // Une surcharge personnalisée (accord OU refus explicite) prime toujours.
+      const customPerm = customPermissions.find((p) => p.permission === permission);
+      if (customPerm) return customPerm.granted;
 
-    // Sinon, défauts du rôle : set éditable en base si configuré, sinon code.
-    return roleHasPermission(role, permission, roleMap);
-  };
+      // Sinon, défauts du rôle : set éditable en base si configuré, sinon code.
+      return roleHasPermission(role, permission, roleMap);
+    },
+    [customPermissions, roleMap, role]
+  );
 
-  const hasAnyPermission = (permissions: Permission[]): boolean => {
-    return permissions.some((p) => hasPermission(p));
-  };
+  const hasAnyPermission = useCallback(
+    (permissions: Permission[]): boolean => permissions.some((p) => hasPermission(p)),
+    [hasPermission]
+  );
 
-  const hasAllPermissions = (permissions: Permission[]): boolean => {
-    return permissions.every((p) => hasPermission(p));
-  };
+  const hasAllPermissions = useCallback(
+    (permissions: Permission[]): boolean => permissions.every((p) => hasPermission(p)),
+    [hasPermission]
+  );
 
   return {
     hasPermission,

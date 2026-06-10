@@ -323,6 +323,15 @@
         "deductions": "Deductions",
         "absences": "Absent days",
         "net": "Net pay"
+      },
+      "adjustments": {
+        "title": "Bonuses & deductions",
+        "add": "Add line",
+        "bonus": "Bonus",
+        "deduction": "Deduction",
+        "amount": "Amount",
+        "motifPlaceholder": "Reason (e.g. performance bonus)",
+        "empty": "No bonus or deduction. Click \"Add line\"."
       }
     },
     "reports": {
@@ -1204,6 +1213,7 @@
       },
       "types": {
         "document_manquant": "Missing document",
+        "paiement_en_attente": "Payment pending",
         "paiement_valide": "Payment validated",
         "paiement_rejete": "Payment rejected",
         "retard_paiement": "Late payment",
@@ -1233,6 +1243,7 @@
       "unread": "Unread ({count})",
       "latePayments": "Late payments",
       "documents": "Documents",
+      "pending": "Pending",
       "payments": "Payments",
       "files": "Files"
     },
@@ -1243,6 +1254,7 @@
     },
     "types": {
       "document_manquant": "Missing document",
+      "paiement_en_attente": "Payment pending",
       "paiement_valide": "Payment validated",
       "paiement_rejete": "Payment rejected",
       "retard_paiement": "Late payment",
@@ -1281,6 +1293,7 @@
     },
     "types": {
       "document_manquant": "Missing document",
+      "paiement_en_attente": "Payment pending",
       "paiement_valide": "Payment validated",
       "paiement_rejete": "Payment rejected",
       "retard_paiement": "Late payment",

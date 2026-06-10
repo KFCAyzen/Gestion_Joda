@@ -17,6 +17,7 @@ type FilterType =
     | "all"
     | "unread"
     | "document_manquant"
+    | "paiement_en_attente"
     | "paiement_valide"
     | "retard_paiement"
     | "mise_a_jour_dossier";
@@ -34,7 +35,9 @@ interface Notification {
 
 const TYPE_STYLES: Record<string, { color: string; bg: string; icon: string }> = {
     document_manquant: { color: "text-orange-600", bg: "bg-orange-100", icon: "DOC" },
+    paiement_en_attente: { color: "text-amber-600", bg: "bg-amber-100", icon: "..." },
     paiement_valide: { color: "text-green-600", bg: "bg-green-100", icon: "PAY" },
+    paiement_rejete: { color: "text-red-600", bg: "bg-red-100", icon: "REJ" },
     retard_paiement: { color: "text-red-600", bg: "bg-red-100", icon: "!" },
     mise_a_jour_dossier: { color: "text-blue-600", bg: "bg-blue-100", icon: "UPD" },
 };
@@ -176,6 +179,7 @@ export default function NotificationsPage() {
         { key: "unread", labelKey: "filters.unread" },
         { key: "retard_paiement", labelKey: "filters.latePayments" },
         { key: "document_manquant", labelKey: "filters.documents" },
+        { key: "paiement_en_attente", labelKey: "filters.pending" },
         { key: "paiement_valide", labelKey: "filters.payments" },
         { key: "mise_a_jour_dossier", labelKey: "filters.files" },
     ];

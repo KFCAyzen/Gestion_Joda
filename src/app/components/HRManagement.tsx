@@ -92,6 +92,7 @@ import type {
     LeaveRequest,
     LeaveType,
     Payslip,
+    PayslipAdjustment,
     DailyReport,
 } from "../types/hr";
 
@@ -2044,19 +2045,38 @@ function PayrollPanel({
         mois: now.getMonth() + 1,
         annee: now.getFullYear(),
         salaire_base: "0",
-        primes: "0",
-        deductions: "0",
+        adjustments: [] as PayslipAdjustment[],
         jours_absences: "0",
         notes: "",
     });
 
+    // Totaux dérivés des lignes de primes/retenues saisies.
+    const primesTotal = useMemo(
+        () => form.adjustments.filter((a) => a.type === "bonus").reduce((s, a) => s + (a.montant || 0), 0),
+        [form.adjustments]
+    );
+    const deductionsTotal = useMemo(
+        () => form.adjustments.filter((a) => a.type === "deduction").reduce((s, a) => s + (a.montant || 0), 0),
+        [form.adjustments]
+    );
+
     const payroll = useMemo(() => computeCameroonPayroll({
         salaireBase: parseInt(form.salaire_base || "0", 10) || 0,
-        primes: parseInt(form.primes || "0", 10) || 0,
+        primes: primesTotal,
         joursAbsences: parseInt(form.jours_absences || "0", 10) || 0,
-        autresRetenues: parseInt(form.deductions || "0", 10) || 0,
-    }), [form]);
+        autresRetenues: deductionsTotal,
+    }), [form.salaire_base, form.jours_absences, primesTotal, deductionsTotal]);
     const net = payroll.netAPayer;
+
+    const addAdjustment = (type: PayslipAdjustment["type"]) =>
+        setForm((f) => ({ ...f, adjustments: [...f.adjustments, { type, motif: "", montant: 0 }] }));
+    const updateAdjustment = (index: number, patch: Partial<PayslipAdjustment>) =>
+        setForm((f) => ({
+            ...f,
+            adjustments: f.adjustments.map((a, i) => (i === index ? { ...a, ...patch } : a)),
+        }));
+    const removeAdjustment = (index: number) =>
+        setForm((f) => ({ ...f, adjustments: f.adjustments.filter((_, i) => i !== index) }));
 
     const openCreate = () => {
         const first = employees[0];
@@ -2065,8 +2085,7 @@ function PayrollPanel({
             mois: now.getMonth() + 1,
             annee: now.getFullYear(),
             salaire_base: String(first?.salaire_base ?? 0),
-            primes: "0",
-            deductions: "0",
+            adjustments: [],
             jours_absences: "0",
             notes: "",
         });
@@ -2089,8 +2108,11 @@ function PayrollPanel({
                 mois: form.mois,
                 annee: form.annee,
                 salaire_base: parseInt(form.salaire_base || "0", 10) || 0,
-                primes: parseInt(form.primes || "0", 10) || 0,
-                deductions: parseInt(form.deductions || "0", 10) || 0,
+                primes: primesTotal,
+                deductions: deductionsTotal,
+                adjustments: form.adjustments
+                    .filter((a) => (a.montant || 0) > 0)
+                    .map((a) => ({ type: a.type, motif: a.motif.trim(), montant: a.montant })),
                 jours_absences: parseInt(form.jours_absences || "0", 10) || 0,
                 net_a_payer: net,
                 notes: form.notes.trim() || null,
@@ -2276,22 +2298,6 @@ function PayrollPanel({
                             onChange={(e) => setForm({ ...form, salaire_base: e.target.value })}
                         />
                     </Field>
-                    <Field label={t("payroll.col.bonus") + " (FCFA)"}>
-                        <Input
-                            type="number"
-                            min="0"
-                            value={form.primes}
-                            onChange={(e) => setForm({ ...form, primes: e.target.value })}
-                        />
-                    </Field>
-                    <Field label={t("payroll.col.deductions") + " (FCFA)"}>
-                        <Input
-                            type="number"
-                            min="0"
-                            value={form.deductions}
-                            onChange={(e) => setForm({ ...form, deductions: e.target.value })}
-                        />
-                    </Field>
                     <Field label={t("payroll.col.absences")}>
                         <Input
                             type="number"
@@ -2301,12 +2307,94 @@ function PayrollPanel({
                         />
                     </Field>
                     <div className="md:col-span-2">
+                        <div className="flex items-center justify-between mb-2">
+                            <Label>{t("payroll.adjustments.title")}</Label>
+                            <Button type="button" variant="outline" size="sm" onClick={() => addAdjustment("bonus")}>
+                                <Plus className="w-4 h-4 mr-1" />
+                                {t("payroll.adjustments.add")}
+                            </Button>
+                        </div>
+                        {form.adjustments.length === 0 ? (
+                            <p className="text-sm text-slate-400 dark:text-slate-500 py-1">
+                                {t("payroll.adjustments.empty")}
+                            </p>
+                        ) : (
+                            <div className="space-y-2">
+                                {form.adjustments.map((a, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 p-2"
+                                    >
+                                        <div className="inline-flex overflow-hidden rounded-md border border-slate-200 dark:border-slate-700">
+                                            <button
+                                                type="button"
+                                                onClick={() => updateAdjustment(i, { type: "bonus" })}
+                                                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                                                    a.type === "bonus"
+                                                        ? "bg-emerald-600 text-white"
+                                                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                }`}
+                                            >
+                                                {t("payroll.adjustments.bonus")}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => updateAdjustment(i, { type: "deduction" })}
+                                                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                                                    a.type === "deduction"
+                                                        ? "bg-rose-600 text-white"
+                                                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                }`}
+                                            >
+                                                {t("payroll.adjustments.deduction")}
+                                            </button>
+                                        </div>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            className="w-32"
+                                            placeholder={t("payroll.adjustments.amount")}
+                                            value={a.montant === 0 ? "" : String(a.montant)}
+                                            onChange={(e) =>
+                                                updateAdjustment(i, { montant: parseInt(e.target.value || "0", 10) || 0 })
+                                            }
+                                        />
+                                        <Input
+                                            className="flex-1 min-w-[160px]"
+                                            placeholder={t("payroll.adjustments.motifPlaceholder")}
+                                            value={a.motif}
+                                            onChange={(e) => updateAdjustment(i, { motif: e.target.value })}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeAdjustment(i)}
+                                            aria-label={t("common.cancel")}
+                                        >
+                                            <Trash2 className="w-4 h-4 text-rose-500" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="md:col-span-2">
                         <Field label={t("employees.form.notes")}>
                             <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                         </Field>
                     </div>
                 </div>
                 <div className="mt-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 space-y-1 text-sm">
+                    <div className="flex justify-between">
+                        <span className="text-slate-600 dark:text-slate-300">{t("payroll.col.base")}</span>
+                        <span className="font-medium">{fmtMoney(parseInt(form.salaire_base || "0", 10) || 0)}</span>
+                    </div>
+                    {primesTotal > 0 && (
+                        <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                            <span>{t("payroll.col.bonus")}</span><span>+ {fmtMoney(primesTotal)}</span>
+                        </div>
+                    )}
                     <div className="flex justify-between">
                         <span className="text-slate-600 dark:text-slate-300">{t("payroll.breakdown.brut")}</span>
                         <span className="font-medium">{fmtMoney(payroll.brut)}</span>

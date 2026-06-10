@@ -146,6 +146,12 @@ export const reviewLeaveRequestSchema = z.object({
 });
 
 // ─── Payslip ───────────────────────────────────────────────────────────────
+export const payslipAdjustmentSchema = z.object({
+  type: z.enum(['bonus', 'deduction']),
+  motif: z.string().trim().max(200).default(''),
+  montant: z.number().int().min(0).default(0),
+});
+
 export const payslipSchema = z.object({
   id: z.string().uuid(),
   employee_id: z.string().uuid(),
@@ -154,6 +160,7 @@ export const payslipSchema = z.object({
   salaire_base: z.number().int().min(0),
   primes: z.number().int().min(0).default(0),
   deductions: z.number().int().min(0).default(0),
+  adjustments: z.array(payslipAdjustmentSchema).default([]),
   jours_absences: z.number().int().min(0).default(0),
   net_a_payer: z.number().int().min(0),
   notes: z.string().nullable().optional(),
@@ -329,6 +336,7 @@ export type LeaveRequestInput = z.infer<typeof createLeaveRequestSchema>;
 export type LeaveReviewInput = z.infer<typeof reviewLeaveRequestSchema>;
 export type PayslipInput = z.infer<typeof createPayslipSchema>;
 export type PayslipUpdate = z.infer<typeof updatePayslipSchema>;
+export type PayslipAdjustmentInput = z.infer<typeof payslipAdjustmentSchema>;
 export type DailyReportInput = z.infer<typeof createDailyReportSchema>;
 export type DailyReportUpdate = z.infer<typeof updateDailyReportSchema>;
 export type DeductionRuleInput = z.infer<typeof createDeductionRuleSchema>;

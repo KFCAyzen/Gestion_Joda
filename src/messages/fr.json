@@ -323,6 +323,15 @@
         "deductions": "Retenues",
         "absences": "J. d'absence",
         "net": "Net à payer"
+      },
+      "adjustments": {
+        "title": "Primes & retenues",
+        "add": "Ajouter une ligne",
+        "bonus": "Prime",
+        "deduction": "Retenue",
+        "amount": "Montant",
+        "motifPlaceholder": "Motif (ex : prime de rendement)",
+        "empty": "Aucune prime ni retenue. Cliquez sur « Ajouter une ligne »."
       }
     },
     "reports": {
@@ -1190,6 +1199,7 @@
       },
       "types": {
         "document_manquant": "Document manquant",
+        "paiement_en_attente": "Paiement en attente",
         "paiement_valide": "Paiement valide",
         "paiement_rejete": "Paiement rejeté",
         "retard_paiement": "Retard de paiement",
@@ -1233,6 +1243,7 @@
       "unread": "Non lues ({count})",
       "latePayments": "Retards",
       "documents": "Documents",
+      "pending": "En attente",
       "payments": "Paiements",
       "files": "Dossiers"
     },
@@ -1243,6 +1254,7 @@
     },
     "types": {
       "document_manquant": "Document manquant",
+      "paiement_en_attente": "Paiement en attente",
       "paiement_valide": "Paiement valide",
       "paiement_rejete": "Paiement rejeté",
       "retard_paiement": "Retard de paiement",
@@ -1281,6 +1293,7 @@
     },
     "types": {
       "document_manquant": "Document manquant",
+      "paiement_en_attente": "Paiement en attente",
       "paiement_valide": "Paiement valide",
       "paiement_rejete": "Paiement rejeté",
       "retard_paiement": "Retard de paiement",
