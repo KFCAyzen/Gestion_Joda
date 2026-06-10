@@ -302,6 +302,13 @@
       "computedNet": "Computed net pay",
       "breakdown": { "brut": "Gross salary" },
       "exportPdf": "Export as PDF",
+      "email": {
+        "action": "Send by email",
+        "sent": "Payslip sent by email",
+        "sentAuto": "Payslip emailed to the employee",
+        "noEmail": "No email address on file for this employee",
+        "error": "Failed to send the payslip by email"
+      },
       "confirmDeleteTitle": "Delete this payslip?",
       "confirmDeleteDesc": "This action cannot be undone.",
       "generate": "Generate payroll",

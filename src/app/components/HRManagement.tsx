@@ -14,6 +14,7 @@ import {
     KeyRound,
     Link2,
     Loader2,
+    Mail,
     Pencil,
     Play,
     Plus,
@@ -2103,7 +2104,7 @@ function PayrollPanel({
             return;
         }
         try {
-            await create.mutateAsync({
+            const created = await create.mutateAsync({
                 employee_id: form.employee_id,
                 mois: form.mois,
                 annee: form.annee,
@@ -2121,6 +2122,53 @@ function PayrollPanel({
             });
             onSuccess(t("messages.payslipCreated"));
             setModalOpen(false);
+
+            // Envoi automatique du bulletin par e-mail à l'employé (best-effort).
+            const r = await sendPayslipByEmail(created, employeesById.get(created.employee_id)).catch(
+                (e): { ok: boolean; skipped?: boolean; error?: string } => ({ ok: false, error: String(e) })
+            );
+            if (r.ok) onSuccess(t("payroll.email.sentAuto"));
+            else if (!r.skipped) onError(new Error(r.error || t("payroll.email.error")));
+        } catch (e) {
+            onError(e);
+        }
+    };
+
+    // Génère le PDF côté client et l'envoie en pièce jointe à l'employé via l'API.
+    const sendPayslipByEmail = async (
+        p: Payslip,
+        emp: Employee | undefined
+    ): Promise<{ ok: boolean; skipped?: boolean; error?: string }> => {
+        if (!emp) return { ok: false, error: "employee not found" };
+        if (!emp.email) return { ok: false, skipped: true };
+        const { generatePayslip } = await import("../lib/pdfGenerator");
+        const pdfBase64 = (await generatePayslip(p, emp, { output: "base64" })) as string;
+        const res = await fetch("/api/hr/send-payslip", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                to: emp.email,
+                employeeName: `${emp.prenom} ${emp.nom}`.trim(),
+                mois: p.mois,
+                annee: p.annee,
+                reference: payslipReference(p),
+                netAPayer: p.net_a_payer,
+                pdfBase64,
+                langue: emp.langue_preferee ?? null,
+            }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { ok: false, error: data?.error || "send failed" };
+        return { ok: true };
+    };
+
+    const handleEmailPayslip = async (p: Payslip) => {
+        const emp = employeesById.get(p.employee_id);
+        try {
+            const r = await sendPayslipByEmail(p, emp);
+            if (r.skipped) return onError(new Error(t("payroll.email.noEmail")));
+            if (!r.ok) return onError(new Error(r.error || t("payroll.email.error")));
+            onSuccess(t("payroll.email.sent"));
         } catch (e) {
             onError(e);
         }
@@ -2231,6 +2279,11 @@ function PayrollPanel({
                                                         label: t("payroll.exportPdf"),
                                                         icon: <Receipt className="w-4 h-4" />,
                                                         onClick: () => handleExportPdf(p),
+                                                    },
+                                                    {
+                                                        label: t("payroll.email.action"),
+                                                        icon: <Mail className="w-4 h-4" />,
+                                                        onClick: () => handleEmailPayslip(p),
                                                     },
                                                     {
                                                         label: t("payroll.confirmDeleteTitle"),

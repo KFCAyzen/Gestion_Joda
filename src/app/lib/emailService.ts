@@ -1099,6 +1099,102 @@ ${emailFooter(year)}
   }
 }
 
+// ── Bulletin de paie → employé (pièce jointe PDF) ─────────────────────────────
+
+interface PayslipEmailData {
+  employeeName: string;
+  employeeEmail: string;
+  mois: number;
+  annee: number;
+  reference: string;
+  netAPayer: number;
+  pdfBase64: string;
+  lang?: Lang;
+}
+
+const MOIS_LABELS: Record<Lang, string[]> = {
+  fr: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+};
+
+export async function sendPayslipEmail(data: PayslipEmailData): Promise<{ ok: boolean; error?: string }> {
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[Email] RESEND_API_KEY manquant');
+    return { ok: false, error: 'RESEND_API_KEY missing' };
+  }
+
+  const lang = data.lang ?? 'fr';
+  const isEn = lang === 'en';
+  const year = new Date().getFullYear();
+  const moisLabel = MOIS_LABELS[lang][data.mois - 1] ?? String(data.mois);
+  const periode = `${moisLabel} ${data.annee}`;
+  const filename = `Fiche_paie_${data.reference}.pdf`;
+
+  try {
+    const result = await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: [data.employeeEmail],
+      subject: isEn
+        ? `📄 Your payslip — ${periode}`
+        : `📄 Votre bulletin de paie — ${periode}`,
+      attachments: [{ filename, content: data.pdfBase64 }],
+      html: `<!DOCTYPE html>
+<html lang="${lang}"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader(lang)}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? 'Hello' : 'Bonjour'} <strong>${data.employeeName}</strong>,</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+    ${isEn
+      ? `Please find attached your payslip for <strong>${periode}</strong>.`
+      : `Veuillez trouver ci-joint votre bulletin de paie pour <strong>${periode}</strong>.`}
+  </p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
+    <tr><td style="padding:20px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;width:140px;">${isEn ? 'Reference' : 'Référence'}</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;font-family:monospace;">${data.reference}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? 'Period' : 'Période'}</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${periode}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? 'Net pay' : 'Net à payer'}</td>
+          <td style="padding:6px 0;font-size:15px;color:#16a34a;font-weight:700;">${formatCFA(data.netAPayer)}</td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+    ${isEn
+      ? 'This document is confidential. Please keep it without time limit.'
+      : 'Ce document est confidentiel. Merci de le conserver sans limitation de durée.'}
+  </p>
+</td></tr>
+${emailFooter(year, lang)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    if (result.error) {
+      const msg = `${result.error.name ?? 'Error'}: ${result.error.message ?? ''}`;
+      console.error('[Email] Resend a renvoyé une erreur (payslip):', result.error);
+      return { ok: false, error: msg };
+    }
+    console.log(`[Email] Bulletin envoyé à ${data.employeeEmail} (${periode}, id=${result.data?.id})`);
+    return { ok: true };
+  } catch (err: any) {
+    console.error('[Email] Exception sendPayslipEmail:', err);
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
 // ── PIN de rapport → employé ──────────────────────────────────────────────────
 
 interface ReportPinEmailData {

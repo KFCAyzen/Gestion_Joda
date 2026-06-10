@@ -302,6 +302,13 @@
       "computedNet": "Net à payer calculé",
       "breakdown": { "brut": "Salaire brut" },
       "exportPdf": "Exporter en PDF",
+      "email": {
+        "action": "Envoyer par e-mail",
+        "sent": "Bulletin envoyé par e-mail",
+        "sentAuto": "Bulletin envoyé par e-mail à l'employé",
+        "noEmail": "Aucune adresse e-mail enregistrée pour cet employé",
+        "error": "Échec de l'envoi du bulletin par e-mail"
+      },
       "confirmDeleteTitle": "Supprimer cette fiche ?",
       "confirmDeleteDesc": "Cette action est irréversible.",
       "generate": "Générer la paie",

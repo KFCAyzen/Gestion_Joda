@@ -679,7 +679,8 @@ function numberToFrenchWords(value: number): string {
 export const generatePayslip = async (
   payslip: PayslipPdfData,
   employee: PayslipEmployeeData,
-): Promise<void> => {
+  options?: { output?: 'save' | 'base64' },
+): Promise<string | void> => {
   const doc = new jsPDF();
   const logo = await loadLogoWhiteBase64();
   const moisLabel = MOIS_FR[payslip.mois - 1] ?? String(payslip.mois);
@@ -924,5 +925,10 @@ export const generatePayslip = async (
   );
 
   addFooter(doc);
+
+  // Sortie base64 (sans le préfixe data URI) pour l'envoi en pièce jointe e-mail.
+  if (options?.output === 'base64') {
+    return doc.output('datauristring').split('base64,')[1] ?? '';
+  }
   doc.save(`Fiche_paie_${reference}_${employee.nom}.pdf`);
 };
