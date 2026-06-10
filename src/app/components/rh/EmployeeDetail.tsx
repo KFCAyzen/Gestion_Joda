@@ -684,7 +684,7 @@ export default function EmployeeDetail({
                                             <TableCell>{fmtMoney(p.deductions)}</TableCell>
                                             <TableCell className="font-semibold">{fmtMoney(p.net_a_payer)}</TableCell>
                                             <TableCell>
-                                                {p.payment_date ?? "—"}
+                                                {(p.payment_date ?? p.created_at)?.slice(0, 10) ?? "—"}
                                                 {p.auto_generated && (
                                                     <Badge className="ml-2 bg-blue-100 text-blue-700 text-xs">{t("detail.auto")}</Badge>
                                                 )}

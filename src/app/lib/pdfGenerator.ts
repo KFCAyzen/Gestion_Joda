@@ -565,6 +565,7 @@ interface PayslipPdfData {
   net_a_payer: number;
   notes?: string | null;
   payment_date?: string | null;
+  created_at?: string | null;
 }
 
 interface PayslipEmployeeData {
@@ -709,7 +710,8 @@ export const generatePayslip = async (
   doc.setTextColor(31, 41, 55);
   doc.text(reference, 19, headBandY + 7);
   doc.text(`${moisLabel} ${payslip.annee}`, 86, headBandY + 7);
-  doc.text(payslip.payment_date ? formatDate(payslip.payment_date) : '—', 150, headBandY + 7);
+  const paymentDate = payslip.payment_date ?? payslip.created_at;
+  doc.text(paymentDate ? formatDate(paymentDate) : '—', 150, headBandY + 7);
 
   // ── Identité de l'employé (colonnes Employé / Emploi)
   const employeeLines: Array<[string, string]> = [];

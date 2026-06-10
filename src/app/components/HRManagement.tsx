@@ -2041,6 +2041,7 @@ function PayrollPanel({
     const [genYear, setGenYear] = useState<number>(now.getFullYear());
     const [genMonth, setGenMonth] = useState<number>(now.getMonth() + 1);
     const [confirmDel, setConfirmDel] = useState<Payslip | null>(null);
+    const today = now.toISOString().slice(0, 10);
     const [form, setForm] = useState({
         employee_id: "",
         mois: now.getMonth() + 1,
@@ -2048,6 +2049,7 @@ function PayrollPanel({
         salaire_base: "0",
         adjustments: [] as PayslipAdjustment[],
         jours_absences: "0",
+        payment_date: today,
         notes: "",
     });
 
@@ -2088,6 +2090,7 @@ function PayrollPanel({
             salaire_base: String(first?.salaire_base ?? 0),
             adjustments: [],
             jours_absences: "0",
+            payment_date: today,
             notes: "",
         });
         setModalOpen(true);
@@ -2116,6 +2119,7 @@ function PayrollPanel({
                     .map((a) => ({ type: a.type, motif: a.motif.trim(), montant: a.montant })),
                 jours_absences: parseInt(form.jours_absences || "0", 10) || 0,
                 net_a_payer: net,
+                payment_date: form.payment_date || null,
                 notes: form.notes.trim() || null,
                 created_by: creatorId || null,
                 auto_generated: false,
@@ -2266,7 +2270,7 @@ function PayrollPanel({
                                     <TableCell>{p.jours_absences}</TableCell>
                                     <TableCell className="font-semibold">{fmtMoney(p.net_a_payer)}</TableCell>
                                     <TableCell>
-                                        {p.payment_date ?? "—"}
+                                        {(p.payment_date ?? p.created_at)?.slice(0, 10) ?? "—"}
                                         {p.auto_generated && (
                                             <Badge className="ml-2 bg-blue-100 text-blue-700 text-xs">{t("detail.auto")}</Badge>
                                         )}
@@ -2357,6 +2361,13 @@ function PayrollPanel({
                             min="0"
                             value={form.jours_absences}
                             onChange={(e) => setForm({ ...form, jours_absences: e.target.value })}
+                        />
+                    </Field>
+                    <Field label={t("detail.paymentDate")}>
+                        <Input
+                            type="date"
+                            value={form.payment_date}
+                            onChange={(e) => setForm({ ...form, payment_date: e.target.value })}
                         />
                     </Field>
                     <div className="md:col-span-2">
