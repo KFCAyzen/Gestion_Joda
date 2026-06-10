@@ -18,6 +18,7 @@ import { useEntreesComptables, useSortiesComptables, ENTREES_KEY, SORTIES_KEY } 
 import { useUsers } from "../lib/hooks/use-users";
 import { useStudents } from "../lib/hooks/use-students";
 import { useAuth } from "../context/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
 import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
@@ -144,6 +145,7 @@ const PAGE_SIZE = 10;
 export default function LivreComptable() {
     const supabase = createClient();
     const { user } = useAuth();
+    const { hasPermission } = usePermissions();
     const { showNotification } = useNotificationContext();
     const queryClient = useQueryClient();
 
@@ -174,7 +176,8 @@ export default function LivreComptable() {
     }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
     const closeConfirm = () => setConfirmDialog((s) => ({ ...s, isOpen: false }));
 
-    const isAdminLike = user?.role === "admin" || user?.role === "super_admin";
+    const canCreateEntry = hasPermission("accounting.create");
+    const canValidateEntry = hasPermission("accounting.validate");
 
     const getUserName = useCallback(
         (id: string | null): string => {
@@ -322,7 +325,7 @@ export default function LivreComptable() {
     };
 
     const handleValidateSortie = async (id: string) => {
-        if (!user || !isAdminLike) return;
+        if (!user || !canValidateEntry) return;
         await supabase
             .from("sorties_comptables")
             .update({ validated_by: user.id, validated_at: new Date().toISOString() })
@@ -339,8 +342,8 @@ export default function LivreComptable() {
 
     const handleAdd = async () => {
         if (!user || !newForm.montant || !newForm.description) return;
-        // Seuls admins et super_admins peuvent créer des écritures comptables manuelles
-        if (!isAdminLike) {
+        // Création d'écritures comptables manuelles soumise à la permission dédiée
+        if (!canCreateEntry) {
             showNotification("Action réservée aux administrateurs", "error");
             return;
         }
@@ -429,7 +432,7 @@ export default function LivreComptable() {
     const allCats = Array.from(new Set(rows.map((r) => r.categorie)));
 
     return (
-        <ProtectedRoute requiredRole="agent">
+        <ProtectedRoute requiredRole="agent" requiredPermission="accounting.view">
             <div className="-m-4 sm:-m-5 flex flex-col bg-white dark:bg-slate-900" style={{ minHeight: "calc(100vh - 130px)" }}>
                 {/* Header */}
                 <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-4">
@@ -608,7 +611,7 @@ export default function LivreComptable() {
                                             {catLabel(row.categorie)}
                                         </td>
                                         <td className="px-3 py-3">
-                                            {row.needsValidation && isAdminLike && (
+                                            {row.needsValidation && canValidateEntry && (
                                                 <button
                                                     onClick={() =>
                                                         setConfirmDialog({
@@ -701,7 +704,7 @@ export default function LivreComptable() {
                 )}
 
                 {/* FAB — mobile + desktop */}
-                {isAdminLike && (
+                {canCreateEntry && (
                     <button
                         onClick={() => setShowNewModal(true)}
                         className="fixed bottom-6 right-6 flex items-center gap-2 rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-red-700 xl:hidden"
@@ -710,7 +713,7 @@ export default function LivreComptable() {
                         Nouveau
                     </button>
                 )}
-                {isAdminLike && (
+                {canCreateEntry && (
                     <div className="hidden items-center border-t border-gray-100 dark:border-slate-700 px-6 py-3 xl:flex">
                         <button
                             onClick={() => setShowNewModal(true)}

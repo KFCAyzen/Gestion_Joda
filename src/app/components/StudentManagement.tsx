@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "../lib/supabase/client";
 import { useStudents, STUDENTS_KEY } from "../lib/hooks/use-students";
 import { useAuth } from "../context/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
 import Pagination from "./Pagination";
@@ -87,6 +88,7 @@ const emptyFormData = {
 
 export default function StudentManagement() {
     const { user } = useAuth();
+    const { hasPermission } = usePermissions();
     const { showNotification } = useNotificationContext();
     const t = useTranslations("students");
     const { getConfig, getBourseConfig } = usePaymentConfig();
@@ -454,6 +456,8 @@ export default function StudentManagement() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        // Défense en profondeur : interdit la soumission sans la permission requise.
+        if (!hasPermission(editingStudent ? "students.edit" : "students.create")) return;
         setFeedback("", "");
         setIsSubmitting(true);
 
@@ -619,6 +623,7 @@ export default function StudentManagement() {
         if (!studentToDelete) {
             return;
         }
+        if (!hasPermission("students.delete")) return;
         setIsDeleting(true);
         try {
             const { error } = await supabase.from("students").delete().eq("id", studentToDelete.id);
@@ -667,18 +672,13 @@ export default function StudentManagement() {
         setActiveTab("list");
     };
 
-    const canEdit =
-        currentUser?.role === "admin" ||
-        currentUser?.role === "super_admin" ||
-        currentUser?.role === "agent";
-    
-    const canDelete =
-        currentUser?.role === "admin" ||
-        currentUser?.role === "super_admin";
+    const canCreate = hasPermission("students.create");
+    const canEdit = hasPermission("students.edit");
+    const canDelete = hasPermission("students.delete");
 
     return (
         <>
-            <ProtectedRoute requiredRole="agent">
+            <ProtectedRoute requiredRole="agent" requiredPermission="students.view">
                 <div className="space-y-6 p-4 sm:p-6">
                     <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -692,7 +692,7 @@ export default function StudentManagement() {
                                 {t("subtitle")}
                             </p>
                         </div>
-                        {canEdit && <Button onClick={openCreateForm} className="bg-red-600 hover:bg-red-700 text-white">{t("addButton")}</Button>}
+                        {canCreate && <Button onClick={openCreateForm} className="bg-red-600 hover:bg-red-700 text-white">{t("addButton")}</Button>}
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

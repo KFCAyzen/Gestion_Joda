@@ -194,7 +194,7 @@ export default function ActivityLogsPage() {
   if (loading) return <LoadingState />;
 
   return (
-    <ProtectedRoute requiredRole="admin">
+    <ProtectedRoute requiredRole="admin" requiredPermission="logs.view">
       <div className="space-y-6">
         <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

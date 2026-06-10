@@ -8,6 +8,7 @@ import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
 import { useStudents } from '../lib/hooks/use-students';
 import { useEntreesComptables, useSortiesComptables } from '../lib/hooks/use-accounting';
 import { useAuth } from "../context/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import { useNotificationContext } from "../context/NotificationContext";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { logActivity } from "../utils/activityLogger";
@@ -117,6 +118,7 @@ function typeLabel(type: string, tranche: number | null): string {
 export default function PaymentsPage() {
     const supabase = createClient();
     const { user } = useAuth();
+    const { hasPermission } = usePermissions();
     const { showNotification } = useNotificationContext();
     const { getConfig, getBourseConfig } = usePaymentConfig();
 
@@ -208,12 +210,13 @@ export default function PaymentsPage() {
         }
     }, [payments, students]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const isAdminLike = user?.role === "admin" || user?.role === "super_admin";
+    const canCreatePayment = hasPermission("payments.create");
+    const canValidatePayment = hasPermission("payments.validate");
 
     const studentMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
 
     const handleValidate = async (paymentId: string) => {
-        if (!user || !isAdminLike) return;
+        if (!user || !canValidatePayment) return;
         const { data: payment } = await supabase
             .from("payments")
             .select("*, students(nom, prenom)")
@@ -271,6 +274,7 @@ export default function PaymentsPage() {
 
     const handleRegisterPayment = async () => {
         if (!user || !newPayment.student_id || !newPayment.montant) return;
+        if (!canCreatePayment) return;
         setSaving(true);
         try {
             await supabase.from("payments").insert({
@@ -384,7 +388,7 @@ export default function PaymentsPage() {
     ];
 
     return (
-        <ProtectedRoute requiredRole="agent">
+        <ProtectedRoute requiredRole="agent" requiredPermission="payments.view">
             <div className="-m-4 sm:-m-5 flex flex-col bg-white dark:bg-slate-900" style={{ minHeight: "calc(100vh - 130px)" }}>
                 {/* Header */}
                 <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-4">
@@ -404,7 +408,7 @@ export default function PaymentsPage() {
                                 <Filter className="h-3.5 w-3.5" />
                                 Filtrer
                             </button>
-                            {isAdminLike && (
+                            {canCreatePayment && (
                                 <button
                                     onClick={() => setShowRegisterModal(true)}
                                     className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700"
@@ -635,7 +639,7 @@ export default function PaymentsPage() {
                                                             >
                                                                 Pénalité
                                                             </button>
-                                                        ) : isAdminLike ? (
+                                                        ) : canValidatePayment ? (
                                                             <button
                                                                 onClick={() =>
                                                                     setConfirmDialog({
@@ -743,7 +747,7 @@ export default function PaymentsPage() {
                         )}
 
                         {/* Validate all */}
-                        {tab === "a_valider" && filtered.length > 0 && isAdminLike && (
+                        {tab === "a_valider" && filtered.length > 0 && canValidatePayment && (
                             <div className="mt-auto border-t border-gray-100 dark:border-slate-700 p-4">
                                 <button
                                     onClick={() =>
@@ -767,7 +771,7 @@ export default function PaymentsPage() {
                 </div>
 
                 {/* Mobile bottom action */}
-                {tab === "a_valider" && filtered.length > 0 && isAdminLike && (
+                {tab === "a_valider" && filtered.length > 0 && canValidatePayment && (
                     <div className="border-t border-gray-100 dark:border-slate-700 p-4 xl:hidden">
                         <button
                             onClick={() =>
@@ -968,7 +972,7 @@ export default function PaymentsPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    {isAdminLike && (
+                                    {canValidatePayment && (
                                         <button
                                             onClick={() => {
                                                 setPenaltyModal(null);

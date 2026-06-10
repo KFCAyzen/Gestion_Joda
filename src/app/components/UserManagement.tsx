@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
@@ -25,7 +25,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Permission, DEFAULT_ROLE_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from "../types/permissions";
+import { Permission, PERMISSION_LABELS, PERMISSION_GROUPS, PERMISSION_DESCRIPTIONS } from "../types/permissions";
+import { fetchRolePermissionMap, roleHasPermission, isRoleConfigured, ALL_PERMISSIONS, type RolePermissionMap } from "../lib/rolePermissions";
 import { Check, KeyRound, Loader2, Power, PowerOff, Shield, Trash2, X } from "lucide-react";
 import DropdownMenu from "./shared/DropdownMenu";
 import PhoneInput from "./shared/PhoneInput";
@@ -80,6 +81,10 @@ export default function UserManagement() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [togglingPermKey, setTogglingPermKey] = useState<string | null>(null);
+    const [togglingGroup, setTogglingGroup] = useState<string | null>(null);
+    const [roleMap, setRoleMap] = useState<RolePermissionMap>({});
+    const [editingRole, setEditingRole] = useState<string>("agent");
+    const [togglingRoleKey, setTogglingRoleKey] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<DbUser | null>(null);
     const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
     const [loadingPermissions, setLoadingPermissions] = useState(false);
@@ -313,6 +318,19 @@ export default function UserManagement() {
         }
     };
 
+    const loadRoleMap = useCallback(async () => {
+        try {
+            const supabase = createClient();
+            setRoleMap(await fetchRolePermissionMap(supabase));
+        } catch (err) {
+            console.error("Erreur chargement permissions de rôle:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        void loadRoleMap();
+    }, [loadRoleMap]);
+
     const loadUserPermissions = async (userId: string) => {
         setLoadingPermissions(true);
         try {
@@ -345,7 +363,13 @@ export default function UserManagement() {
         try {
             const supabase = createClient();
 
-            if (currentlyGranted) {
+            const desired = !currentlyGranted;
+            const targetRole = selectedUser?.role ?? "";
+            const isDefault = roleHasPermission(targetRole, permission, roleMap);
+
+            if (desired === isDefault) {
+                // L'état souhaité coïncide avec le défaut du rôle : on retire toute
+                // surcharge personnalisée pour revenir au comportement par défaut.
                 const { error: deleteError } = await supabase
                     .from("user_permissions")
                     .delete()
@@ -356,17 +380,22 @@ export default function UserManagement() {
                     throw deleteError;
                 }
             } else {
-                const { error: insertError } = await supabase
+                // Surcharge explicite : accord (granted:true) hors défaut, ou refus
+                // (granted:false) d'une permission normalement accordée par le rôle.
+                const { error: upsertError } = await supabase
                     .from("user_permissions")
-                    .insert({
-                        user_id: userId,
-                        permission,
-                        granted: true,
-                        granted_by: currentUser?.id,
-                    });
+                    .upsert(
+                        {
+                            user_id: userId,
+                            permission,
+                            granted: desired,
+                            granted_by: currentUser?.id,
+                        },
+                        { onConflict: "user_id,permission" }
+                    );
 
-                if (insertError) {
-                    throw insertError;
+                if (upsertError) {
+                    throw upsertError;
                 }
             }
 
@@ -399,10 +428,153 @@ export default function UserManagement() {
         }
     };
 
+    // Gestion groupée : accorde tout le groupe s'il n'est pas entièrement accordé,
+    // sinon retire tout le groupe. Une seule requête par permission, puis rechargement.
+    const toggleGroup = async (userId: string, group: string, permissions: readonly Permission[], grantAll: boolean) => {
+        setTogglingGroup(`${userId}-${group}`);
+        try {
+            const supabase = createClient();
+            const targetRole = selectedUser?.role ?? "";
+
+            for (const permission of permissions) {
+                const isDefault = roleHasPermission(targetRole, permission, roleMap);
+                if (grantAll === isDefault) {
+                    // L'état souhaité = défaut du rôle → on retire toute surcharge.
+                    const { error: deleteError } = await supabase
+                        .from("user_permissions")
+                        .delete()
+                        .eq("user_id", userId)
+                        .eq("permission", permission);
+                    if (deleteError) throw deleteError;
+                } else {
+                    const { error: upsertError } = await supabase
+                        .from("user_permissions")
+                        .upsert(
+                            { user_id: userId, permission, granted: grantAll, granted_by: currentUser?.id },
+                            { onConflict: "user_id,permission" }
+                        );
+                    if (upsertError) throw upsertError;
+                }
+            }
+
+            await loadUserPermissions(userId);
+            showNotification({
+                title: t("messages.permissionsUpdatedTitle"),
+                message: grantAll ? t("messages.groupGranted", { group }) : t("messages.groupRemoved", { group }),
+                type: "success",
+            });
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, currentUser.name, currentUser.role,
+                    "user_update", "user_permissions", userId,
+                    `Groupe de permissions ${grantAll ? "accordé" : "retiré"} — ${group} → utilisateur ${userId}`,
+                    { target_user_id: userId, group, granted: grantAll }
+                );
+            }
+        } catch (err) {
+            const message = getFriendlyErrorMessage(err, { fallback: t("messages.permissionUpdateError") });
+            setFeedback(message, "");
+            showNotification({ title: t("messages.permissionsUpdateTitle"), message, type: "error" });
+        } finally {
+            setTogglingGroup(null);
+        }
+    };
+
+    // ---- Gestion des permissions PAR RÔLE (table role_permissions) ----------
+    // « Matérialise » un rôle non encore configuré : écrit l'intégralité de son set
+    // effectif courant, pour qu'il fasse désormais autorité sur les défauts du code.
+    const ensureRoleMaterialized = async (supabase: ReturnType<typeof createClient>, role: string) => {
+        if (isRoleConfigured(role, roleMap)) return;
+        const rows = ALL_PERMISSIONS.map((permission) => ({
+            role,
+            permission,
+            granted: roleHasPermission(role, permission, roleMap),
+            updated_by: currentUser?.id,
+        }));
+        const { error } = await supabase
+            .from("role_permissions")
+            .upsert(rows, { onConflict: "role,permission" });
+        if (error) throw error;
+    };
+
+    const toggleRolePermission = async (role: string, permission: Permission, currentlyGranted: boolean) => {
+        setTogglingRoleKey(`${role}-${permission}`);
+        try {
+            const supabase = createClient();
+            await ensureRoleMaterialized(supabase, role);
+            const { error } = await supabase
+                .from("role_permissions")
+                .upsert(
+                    { role, permission, granted: !currentlyGranted, updated_by: currentUser?.id, updated_at: new Date().toISOString() },
+                    { onConflict: "role,permission" }
+                );
+            if (error) throw error;
+            await loadRoleMap();
+            showNotification({
+                title: t("messages.permissionsUpdatedTitle"),
+                message: currentlyGranted ? t("messages.permissionRemoved") : t("messages.permissionGranted"),
+                type: "success",
+            });
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, currentUser.name, currentUser.role,
+                    "user_update", "role_permissions", role,
+                    `Permission de rôle ${currentlyGranted ? "retirée" : "accordée"} — ${permission} → rôle ${role}`,
+                    { role, permission, granted: !currentlyGranted }
+                );
+            }
+        } catch (err) {
+            const message = getFriendlyErrorMessage(err, { fallback: t("messages.permissionUpdateError") });
+            setFeedback(message, "");
+            showNotification({ title: t("messages.permissionsUpdateTitle"), message, type: "error" });
+        } finally {
+            setTogglingRoleKey(null);
+        }
+    };
+
+    const toggleRoleGroup = async (role: string, group: string, permissions: readonly Permission[], grantAll: boolean) => {
+        setTogglingRoleKey(`${role}-group-${group}`);
+        try {
+            const supabase = createClient();
+            await ensureRoleMaterialized(supabase, role);
+            const rows = permissions.map((permission) => ({
+                role,
+                permission,
+                granted: grantAll,
+                updated_by: currentUser?.id,
+                updated_at: new Date().toISOString(),
+            }));
+            const { error } = await supabase
+                .from("role_permissions")
+                .upsert(rows, { onConflict: "role,permission" });
+            if (error) throw error;
+            await loadRoleMap();
+            showNotification({
+                title: t("messages.permissionsUpdatedTitle"),
+                message: grantAll ? t("messages.groupGranted", { group }) : t("messages.groupRemoved", { group }),
+                type: "success",
+            });
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, currentUser.name, currentUser.role,
+                    "user_update", "role_permissions", role,
+                    `Groupe de permissions de rôle ${grantAll ? "accordé" : "retiré"} — ${group} → rôle ${role}`,
+                    { role, group, granted: grantAll }
+                );
+            }
+        } catch (err) {
+            const message = getFriendlyErrorMessage(err, { fallback: t("messages.permissionUpdateError") });
+            setFeedback(message, "");
+            showNotification({ title: t("messages.permissionsUpdateTitle"), message, type: "error" });
+        } finally {
+            setTogglingRoleKey(null);
+        }
+    };
+
     const hasPermission = (userId: string, permission: Permission, role: string): boolean => {
         const customPerm = userPermissions.find((entry) => entry.user_id === userId && entry.permission === permission);
         if (customPerm) return customPerm.granted;
-        return DEFAULT_ROLE_PERMISSIONS[role]?.includes(permission) || false;
+        return roleHasPermission(role, permission, roleMap);
     };
 
     const isCustomPermission = (userId: string, permission: Permission): boolean => {
@@ -434,7 +606,7 @@ export default function UserManagement() {
                 <Card className="joda-surface border-0 shadow-none">
                     <CardHeader className="border-b border-slate-100 dark:border-slate-700">
                         <div className="flex flex-wrap gap-2">
-                            {["users", "create"].map((tab) => (
+                            {(currentUser?.role === "super_admin" ? ["users", "roles", "create"] : ["users", "create"]).map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => {
@@ -447,7 +619,7 @@ export default function UserManagement() {
                                             : "bg-white/70 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                                     }`}
                                 >
-                                    {tab === "users" ? t("tabs.users", { count: dbUsers.length }) : t("tabs.create")}
+                                    {tab === "users" ? t("tabs.users", { count: dbUsers.length }) : tab === "roles" ? t("tabs.roles") : t("tabs.create")}
                                 </button>
                             ))}
                         </div>
@@ -566,31 +738,52 @@ export default function UserManagement() {
                                     <div className="py-8 text-center text-slate-500 dark:text-slate-400">{t("loading")}</div>
                                 ) : (
                                     <div className="space-y-6">
-                                        {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => (
+                                        {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => {
+                                            const groupPerms = permissions as readonly Permission[];
+                                            const grantedCount = groupPerms.filter((p) => hasPermission(selectedUser.id, p, selectedUser.role)).length;
+                                            const allGranted = grantedCount === groupPerms.length;
+                                            const noneGranted = grantedCount === 0;
+                                            const groupBusy = togglingGroup === `${selectedUser.id}-${group}`;
+                                            return (
                                             <Card key={group} className="joda-surface-muted">
-                                                <CardHeader>
-                                                    <CardTitle className="text-base">{group}</CardTitle>
+                                                <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+                                                    <div>
+                                                        <CardTitle className="text-base">{group}</CardTitle>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                            {t("permissions.groupCount", { granted: grantedCount, total: groupPerms.length })}
+                                                        </p>
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={groupBusy}
+                                                        onClick={() => void toggleGroup(selectedUser.id, group, groupPerms, !allGranted)}
+                                                    >
+                                                        {allGranted ? t("permissions.revokeAll") : t("permissions.grantAll")}
+                                                    </Button>
                                                 </CardHeader>
                                                 <CardContent>
                                                     <div className="space-y-3">
                                                         {permissions.map((perm) => {
                                                             const granted = hasPermission(selectedUser.id, perm as Permission, selectedUser.role);
                                                             const isCustom = isCustomPermission(selectedUser.id, perm as Permission);
-                                                            const isDefault = DEFAULT_ROLE_PERMISSIONS[selectedUser.role]?.includes(perm as Permission);
+                                                            const isDefault = roleHasPermission(selectedUser.role, perm as Permission, roleMap);
 
                                                             return (
                                                                 <div key={perm} className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                                                                     <div className="flex items-center gap-3">
                                                                         <Checkbox
                                                                             checked={granted}
-                                                                            disabled={togglingPermKey === `${selectedUser.id}-${perm}`}
+                                                                            disabled={togglingPermKey === `${selectedUser.id}-${perm}` || groupBusy}
                                                                             onCheckedChange={() =>
                                                                                 void togglePermission(selectedUser.id, perm as Permission, granted)
                                                                             }
                                                                         />
                                                                         <div>
                                                                             <div className="text-sm font-medium">{PERMISSION_LABELS[perm as Permission]}</div>
-                                                                            <div className="text-xs text-slate-500 dark:text-slate-400">{perm}</div>
+                                                                            <div className="text-xs text-slate-500 dark:text-slate-400">{PERMISSION_DESCRIPTIONS[perm as Permission]}</div>
+                                                                            <div className="mt-0.5 text-[10px] font-mono text-slate-400 dark:text-slate-500">{perm}</div>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
@@ -616,9 +809,96 @@ export default function UserManagement() {
                                                     </div>
                                                 </CardContent>
                                             </Card>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {activeTab === "roles" && currentUser?.role === "super_admin" && (
+                            <div className="space-y-6">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-semibold">{t("roleEditor.title")}</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">{t("roleEditor.description")}</p>
+                                    </div>
+                                    <div className="w-full sm:w-56">
+                                        <Select value={editingRole} onValueChange={(v) => setEditingRole(v ?? "agent")}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {["student", "agent", "supervisor", "admin"].map((r) => (
+                                                    <SelectItem key={r} value={r}>{getRoleLabel(r)}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+                                    {isRoleConfigured(editingRole, roleMap)
+                                        ? t("roleEditor.configured")
+                                        : t("roleEditor.usingDefaults")}
+                                    {" "}{t("roleEditor.superAdminNote")}
+                                </div>
+
+                                {Object.entries(PERMISSION_GROUPS).map(([group, permissions]) => {
+                                    const groupPerms = permissions as readonly Permission[];
+                                    const grantedCount = groupPerms.filter((p) => roleHasPermission(editingRole, p, roleMap)).length;
+                                    const allGranted = grantedCount === groupPerms.length;
+                                    const groupKey = `${editingRole}-group-${group}`;
+                                    return (
+                                        <Card key={group} className="joda-surface-muted">
+                                            <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+                                                <div>
+                                                    <CardTitle className="text-base">{group}</CardTitle>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                        {t("permissions.groupCount", { granted: grantedCount, total: groupPerms.length })}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    disabled={togglingRoleKey === groupKey}
+                                                    onClick={() => void toggleRoleGroup(editingRole, group, groupPerms, !allGranted)}
+                                                >
+                                                    {allGranted ? t("permissions.revokeAll") : t("permissions.grantAll")}
+                                                </Button>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="space-y-3">
+                                                    {groupPerms.map((perm) => {
+                                                        const granted = roleHasPermission(editingRole, perm, roleMap);
+                                                        return (
+                                                            <div key={perm} className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                                                                <div className="flex items-center gap-3">
+                                                                    <Checkbox
+                                                                        checked={granted}
+                                                                        disabled={togglingRoleKey === `${editingRole}-${perm}` || togglingRoleKey === groupKey}
+                                                                        onCheckedChange={() => void toggleRolePermission(editingRole, perm, granted)}
+                                                                    />
+                                                                    <div>
+                                                                        <div className="text-sm font-medium">{PERMISSION_LABELS[perm]}</div>
+                                                                        <div className="text-xs text-slate-500 dark:text-slate-400">{PERMISSION_DESCRIPTIONS[perm]}</div>
+                                                                        <div className="mt-0.5 text-[10px] font-mono text-slate-400 dark:text-slate-500">{perm}</div>
+                                                                    </div>
+                                                                </div>
+                                                                {granted ? (
+                                                                    <Check className="h-4 w-4 text-emerald-500" />
+                                                                ) : (
+                                                                    <X className="h-4 w-4 text-slate-300" />
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
                             </div>
                         )}
 

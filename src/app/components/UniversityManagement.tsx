@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import { useUniversities, UNIVERSITIES_KEY } from "../lib/hooks/use-universities";
 import { logActivity } from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
@@ -47,6 +48,7 @@ const predefinedUniversities: Omit<University, "id" | "created_at">[] = [
 
 export default function UniversityManagement() {
     const { user } = useAuth();
+    const { hasPermission } = usePermissions();
     const t = useTranslations("universityManagement");
     const supabase = createClient();
     const queryClient = useQueryClient();
@@ -81,6 +83,7 @@ export default function UniversityManagement() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!hasPermission(editingUni ? "universities.edit" : "universities.create")) return;
         setIsSubmitting(true);
         try {
             if (editingUni) {
@@ -123,6 +126,7 @@ export default function UniversityManagement() {
     };
 
     const handleDelete = async (id: string) => {
+        if (!hasPermission("universities.delete")) return;
         setIsDeleting(true);
         try {
             const uniToDelete = universities.find(u => u.id === id);
@@ -147,6 +151,7 @@ export default function UniversityManagement() {
     };
 
     const handleSeed = async () => {
+        if (!hasPermission("universities.create")) return;
         setIsSeeding(true);
         try {
             const { error } = await supabase.from("universities").upsert(predefinedUniversities);
@@ -185,8 +190,9 @@ export default function UniversityManagement() {
         setActiveTab("list");
     };
 
-    const canEdit = user?.role === "agent" || user?.role === "admin" || user?.role === "super_admin";
-    const canDelete = user?.role === "admin" || user?.role === "super_admin";
+    const canCreate = hasPermission("universities.create");
+    const canEdit = hasPermission("universities.edit");
+    const canDelete = hasPermission("universities.delete");
 
     const cities = useMemo(() => {
         const uniqueCities = [...new Set(universities.map(u => u.ville))];
@@ -205,17 +211,17 @@ export default function UniversityManagement() {
     }, [universities, searchTerm, statusFilter, cityFilter]);
 
     return (
-        <ProtectedRoute requiredRole="user">
+        <ProtectedRoute requiredRole="user" requiredPermission="universities.view">
             <div className="space-y-6 p-4 sm:p-6">
                 <PageHeader
                     eyebrow={t("header.eyebrow")}
                     title={t("header.title")}
                     description={t("header.description")}
-                    action={canEdit ? {
+                    action={canCreate ? {
                         label: t("actions.addShort"),
                         onClick: () => setActiveTab("form")
                     } : undefined}
-                    secondaryAction={canEdit && universities.length === 0 ? {
+                    secondaryAction={canCreate && universities.length === 0 ? {
                         label: t("actions.addPredefined"),
                         onClick: handleSeed,
                         variant: "outline",
@@ -261,7 +267,7 @@ export default function UniversityManagement() {
                                     icon={Building2}
                                     title={t("empty.title")}
                                     description={t("empty.description")}
-                                    action={canEdit ? {
+                                    action={canCreate ? {
                                         label: t("actions.add"),
                                         onClick: () => setActiveTab("form")
                                     } : undefined}
@@ -274,7 +280,7 @@ export default function UniversityManagement() {
                                             <TableHead>{t("table.city")}</TableHead>
                                             <TableHead>{t("table.programs")}</TableHead>
                                             <TableHead>{t("table.status")}</TableHead>
-                                            {canEdit && <TableHead>{t("table.actions")}</TableHead>}
+                                            {(canEdit || canDelete) && <TableHead>{t("table.actions")}</TableHead>}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -291,11 +297,11 @@ export default function UniversityManagement() {
                                                 <TableCell>
                                                     <StatusBadge status={u.active ? "active" : "inactive"} />
                                                 </TableCell>
-                                                {canEdit && (
+                                                {(canEdit || canDelete) && (
                                                     <TableCell>
                                                         <DropdownMenu
                                                             actions={[
-                                                                {
+                                                                ...(canEdit ? [{
                                                                     label: t("actions.edit"),
                                                                     icon: <Edit className="h-4 w-4" />,
                                                                     onClick: () => {
@@ -312,8 +318,8 @@ export default function UniversityManagement() {
                                                                         });
                                                                         setActiveTab("form");
                                                                     },
-                                                                },
-                                                                {
+                                                                }] : []),
+                                                                ...(canEdit ? [{
                                                                     label: togglingId === u.id
                                                                         ? (u.active ? t("actions.deactivating") : t("actions.activating"))
                                                                         : (u.active ? t("actions.deactivate") : t("actions.activate")),
@@ -321,7 +327,7 @@ export default function UniversityManagement() {
                                                                         ? <Loader2 className="h-4 w-4 animate-spin" />
                                                                         : <Power className="h-4 w-4" />,
                                                                     onClick: () => { if (!togglingId) handleToggle(u.id, u.active); },
-                                                                },
+                                                                }] : []),
                                                                 ...(canDelete ? [{
                                                                     label: t("actions.delete"),
                                                                     icon: <Trash2 className="h-4 w-4" />,
@@ -346,7 +352,7 @@ export default function UniversityManagement() {
                     </Card>
                 )}
 
-                {activeTab === "form" && canEdit && (
+                {activeTab === "form" && (editingUni ? canEdit : canCreate) && (
                     <Card className="joda-surface max-w-2xl border-0 shadow-none">
                         <CardHeader>
                             <CardTitle>{editingUni ? t("form.titleEdit") : t("form.titleAdd")}</CardTitle>

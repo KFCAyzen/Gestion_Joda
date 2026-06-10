@@ -887,7 +887,7 @@ export default function PerformanceHistory() {
     // ── Render ──────────────────────────────────────────────────────────────────
 
     return (
-        <ProtectedRoute requiredRole="agent">
+        <ProtectedRoute requiredRole="supervisor">
             <div className="space-y-6 p-4 sm:p-6 lg:p-8">
 
                 {/* Header */}

@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import { useApplications, APPLICATIONS_KEY } from "../lib/hooks/use-applications";
 import { useStudents } from "../lib/hooks/use-students";
 import { useUniversities } from "../lib/hooks/use-universities";
@@ -60,6 +61,7 @@ interface ScholarshipApplication {
 
 export default function ApplicationManagement() {
     const { user } = useAuth();
+    const { hasPermission } = usePermissions();
     const t = useTranslations("applicationManagement");
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
@@ -88,7 +90,9 @@ export default function ApplicationManagement() {
     const [universityFilter, setUniversityFilter] = useState("all");
     const pageSize = 10;
 
-    const canDelete = user?.role === "admin" || user?.role === "super_admin";
+    const canCreate = hasPermission("applications.create");
+    const canEdit = hasPermission("applications.edit");
+    const canDelete = hasPermission("applications.delete");
 
     const defaultFormData = {
         studentId: "",
@@ -144,6 +148,7 @@ export default function ApplicationManagement() {
             showNotification(t("messages.requiredFields"), "error");
             return;
         }
+        if (!hasPermission(editingApplication ? "applications.edit" : "applications.create")) return;
         setIsSubmitting(true);
         try {
             if (editingApplication) {
@@ -280,6 +285,7 @@ export default function ApplicationManagement() {
 
     const handleDeleteConfirm = async () => {
         if (!pendingDeleteId) return;
+        if (!hasPermission("applications.delete")) return;
         setIsDeleting(true);
         try {
             const { error } = await supabase.from("dossier_bourses").delete().eq("id", pendingDeleteId);
@@ -305,6 +311,7 @@ export default function ApplicationManagement() {
     };
 
     const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
+        if (!hasPermission("applications.edit")) return;
         setUpdatingStatusId(applicationId);
         try {
             await supabase.from("dossier_bourses").update({ status: newStatus }).eq("id", applicationId);
@@ -372,7 +379,7 @@ export default function ApplicationManagement() {
     }
 
     return (
-        <ProtectedRoute requiredRole="agent">
+        <ProtectedRoute requiredRole="agent" requiredPermission="applications.view">
         <div className="space-y-6 p-4 sm:p-6 lg:p-8">
             <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -386,6 +393,7 @@ export default function ApplicationManagement() {
                         {t("header.subtitle")}
                     </p>
                 </div>
+                {canCreate && (
                 <Button onClick={() => {
                     setEditingApplication(null);
                     resetForm();
@@ -393,6 +401,7 @@ export default function ApplicationManagement() {
                 }} style={{ backgroundColor: "#dc2626" }}>
                     {t("actions.new")}
                 </Button>
+                )}
             </div>
 
             {showForm && (
@@ -618,6 +627,7 @@ export default function ApplicationManagement() {
                                         </div>
 
                                         <div className="flex items-center gap-2">
+                                            {canEdit && (
                                             <Select disabled={updatingStatusId === application.id} value={application.status} onValueChange={(v) => updateApplicationStatus(application.id, v || application.status)}>
                                                 <SelectTrigger className="w-[180px] text-xs font-medium"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
@@ -630,13 +640,15 @@ export default function ApplicationManagement() {
                                                     <SelectItem value="termine">{t("status.completed")}</SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            )}
+                                            {(canEdit || canDelete) && (
                                             <DropdownMenu
                                                 actions={[
-                                                    {
+                                                    ...(canEdit ? [{
                                                         label: t("actions.edit"),
                                                         icon: <Edit className="h-4 w-4" />,
                                                         onClick: () => openEditForm(application),
-                                                    },
+                                                    }] : []),
                                                     ...(canDelete
                                                         ? [
                                                               {
@@ -649,6 +661,7 @@ export default function ApplicationManagement() {
                                                         : []),
                                                 ]}
                                             />
+                                            )}
                                         </div>
                                     </div>
                                 );

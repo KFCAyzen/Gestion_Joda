@@ -1814,7 +1814,15 @@
     },
     "tabs": {
       "users": "Utilisateurs ({count})",
+      "roles": "Rôles",
       "create": "Créer"
+    },
+    "roleEditor": {
+      "title": "Permissions par rôle",
+      "description": "Modifie les permissions par défaut d'un rôle. S'applique à tous les comptes de ce rôle (sauf surcharge individuelle).",
+      "configured": "Ce rôle est personnalisé : ses permissions sont définies ici (et non plus les valeurs par défaut du code).",
+      "usingDefaults": "Ce rôle utilise les permissions par défaut. Toute modification ici devient sa nouvelle configuration.",
+      "superAdminNote": "Le Super Admin conserve toujours tous les accès et n'est pas modifiable."
     },
     "table": {
       "name": "Nom",
@@ -1844,7 +1852,10 @@
     "permissions": {
       "roleLine": "Rôle : {role} - @{username}",
       "custom": "Personnalisé",
-      "default": "Par défaut"
+      "default": "Par défaut",
+      "groupCount": "{granted}/{total} accordées",
+      "grantAll": "Tout accorder",
+      "revokeAll": "Tout retirer"
     },
     "create": {
       "title": "Créer un nouvel utilisateur",
@@ -1910,6 +1921,8 @@
       "permissionsUpdatedTitle": "Permissions mises à jour",
       "permissionRemoved": "La permission personnalisée a été retirée.",
       "permissionGranted": "La permission personnalisée a été accordée.",
+      "groupGranted": "Toutes les permissions du groupe « {group} » ont été accordées.",
+      "groupRemoved": "Toutes les permissions du groupe « {group} » ont été retirées.",
       "permissionsUpdateTitle": "Mise à jour des permissions",
       "permissionUpdateError": "Impossible de modifier cette permission pour le moment."
     }

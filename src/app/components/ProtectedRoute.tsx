@@ -2,6 +2,8 @@
 
 import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
+import { Permission } from '../types/permissions';
 
 type UserRole = 'student' | 'user' | 'agent' | 'admin' | 'supervisor' | 'super_admin';
 
@@ -16,15 +18,23 @@ interface User {
 interface ProtectedRouteProps {
     children: ReactNode;
     requiredRole?: UserRole;
+    /**
+     * Permission granulaire requise (en plus du rôle). Si fournie, l'accès n'est
+     * accordé que si l'utilisateur possède cette permission (par défaut de rôle
+     * ou surcharge personnalisée via la gestion des permissions).
+     */
+    requiredPermission?: Permission;
     fallback?: ReactNode;
 }
 
-export default function ProtectedRoute({ 
-    children, 
-    requiredRole = 'user', 
+export default function ProtectedRoute({
+    children,
+    requiredRole = 'user',
+    requiredPermission,
     fallback
 }: ProtectedRouteProps) {
     const { user, hasPermission } = useAuth();
+    const { hasPermission: hasGranularPermission, loading: permissionsLoading } = usePermissions();
     const [localUser, setLocalUser] = useState<User | null | undefined>(undefined);
     
     // Check localStorage as fallback - synchronously
@@ -82,8 +92,8 @@ export default function ProtectedRoute({
         return roleHierarchy[userRole] >= requiredRoleNum;
     };
 
-    if (!checkPermission()) {
-        return fallback || (
+    const accessDenied = (detail: ReactNode) =>
+        fallback || (
             <div className="p-8 text-center">
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-6 max-w-md mx-auto">
                     <div className="text-red-600 mb-2">
@@ -93,10 +103,30 @@ export default function ProtectedRoute({
                     </div>
                     <h3 className="text-lg font-semibold text-red-800 mb-2">Accès refusé</h3>
                     <p className="text-red-600">Vous n'avez pas les permissions nécessaires pour accéder à cette section.</p>
-                    <p className="text-sm text-red-500 mt-2">Niveau requis: {requiredRole}</p>
+                    {detail}
                 </div>
             </div>
         );
+
+    if (!checkPermission()) {
+        return accessDenied(<p className="text-sm text-red-500 mt-2">Niveau requis: {requiredRole}</p>);
+    }
+
+    // Vérification de la permission granulaire (le cas échéant).
+    if (requiredPermission) {
+        // Attendre le chargement des permissions pour éviter un faux « accès refusé ».
+        if (permissionsLoading) {
+            return (
+                <div className="p-8 text-center">
+                    <div className="text-gray-500 dark:text-gray-400">Chargement...</div>
+                </div>
+            );
+        }
+        if (!hasGranularPermission(requiredPermission)) {
+            return accessDenied(
+                <p className="text-sm text-red-500 mt-2">Permission requise: {requiredPermission}</p>
+            );
+        }
     }
 
     return <>{children}</>;

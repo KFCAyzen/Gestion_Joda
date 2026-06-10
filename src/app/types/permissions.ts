@@ -78,9 +78,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'students.view',
     'students.create',
     'students.edit',
-    'applications.view',
-    'applications.create',
-    'applications.edit',
+    // Candidatures : réservées au super_admin (ou comptes explicitement autorisés)
     'dossiers.view',
     'dossiers.create',
     'dossiers.edit',
@@ -89,16 +87,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'payments.create',
     'payments.edit',
   ],
-  
+
   supervisor: [
     'students.view',
     'students.create',
     'students.edit',
     'students.delete',
-    'applications.view',
-    'applications.create',
-    'applications.edit',
-    'applications.delete',
+    // Candidatures : réservées au super_admin (ou comptes explicitement autorisés)
     'dossiers.view',
     'dossiers.create',
     'dossiers.edit',
@@ -111,20 +106,17 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'payments.create',
     'payments.edit',
     'payments.validate',
-    'accounting.view',
+    // Comptabilité : réservée à admin/super_admin (ou comptes explicitement autorisés)
     'reports.view',
     'reports.export',
   ],
-  
+
   admin: [
     'students.view',
     'students.create',
     'students.edit',
     'students.delete',
-    'applications.view',
-    'applications.create',
-    'applications.edit',
-    'applications.delete',
+    // Candidatures : réservées au super_admin (ou comptes explicitement autorisés)
     'dossiers.view',
     'dossiers.create',
     'dossiers.edit',
@@ -248,6 +240,58 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   
   'storage.view': 'Voir le stockage',
   'storage.manage': 'Gérer le stockage',
+};
+
+// Descriptions : ce que chaque permission autorise concrètement, affiché en
+// info-bulle/aide dans l'écran de gestion des permissions.
+export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
+  'students.view': "Consulter la liste des étudiants et leurs fiches détaillées.",
+  'students.create': "Enregistrer de nouveaux étudiants dans le système.",
+  'students.edit': "Modifier les informations d'un étudiant existant.",
+  'students.delete': "Supprimer définitivement la fiche d'un étudiant.",
+
+  'applications.view': "Consulter les candidatures déposées.",
+  'applications.create': "Créer une nouvelle candidature.",
+  'applications.edit': "Modifier une candidature et changer son statut.",
+  'applications.delete': "Supprimer définitivement une candidature.",
+
+  'dossiers.view': "Consulter les dossiers de bourse et leur avancement.",
+  'dossiers.create': "Ouvrir un nouveau dossier de bourse.",
+  'dossiers.edit': "Modifier un dossier, ses notes et son statut.",
+  'dossiers.delete': "Supprimer définitivement un dossier de bourse.",
+  'dossiers.validate': "Valider officiellement un dossier (étape de contrôle).",
+
+  'universities.view': "Consulter les universités partenaires.",
+  'universities.create': "Ajouter une nouvelle université partenaire.",
+  'universities.edit': "Modifier une université ou l'activer/désactiver.",
+  'universities.delete': "Supprimer définitivement une université.",
+
+  'payments.view': "Consulter les frais et l'historique des paiements.",
+  'payments.create': "Enregistrer un nouveau paiement de frais.",
+  'payments.edit': "Modifier un paiement existant.",
+  'payments.delete': "Supprimer définitivement un paiement.",
+  'payments.validate': "Valider un paiement et lever les pénalités de retard.",
+
+  'accounting.view': "Accéder au livre comptable (entrées et sorties).",
+  'accounting.create': "Saisir une nouvelle écriture comptable.",
+  'accounting.edit': "Modifier une écriture comptable existante.",
+  'accounting.delete': "Supprimer définitivement une écriture comptable.",
+  'accounting.validate': "Valider une sortie comptable (contrôle financier).",
+  'accounting.export': "Exporter les données comptables (Excel/PDF).",
+
+  'users.view': "Consulter la liste des comptes utilisateurs.",
+  'users.create': "Créer de nouveaux comptes utilisateurs.",
+  'users.edit': "Modifier un compte (rôle, infos, statut).",
+  'users.delete': "Supprimer définitivement un compte utilisateur.",
+  'users.manage_permissions': "Accorder ou retirer les permissions des comptes (cet écran).",
+
+  'reports.view': "Consulter les rapports et indicateurs.",
+  'reports.export': "Exporter les rapports générés.",
+
+  'logs.view': "Consulter les journaux d'activité sensibles.",
+
+  'storage.view': "Voir le monitoring du stockage et de la base de données.",
+  'storage.manage': "Gérer le stockage (nettoyage, opérations de maintenance).",
 };
 
 // Groupes de permissions

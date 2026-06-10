@@ -3,60 +3,92 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { createClient } from "../lib/supabase/client";
-import { Permission, DEFAULT_ROLE_PERMISSIONS } from "../types/permissions";
+import { Permission } from "../types/permissions";
+import { fetchRolePermissionMap, roleHasPermission, type RolePermissionMap } from "../lib/rolePermissions";
 
-interface UserPermission {
+interface UserPermissionRow {
   permission: Permission;
   granted: boolean;
 }
 
+/**
+ * Récupère le rôle de l'utilisateur mis en cache (reprise hors-ligne desktop).
+ * Le contexte d'auth peut être vide au démarrage hors-ligne alors que le profil
+ * est encore disponible dans localStorage — on s'appuie dessus pour les
+ * permissions par défaut du rôle.
+ */
+function readCachedRole(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("currentUser");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { role?: string };
+    return parsed?.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function usePermissions() {
   const { user } = useAuth();
-  const [customPermissions, setCustomPermissions] = useState<UserPermission[]>([]);
+  const [customPermissions, setCustomPermissions] = useState<UserPermissionRow[]>([]);
+  const [roleMap, setRoleMap] = useState<RolePermissionMap>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) {
-      setLoading(false);
-      return;
-    }
+    let cancelled = false;
+    setLoading(true);
 
-    const loadPermissions = async () => {
+    const load = async () => {
       try {
         const supabase = createClient();
-        const { data } = await supabase
-          .from("user_permissions")
-          .select("permission, granted")
-          .eq("user_id", user.id);
-        
-        if (data) setCustomPermissions(data as UserPermission[]);
+
+        // Défauts par rôle (table role_permissions) — repli silencieux sur le code
+        // si la table est absente / hors-ligne (fetchRolePermissionMap renvoie {}).
+        const map = await fetchRolePermissionMap(supabase);
+        if (!cancelled) setRoleMap(map);
+
+        // Surcharges personnalisées de l'utilisateur courant (si connecté).
+        if (user?.id) {
+          const { data } = await supabase
+            .from("user_permissions")
+            .select("permission, granted")
+            .eq("user_id", user.id);
+          if (!cancelled && data) setCustomPermissions(data as UserPermissionRow[]);
+        } else if (!cancelled) {
+          setCustomPermissions([]);
+        }
       } catch (err) {
         console.error("Erreur chargement permissions:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadPermissions();
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
+  // Rôle effectif : contexte d'auth en priorité, sinon profil en cache (hors-ligne).
+  const role = user?.role ?? readCachedRole();
+
   const hasPermission = (permission: Permission): boolean => {
-    if (!user) return false;
+    // Une surcharge personnalisée (accord OU refus explicite) prime toujours.
+    const customPerm = customPermissions.find((p) => p.permission === permission);
+    if (customPerm) return customPerm.granted;
 
-    // Vérifier les permissions personnalisées
-    const customPerm = customPermissions.find(p => p.permission === permission);
-    if (customPerm !== undefined) return customPerm.granted;
-
-    // Vérifier les permissions par défaut du rôle
-    return DEFAULT_ROLE_PERMISSIONS[user.role]?.includes(permission) || false;
+    // Sinon, défauts du rôle : set éditable en base si configuré, sinon code.
+    return roleHasPermission(role, permission, roleMap);
   };
 
   const hasAnyPermission = (permissions: Permission[]): boolean => {
-    return permissions.some(p => hasPermission(p));
+    return permissions.some((p) => hasPermission(p));
   };
 
   const hasAllPermissions = (permissions: Permission[]): boolean => {
-    return permissions.every(p => hasPermission(p));
+    return permissions.every((p) => hasPermission(p));
   };
 
   return {

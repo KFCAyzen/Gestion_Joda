@@ -17,6 +17,7 @@ import { useApplications, APPLICATIONS_KEY } from '../lib/hooks/use-applications
 import { useStudents } from '../lib/hooks/use-students';
 import { useUniversities } from '../lib/hooks/use-universities';
 import { useAuth } from "../context/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import { useNotificationContext } from "../context/NotificationContext";
 import { getFriendlyErrorMessage } from "../lib/feedback";
 import { logActivity } from "../utils/activityLogger";
@@ -45,6 +46,7 @@ interface ScholarshipFile {
 
 export default function ScholarshipFileManagement() {
     const { user } = useAuth();
+    const { hasPermission } = usePermissions();
     const t = useTranslations("scholarshipFiles");
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
@@ -88,7 +90,8 @@ export default function ScholarshipFileManagement() {
     }>({ open: false, title: "", description: "", onConfirm: () => {} });
     const closeConfirm = () => setConfirmDialog(s => ({ ...s, open: false }));
 
-    const canDelete = user?.role === "admin" || user?.role === "super_admin";
+    const canEdit = hasPermission("dossiers.edit");
+    const canDelete = hasPermission("dossiers.delete");
 
     useEffect(() => {
         if (selectedFile) setNotes(selectedFile.notes_internes || "");
@@ -104,6 +107,7 @@ export default function ScholarshipFileManagement() {
     const updateStatus = async (newStatus: string | null) => {
         if (!newStatus) return;
         if (!selectedFile || selectedFile.status === newStatus) return;
+        if (!hasPermission("dossiers.edit")) return;
         setUpdatingStatus(true);
         try {
             const { error } = await supabase
@@ -136,6 +140,7 @@ export default function ScholarshipFileManagement() {
 
     const updateNotes = async () => {
         if (!selectedFile) return;
+        if (!hasPermission("dossiers.edit")) return;
         setIsSavingNotes(true);
         try {
             const { error } = await supabase
@@ -168,6 +173,7 @@ export default function ScholarshipFileManagement() {
 
     const deleteFile = () => {
         if (!selectedFile) return;
+        if (!hasPermission("dossiers.delete")) return;
         setConfirmDialog({
             open: true,
             title: t("delete.title"),
@@ -255,12 +261,12 @@ export default function ScholarshipFileManagement() {
         return matchesStatus && matchesSearch;
     });
 
-    if (isLoading) return <ProtectedRoute requiredRole="agent"><LoadingState message={t("loading")} /></ProtectedRoute>;
+    if (isLoading) return <ProtectedRoute requiredRole="agent" requiredPermission="dossiers.view"><LoadingState message={t("loading")} /></ProtectedRoute>;
 
     // ── Vue détail ──────────────────────────────────────────────────────────
     if (selectedFile) {
         return (
-            <ProtectedRoute requiredRole="agent">
+            <ProtectedRoute requiredRole="agent" requiredPermission="dossiers.view">
             <div className="space-y-6">
                 {/* Header */}
                 <div className="joda-surface flex items-center gap-4">
@@ -314,7 +320,7 @@ export default function ScholarshipFileManagement() {
                             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t("detail.status")}</p>
                             <Select
                                 value={selectedFile.status}
-                                disabled={updatingStatus}
+                                disabled={updatingStatus || !canEdit}
                                 onValueChange={updateStatus}
                             >
                                 <SelectTrigger className="w-full bg-white dark:bg-slate-900">
@@ -340,15 +346,18 @@ export default function ScholarshipFileManagement() {
                             <textarea
                                 value={notes}
                                 onChange={e => setNotes(e.target.value)}
+                                readOnly={!canEdit}
                                 className="w-full resize-none rounded-xl border border-slate-300 bg-white dark:bg-slate-900 px-4 py-3 text-sm transition-all focus:border-red-500 focus:ring-2 focus:ring-red-100 focus:outline-none"
                                 rows={6}
                                 placeholder={t("detail.notesPlaceholder")}
                             />
+                            {canEdit && (
                             <div className="flex justify-end">
                                 <Button className="bg-red-600 hover:bg-red-700" disabled={isSavingNotes} onClick={updateNotes}>
                                     {isSavingNotes ? t("actions.saving") : t("actions.save")}
                                 </Button>
                             </div>
+                            )}
                         </div>
 
                         {/* Suppression */}
@@ -401,7 +410,7 @@ export default function ScholarshipFileManagement() {
 
     // ── Vue liste ───────────────────────────────────────────────────────────
     return (
-        <ProtectedRoute requiredRole="agent">
+        <ProtectedRoute requiredRole="agent" requiredPermission="dossiers.view">
         <div className="space-y-8">
             <div className="joda-surface">
                 <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">

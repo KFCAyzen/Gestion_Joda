@@ -1814,7 +1814,15 @@
     },
     "tabs": {
       "users": "Users ({count})",
+      "roles": "Roles",
       "create": "Create"
+    },
+    "roleEditor": {
+      "title": "Permissions by role",
+      "description": "Edit a role's default permissions. Applies to every account with that role (unless individually overridden).",
+      "configured": "This role is customized: its permissions are defined here (no longer the code defaults).",
+      "usingDefaults": "This role uses the default permissions. Any change here becomes its new configuration.",
+      "superAdminNote": "Super Admin always keeps full access and cannot be edited."
     },
     "table": {
       "name": "Name",
@@ -1844,7 +1852,10 @@
     "permissions": {
       "roleLine": "Role: {role} - @{username}",
       "custom": "Custom",
-      "default": "Default"
+      "default": "Default",
+      "groupCount": "{granted}/{total} granted",
+      "grantAll": "Grant all",
+      "revokeAll": "Revoke all"
     },
     "create": {
       "title": "Create a new user",
@@ -1910,6 +1921,8 @@
       "permissionsUpdatedTitle": "Permissions updated",
       "permissionRemoved": "The custom permission was removed.",
       "permissionGranted": "The custom permission was granted.",
+      "groupGranted": "All permissions in the \"{group}\" group were granted.",
+      "groupRemoved": "All permissions in the \"{group}\" group were removed.",
       "permissionsUpdateTitle": "Permission update",
       "permissionUpdateError": "Unable to update this permission right now."
     }

@@ -101,7 +101,7 @@ const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
     hr: "Gestion des ressources humaines",
 };
 
-type MenuItem = { id: RouteId; label: string; icon: ReactNode };
+type MenuItem = { id: RouteId; label: string; icon: ReactNode; roles?: UserRole[] };
 type MenuSection = { id: string; label: string; roles?: UserRole[]; items: MenuItem[] };
 
 // Entrées de menu dont l'accès est régi par une permission granulaire. Si l'entrée
@@ -148,7 +148,7 @@ function AppShell({ children }: { children: ReactNode }) {
             label: t('sections.pilotage'),
             items: [
                 { id: "home", label: tNav('dashboard'), icon: <LayoutDashboard className={iconCls} /> },
-                { id: "performance", label: tNav('performance'), icon: <TrendingUp className={iconCls} /> },
+                { id: "performance", label: tNav('performance'), icon: <TrendingUp className={iconCls} />, roles: ["supervisor", "admin", "super_admin"] as UserRole[] },
             ],
         },
         {
@@ -306,6 +306,9 @@ function AppShell({ children }: { children: ReactNode }) {
                     // Entrée régie par une permission : visible ssi l'utilisateur l'a
                     // (indépendamment du rôle de la section).
                     if (perm) return hasPermission(perm);
+                    // Restriction de rôle propre à l'entrée (ex. performance réservée
+                    // au superviseur et au-dessus, pas aux agents).
+                    if (item.roles) return !!user?.role && item.roles.includes(user.role as UserRole);
                     // Sinon : visibilité par le rôle de la section, comme avant.
                     return roleOk(section);
                 }),

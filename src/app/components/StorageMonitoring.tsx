@@ -132,7 +132,7 @@ export default function StorageMonitoring() {
 
   if (loading) {
     return (
-      <ProtectedRoute requiredRole="super_admin">
+      <ProtectedRoute requiredRole="super_admin" requiredPermission="storage.view">
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-red-600" />
@@ -144,7 +144,7 @@ export default function StorageMonitoring() {
   }
 
   return (
-    <ProtectedRoute requiredRole="super_admin">
+    <ProtectedRoute requiredRole="super_admin" requiredPermission="storage.view">
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="joda-surface flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
