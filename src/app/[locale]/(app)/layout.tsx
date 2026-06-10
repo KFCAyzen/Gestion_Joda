@@ -9,6 +9,7 @@ import {
     BookOpen,
     Building2,
     ChevronDown,
+    ClipboardList,
     Database,
     FileArchive,
     FileClock,
@@ -54,6 +55,7 @@ type RouteId =
     | "newsletter"
     | "users"
     | "performance"
+    | "rapport"
     | "notifications"
     | "comptabilite"
     | "storage"
@@ -73,6 +75,7 @@ const ROUTES: Record<RouteId, string> = {
     newsletter: "/newsletter",
     users: "/utilisateurs",
     performance: "/performances",
+    rapport: "/rapport",
     notifications: "/notifications",
     comptabilite: "/comptabilite",
     storage: "/stockage",
@@ -93,6 +96,7 @@ const PAGE_DESCRIPTIONS: Record<RouteId, string> = {
     newsletter: "Campagnes email et relances automatiques",
     users: "Administration des comptes utilisateurs",
     performance: "Indicateurs et performances de l'équipe",
+    rapport: "Soumettez votre rapport journalier d'activité",
     notifications: "Centre de notifications et alertes",
     comptabilite: "Suivi comptable et financier",
     storage: "Monitoring du stockage et de la base de données",
@@ -149,6 +153,7 @@ function AppShell({ children }: { children: ReactNode }) {
             items: [
                 { id: "home", label: tNav('dashboard'), icon: <LayoutDashboard className={iconCls} /> },
                 { id: "performance", label: tNav('performance'), icon: <TrendingUp className={iconCls} />, roles: ["supervisor", "admin", "super_admin"] as UserRole[] },
+                { id: "rapport", label: tNav('myReports'), icon: <ClipboardList className={iconCls} />, roles: ["user", "agent", "supervisor"] as UserRole[] },
             ],
         },
         {
@@ -226,6 +231,7 @@ function AppShell({ children }: { children: ReactNode }) {
         newsletter: t('descriptions.newsletter'),
         users: t('descriptions.users'),
         performance: t('descriptions.performance'),
+        rapport: t('descriptions.rapport'),
         notifications: t('descriptions.notifications'),
         comptabilite: t('descriptions.accounting'),
         storage: t('descriptions.storage'),

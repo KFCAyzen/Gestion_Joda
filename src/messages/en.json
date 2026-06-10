@@ -18,7 +18,8 @@
     "feeConfig": "Fee Config.",
     "com": "Communication",
     "newsletter": "Newsletter",
-    "hr": "Human Resources"
+    "hr": "Human Resources",
+    "myReports": "My Reports"
   },
   "layout": {
     "workspace": "Joda Workspace",
@@ -64,7 +65,8 @@
       "feeConfig": "Installment, penalty and deadline configuration",
       "com": "Student communication",
       "newsletter": "Email campaigns and automated re-engagement",
-      "hr": "Employees, leaves, payroll and daily reports"
+      "hr": "Employees, leaves, payroll and daily reports",
+      "rapport": "Submit your daily activity report"
     }
   },
   "common": {

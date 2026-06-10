@@ -18,7 +18,8 @@
     "feeConfig": "Config. Frais",
     "com": "Communication",
     "newsletter": "Newsletter",
-    "hr": "Ressources humaines"
+    "hr": "Ressources humaines",
+    "myReports": "Mes rapports"
   },
   "layout": {
     "workspace": "Workspace Joda",
@@ -64,7 +65,8 @@
       "feeConfig": "Configuration des tranches, pénalités et délais",
       "com": "Communication avec les étudiants",
       "newsletter": "Campagnes email et relances automatiques",
-      "hr": "Employés, congés, paie et rapports journaliers"
+      "hr": "Employés, congés, paie et rapports journaliers",
+      "rapport": "Soumettez votre rapport journalier d'activité"
     }
   },
   "common": {
