@@ -913,24 +913,14 @@ export const generatePayslip = async (
     contentEndY = contentEndY + 9 + split.length * 4.5;
   }
 
-  // ── Signatures — position dynamique, sans chevaucher le contenu
-  const sigY = Math.min(Math.max(contentEndY + 18, 235), 262);
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.3);
-  doc.line(25, sigY, 85, sigY);
-  doc.line(125, sigY, 185, sigY);
-  doc.setFontSize(8.5);
-  doc.setTextColor(107, 114, 128);
-  doc.text("Signature de l'employé", 55, sigY + 5, { align: 'center' });
-  doc.text("Signature de l'employeur", 155, sigY + 5, { align: 'center' });
-
   // ── Mention légale
+  const legalY = Math.min(Math.max(contentEndY + 18, 235), 278);
   doc.setFontSize(7);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(148, 163, 184);
   doc.text(
     'Bulletin de paie à conserver sans limitation de durée.',
-    105, Math.min(sigY + 13, 278), { align: 'center' },
+    105, legalY, { align: 'center' },
   );
 
   addFooter(doc);
