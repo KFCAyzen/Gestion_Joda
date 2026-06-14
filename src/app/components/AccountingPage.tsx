@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
@@ -32,6 +32,7 @@ import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
 import DropdownMenu from "./shared/DropdownMenu";
+import Pagination from "./Pagination";
 
 interface EntreeComptable {
     id: string;
@@ -138,26 +139,23 @@ export default function AccountingPage() {
     // Données comptables mises en cache (React Query) : revenir sur l'écran ne
     // relance plus les 4 requêtes tant que le cache est frais. Chaque mutation
     // appelle `load()` (→ refetch) pour rafraîchir après écriture.
+    // Tables de référence (petites) : budgets + catégories personnalisées. Les
+    // lignes entrées/sorties ne sont plus chargées en masse ici — elles passent
+    // par les requêtes bornées (période) et paginées (onglets) ci-dessous.
     const { data: accountingData, isLoading: loading } = useQuery({
-        queryKey: ["accounting", "all"],
+        queryKey: ["accounting", "refs"],
         staleTime: 60 * 1000,
         queryFn: async () => {
-            const [e, s, b, c] = await Promise.all([
-                supabase.from("entrees_comptables").select("*").order("date", { ascending: false }),
-                supabase.from("sorties_comptables").select("*").order("date", { ascending: false }),
+            const [b, c] = await Promise.all([
                 supabase.from("budgets").select("*").order("created_at", { ascending: false }),
                 supabase.from("custom_categories").select("*").order("nom", { ascending: true }),
             ]);
             return {
-                entrees: (e.data ?? []) as EntreeComptable[],
-                sorties: (s.data ?? []) as SortieComptable[],
                 budgets: (b.data ?? []) as Budget[],
                 customCategories: (c.data ?? []) as CustomCategory[],
             };
         },
     });
-    const entrees = accountingData?.entrees ?? [];
-    const sorties = accountingData?.sorties ?? [];
     const budgets = accountingData?.budgets ?? [];
     const customCategories = accountingData?.customCategories ?? [];
 
@@ -169,13 +167,24 @@ export default function AccountingPage() {
         queryKey: ["accounting", "global-balance"],
         staleTime: 60 * 1000,
         queryFn: async () => {
-            const { data, error } = await supabase.rpc("accounting_global_balance");
-            if (!error && Array.isArray(data) && data[0]) {
+            // Sommes via RPC + compteurs d'opérations (head count, aucune ligne
+            // transférée) pour les sous-titres « N opérations » des cartes.
+            const [rpc, ce, cs] = await Promise.all([
+                supabase.rpc("accounting_global_balance"),
+                supabase.from("entrees_comptables").select("id", { count: "exact", head: true }),
+                supabase.from("sorties_comptables").select("id", { count: "exact", head: true }),
+            ]);
+            const countEntrees = ce.count ?? 0;
+            const countSorties = cs.count ?? 0;
+            if (!rpc.error && Array.isArray(rpc.data) && rpc.data[0]) {
                 return {
-                    totalEntrees: Number(data[0].total_entrees) || 0,
-                    totalSorties: Number(data[0].total_sorties) || 0,
+                    totalEntrees: Number(rpc.data[0].total_entrees) || 0,
+                    totalSorties: Number(rpc.data[0].total_sorties) || 0,
+                    countEntrees,
+                    countSorties,
                 };
             }
+            // Filet : RPC absente (migration non appliquée) → somme directe.
             const [e, s] = await Promise.all([
                 supabase.from("entrees_comptables").select("montant"),
                 supabase.from("sorties_comptables").select("montant, status"),
@@ -184,7 +193,7 @@ export default function AccountingPage() {
             const totalSorties = (s.data ?? [])
                 .filter((r: { status: string }) => r.status === "validated")
                 .reduce((sum, r: { montant: number }) => sum + (r.montant || 0), 0);
-            return { totalEntrees, totalSorties };
+            return { totalEntrees, totalSorties, countEntrees, countSorties };
         },
     });
 
@@ -220,6 +229,19 @@ export default function AccountingPage() {
     const [newCategory, setNewCategory] = useState({ nom: "", type: "sortie" as "entree" | "sortie" });
     const [exporting, setExporting] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const TABLE_PAGE_SIZE = 20;
+    const [entreesPage, setEntreesPage] = useState(1);
+    const [sortiesPage, setSortiesPage] = useState(1);
+    // Recherche debouncée pour les tableaux paginés côté serveur.
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 350);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+    useEffect(() => {
+        setEntreesPage(1);
+        setSortiesPage(1);
+    }, [debouncedSearch]);
     const [detailEntree, setDetailEntree] = useState<EntreeComptable | null>(null);
     const [detailSortie, setDetailSortie] = useState<SortieComptable | null>(null);
     const [editingEntree, setEditingEntree] = useState<EntreeComptable | null>(null);
@@ -351,7 +373,7 @@ export default function AccountingPage() {
     const handleValidateSortie = async (id: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         setValidatingId(id);
-        const sortie = sorties.find((s) => s.id === id);
+        const sortie = filteredSorties.find((s) => s.id === id);
         try {
             await supabase.from("sorties_comptables").update({
                 status: "validated",
@@ -380,7 +402,7 @@ export default function AccountingPage() {
     const handleRejectSortie = async (id: string, reason: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
         setValidatingId(id);
-        const sortie = sorties.find((s) => s.id === id);
+        const sortie = filteredSorties.find((s) => s.id === id);
         try {
             await supabase.from("sorties_comptables").update({
                 status: "rejected",
@@ -509,16 +531,56 @@ export default function AccountingPage() {
     const totalSortiesPeriod = sortiesPeriod.reduce((sum, e) => sum + e.montant, 0);
     const soldePeriod = totalEntreesPeriod - totalSortiesPeriod;
 
-    // Filtrage par recherche
-    const filteredEntrees = entrees.filter(e => 
-        e.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getEntryTypeLabel(e.type).toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Tableaux entrées/sorties paginés + recherche côté serveur. Seul l'onglet
+    // actif est chargé (enabled). La recherche porte sur la description et la
+    // colonne brute (type / catégorie) — pas sur le libellé traduit comme avant.
+    const { data: entreesTable } = useQuery({
+        queryKey: ["accounting", "entrees-table", entreesPage, debouncedSearch],
+        enabled: tab === "entrees",
+        staleTime: 60 * 1000,
+        placeholderData: keepPreviousData,
+        queryFn: async () => {
+            const from = (entreesPage - 1) * TABLE_PAGE_SIZE;
+            const to = from + TABLE_PAGE_SIZE - 1;
+            let q = supabase
+                .from("entrees_comptables")
+                .select("*", { count: "exact" })
+                .order("date", { ascending: false })
+                .range(from, to);
+            if (debouncedSearch) {
+                q = q.or(`description.ilike.%${debouncedSearch}%,type.ilike.%${debouncedSearch}%`);
+            }
+            const { data, count } = await q;
+            return { rows: (data ?? []) as EntreeComptable[], total: count ?? 0 };
+        },
+    });
+    const filteredEntrees = entreesTable?.rows ?? [];
+    const entreesTotal = entreesTable?.total ?? 0;
+    const entreesTotalPages = Math.max(1, Math.ceil(entreesTotal / TABLE_PAGE_SIZE));
 
-    const filteredSorties = sorties.filter(s => 
-        s.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getCategoryLabel(s.categorie).toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const { data: sortiesTable } = useQuery({
+        queryKey: ["accounting", "sorties-table", sortiesPage, debouncedSearch],
+        enabled: tab === "sorties",
+        staleTime: 60 * 1000,
+        placeholderData: keepPreviousData,
+        queryFn: async () => {
+            const from = (sortiesPage - 1) * TABLE_PAGE_SIZE;
+            const to = from + TABLE_PAGE_SIZE - 1;
+            let q = supabase
+                .from("sorties_comptables")
+                .select("*", { count: "exact" })
+                .order("date", { ascending: false })
+                .range(from, to);
+            if (debouncedSearch) {
+                q = q.or(`description.ilike.%${debouncedSearch}%,categorie.ilike.%${debouncedSearch}%`);
+            }
+            const { data, count } = await q;
+            return { rows: (data ?? []) as SortieComptable[], total: count ?? 0 };
+        },
+    });
+    const filteredSorties = sortiesTable?.rows ?? [];
+    const sortiesTotal = sortiesTable?.total ?? 0;
+    const sortiesTotalPages = Math.max(1, Math.ceil(sortiesTotal / TABLE_PAGE_SIZE));
 
     // Statistiques par catégorie pour le rapport
     const statsByCategorie = sortiesPeriod.reduce((acc, s) => {
@@ -605,7 +667,7 @@ export default function AccountingPage() {
 
     const handleDeleteEntree = (id: string) => {
         if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
-        const entry = entrees.find((e) => e.id === id);
+        const entry = filteredEntrees.find((e) => e.id === id);
         openDeleteConfirm(
             t("confirm.deleteEntryTitle"),
             t("confirm.deleteEntryDescription"),
@@ -629,7 +691,7 @@ export default function AccountingPage() {
             t("confirm.deleteExpenseTitle"),
             t("confirm.deleteExpenseDescription"),
             async () => {
-                const sortie2 = sorties.find((s) => s.id === id);
+                const sortie2 = filteredSorties.find((s) => s.id === id);
                 await supabase.from("sorties_comptables").delete().eq("id", id);
                 await logActivity(
                     user.id, user.name, user.role,
@@ -834,7 +896,7 @@ export default function AccountingPage() {
                                 <TrendingUp className="h-4 w-4 text-emerald-500" />
                             </div>
                             <p className="text-2xl font-bold text-emerald-600">{formatAmount(totalEntrees)}</p>
-                            <p className="text-xs text-slate-400 mt-1">{t("summary.operations", { count: entrees.length })}</p>
+                            <p className="text-xs text-slate-400 mt-1">{t("summary.operations", { count: balance?.countEntrees ?? 0 })}</p>
                         </CardContent>
                     </Card>
                     <Card className="joda-surface border-0 shadow-none">
@@ -844,7 +906,7 @@ export default function AccountingPage() {
                                 <TrendingDown className="h-4 w-4 text-rose-500" />
                             </div>
                             <p className="text-2xl font-bold text-rose-600">{formatAmount(totalSorties)}</p>
-                            <p className="text-xs text-slate-400 mt-1">{t("summary.operations", { count: sorties.length })}</p>
+                            <p className="text-xs text-slate-400 mt-1">{t("summary.operations", { count: balance?.countSorties ?? 0 })}</p>
                         </CardContent>
                     </Card>
                     <Card className="joda-surface border-0 shadow-none">
@@ -1227,6 +1289,15 @@ export default function AccountingPage() {
                                                 )}
                                             </TableBody>
                                         </Table>
+                                        <Pagination
+                                            currentPage={entreesPage}
+                                            totalPages={entreesTotalPages}
+                                            onPageChange={setEntreesPage}
+                                            hasNextPage={entreesPage < entreesTotalPages}
+                                            hasPrevPage={entreesPage > 1}
+                                            totalCount={entreesTotal}
+                                            pageSize={TABLE_PAGE_SIZE}
+                                        />
                                     </div>
                                 )}
 
@@ -1395,6 +1466,15 @@ export default function AccountingPage() {
                                                 )}
                                             </TableBody>
                                         </Table>
+                                        <Pagination
+                                            currentPage={sortiesPage}
+                                            totalPages={sortiesTotalPages}
+                                            onPageChange={setSortiesPage}
+                                            hasNextPage={sortiesPage < sortiesTotalPages}
+                                            hasPrevPage={sortiesPage > 1}
+                                            totalCount={sortiesTotal}
+                                            pageSize={TABLE_PAGE_SIZE}
+                                        />
                                     </div>
                                 )}
 
