@@ -532,13 +532,17 @@ export default function StudentManagement() {
                 return;
             }
 
-            const duplicateCount = students.filter(
-                (student) =>
-                    student.prenom.trim().toLowerCase() === formData.prenom.trim().toLowerCase() &&
-                    student.nom.trim().toLowerCase() === formData.nom.trim().toLowerCase()
-            ).length;
+            // Compte les homonymes côté serveur (et non sur la liste chargée) pour
+            // générer un identifiant unique même si la liste est paginée/filtrée.
+            // ilike sans joker = égalité insensible à la casse (miroir de l'ancien
+            // .toLowerCase() ===) ; les prénoms/noms ne contiennent pas de % ou _.
+            const { count: duplicateCount } = await supabase
+                .from("students")
+                .select("id", { count: "exact", head: true })
+                .ilike("prenom", formData.prenom.trim())
+                .ilike("nom", formData.nom.trim());
 
-            const username = buildStudentUsername(formData.prenom, formData.nom, duplicateCount);
+            const username = buildStudentUsername(formData.prenom, formData.nom, duplicateCount ?? 0);
             const temporaryPassword = generateTemporaryPassword();
             const fullName = `${formData.prenom} ${formData.nom}`.trim();
 
