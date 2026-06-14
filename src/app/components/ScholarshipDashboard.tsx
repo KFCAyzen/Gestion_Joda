@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
     AlertTriangle,
     ArrowRight,
@@ -470,14 +471,15 @@ export default function ScholarshipDashboard() {
     const supabase = createClient();
     const { showNotification } = useNotificationContext();
     const t = useTranslations("scholarshipDashboard");
-    const [isLoading, setIsLoading] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [snapshot, setSnapshot] = useState<DashboardSnapshot>(emptySnapshot);
     const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
 
-    const loadDashboardData = useCallback(async () => {
-        setIsRefreshing(true);
-        try {
+    // Données du dashboard mises en cache (React Query) : revenir sur la page ne
+    // relance plus les 5 requêtes tant que le cache est frais (`staleTime`). Le
+    // bouton « rafraîchir » et les événements applicatifs forcent un `refetch`.
+    const { data: snapshot = emptySnapshot, isLoading, isFetching, refetch } = useQuery({
+        queryKey: ["dashboard", "snapshot"],
+        staleTime: 60 * 1000,
+        queryFn: async () => {
             const [universitiesRes, studentsRes, applicationsRes, paymentsRes, notificationsRes] = await Promise.all([
                 supabase.from("universities").select("id, nom, active"),
                 supabase.from("students").select("id, created_at"),
@@ -486,26 +488,23 @@ export default function ScholarshipDashboard() {
                 supabase.from("notifications").select("id, type, read, created_at"),
             ]);
 
-            setSnapshot(
-                buildSnapshot(
-                    (universitiesRes.data || []) as UniversityRow[],
-                    (studentsRes.data || []) as StudentRow[],
-                    (applicationsRes.data || []) as ApplicationRow[],
-                    (paymentsRes.data || []) as PaymentRow[],
-                    (notificationsRes.data || []) as NotificationRow[],
-                ),
+            return buildSnapshot(
+                (universitiesRes.data || []) as UniversityRow[],
+                (studentsRes.data || []) as StudentRow[],
+                (applicationsRes.data || []) as ApplicationRow[],
+                (paymentsRes.data || []) as PaymentRow[],
+                (notificationsRes.data || []) as NotificationRow[],
             );
-        } catch (error) {
-            console.warn("Erreur chargement dashboard:", error);
-        } finally {
-            setIsLoading(false);
-            setIsRefreshing(false);
-        }
-    }, []);
+        },
+    });
+
+    const loadDashboardData = useCallback(() => {
+        void refetch();
+    }, [refetch]);
+
+    const isRefreshing = isFetching;
 
     useEffect(() => {
-        loadDashboardData();
-
         const handleRefresh = () => {
             loadDashboardData();
         };

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
     Bell,
@@ -242,9 +243,7 @@ function AppShell({ children }: { children: ReactNode }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showPasswordChange, setShowPasswordChange] = useState(false);
     const [showUserPasswordChange, setShowUserPasswordChange] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [passwordJustChanged, setPasswordJustChanged] = useState(false);
-    const [menuBadges, setMenuBadges] = useState<Partial<Record<RouteId, { count: number; tone: BadgeTone }>>>({});
 
     useEffect(() => {
         if (user?.role === "student") {
@@ -262,37 +261,43 @@ function AppShell({ children }: { children: ReactNode }) {
         }
     }, [user, passwordJustChanged]);
 
-    useEffect(() => {
-        if (!user) return;
-        supabase
-            .from("notifications")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .eq("read", false)
-            .then(({ count }) => setUnreadCount(count ?? 0));
-    }, [user, pathname]);
+    // Compteur de notifications non lues. Mis en cache (React Query) plutôt que
+    // refetché à chaque navigation : un `staleTime` court garde la fraîcheur sans
+    // multiplier les allers-retours réseau pendant que l'utilisateur navigue.
+    const { data: unreadCount = 0 } = useQuery({
+        queryKey: ["layout", "unread-notifications", user?.id],
+        enabled: !!user,
+        staleTime: 30 * 1000,
+        queryFn: async () => {
+            const { count } = await supabase
+                .from("notifications")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", user!.id)
+                .eq("read", false);
+            return count ?? 0;
+        },
+    });
 
     // Compteurs « à traiter / en attente / en retard » pour les badges de menu.
-    useEffect(() => {
-        if (!user) return;
-        let cancelled = false;
-        (async () => {
+    const { data: menuBadges = {} } = useQuery<Partial<Record<RouteId, { count: number; tone: BadgeTone }>>>({
+        queryKey: ["layout", "menu-badges", user?.id],
+        enabled: !!user,
+        staleTime: 30 * 1000,
+        queryFn: async () => {
             const [candidatures, dossiers, fraisRetard] = await Promise.all([
                 supabase.from("dossier_bourses").select("id", { count: "exact", head: true }).in("status", CANDIDATURE_TODO_STATUSES),
                 supabase.from("dossier_bourses").select("id", { count: "exact", head: true }).in("status", DOSSIER_PENDING_STATUSES),
                 supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "retard"),
             ]);
-            if (cancelled) return;
             const lateCount = fraisRetard.count ?? 0;
-            setMenuBadges({
+            return {
                 reservations: { count: candidatures.count ?? 0, tone: "attention" },
                 dossiers: { count: dossiers.count ?? 0, tone: "attention" },
                 facturation: { count: lateCount, tone: "urgent" },
                 comptabilite: { count: lateCount, tone: "urgent" },
-            });
-        })();
-        return () => { cancelled = true; };
-    }, [user, pathname]);
+            };
+        },
+    });
 
     const activeRouteId = useMemo<RouteId>(() => {
         const entry = Object.entries(ROUTES).find(
