@@ -453,23 +453,28 @@
       }
     },
     "evaluationsOverview": {
-      "title": "Evaluations — global view",
-      "description": "Summary and ranking of evaluations over a period",
+      "title": "Performance index — global view",
+      "description": "Ranking of employees by performance index, derived from ratings and daily reports",
       "summaryTitle": "Summary",
       "totalEvaluations": "Evaluations",
       "employeesEvaluated": "Employees evaluated",
+      "employeesRanked": "Employees ranked",
       "globalAverage": "Global average rating",
+      "averageIndex": "Average index",
+      "indexHint": "Index /100 = 70% ratings + 30% reports (consistency: number of reports and hours worked). Employees without an account, and those with only one of the two sources, are included with a partial index.",
       "byCriterion": "Averages by criterion",
       "rankingTitle": "Employee ranking",
-      "empty": "No evaluation for this period",
+      "empty": "No data (rating or report) for this period",
       "col": {
         "rank": "Rank",
         "count": "# eval.",
-        "average": "Average rating"
+        "average": "Average rating",
+        "index": "Index",
+        "reports": "Reports"
       },
       "print": {
         "button": "Print summary",
-        "docTitle": "Evaluations summary",
+        "docTitle": "Employee performance index",
         "generatedOn": "Document generated on {date}"
       }
     },
@@ -2329,7 +2334,22 @@
     },
     "tabs": {
       "byAgent": "By agent",
-      "daily": "Daily view"
+      "daily": "Daily view",
+      "employees": "Employees"
+    },
+    "employees": {
+      "title": "Employee performance index",
+      "subtitle": "Derived from ratings and daily reports. Includes employees without an account.",
+      "averageIndex": "Average index",
+      "count": "Employees ranked",
+      "rating": "Rating",
+      "reportsTitle": "Reports",
+      "reportsLabel": "{count, plural, one {# report} other {# reports}}",
+      "hoursLabel": "{hours} h total",
+      "noAccount": "No account",
+      "noRating": "Not rated",
+      "empty": "No employee with a rating or report for this period",
+      "hint": "Index /100 = 70% ratings + 30% reports (consistency). A single available source yields a partial index."
     },
     "period": {
       "week": "7 days",

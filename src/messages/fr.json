@@ -453,23 +453,28 @@
       }
     },
     "evaluationsOverview": {
-      "title": "Évaluations — vue globale",
-      "description": "Synthèse et classement des évaluations sur une période",
+      "title": "Indice de performance — vue globale",
+      "description": "Classement des employés par indice de performance, dérivé des notations et des rapports journaliers",
       "summaryTitle": "Synthèse",
       "totalEvaluations": "Évaluations",
       "employeesEvaluated": "Employés évalués",
+      "employeesRanked": "Employés classés",
       "globalAverage": "Note moyenne globale",
+      "averageIndex": "Indice moyen",
+      "indexHint": "Indice /100 = 70 % notations + 30 % rapports (régularité : nombre de rapports et heures travaillées). Les employés sans compte, et ceux n'ayant qu'une seule des deux sources, sont inclus avec un indice partiel.",
       "byCriterion": "Moyennes par critère",
       "rankingTitle": "Classement des employés",
-      "empty": "Aucune évaluation sur cette période",
+      "empty": "Aucune donnée (notation ou rapport) sur cette période",
       "col": {
         "rank": "Rang",
         "count": "Nb éval.",
-        "average": "Note moyenne"
+        "average": "Note moyenne",
+        "index": "Indice",
+        "reports": "Rapports"
       },
       "print": {
         "button": "Imprimer la synthèse",
-        "docTitle": "Synthèse des évaluations",
+        "docTitle": "Indice de performance des employés",
         "generatedOn": "Document généré le {date}"
       }
     },
@@ -2329,7 +2334,22 @@
     },
     "tabs": {
       "byAgent": "Par agent",
-      "daily": "Vue journalière"
+      "daily": "Vue journalière",
+      "employees": "Employés"
+    },
+    "employees": {
+      "title": "Indice de performance des employés",
+      "subtitle": "Dérivé des notations et des rapports journaliers. Inclut les employés sans compte.",
+      "averageIndex": "Indice moyen",
+      "count": "Employés classés",
+      "rating": "Note",
+      "reportsTitle": "Rapports",
+      "reportsLabel": "{count, plural, one {# rapport} other {# rapports}}",
+      "hoursLabel": "{hours} h cumulées",
+      "noAccount": "Sans compte",
+      "noRating": "Non noté",
+      "empty": "Aucun employé avec notation ou rapport sur la période",
+      "hint": "Indice /100 = 70 % notations + 30 % rapports (régularité). Source unique présente = indice partiel."
     },
     "period": {
       "week": "7 jours",

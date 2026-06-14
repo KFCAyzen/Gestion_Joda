@@ -24,6 +24,7 @@ import {
     Settings2,
     Star,
     Trash2,
+    TrendingUp,
     User,
     Users as UsersIcon,
     X as XIcon,
@@ -87,6 +88,11 @@ import { printEmployeesReport } from "../lib/printEmployeesReport";
 import { payslipReference } from "../lib/payslipRef";
 import { computeCameroonPayroll } from "../lib/cameroonPayroll";
 import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../lib/hrEvaluation";
+import {
+    averagePerformanceIndex,
+    computeEmployeePerformance,
+    perfIndexColor,
+} from "../lib/hrPerformance";
 import type {
     Employee,
     EmployeeStatus,
@@ -351,14 +357,9 @@ function EvaluationsOverviewPanel({
 }) {
     const t = useTranslations("hrManagement");
     const evalQ = useEmployeeEvaluations();
+    const reportsQ = useDailyReports();
     const [periodFrom, setPeriodFrom] = useState("");
     const [periodTo, setPeriodTo] = useState("");
-
-    const employeesById = useMemo(() => {
-        const m = new Map<string, Employee>();
-        for (const e of employees) m.set(e.id, e);
-        return m;
-    }, [employees]);
 
     const inPeriod = useMemo(() => {
         return (evalQ.data ?? []).filter((ev) => {
@@ -368,25 +369,22 @@ function EvaluationsOverviewPanel({
         });
     }, [evalQ.data, periodFrom, periodTo]);
 
-    // Agrégat par employé, trié par note moyenne décroissante
-    const ranking = useMemo(() => {
-        const byEmp = new Map<string, typeof inPeriod>();
-        for (const ev of inPeriod) {
-            const arr = byEmp.get(ev.employee_id) ?? [];
-            arr.push(ev);
-            byEmp.set(ev.employee_id, arr);
-        }
-        const rows = Array.from(byEmp.entries()).map(([empId, evals]) => ({
-            employee: employeesById.get(empId) ?? null,
-            empId,
-            count: evals.length,
-            avg: overallAverage(evals),
-            crit: criterionAverages(evals),
-        }));
-        rows.sort((a, b) => b.avg - a.avg);
-        return rows;
-    }, [inPeriod, employeesById]);
+    const inPeriodReports = useMemo(() => {
+        return (reportsQ.data ?? []).filter((r) => {
+            if (periodFrom && r.date < periodFrom) return false;
+            if (periodTo && r.date > periodTo) return false;
+            return true;
+        });
+    }, [reportsQ.data, periodFrom, periodTo]);
 
+    // Classement par indice de performance (notations + rapports), trié décroissant.
+    // Inclut les employés sans compte et ceux n'ayant qu'une seule des deux sources.
+    const ranking = useMemo(
+        () => computeEmployeePerformance(employees, inPeriod, inPeriodReports),
+        [employees, inPeriod, inPeriodReports],
+    );
+
+    const avgIndex = useMemo(() => averagePerformanceIndex(ranking), [ranking]);
     const globalAvg = useMemo(() => overallAverage(inPeriod), [inPeriod]);
     const globalCrit = useMemo(() => criterionAverages(inPeriod), [inPeriod]);
 
@@ -402,7 +400,8 @@ function EvaluationsOverviewPanel({
             summaryTitle: t("evaluationsOverview.summaryTitle"),
             summary: [
                 { label: t("evaluationsOverview.totalEvaluations"), value: String(inPeriod.length) },
-                { label: t("evaluationsOverview.employeesEvaluated"), value: String(ranking.length) },
+                { label: t("evaluationsOverview.employeesRanked"), value: String(ranking.length) },
+                { label: t("evaluationsOverview.averageIndex"), value: `${avgIndex} / 100` },
                 { label: t("evaluationsOverview.globalAverage"), value: `${fmtNote(globalAvg)} / 5` },
                 ...EVAL_CRITERIA.map((c) => ({
                     label: t(`detail.evaluations.criteria.${c.code}`),
@@ -414,16 +413,20 @@ function EvaluationsOverviewPanel({
                 { key: "rank", label: t("evaluationsOverview.col.rank") },
                 { key: "name", label: t("employees.col.name") },
                 { key: "department", label: t("employees.col.department") },
+                { key: "index", label: t("evaluationsOverview.col.index"), align: "right" },
                 { key: "count", label: t("evaluationsOverview.col.count"), align: "right" },
+                { key: "reports", label: t("evaluationsOverview.col.reports"), align: "right" },
                 { key: "avg", label: t("evaluationsOverview.col.average"), align: "right" },
             ],
-            rows: ranking.map((r, i) => ({
+            rows: ranking.map((r) => ({
                 cells: [
-                    String(i + 1),
+                    String(r.rank),
                     r.employee ? `${r.employee.prenom} ${r.employee.nom}` : t("unknownEmployee"),
                     r.employee?.departement ?? "—",
-                    String(r.count),
-                    `${fmtNote(r.avg)} / 5`,
+                    `${r.performanceIndex} / 100`,
+                    String(r.evalCount),
+                    String(r.reportCount),
+                    r.evalCount > 0 ? `${fmtNote(r.evalAvg)} / 5` : "—",
                 ],
             })),
             emptyLabel: t("evaluationsOverview.empty"),
@@ -443,7 +446,7 @@ function EvaluationsOverviewPanel({
                     </CardTitle>
                     <CardDescription>{t("evaluationsOverview.description")}</CardDescription>
                 </div>
-                <Button variant="outline" onClick={handlePrint} disabled={inPeriod.length === 0}>
+                <Button variant="outline" onClick={handlePrint} disabled={ranking.length === 0}>
                     <Printer className="w-4 h-4 mr-2" />
                     {t("evaluationsOverview.print.button")}
                 </Button>
@@ -467,9 +470,20 @@ function EvaluationsOverviewPanel({
                 </div>
 
                 {/* Synthèse globale */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/40 dark:bg-slate-900/40 p-4 flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600">
+                            <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{t("evaluationsOverview.averageIndex")}</p>
+                            <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                                {ranking.length ? `${avgIndex} / 100` : "—"}
+                            </p>
+                        </div>
+                    </div>
+                    <StatCard icon={<UsersIcon className="w-5 h-5" />} label={t("evaluationsOverview.employeesRanked")} value={ranking.length} />
                     <StatCard icon={<Star className="w-5 h-5" />} label={t("evaluationsOverview.totalEvaluations")} value={inPeriod.length} />
-                    <StatCard icon={<UsersIcon className="w-5 h-5" />} label={t("evaluationsOverview.employeesEvaluated")} value={ranking.length} />
                     <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/40 dark:bg-slate-900/40 p-4 flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600">
                             <Star className="w-5 h-5" />
@@ -482,6 +496,8 @@ function EvaluationsOverviewPanel({
                         </div>
                     </div>
                 </div>
+
+                <p className="text-xs text-slate-400">{t("evaluationsOverview.indexHint")}</p>
 
                 {/* Moyennes par critère */}
                 {inPeriod.length > 0 && (
@@ -508,41 +524,57 @@ function EvaluationsOverviewPanel({
                             <TableHead className="w-12">{t("evaluationsOverview.col.rank")}</TableHead>
                             <TableHead>{t("employees.col.name")}</TableHead>
                             <TableHead>{t("employees.col.department")}</TableHead>
-                            <TableHead className="text-right">{t("evaluationsOverview.col.count")}</TableHead>
+                            <TableHead>{t("evaluationsOverview.col.index")}</TableHead>
                             <TableHead>{t("evaluationsOverview.col.average")}</TableHead>
+                            <TableHead className="text-right">{t("evaluationsOverview.col.reports")}</TableHead>
                             <TableHead className="text-right">{t("employees.col.actions")}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {evalQ.isLoading ? (
-                            <LoadingRow cols={6} />
+                        {evalQ.isLoading || reportsQ.isLoading ? (
+                            <LoadingRow cols={7} />
                         ) : ranking.length === 0 ? (
-                            <EmptyRow cols={6} label={t("evaluationsOverview.empty")} />
+                            <EmptyRow cols={7} label={t("evaluationsOverview.empty")} />
                         ) : (
-                            ranking.map((r, i) => (
-                                <TableRow key={r.empId}>
-                                    <TableCell className="font-semibold text-slate-500">{i + 1}</TableCell>
-                                    <TableCell className="font-medium">
-                                        {r.employee ? `${r.employee.prenom} ${r.employee.nom}` : t("unknownEmployee")}
-                                    </TableCell>
-                                    <TableCell>{r.employee?.departement ?? "—"}</TableCell>
-                                    <TableCell className="text-right">{r.count}</TableCell>
-                                    <TableCell>
-                                        <span className="flex items-center gap-2">
-                                            <StarsInline value={r.avg} />
-                                            <span className="text-sm font-semibold">{fmtNote(r.avg)}</span>
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {r.employee && (
-                                            <Button size="sm" variant="ghost" onClick={() => onView(r.employee!)}>
-                                                <Eye className="w-4 h-4 mr-1" />
-                                                {t("employees.viewDetail")}
-                                            </Button>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                            ranking.map((r) => {
+                                const ic = perfIndexColor(r.performanceIndex);
+                                return (
+                                    <TableRow key={r.empId}>
+                                        <TableCell className="font-semibold text-slate-500">{r.rank}</TableCell>
+                                        <TableCell className="font-medium">
+                                            {r.employee ? `${r.employee.prenom} ${r.employee.nom}` : t("unknownEmployee")}
+                                        </TableCell>
+                                        <TableCell>{r.employee?.departement ?? "—"}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2 min-w-[120px]">
+                                                <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                                                    <div className={`h-full rounded-full ${ic.bar}`} style={{ width: `${r.performanceIndex}%` }} />
+                                                </div>
+                                                <span className={`text-sm font-semibold tabular-nums ${ic.text}`}>{r.performanceIndex}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {r.evalCount > 0 ? (
+                                                <span className="flex items-center gap-2">
+                                                    <StarsInline value={r.evalAvg} />
+                                                    <span className="text-sm font-semibold">{fmtNote(r.evalAvg)}</span>
+                                                </span>
+                                            ) : (
+                                                <span className="text-sm text-slate-400">—</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-right tabular-nums">{r.reportCount}</TableCell>
+                                        <TableCell className="text-right">
+                                            {r.employee && (
+                                                <Button size="sm" variant="ghost" onClick={() => onView(r.employee!)}>
+                                                    <Eye className="w-4 h-4 mr-1" />
+                                                    {t("employees.viewDetail")}
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>

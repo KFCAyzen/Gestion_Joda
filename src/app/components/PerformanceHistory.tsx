@@ -7,6 +7,14 @@ import { useAuth } from "../context/AuthContext";
 import { usePayments } from "../lib/hooks/use-payments";
 import { useStudents } from "../lib/hooks/use-students";
 import { useUsers } from "../lib/hooks/use-users";
+import { useEmployees, useEmployeeEvaluations, useDailyReports } from "../lib/hooks/use-hr";
+import {
+    averagePerformanceIndex,
+    computeEmployeePerformance,
+    perfIndexColor,
+    type EmployeePerfRow,
+} from "../lib/hrPerformance";
+import { fmtNote } from "../lib/hrEvaluation";
 import { createClient } from "../lib/supabase/client";
 import { formatPrice } from "../utils/formatPrice";
 import LoadingSpinner from "./LoadingSpinner";
@@ -34,6 +42,7 @@ import {
     AlertCircle,
     CheckCircle2,
     TrendingUp,
+    Star,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -123,7 +132,7 @@ interface AgentStats {
     rank: number;
 }
 
-type ViewMode = "by-agent" | "daily";
+type ViewMode = "by-agent" | "daily" | "employees";
 type Period = "week" | "month" | "quarter" | "year" | "all";
 type FilterOption = { value: string; label: string };
 
@@ -485,6 +494,87 @@ function AgentCard({ agent, maxTotal, expanded, onToggle, dailyStats, dateLocale
     );
 }
 
+// ─── Employee performance card (HR: ratings + reports) ──────────────────────────
+
+function EmployeePerfCard({ row, t }: { row: EmployeePerfRow; t: T }) {
+    const ic = perfIndexColor(row.performanceIndex);
+    const name = row.employee
+        ? `${row.employee.prenom} ${row.employee.nom}`.trim()
+        : t("employees.noAccount");
+    const dept = row.employee?.departement ?? null;
+    const noAccount = !row.employee?.user_id;
+
+    return (
+        <Card className="overflow-hidden">
+            <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                        {getInitials(name)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                            <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{name}</p>
+                            <span className="flex items-center gap-0.5 text-[11px] font-semibold text-slate-400">
+                                <span className="text-slate-400">#</span>{row.rank}
+                            </span>
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                            {dept && <span className="truncate">{dept}</span>}
+                            {noAccount && (
+                                <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                                    {t("employees.noAccount")}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Index bar */}
+                <div className="mt-3">
+                    <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{t("agentCard.score")}</span>
+                        <span className={cn("text-sm font-bold tabular-nums", ic.text)}>
+                            {row.performanceIndex}
+                            <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">/100</span>
+                        </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                        <div className={cn("h-full rounded-full transition-all duration-700", ic.bar)} style={{ width: `${row.performanceIndex}%` }} />
+                    </div>
+                </div>
+
+                {/* Breakdown */}
+                <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                    <div className="rounded bg-slate-50 px-2 py-1.5 dark:bg-slate-800">
+                        <p className="text-[9px] uppercase tracking-wide text-slate-400">{t("employees.rating")}</p>
+                        <p className="flex items-center justify-center gap-1 text-[12px] font-semibold text-slate-600 dark:text-slate-300">
+                            {row.evalCount > 0 ? (
+                                <>
+                                    <Star size={11} className="fill-amber-400 text-amber-400" />
+                                    {fmtNote(row.evalAvg)}/5
+                                </>
+                            ) : (
+                                <span className="text-slate-400">{t("employees.noRating")}</span>
+                            )}
+                        </p>
+                    </div>
+                    <div className="rounded bg-slate-50 px-2 py-1.5 dark:bg-slate-800">
+                        <p className="text-[9px] uppercase tracking-wide text-slate-400">{t("employees.reportsTitle")}</p>
+                        <p className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">
+                            {t("employees.reportsLabel", { count: row.reportCount })}
+                        </p>
+                    </div>
+                </div>
+                {row.totalHours > 0 && (
+                    <p className="mt-1.5 text-center text-[10px] text-slate-400 dark:text-slate-500">
+                        {t("employees.hoursLabel", { hours: row.totalHours })}
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function PerformanceHistory() {
@@ -498,6 +588,11 @@ export default function PerformanceHistory() {
     const { data: allPaymentsRaw = [], isLoading: loadingPayments, isError } = usePayments();
     const { data: studentsRaw = [], isLoading: loadingStudents } = useStudents();
     const { data: usersRaw = [], isLoading: loadingUsers } = useUsers();
+
+    // HR data for the employee performance index (ratings + daily reports)
+    const { data: employeesRaw = [], isLoading: loadingEmployees } = useEmployees();
+    const { data: employeeEvalsRaw = [], isLoading: loadingEmployeeEvals } = useEmployeeEvaluations();
+    const { data: dailyReportsRaw = [], isLoading: loadingDailyReports } = useDailyReports();
     const { data: dossiersRaw = [], isLoading: loadingDossiers } = useQuery({
         queryKey: ["dossier_bourses", "performance"],
         queryFn: async () => {
@@ -573,6 +668,23 @@ export default function PerformanceHistory() {
         () => allPayments.filter((p) => p.status === "paye" && isInPeriod(p, periodStart)),
         [allPayments, periodStart],
     );
+
+    // ── Employee performance ranking (HR ratings + daily reports, period-filtered) ─
+
+    const employeeRanking = useMemo<EmployeePerfRow[]>(() => {
+        if (!isAdmin) return [];
+        const evalsInPeriod = employeeEvalsRaw.filter(
+            (ev) => !periodStart || new Date(ev.date_evaluation) >= periodStart,
+        );
+        const reportsInPeriod = dailyReportsRaw.filter(
+            (r) => !periodStart || new Date(r.date) >= periodStart,
+        );
+        return computeEmployeePerformance(employeesRaw, evalsInPeriod, reportsInPeriod);
+    }, [isAdmin, employeesRaw, employeeEvalsRaw, dailyReportsRaw, periodStart]);
+
+    const employeeAvgIndex = useMemo(() => averagePerformanceIndex(employeeRanking), [employeeRanking]);
+
+    const loadingEmployeesData = loadingEmployees || loadingEmployeeEvals || loadingDailyReports;
 
     // ── Current-state payments (not period-filtered) ────────────────────────────
 
@@ -961,11 +1073,24 @@ export default function PerformanceHistory() {
                                 <CalendarDays size={14} />
                                 {t("tabs.daily")}
                             </button>
+                            <button
+                                onClick={() => setViewMode("employees")}
+                                className={cn(
+                                    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                                    viewMode === "employees"
+                                        ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+                                )}
+                            >
+                                <Users size={14} />
+                                {t("tabs.employees")}
+                            </button>
                         </div>
                     )}
                 </div>
 
-                {/* 4 KPI cards */}
+                {/* 4 KPI cards (revenue-focused, hidden in employees view) */}
+                {viewMode !== "employees" && (
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     <Card className="joda-surface border-0 shadow-none">
                         <CardContent className="pt-4">
@@ -1018,9 +1143,68 @@ export default function PerformanceHistory() {
                         </CardContent>
                     </Card>
                 </div>
+                )}
 
                 {/* Main content */}
-                {isLoading ? (
+                {isAdmin && viewMode === "employees" ? (
+                    /* ── Employee performance index (HR ratings + reports) ── */
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                                <Users size={16} className="text-slate-400" />
+                                <h2 className="font-semibold text-slate-700 dark:text-slate-300">{t("employees.title")}</h2>
+                                <span className="text-xs text-slate-400">({employeeRanking.length})</span>
+                            </div>
+                            <p className="text-xs text-slate-400">{t("employees.subtitle")}</p>
+                        </div>
+
+                        {/* Summary cards */}
+                        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 max-w-md">
+                            <Card className="joda-surface border-0 shadow-none">
+                                <CardContent className="pt-4">
+                                    <div className="mb-2 flex items-center gap-2">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                                            <TrendingUp size={15} className="text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("employees.averageIndex")}</p>
+                                    </div>
+                                    <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{employeeRanking.length ? `${employeeAvgIndex}/100` : "—"}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="joda-surface border-0 shadow-none">
+                                <CardContent className="pt-4">
+                                    <div className="mb-2 flex items-center gap-2">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
+                                            <Users size={15} className="text-slate-600 dark:text-slate-300" />
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("employees.count")}</p>
+                                    </div>
+                                    <p className="text-xl font-bold text-slate-700 dark:text-slate-200">{employeeRanking.length}</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {loadingEmployeesData ? (
+                            <LoadingSpinner size="lg" text={t("states.loading")} />
+                        ) : employeeRanking.length === 0 ? (
+                            <Card className="joda-surface border-0 shadow-none">
+                                <CardContent className="py-12 text-center">
+                                    <Users size={32} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                                    <p className="text-slate-500 dark:text-slate-400">{t("employees.empty")}</p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    {employeeRanking.map((row) => (
+                                        <EmployeePerfCard key={row.empId} row={row} t={t} />
+                                    ))}
+                                </div>
+                                <p className="text-xs text-slate-400">{t("employees.hint")}</p>
+                            </>
+                        )}
+                    </div>
+                ) : isLoading ? (
                     <LoadingSpinner size="lg" text={t("states.loading")} />
                 ) : isError ? (
                     <div className="py-8 text-center">
