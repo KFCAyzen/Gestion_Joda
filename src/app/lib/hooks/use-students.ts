@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { createClient } from '../supabase/client';
 import type { Student, CreateStudent, UpdateStudent } from '../schemas/student.schema';
 import { createStudentSchema, updateStudentSchema } from '../schemas/student.schema';
@@ -109,6 +109,9 @@ export function useStudentsPaginated(
       return { students: data as Student[], total: count ?? 0, page, pageSize };
     },
     staleTime: 60 * 1000,
+    // Garde la page précédente visible pendant le chargement de la suivante
+    // (pas de flash de spinner à chaque changement de page/filtre).
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "../lib/supabase/client";
-import { useStudents, STUDENTS_KEY } from "../lib/hooks/use-students";
+import { useStudentsPaginated, useStudentsStats, STUDENTS_KEY } from "../lib/hooks/use-students";
 import { useAuth } from "../context/AuthContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -96,8 +96,6 @@ export default function StudentManagement() {
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
     const queryClient = useQueryClient();
-    const { data: _studentsData = [], isLoading: loading } = useStudents();
-    const students = _studentsData as unknown as Student[];
     const [localUser, setLocalUser] = useState<{ id: string; role: string } | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -118,6 +116,32 @@ export default function StudentManagement() {
     const [formData, setFormData] = useState(emptyFormData);
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 20;
+
+    // Recherche debouncée : évite une requête serveur à chaque frappe.
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 350);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Statistiques globales (non filtrées) via compteurs serveur.
+    const { data: statsData } = useStudentsStats();
+    const stats = {
+        total: statsData?.total ?? 0,
+        women: statsData?.women ?? 0,
+        men: statsData?.men ?? 0,
+        withLanguages: statsData?.withLanguages ?? 0,
+    };
+
+    // Liste paginée + filtrée côté serveur (page du hook = 0-based).
+    const { data: pageData, isLoading: loading } = useStudentsPaginated(
+        currentPage - 1,
+        pageSize,
+        { search: debouncedSearch, gender: genderFilter, profile: profileFilter }
+    );
+    const students = (pageData?.students ?? []) as unknown as Student[];
+    const totalCount = pageData?.total ?? 0;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     const setFeedback = (nextError = "", nextSuccess = "") => {
         setSubmitError(nextError);
@@ -278,45 +302,11 @@ export default function StudentManagement() {
             .then(({ data }) => setSelectedStudentPayments(data || []));
     }, [selectedStudent?.id]);
 
-    const filteredStudents = useMemo(() => {
-        return students.filter((student) => {
-            const matchesSearch = `${student.prenom} ${student.nom} ${student.email} ${student.telephone} ${student.filiere} ${student.niveau}`
-                .toLowerCase()
-                .includes(searchTerm.trim().toLowerCase());
-
-            const matchesGender = genderFilter === "all" || student.sexe === genderFilter;
-
-            const intl = isInternational(student.nationalite);
-            const matchesProfile =
-                profileFilter === "all" ||
-                (profileFilter === "international" && intl) ||
-                (profileFilter === "local" && !intl);
-
-            return matchesSearch && matchesGender && matchesProfile;
-        });
-    }, [genderFilter, profileFilter, searchTerm, students]);
-
-    // Pagination
-    const totalPages = Math.ceil(filteredStudents.length / pageSize);
-    const paginatedStudents = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        const end = start + pageSize;
-        return filteredStudents.slice(start, end);
-    }, [filteredStudents, currentPage, pageSize]);
-
-    // Reset page when filters change
+    // Revient à la première page quand un filtre appliqué change (sinon on
+    // pourrait interroger une page hors limites d'un jeu de résultats plus petit).
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, genderFilter, profileFilter]);
-
-    const stats = useMemo(() => {
-        return {
-            total: students.length,
-            women: students.filter((student) => student.sexe === "F").length,
-            men: students.filter((student) => student.sexe === "M").length,
-            withLanguages: students.filter((student) => student.langue.trim().length > 0).length,
-        };
-    }, [students]);
+    }, [debouncedSearch, genderFilter, profileFilter]);
 
     const openCreateForm = () => {
         setFeedback("", "");
@@ -780,7 +770,7 @@ export default function StudentManagement() {
                                 <CardContent>
                                     {loading ? (
                                         <div className="py-8 text-center text-slate-500 dark:text-slate-400">{t("loading")}</div>
-                                    ) : filteredStudents.length === 0 ? (
+                                    ) : students.length === 0 ? (
                                         <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-6 py-12 text-center">
                                             <p className="text-lg font-medium text-slate-700 dark:text-slate-300">{t("list.empty")}</p>
                                             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -801,7 +791,7 @@ export default function StudentManagement() {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {paginatedStudents.map((student) => (
+                                                    {students.map((student) => (
                                                     <TableRow
                                                         key={student.id}
                                                         className="cursor-default"
@@ -856,7 +846,7 @@ export default function StudentManagement() {
                                                 onPageChange={setCurrentPage}
                                                 hasNextPage={currentPage < totalPages}
                                                 hasPrevPage={currentPage > 1}
-                                                totalCount={filteredStudents.length}
+                                                totalCount={totalCount}
                                                 pageSize={pageSize}
                                             />
                                         </>
