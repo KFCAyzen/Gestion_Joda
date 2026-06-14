@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from '../context/AuthContext';
@@ -64,9 +65,6 @@ export default function DossierWorkflow() {
     const supabase = createClient();
     const t = useTranslations("dossierWorkflow");
     const { showNotification } = useNotificationContext();
-    const [dossiers, setDossiers] = useState<DossierBourse[]>([]);
-    const [students, setStudents] = useState<StudentLite[]>([]);
-    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState<DossierStatus>('en_attente');
     const [statusChangeModal, setStatusChangeModal] = useState<{
@@ -75,24 +73,31 @@ export default function DossierWorkflow() {
         description: string;
     } | null>(null);
 
-    const loadDossiersByStatus = useCallback(async (status: DossierStatus) => {
-        setLoading(true);
-        const [dossiersRes, studentsRes] = await Promise.all([
-            supabase
+    // Liste des étudiants (id/nom/prénom) indépendante du statut : mise en cache
+    // une fois plutôt que rechargée à chaque changement d'onglet.
+    const { data: students = [] } = useQuery({
+        queryKey: ['dossier-workflow', 'students-min'],
+        staleTime: 60 * 1000,
+        queryFn: async () => {
+            const { data } = await supabase.from('students').select('id, nom, prenom');
+            return (data ?? []) as StudentLite[];
+        },
+    });
+
+    // Dossiers du statut sélectionné, mis en cache par statut : revenir sur un
+    // onglet déjà consulté est instantané (plus de rechargement réseau).
+    const { data: dossiers = [], isLoading: loading, refetch: refetchDossiers } = useQuery({
+        queryKey: ['dossier-workflow', 'by-status', selectedStatus],
+        staleTime: 60 * 1000,
+        queryFn: async () => {
+            const { data } = await supabase
                 .from('dossier_bourses')
                 .select('*')
-                .eq('status', status)
-                .order('created_at', { ascending: false }),
-            supabase.from('students').select('id, nom, prenom'),
-        ]);
-        if (dossiersRes.data) setDossiers(dossiersRes.data);
-        if (studentsRes.data) setStudents(studentsRes.data);
-        setLoading(false);
-    }, []);
-
-    useEffect(() => {
-        loadDossiersByStatus(selectedStatus);
-    }, [selectedStatus, loadDossiersByStatus]);
+                .eq('status', selectedStatus)
+                .order('created_at', { ascending: false });
+            return (data ?? []) as DossierBourse[];
+        },
+    });
 
     const getStudentName = useCallback(
         (studentId: string | null | undefined): string | null => {
@@ -142,7 +147,7 @@ export default function DossierWorkflow() {
             );
 
             showNotification("Statut du dossier mis à jour", "success");
-            await loadDossiersByStatus(selectedStatus);
+            await refetchDossiers();
             setStatusChangeModal(null);
         } catch (err) {
             console.error("Erreur changement statut dossier:", err);

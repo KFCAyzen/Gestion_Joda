@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { createClient } from "../lib/supabase/client";
 import LoadingSpinner from "./LoadingSpinner";
@@ -52,25 +53,27 @@ export default function NotificationsPage() {
     const getTypeLabel = (type: string) => {
         return t(`types.${type}`, { fallback: type });
     };
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<FilterType>("all");
+    const queryClient = useQueryClient();
+    const notificationsKey = ["notifications", "list", user?.id, user?.role];
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        try {
+    // Notifications mises en cache + rafraîchies périodiquement (refetchInterval)
+    // au lieu d'être rechargées à neuf à chaque visite de l'écran.
+    const { data: notifications = [], isLoading: loading, refetch } = useQuery({
+        queryKey: notificationsKey,
+        enabled: !!user,
+        staleTime: 30 * 1000,
+        refetchInterval: 60000,
+        queryFn: async () => {
             let query = supabase.from("notifications").select("*").order("created_at", { ascending: false });
-
             if (user?.role !== "admin" && user?.role !== "super_admin") {
                 query = query.eq("user_id", user?.id);
             }
-
             const { data } = await query;
-            if (data) setNotifications(data);
-        } finally {
-            setLoading(false);
-        }
-    }, [user]);
+            return (data ?? []) as Notification[];
+        },
+    });
+    const load = useCallback(async () => { await refetch(); }, [refetch]);
 
     const [autoNotifStatus, setAutoNotifStatus] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -137,15 +140,12 @@ export default function NotificationsPage() {
         }
     }, [user, load, t, dateLocale, supabase]);
 
-    useEffect(() => {
-        load();
-        const interval = setInterval(load, 60000);
-        return () => clearInterval(interval);
-    }, [load]);
-
     const markAsRead = async (id: string) => {
         await supabase.from("notifications").update({ read: true }).eq("id", id);
-        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+        queryClient.setQueryData<Notification[]>(notificationsKey, (prev) =>
+            (prev ?? []).map((n) => (n.id === id ? { ...n, read: true } : n))
+        );
+        queryClient.invalidateQueries({ queryKey: ["layout", "unread-notifications", user?.id] });
     };
 
     const markAllAsRead = async () => {
@@ -160,7 +160,10 @@ export default function NotificationsPage() {
                 3,
                 150
             );
-            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+            queryClient.setQueryData<Notification[]>(notificationsKey, (prev) =>
+                (prev ?? []).map((n) => ({ ...n, read: true }))
+            );
+            queryClient.invalidateQueries({ queryKey: ["layout", "unread-notifications", user?.id] });
         } finally {
             setIsMarkingAllRead(false);
         }
