@@ -33,9 +33,65 @@ export interface StudentsPaginatedResult {
   pageSize: number;
 }
 
-export function useStudentsPaginated(page: number, pageSize: number, search?: string) {
+export interface StudentsQueryFilters {
+  /** Recherche plein texte sur nom/prénom/email/téléphone/filière/niveau */
+  search?: string;
+  /** "M" | "F" — toute autre valeur (ou "all") ne filtre pas */
+  gender?: string;
+  /** "local" | "international" — miroir SQL de isInternational(). "all" ne filtre pas */
+  profile?: string;
+}
+
+/**
+ * Applique les mêmes filtres que la liste étudiants côté serveur.
+ * Le filtre "profile" reflète isInternational() de types/payment-config.ts :
+ *   international = nationalité renseignée ET ≠ camerounais/camerounaise
+ *   local        = nationalité nulle OU camerounais/camerounaise
+ * (les valeurs de nationalité sont normalisées à l'insertion : "Camerounais"
+ * pour les locaux, donc pas de trim SQL nécessaire — ilike gère la casse.)
+ */
+function applyStudentFilters<T>(query: T, filters: StudentsQueryFilters): T {
+  const { search, gender, profile } = filters;
+  // `query` est un PostgrestFilterBuilder ; on garde le typage générique pour
+  // réutiliser cette fonction sur la requête liste et la requête de comptage.
+  let q = query as any;
+
+  const trimmed = search?.trim();
+  if (trimmed) {
+    q = q.or(
+      `nom.ilike.%${trimmed}%,prenom.ilike.%${trimmed}%,email.ilike.%${trimmed}%,telephone.ilike.%${trimmed}%,filiere.ilike.%${trimmed}%,niveau.ilike.%${trimmed}%`
+    );
+  }
+  if (gender === 'M' || gender === 'F') {
+    q = q.eq('sexe', gender);
+  }
+  if (profile === 'local') {
+    q = q.or('nationalite.is.null,nationalite.ilike.camerounais,nationalite.ilike.camerounaise');
+  } else if (profile === 'international') {
+    q = q
+      .not('nationalite', 'is', null)
+      .not('nationalite', 'ilike', 'camerounais')
+      .not('nationalite', 'ilike', 'camerounaise');
+  }
+  return q as T;
+}
+
+export function useStudentsPaginated(
+  page: number,
+  pageSize: number,
+  filters: StudentsQueryFilters = {}
+) {
+  const { search, gender, profile } = filters;
   return useQuery({
-    queryKey: [...STUDENTS_KEY, 'paginated', page, pageSize, search ?? ''],
+    queryKey: [
+      ...STUDENTS_KEY,
+      'paginated',
+      page,
+      pageSize,
+      search?.trim() ?? '',
+      gender ?? 'all',
+      profile ?? 'all',
+    ],
     queryFn: async (): Promise<StudentsPaginatedResult> => {
       const from = page * pageSize;
       const to = from + pageSize - 1;
@@ -46,11 +102,7 @@ export function useStudentsPaginated(page: number, pageSize: number, search?: st
         .order('created_at', { ascending: false })
         .range(from, to);
 
-      if (search) {
-        query = query.or(
-          `nom.ilike.%${search}%,prenom.ilike.%${search}%,email.ilike.%${search}%`
-        );
-      }
+      query = applyStudentFilters(query, filters);
 
       const { data, error, count } = await query;
       if (error) throw error;
@@ -136,12 +188,38 @@ export function useDeleteStudent() {
   });
 }
 
+export interface StudentsStats {
+  total: number;
+  women: number;
+  men: number;
+  withLanguages: number;
+}
+
+/**
+ * Compteurs globaux (non filtrés) pour les cartes de statistiques.
+ * Chaque compteur est une requête `head: true` (aucune ligne transférée, juste
+ * le count) — bien moins coûteux que de ramener toute la table pour compter en JS.
+ */
 export function useStudentsStats() {
   return useQuery({
     queryKey: [...STUDENTS_KEY, 'stats'],
-    queryFn: async () => {
-      const total = await supabase.from('students').select('*', { count: 'exact', head: true });
-      return { total: total.count || 0 };
+    queryFn: async (): Promise<StudentsStats> => {
+      const [total, women, men, withLanguages] = await Promise.all([
+        supabase.from('students').select('*', { count: 'exact', head: true }),
+        supabase.from('students').select('*', { count: 'exact', head: true }).eq('sexe', 'F'),
+        supabase.from('students').select('*', { count: 'exact', head: true }).eq('sexe', 'M'),
+        supabase
+          .from('students')
+          .select('*', { count: 'exact', head: true })
+          .not('langue', 'is', null)
+          .neq('langue', ''),
+      ]);
+      return {
+        total: total.count ?? 0,
+        women: women.count ?? 0,
+        men: men.count ?? 0,
+        withLanguages: withLanguages.count ?? 0,
+      };
     },
     staleTime: 60 * 1000,
   });
