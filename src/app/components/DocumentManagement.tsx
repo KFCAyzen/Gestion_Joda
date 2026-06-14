@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from '../context/AuthContext';
@@ -46,8 +47,6 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
     const locale = useLocale();
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const supabase = createClient();
-    const [documents, setDocuments] = useState<Document[]>([]);
-    const [loading, setLoading] = useState(true);
     const [uploadingType, setUploadingType] = useState<string | null>(null);
     const [validationModal, setValidationModal] = useState<{
         document: Document;
@@ -55,19 +54,21 @@ export default function DocumentManagement({ studentId, studentName }: DocumentM
         reason?: string;
     } | null>(null);
 
-    const loadDocuments = useCallback(async () => {
-        setLoading(true);
-        const { data } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('student_id', studentId);
-        if (data) setDocuments(data);
-        setLoading(false);
-    }, [studentId]);
-
-    useEffect(() => {
-        loadDocuments();
-    }, [loadDocuments]);
+    // Documents de l'étudiant mis en cache par studentId (React Query) plutôt que
+    // rechargés à chaque ouverture de la fiche.
+    const { data: documents = [], isLoading: loading, refetch } = useQuery({
+        queryKey: ["documents", "by-student", studentId],
+        enabled: !!studentId,
+        staleTime: 60 * 1000,
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('documents')
+                .select('*')
+                .eq('student_id', studentId);
+            return (data ?? []) as Document[];
+        },
+    });
+    const loadDocuments = () => { void refetch(); };
 
     const handleFileUpload = async (type: string, file: File) => {
         if (!file) return;

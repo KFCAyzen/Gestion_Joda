@@ -268,6 +268,7 @@ function AppShell({ children }: { children: ReactNode }) {
         queryKey: ["layout", "unread-notifications", user?.id],
         enabled: !!user,
         staleTime: 30 * 1000,
+        refetchInterval: 60 * 1000,
         queryFn: async () => {
             const { count } = await supabase
                 .from("notifications")
@@ -283,6 +284,7 @@ function AppShell({ children }: { children: ReactNode }) {
         queryKey: ["layout", "menu-badges", user?.id],
         enabled: !!user,
         staleTime: 30 * 1000,
+        refetchInterval: 60 * 1000,
         queryFn: async () => {
             const [candidatures, dossiers, fraisRetard] = await Promise.all([
                 supabase.from("dossier_bourses").select("id", { count: "exact", head: true }).in("status", CANDIDATURE_TODO_STATUSES),

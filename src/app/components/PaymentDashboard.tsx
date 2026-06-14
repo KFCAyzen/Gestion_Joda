@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "../lib/supabase/client";
 import { formatPrice } from "../utils/formatPrice";
 import { calculatePenalty } from "../utils/penaltyCalculator";
@@ -33,8 +34,15 @@ interface PaymentStats {
 
 export default function PaymentDashboard() {
     const supabase = createClient();
-    const [payments, setPayments] = useState<Payment[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Paiements mis en cache (React Query) plutôt que rechargés à chaque montage.
+    const { data: payments = [], isLoading: loading } = useQuery({
+        queryKey: ["payments", "dashboard-all"],
+        staleTime: 60 * 1000,
+        queryFn: async () => {
+            const { data } = await supabase.from("payments").select("*");
+            return (data ?? []) as Payment[];
+        },
+    });
     const [stats, setStats] = useState<PaymentStats>({
         totalRevenue: 0,
         totalPenalties: 0,
@@ -44,17 +52,6 @@ export default function PaymentDashboard() {
         revenueByType: {},
         monthlyRevenue: {}
     });
-
-    useEffect(() => {
-        const loadPayments = async () => {
-            setLoading(true);
-            const { data } = await supabase.from('payments').select('*');
-            if (data) setPayments(data);
-            setLoading(false);
-        };
-        loadPayments();
-    }, []);
-
 
     useEffect(() => {
         if (payments.length === 0) return;
