@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useAuth } from "../context/AuthContext";
-import { getActivityLogs, ActivityType } from "../utils/activityLogger";
+import {
+  getActivityLogsPaginated,
+  getActivityLogsStats,
+  ActivityType,
+  type ActivityLogFilters,
+} from "../utils/activityLogger";
 import ProtectedRoute from "./ProtectedRoute";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -116,82 +121,119 @@ function groupLogsByDay(
   return Array.from(groups.values());
 }
 
+// Traduit le filtre de période (today/week/month/custom) en bornes ISO.
+// Identique à l'ancienne logique de loadLogs, isolé pour être mémoïsé
+// (sinon `new Date()` change la queryKey à chaque rendu → refetch en boucle).
+function computeDateRange(
+  dateFilter: string,
+  customStartDate: string,
+  customEndDate: string,
+): { startDate?: string; endDate?: string } {
+  if (dateFilter === "tout") return {};
+  const now = new Date();
+  if (dateFilter === "today") {
+    return { startDate: new Date(now.setHours(0, 0, 0, 0)).toISOString() };
+  }
+  if (dateFilter === "week") {
+    return { startDate: new Date(now.setDate(now.getDate() - 7)).toISOString() };
+  }
+  if (dateFilter === "month") {
+    return { startDate: new Date(now.setMonth(now.getMonth() - 1)).toISOString() };
+  }
+  if (dateFilter === "custom") {
+    const range: { startDate?: string; endDate?: string } = {};
+    if (customStartDate) {
+      const start = new Date(customStartDate);
+      start.setHours(0, 0, 0, 0);
+      range.startDate = start.toISOString();
+    }
+    if (customEndDate) {
+      const end = new Date(customEndDate);
+      end.setHours(23, 59, 59, 999);
+      range.endDate = end.toISOString();
+    }
+    return range;
+  }
+  return {};
+}
+
 export default function ActivityLogsPage() {
   const t = useTranslations("activityLogs");
   const locale = useLocale();
   const dateLocale = locale === "en" ? "en-US" : "fr-FR";
-  const { user } = useAuth();
-  const [logs, setLogs] = useState<ActivityLog[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("tout");
   const [activityFilter, setActivityFilter] = useState<string>("tout");
   const [dateFilter, setDateFilter] = useState<string>("tout");
   const [customStartDate, setCustomStartDate] = useState<string>("");
   const [customEndDate, setCustomEndDate] = useState<string>("");
-
-  const loadLogs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const filters: any = {};
-      if (roleFilter !== "tout") filters.userRole = roleFilter;
-      if (activityFilter !== "tout") filters.activityType = activityFilter;
-      if (dateFilter !== "tout") {
-        const now = new Date();
-        if (dateFilter === "today") {
-          filters.startDate = new Date(now.setHours(0, 0, 0, 0)).toISOString();
-        } else if (dateFilter === "week") {
-          filters.startDate = new Date(now.setDate(now.getDate() - 7)).toISOString();
-        } else if (dateFilter === "month") {
-          filters.startDate = new Date(now.setMonth(now.getMonth() - 1)).toISOString();
-        } else if (dateFilter === "custom") {
-          if (customStartDate) {
-            const start = new Date(customStartDate);
-            start.setHours(0, 0, 0, 0);
-            filters.startDate = start.toISOString();
-          }
-          if (customEndDate) {
-            const end = new Date(customEndDate);
-            end.setHours(23, 59, 59, 999);
-            filters.endDate = end.toISOString();
-          }
-        }
-      }
-      const data = await getActivityLogs(filters);
-      setLogs(data);
-    } finally {
-      setLoading(false);
-    }
-  }, [roleFilter, activityFilter, dateFilter, customStartDate, customEndDate]);
-
-  useEffect(() => { loadLogs(); }, [loadLogs]);
-
-  const filteredLogs = logs.filter((log) =>
-    searchTerm === "" ||
-    log.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.entity_type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 30;
-  const totalPages = Math.ceil(filteredLogs.length / pageSize);
-  const paginatedData = filteredLogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, roleFilter, activityFilter, dateFilter, customStartDate, customEndDate]);
+  // Recherche debouncée (évite un appel serveur à chaque frappe).
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 350);
+    return () => clearTimeout(id);
+  }, [searchTerm]);
+
+  const dateRange = useMemo(
+    () => computeDateRange(dateFilter, customStartDate, customEndDate),
+    [dateFilter, customStartDate, customEndDate],
+  );
+
+  // Filtres communs (rôle / action / période) partagés par la liste et les stats.
+  const serverFilters: ActivityLogFilters = useMemo(
+    () => ({
+      userRole: roleFilter !== "tout" ? roleFilter : undefined,
+      activityType: activityFilter !== "tout" ? (activityFilter as ActivityType) : undefined,
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    }),
+    [roleFilter, activityFilter, dateRange.startDate, dateRange.endDate],
+  );
+
+  // Retour page 1 dès qu'un filtre / la recherche change.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, roleFilter, activityFilter, dateFilter, customStartDate, customEndDate]);
+
+  const { data: pageData, isLoading: pageLoading } = useQuery({
+    queryKey: [
+      "activity-logs", "page", currentPage, pageSize,
+      roleFilter, activityFilter,
+      dateRange.startDate ?? "", dateRange.endDate ?? "", debouncedSearch,
+    ],
+    queryFn: () =>
+      getActivityLogsPaginated(
+        { ...serverFilters, search: debouncedSearch || undefined },
+        currentPage - 1,
+        pageSize,
+      ),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+  });
+
+  const { data: statsData } = useQuery({
+    queryKey: [
+      "activity-logs", "stats",
+      roleFilter, activityFilter,
+      dateRange.startDate ?? "", dateRange.endDate ?? "",
+    ],
+    queryFn: () => getActivityLogsStats(serverFilters),
+    staleTime: 30_000,
+  });
+
+  const paginatedData = (pageData?.rows ?? []) as ActivityLog[];
+  const totalCount = pageData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const stats = statsData ?? { total: 0, agents: 0, admins: 0, today: 0 };
 
   const goToPage = (page: number) => { if (page >= 1 && page <= totalPages) setCurrentPage(page); };
 
-  const stats = {
-    total: logs.length,
-    agents: logs.filter((l) => l.user_role === "agent").length,
-    admins: logs.filter((l) => l.user_role === "admin" || l.user_role === "super_admin").length,
-    today: logs.filter((l) => new Date(l.created_at).toDateString() === new Date().toDateString()).length,
-  };
-
   const groups = groupLogsByDay(paginatedData, dateLocale, t("days.today"), t("days.yesterday"));
 
-  if (loading) return <LoadingState />;
+  if (pageLoading && paginatedData.length === 0) return <LoadingState />;
 
   return (
     <ProtectedRoute requiredRole="admin" requiredPermission="logs.view">
@@ -413,7 +455,7 @@ export default function ActivityLogsPage() {
                   onPageChange={goToPage}
                   hasNextPage={currentPage < totalPages}
                   hasPrevPage={currentPage > 1}
-                  totalCount={filteredLogs.length}
+                  totalCount={totalCount}
                   pageSize={pageSize}
                 />
               </>
