@@ -141,6 +141,97 @@ export async function getActivityLogs(filters?: {
   }
 }
 
+export interface ActivityLogFilters {
+  userId?: string;
+  userRole?: string;
+  activityType?: ActivityType;
+  entityType?: string;
+  startDate?: string;
+  endDate?: string;
+  /** Recherche plein texte sur user_name / description / entity_type */
+  search?: string;
+}
+
+// Applique les filtres communs (mêmes critères que getActivityLogs) à une requête.
+// Générique pour servir aussi bien la requête paginée que les requêtes de comptage.
+function applyActivityLogFilters<T>(query: T, filters: ActivityLogFilters): T {
+  let q = query as any;
+  if (filters.userId) q = q.eq("user_id", filters.userId);
+  if (filters.userRole) q = q.eq("user_role", filters.userRole);
+  if (filters.activityType) q = q.eq("activity_type", filters.activityType);
+  if (filters.entityType) q = q.eq("entity_type", filters.entityType);
+  if (filters.startDate) q = q.gte("created_at", filters.startDate);
+  if (filters.endDate) q = q.lte("created_at", filters.endDate);
+  const s = filters.search?.trim();
+  if (s) {
+    q = q.or(`user_name.ilike.%${s}%,description.ilike.%${s}%,entity_type.ilike.%${s}%`);
+  }
+  return q as T;
+}
+
+/**
+ * Récupère une page de logs (tri created_at DESC) + le total filtré, le tout
+ * côté serveur (range + count). Évite de charger toute la table activity_logs.
+ */
+export async function getActivityLogsPaginated(
+  filters: ActivityLogFilters,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: ActivityLog[]; total: number }> {
+  try {
+    const supabase = createClient();
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    let query = supabase
+      .from("activity_logs")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    query = applyActivityLogFilters(query, filters);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { rows: (data ?? []) as ActivityLog[], total: count ?? 0 };
+  } catch (error) {
+    console.error("Erreur lors de la récupération paginée des logs:", error);
+    return { rows: [], total: 0 };
+  }
+}
+
+/**
+ * Compteurs des cartes de stats (head count, aucune ligne transférée).
+ * Applique les mêmes filtres rôle/action/période que la liste (PAS la recherche,
+ * pour rester cohérent avec l'ancien calcul fait sur le jeu non recherché).
+ */
+export async function getActivityLogsStats(
+  filters: ActivityLogFilters,
+): Promise<{ total: number; agents: number; admins: number; today: number }> {
+  try {
+    const supabase = createClient();
+    const base = () =>
+      applyActivityLogFilters(
+        supabase.from("activity_logs").select("id", { count: "exact", head: true }),
+        { ...filters, search: undefined },
+      );
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const [total, agents, admins, today] = await Promise.all([
+      base(),
+      base().eq("user_role", "agent"),
+      base().in("user_role", ["admin", "super_admin"]),
+      base().gte("created_at", todayStart.toISOString()),
+    ]);
+    return {
+      total: total.count ?? 0,
+      agents: agents.count ?? 0,
+      admins: admins.count ?? 0,
+      today: today.count ?? 0,
+    };
+  } catch (error) {
+    console.error("Erreur lors du comptage des logs:", error);
+    return { total: 0, agents: 0, admins: 0, today: 0 };
+  }
+}
+
 /**
  * Labels pour les types d'activités
  */
