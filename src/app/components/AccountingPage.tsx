@@ -200,7 +200,6 @@ export default function AccountingPage() {
     const [reportScope, setReportScope] = useState<ReportScope>("all");
 
     const today = new Date();
-    const [reportDate, setReportDate] = useState(today.toISOString().slice(0, 10));
 
     const [newEntree, setNewEntree] = useState({
         montant: "",
@@ -462,28 +461,41 @@ export default function AccountingPage() {
 
     const { start: startOfPeriod, end: endOfPeriod } = getPeriodDates();
 
-    const reportDay = new Date(reportDate);
-    const startOfDay = new Date(reportDay.getFullYear(), reportDay.getMonth(), reportDay.getDate());
-    const endOfDay = new Date(reportDay.getFullYear(), reportDay.getMonth(), reportDay.getDate(), 23, 59, 59);
-
-    // Seules les sorties validées impactent la comptabilité — les sorties en attente
-    // ou rejetées sont exclues des totaux, rapports et statistiques.
-    const sortiesEffective = sorties.filter((s) => s.status === "validated");
-
-    const entreesJour = entrees.filter((e) => {
-        const d = toDate(e.date);
-        return d >= startOfDay && d <= endOfDay;
+    // Lignes de la période chargées de façon bornée côté serveur (au lieu de
+    // filtrer toute la table). La requête élargit la borne de ±1 jour pour
+    // absorber tout écart de fuseau, puis on réapplique EXACTEMENT le même
+    // filtre de dates qu'avant côté client → résultats identiques.
+    // Les sorties sont déjà restreintes aux validées (seules à impacter la compta).
+    const periodStartIso = startOfPeriod.toISOString();
+    const periodEndIso = endOfPeriod.toISOString();
+    const { data: periodData } = useQuery({
+        queryKey: ["accounting", "period", periodStartIso, periodEndIso],
+        staleTime: 60 * 1000,
+        queryFn: async () => {
+            const dayMs = 24 * 60 * 60 * 1000;
+            const fetchStart = new Date(startOfPeriod.getTime() - dayMs).toISOString().slice(0, 10);
+            const fetchEnd = new Date(endOfPeriod.getTime() + dayMs).toISOString().slice(0, 10);
+            const [e, s] = await Promise.all([
+                supabase.from("entrees_comptables").select("*")
+                    .gte("date", fetchStart).lte("date", fetchEnd)
+                    .order("date", { ascending: false }),
+                supabase.from("sorties_comptables").select("*")
+                    .eq("status", "validated")
+                    .gte("date", fetchStart).lte("date", fetchEnd)
+                    .order("date", { ascending: false }),
+            ]);
+            return {
+                entrees: (e.data ?? []) as EntreeComptable[],
+                sorties: (s.data ?? []) as SortieComptable[],
+            };
+        },
     });
-    const sortiesJour = sortiesEffective.filter((s) => {
-        const d = toDate(s.date);
-        return d >= startOfDay && d <= endOfDay;
-    });
 
-    const entreesPeriod = entrees.filter((e) => {
+    const entreesPeriod = (periodData?.entrees ?? []).filter((e) => {
         const d = toDate(e.date);
         return d >= startOfPeriod && d <= endOfPeriod;
     });
-    const sortiesPeriod = sortiesEffective.filter((s) => {
+    const sortiesPeriod = (periodData?.sorties ?? []).filter((s) => {
         const d = toDate(s.date);
         return d >= startOfPeriod && d <= endOfPeriod;
     });
@@ -492,10 +504,6 @@ export default function AccountingPage() {
     const totalEntrees = balance?.totalEntrees ?? 0;
     const totalSorties = balance?.totalSorties ?? 0;
     const soldeGlobal = totalEntrees - totalSorties;
-
-    const totalEntreesJour = entreesJour.reduce((sum, e) => sum + e.montant, 0);
-    const totalSortiesJour = sortiesJour.reduce((sum, e) => sum + e.montant, 0);
-    const soldeJour = totalEntreesJour - totalSortiesJour;
 
     const totalEntreesPeriod = entreesPeriod.reduce((sum, e) => sum + e.montant, 0);
     const totalSortiesPeriod = sortiesPeriod.reduce((sum, e) => sum + e.montant, 0);
