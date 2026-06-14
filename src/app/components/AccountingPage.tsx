@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
@@ -118,6 +118,7 @@ export default function AccountingPage() {
     const dateLocale = locale === "en" ? "en-US" : "fr-FR";
     const { user } = useAuth();
     const supabase = createClient();
+    const queryClient = useQueryClient();
     const { showNotification } = useNotificationContext();
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean; title: string; description: string;
@@ -137,7 +138,7 @@ export default function AccountingPage() {
     // Données comptables mises en cache (React Query) : revenir sur l'écran ne
     // relance plus les 4 requêtes tant que le cache est frais. Chaque mutation
     // appelle `load()` (→ refetch) pour rafraîchir après écriture.
-    const { data: accountingData, isLoading: loading, refetch: refetchAccounting } = useQuery({
+    const { data: accountingData, isLoading: loading } = useQuery({
         queryKey: ["accounting", "all"],
         staleTime: 60 * 1000,
         queryFn: async () => {
@@ -159,7 +160,39 @@ export default function AccountingPage() {
     const sorties = accountingData?.sorties ?? [];
     const budgets = accountingData?.budgets ?? [];
     const customCategories = accountingData?.customCategories ?? [];
-    const load = async () => { await refetchAccounting(); };
+
+    // Solde global (cumulé all-time) calculé côté serveur via RPC, au lieu de
+    // sommer toute la table en mémoire. Filet : si la fonction n'existe pas
+    // encore (migration add_accounting_global_balance_rpc.sql non appliquée),
+    // on retombe sur une somme directe — résultat identique.
+    const { data: balance } = useQuery({
+        queryKey: ["accounting", "global-balance"],
+        staleTime: 60 * 1000,
+        queryFn: async () => {
+            const { data, error } = await supabase.rpc("accounting_global_balance");
+            if (!error && Array.isArray(data) && data[0]) {
+                return {
+                    totalEntrees: Number(data[0].total_entrees) || 0,
+                    totalSorties: Number(data[0].total_sorties) || 0,
+                };
+            }
+            const [e, s] = await Promise.all([
+                supabase.from("entrees_comptables").select("montant"),
+                supabase.from("sorties_comptables").select("montant, status"),
+            ]);
+            const totalEntrees = (e.data ?? []).reduce((sum, r: { montant: number }) => sum + (r.montant || 0), 0);
+            const totalSorties = (s.data ?? [])
+                .filter((r: { status: string }) => r.status === "validated")
+                .reduce((sum, r: { montant: number }) => sum + (r.montant || 0), 0);
+            return { totalEntrees, totalSorties };
+        },
+    });
+
+    // Rafraîchit toutes les requêtes comptables (liste, solde, et à venir période)
+    // après chaque écriture.
+    const load = async () => {
+        await queryClient.invalidateQueries({ queryKey: ["accounting"] });
+    };
     const [tab, setTab] = useState<Tab>("rapport");
     const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("mois");
     const [customStartDate, setCustomStartDate] = useState("");
@@ -455,8 +488,9 @@ export default function AccountingPage() {
         return d >= startOfPeriod && d <= endOfPeriod;
     });
 
-    const totalEntrees = entrees.reduce((sum, e) => sum + e.montant, 0);
-    const totalSorties = sortiesEffective.reduce((sum, e) => sum + e.montant, 0);
+    // Solde global servi par la RPC (filet : somme directe). Voir la query plus haut.
+    const totalEntrees = balance?.totalEntrees ?? 0;
+    const totalSorties = balance?.totalSorties ?? 0;
     const soldeGlobal = totalEntrees - totalSorties;
 
     const totalEntreesJour = entreesJour.reduce((sum, e) => sum + e.montant, 0);
