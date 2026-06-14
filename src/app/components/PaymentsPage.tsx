@@ -202,7 +202,13 @@ export default function PaymentsPage() {
     };
 
     useEffect(() => {
-        if (payments.length > 0 && !syncedRef.current) {
+        // La synchronisation des pénalités fait des UPDATE sur `payments`. Elle ne
+        // doit s'exécuter que pour les rôles autorisés à écrire : sinon chaque
+        // chargement déclenche N écritures bloquées par la RLS (bruit + latence
+        // inutiles). Le cron `check-late-payments` (quotidien) reste l'autorité,
+        // donc gater ici ne retire qu'une écriture redondante côté client.
+        const canWritePayments = hasPermission("payments.validate") || hasPermission("payments.create");
+        if (canWritePayments && payments.length > 0 && !syncedRef.current) {
             syncedRef.current = true;
             syncPenalties(payments, students).then(() => {
                 queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
