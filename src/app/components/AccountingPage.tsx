@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "../lib/supabase/client";
 import { useAuth } from "../context/AuthContext";
@@ -133,11 +134,32 @@ export default function AccountingPage() {
         catch { /* errors handled inside action */ }
         finally { setIsDeleting(false); }
     };
-    const [entrees, setEntrees] = useState<EntreeComptable[]>([]);
-    const [sorties, setSorties] = useState<SortieComptable[]>([]);
-    const [budgets, setBudgets] = useState<Budget[]>([]);
-    const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Données comptables mises en cache (React Query) : revenir sur l'écran ne
+    // relance plus les 4 requêtes tant que le cache est frais. Chaque mutation
+    // appelle `load()` (→ refetch) pour rafraîchir après écriture.
+    const { data: accountingData, isLoading: loading, refetch: refetchAccounting } = useQuery({
+        queryKey: ["accounting", "all"],
+        staleTime: 60 * 1000,
+        queryFn: async () => {
+            const [e, s, b, c] = await Promise.all([
+                supabase.from("entrees_comptables").select("*").order("date", { ascending: false }),
+                supabase.from("sorties_comptables").select("*").order("date", { ascending: false }),
+                supabase.from("budgets").select("*").order("created_at", { ascending: false }),
+                supabase.from("custom_categories").select("*").order("nom", { ascending: true }),
+            ]);
+            return {
+                entrees: (e.data ?? []) as EntreeComptable[],
+                sorties: (s.data ?? []) as SortieComptable[],
+                budgets: (b.data ?? []) as Budget[],
+                customCategories: (c.data ?? []) as CustomCategory[],
+            };
+        },
+    });
+    const entrees = accountingData?.entrees ?? [];
+    const sorties = accountingData?.sorties ?? [];
+    const budgets = accountingData?.budgets ?? [];
+    const customCategories = accountingData?.customCategories ?? [];
+    const load = async () => { await refetchAccounting(); };
     const [tab, setTab] = useState<Tab>("rapport");
     const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("mois");
     const [customStartDate, setCustomStartDate] = useState("");
@@ -204,25 +226,6 @@ export default function AccountingPage() {
         const custom = customCategories.filter(c => c.type === "entree").map(c => c.nom);
         return [...defaults, ...custom];
     }, [customCategories]);
-
-    const load = async () => {
-        setLoading(true);
-        const [e, s, b, c] = await Promise.all([
-            supabase.from("entrees_comptables").select("*").order("date", { ascending: false }),
-            supabase.from("sorties_comptables").select("*").order("date", { ascending: false }),
-            supabase.from("budgets").select("*").order("created_at", { ascending: false }),
-            supabase.from("custom_categories").select("*").order("nom", { ascending: true }),
-        ]);
-        if (e.data) setEntrees(e.data);
-        if (s.data) setSorties(s.data);
-        if (b.data) setBudgets(b.data);
-        if (c.data) setCustomCategories(c.data);
-        setLoading(false);
-    };
-
-    useEffect(() => {
-        load();
-    }, []);
 
     const handleAddEntree = async (e: React.FormEvent) => {
         e.preventDefault();
