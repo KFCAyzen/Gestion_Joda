@@ -35,7 +35,14 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Joda accède à tes photos pour ajouter une pièce à ton dossier.",
+          "cameraPermission": "Joda accède à la caméra pour photographier une pièce de ton dossier."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
