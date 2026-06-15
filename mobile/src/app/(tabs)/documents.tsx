@@ -3,14 +3,24 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { Check, Clock, FileText, Upload } from 'lucide-react-native';
+import { Check, FileText, Sparkles, Upload } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import { useStudentProfile } from '@/lib/hooks/use-student-portal';
 import { useDocuments, useUploadDocument, type StudentDocument } from '@/lib/hooks/use-documents';
 import { REQUIRED_DOCS, REQUIRED_KEYS, type DocKey } from '@/lib/required-docs';
 import { apiFetch } from '@/lib/api';
-import { Button, Chip, GlassCard, ScreenBackground } from '@/components/ui';
+import {
+  BellBtn,
+  Button,
+  Chip,
+  GlassCard,
+  IconBox,
+  iconTint,
+  ScreenBackground,
+  ScreenHeader,
+  type IconTone,
+} from '@/components/ui';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 
 export default function DocumentsScreen() {
@@ -26,7 +36,10 @@ export default function DocumentsScreen() {
 
   const byType = new Map((docs ?? []).map((d) => [d.type, d]));
   const completion = REQUIRED_KEYS.filter((k) => byType.has(k)).length;
-  const allRequired = completion === REQUIRED_KEYS.length;
+  const total = REQUIRED_KEYS.length;
+  const remaining = total - completion;
+  const allRequired = remaining === 0;
+  const pct = total ? Math.round((completion / total) * 100) : 0;
 
   async function runUpload(key: DocKey, input: { name: string; mimeType: string; base64?: string; uri?: string }) {
     if (!studentId) return;
@@ -97,8 +110,7 @@ export default function DocumentsScreen() {
   return (
     <ScreenBackground>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <Text style={styles.eyebrow}>Dossier</Text>
-        <Text style={styles.title}>Mes documents</Text>
+        <ScreenHeader eyebrow="Mes documents" title="Dossier" right={<BellBtn hasUnread />} />
 
         {isLoading ? (
           <ActivityIndicator style={{ marginTop: 32 }} />
@@ -106,23 +118,27 @@ export default function DocumentsScreen() {
           <Text style={styles.error}>Erreur : {(error as Error).message}</Text>
         ) : (
           <ScrollView
-            contentContainerStyle={{ paddingTop: 16, paddingBottom: 120, gap: spacing.rowGap }}
+            contentContainerStyle={{ paddingBottom: 120, gap: spacing.rowGap }}
             showsVerticalScrollIndicator={false}>
             <GlassCard variant="strong" style={{ marginBottom: 6 }}>
-              <Text style={styles.eyebrow}>Documents requis</Text>
-              <Text style={styles.ratio}>
-                {completion}
-                <Text style={styles.ratioTotal}> / {REQUIRED_KEYS.length}</Text>
-              </Text>
+              <View style={styles.progressTop}>
+                <Text style={styles.eyebrowMuted}>Documents requis</Text>
+                <Text style={styles.ratio}>
+                  <Text style={styles.ratioDone}>{completion}</Text> / {total}
+                </Text>
+              </View>
               <View style={styles.progressTrack}>
-                <View
-                  style={[styles.progressFill, { width: `${(completion / REQUIRED_KEYS.length) * 100}%` }]}
-                />
+                <View style={[styles.progressFill, { width: `${pct}%` }]} />
               </View>
               <Text style={styles.progressNote}>
-                {allRequired
-                  ? 'Tous les documents requis sont fournis.'
-                  : `Plus que ${REQUIRED_KEYS.length - completion} document(s) pour compléter ton dossier.`}
+                {allRequired ? (
+                  'Tous les documents requis sont fournis.'
+                ) : (
+                  <>
+                    Plus que <Text style={styles.progressStrong}>{remaining} document{remaining > 1 ? 's' : ''}</Text> pour
+                    soumettre ton dossier complet.
+                  </>
+                )}
               </Text>
             </GlassCard>
 
@@ -165,17 +181,34 @@ function DocRow({
   onUpload: () => void;
 }) {
   const status = doc?.status;
-  const Icon = status === 'valide' ? Check : status === 'en_attente' ? Clock : docDef.optional ? FileText : Upload;
-  const tint = status === 'valide' ? colors.mint : status === 'en_attente' ? colors.amber : docDef.optional ? colors.ink35 : colors.crimsonVivid;
+  const received = status === 'valide' || status === 'en_attente';
+
+  let tone: IconTone;
+  let Icon: typeof Check;
+  if (received) {
+    tone = 'mint';
+    Icon = Check;
+  } else if (docDef.optional) {
+    tone = 'ghost';
+    Icon = Sparkles;
+  } else if (status === 'non_conforme') {
+    tone = 'red';
+    Icon = Upload;
+  } else {
+    tone = 'red';
+    Icon = Upload;
+  }
+
+  const subColor = !received && !docDef.optional ? '#ffb3b3' : colors.ink50;
 
   return (
     <GlassCard style={[styles.row, docDef.optional && !doc ? styles.rowOptional : null]}>
-      <View style={[styles.rowIcon, { borderColor: tint }]}>
-        <Icon size={16} color={tint} strokeWidth={2.4} />
-      </View>
+      <IconBox tone={tone} size={36}>
+        <Icon size={17} color={iconTint[tone]} strokeWidth={2.2} />
+      </IconBox>
       <View style={{ flex: 1 }}>
         <Text style={styles.rowTitle}>{docDef.label}</Text>
-        <Text style={styles.rowMeta}>{docDef.description}</Text>
+        <Text style={[styles.rowMeta, { color: subColor }]}>{docDef.description}</Text>
       </View>
       <View>
         {uploading ? (
@@ -183,11 +216,11 @@ function DocRow({
         ) : status === 'valide' ? (
           <Chip variant="done" label="OK" />
         ) : status === 'en_attente' ? (
-          <Chip variant="live" label="En revue" />
+          <Chip variant="due" label="En revue" />
         ) : status === 'non_conforme' ? (
           <Button label="Renvoyer" size="sm" onPress={onUpload} />
         ) : docDef.optional ? (
-          <Button label="Ajouter" size="sm" variant="glass" onPress={onUpload} />
+          <Chip variant="ghost" label="Option" />
         ) : (
           <Button label="Ajouter" size="sm" onPress={onUpload} />
         )}
@@ -198,24 +231,23 @@ function DocRow({
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: spacing.screenX },
-  eyebrow: {
-    color: colors.crimsonVivid,
+  eyebrowMuted: {
+    color: colors.ink50,
     fontSize: fontSize.eyebrow,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 1.4,
-    marginTop: 12,
+    letterSpacing: 1.6,
   },
-  title: { color: colors.text, fontSize: fontSize.screenTitle, fontWeight: '600' },
-  ratio: { color: colors.text, fontSize: 34, fontWeight: '600', marginVertical: 4 },
-  ratioTotal: { color: colors.ink50, fontSize: 22 },
-  progressTrack: { height: 8, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden' },
+  progressTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  ratio: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  ratioDone: { color: colors.mint },
+  progressTrack: { height: 8, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden', marginTop: 10 },
   progressFill: { height: '100%', borderRadius: radius.pill, backgroundColor: colors.mint },
-  progressNote: { color: colors.ink50, fontSize: fontSize.meta, marginTop: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  progressNote: { color: colors.ink70, fontSize: fontSize.meta, marginTop: 9 },
+  progressStrong: { color: colors.text, fontWeight: '700' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13 },
   rowOptional: { opacity: 0.72 },
-  rowIcon: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { color: colors.text, fontSize: fontSize.cardTitle, fontWeight: '600' },
-  rowMeta: { color: colors.ink50, fontSize: fontSize.meta, marginTop: 2 },
+  rowTitle: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
+  rowMeta: { fontSize: 11.5, marginTop: 2 },
   error: { color: colors.crimsonVivid, fontSize: 13 },
 });
