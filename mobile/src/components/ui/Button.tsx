@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -19,6 +20,8 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
+  /** Icône optionnelle affichée avant le label (handoff : `.pbtn` avec icône). */
+  icon?: ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -31,6 +34,7 @@ export function Button({
   disabled,
   loading,
   fullWidth,
+  icon,
   style,
 }: Props) {
   const height = size === 'sm' ? 38 : 48;
@@ -40,7 +44,10 @@ export function Button({
   const content = loading ? (
     <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.ink70} />
   ) : (
-    <Text style={[styles.label, variant === 'glass' && styles.labelGlass]}>{label}</Text>
+    <View style={styles.inner}>
+      {icon}
+      <Text style={[styles.label, variant === 'glass' && styles.labelGlass]}>{label}</Text>
+    </View>
   );
 
   if (variant === 'primary') {
@@ -72,6 +79,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
+  inner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   glass: { backgroundColor: colors.glass2, borderWidth: 1, borderColor: colors.glassLine2 },
   fullWidth: { alignSelf: 'stretch' },
   dim: { opacity: 0.6 },
