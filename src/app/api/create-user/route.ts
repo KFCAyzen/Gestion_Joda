@@ -64,6 +64,12 @@ async function handleCreateUser(req: NextRequest, session: AuthSession) {
         return NextResponse.json({ error: "Les administrateurs ne peuvent pas créer de comptes Super Admin." }, { status: 403 });
     }
 
+    // Les agents/superviseurs peuvent inscrire des étudiants (students.create) mais
+    // ne peuvent créer que des comptes étudiants — pas de comptes du personnel.
+    if (!['admin', 'super_admin'].includes(session.user.role) && role !== 'student') {
+        return NextResponse.json({ error: "Vous ne pouvez créer que des comptes étudiants." }, { status: 403 });
+    }
+
     // Pour les étudiants, authEmail DOIT être fourni et se terminer par @students.joda.app
     const supabaseEmail = (role === 'student')
         ? (authEmail?.endsWith('@students.joda.app') ? authEmail : `${username.toLowerCase().replace(/[^a-z0-9.]/g, '.')}@students.joda.app`)
@@ -257,4 +263,4 @@ async function handleCreateUser(req: NextRequest, session: AuthSession) {
     }
 }
 
-export const POST = requireRole(['admin', 'super_admin'], handleCreateUser);
+export const POST = requireRole(['agent', 'supervisor', 'admin', 'super_admin'], handleCreateUser);
