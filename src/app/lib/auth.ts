@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 export interface AuthSession {
@@ -10,10 +11,28 @@ export interface AuthSession {
   };
 }
 
-export async function getServerSession(req: NextRequest): Promise<AuthSession | null> {
+// Construit un client Supabase pour la requête entrante :
+//   - Mobile (natif) : session via en-tête `Authorization: Bearer <access_token>`
+//   - Web : session via cookies (@supabase/ssr)
+async function createRequestClient(req: NextRequest) {
+  const authHeader = req.headers.get('authorization');
+  const bearer = authHeader?.toLowerCase().startsWith('bearer ')
+    ? authHeader.slice(7).trim()
+    : null;
+
+  if (bearer) {
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      }
+    );
+  }
+
   const cookieStore = await cookies();
-  
-  const supabase = createServerClient(
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -29,6 +48,10 @@ export async function getServerSession(req: NextRequest): Promise<AuthSession | 
       },
     }
   );
+}
+
+export async function getServerSession(req: NextRequest): Promise<AuthSession | null> {
+  const supabase = await createRequestClient(req);
 
   // getUser() vérifie le token auprès du serveur Auth (contrairement à getSession())
   const { data: { user } } = await supabase.auth.getUser();
