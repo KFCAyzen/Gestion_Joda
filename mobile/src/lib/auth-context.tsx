@@ -134,13 +134,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { error: pwErr } = await supabase.auth.updateUser({ password: newPassword });
     if (pwErr) {
-      return { success: false, message: 'Impossible de définir le mot de passe. Réessaie.' };
+      // Cas « stuck loop » : une tentative précédente a bien changé le mot de passe
+      // (updateUser OK) mais la levée du flag a échoué. Au retour, l'utilisateur
+      // ressaisit le même mot de passe → GoTrue refuse (« should be different »).
+      // Ce n'est pas une vraie erreur : le mot de passe est déjà bon, on enchaîne
+      // directement sur la finalisation pour débloquer le compte.
+      const msg = (pwErr.message ?? '').toLowerCase();
+      const samePassword =
+        (pwErr as { code?: string }).code === 'same_password' ||
+        msg.includes('should be different') ||
+        msg.includes('different from the old');
+      if (!samePassword) {
+        return {
+          success: false,
+          message: `Impossible de définir le mot de passe (${pwErr.message ?? 'erreur inconnue'}).`,
+        };
+      }
     }
 
     // Lève le flag côté serveur (route protégée, bypasse le RLS via service role).
-    const res = await apiFetch('/api/clear-password-flag', { method: 'POST' });
+    let res: Response;
+    try {
+      res = await apiFetch('/api/clear-password-flag', { method: 'POST' });
+    } catch {
+      return {
+        success: false,
+        message: 'Mot de passe défini, mais le serveur est injoignable. Vérifie ta connexion.',
+      };
+    }
     if (!res.ok) {
-      return { success: false, message: 'Mot de passe défini, mais la finalisation a échoué.' };
+      // Surface le motif réel (status + message serveur) pour le diagnostic.
+      let detail = '';
+      try {
+        const body = (await res.json()) as { error?: string };
+        if (body?.error) detail = ` — ${body.error}`;
+      } catch {
+        // corps non-JSON : on ignore
+      }
+      return {
+        success: false,
+        message: `Mot de passe défini, mais la finalisation a échoué (HTTP ${res.status}${detail}).`,
+      };
     }
 
     // Recharge le profil → mustChangePassword=false → le routeur bascule vers l'app.
