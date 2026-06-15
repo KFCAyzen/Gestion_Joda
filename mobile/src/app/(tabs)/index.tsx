@@ -1,9 +1,10 @@
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LogOut } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import { usePayments, type Payment } from '@/lib/hooks/use-payments';
-import { Avatar, Button, Chip, GlassCard, Ring, ScreenBackground } from '@/components/ui';
+import { Avatar, Chip, GlassCard, Ring, ScreenBackground } from '@/components/ui';
 import { colors, fontSize, spacing } from '@/theme/tokens';
 
 const statusChip: Record<Payment['status'], { variant: 'live' | 'done' | 'due' | 'ghost'; label: string }> = {
@@ -14,10 +15,7 @@ const statusChip: Record<Payment['status'], { variant: 'live' | 'done' | 'due' |
   annule: { variant: 'ghost', label: 'Annulé' },
 };
 
-/**
- * Accueil authentifié — pré-version de l'écran « Accueil » du handoff,
- * branché sur le design system (étape 3) et les vraies données.
- */
+/** Onglet Accueil — anneau de progression + aperçu paiements (données réelles). */
 export default function HomeScreen() {
   const { user, logout } = useAuth();
   const { data, isLoading, error, refetch, isRefetching } = usePayments();
@@ -28,13 +26,16 @@ export default function HomeScreen() {
 
   return (
     <ScreenBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.eyebrow}>Bonjour 👋</Text>
             <Text style={styles.title}>{user?.name ?? user?.username}</Text>
           </View>
           <Avatar name={user?.name ?? user?.username ?? '?'} kind="student" />
+          <Pressable onPress={logout} hitSlop={8} style={styles.logout}>
+            <LogOut size={18} color={colors.ink50} />
+          </Pressable>
         </View>
 
         <GlassCard variant="strong" style={styles.hero}>
@@ -65,11 +66,10 @@ export default function HomeScreen() {
             refreshing={isRefetching}
             onRefresh={refetch}
             renderItem={({ item }) => <PaymentRow payment={item} />}
-            contentContainerStyle={{ gap: spacing.rowGap, paddingBottom: 24 }}
+            contentContainerStyle={{ gap: spacing.rowGap, paddingBottom: 120 }}
+            showsVerticalScrollIndicator={false}
           />
         )}
-
-        <Button label="Se déconnecter" variant="glass" size="sm" onPress={logout} style={styles.logout} />
       </SafeAreaView>
     </ScreenBackground>
   );
@@ -94,6 +94,7 @@ function PaymentRow({ payment }: { payment: Payment }) {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: spacing.screenX },
   header: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 16, gap: 12 },
+  logout: { padding: 4 },
   eyebrow: {
     color: colors.crimsonVivid,
     fontSize: fontSize.eyebrow,
@@ -112,6 +113,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   rowTitle: { color: colors.text, fontSize: fontSize.cardTitle, fontWeight: '600', textTransform: 'capitalize' },
   rowAmount: { color: colors.text, fontSize: 16, fontWeight: '600' },
-  logout: { marginTop: 8, marginBottom: 8 },
   error: { color: colors.crimsonVivid, fontSize: 13 },
 });

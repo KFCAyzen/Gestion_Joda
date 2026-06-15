@@ -1,0 +1,90 @@
+import type { ComponentProps } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import type { Tabs } from 'expo-router';
+import { FileText, House, MessageSquare, Route, WalletCards, type LucideIcon } from 'lucide-react-native';
+
+import { colors, radius, shadow } from '@/theme/tokens';
+
+// Type des props passées à `tabBar` par expo-router (qui embarque sa propre
+// copie de react-navigation, distincte du paquet standalone).
+type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
+
+const ICONS: Record<string, { icon: LucideIcon; label: string }> = {
+  index: { icon: House, label: 'Accueil' },
+  parcours: { icon: Route, label: 'Parcours' },
+  documents: { icon: FileText, label: 'Documents' },
+  payments: { icon: WalletCards, label: 'Paiements' },
+  messages: { icon: MessageSquare, label: 'Messages' },
+};
+
+/** Barre d'onglets flottante `.pm-tabs` (verre + onglet actif en pastille crimson). */
+export function BottomTabs({ state, navigation }: TabBarProps) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 8) }]} pointerEvents="box-none">
+      <BlurView intensity={30} tint="dark" style={styles.bar}>
+        {state.routes.map((route, i) => {
+          const meta = ICONS[route.name];
+          if (!meta) return null;
+          const focused = state.index === i;
+          const Icon = meta.icon;
+
+          const onPress = () => {
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+          };
+
+          return (
+            <Pressable key={route.key} style={styles.item} onPress={onPress} hitSlop={6}>
+              {focused ? (
+                <LinearGradient
+                  colors={['rgba(255,90,95,0.9)', 'rgba(209,26,42,0.85)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.pill, shadow.primary]}>
+                  <Icon size={20} color="#fff" strokeWidth={2.2} />
+                </LinearGradient>
+              ) : (
+                <View style={styles.iconInactive}>
+                  <Icon size={20} color={colors.ink35} strokeWidth={2} />
+                </View>
+              )}
+              <Text style={[styles.label, focused && styles.labelActive]} numberOfLines={1}>
+                {meta.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </BlurView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 14 },
+  bar: {
+    flexDirection: 'row',
+    borderRadius: 26,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.glassLine,
+    backgroundColor: 'rgba(20,5,8,0.55)',
+    paddingVertical: 8,
+    ...shadow.tabBar,
+  },
+  item: { flex: 1, alignItems: 'center', gap: 3 },
+  pill: {
+    width: 44,
+    height: 36,
+    borderRadius: radius.sm + 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconInactive: { width: 44, height: 36, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: 10, color: colors.ink35, fontWeight: '600' },
+  labelActive: { color: '#fff' },
+});

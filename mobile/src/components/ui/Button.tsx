@@ -1,4 +1,12 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, gradients, radius, shadow } from '@/theme/tokens';
@@ -11,7 +19,7 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 /** Bouton `.pbtn` — primary (dégradé crimson) ou glass. */

@@ -34,7 +34,7 @@ function RootNavigator() {
         <Stack.Screen name="change-password" />
       </Stack.Protected>
       <Stack.Protected guard={!!user && !mustChange}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
       </Stack.Protected>
     </Stack>
   );

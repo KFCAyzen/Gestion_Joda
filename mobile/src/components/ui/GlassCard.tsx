@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { colors, radius, shadow, spacing } from '@/theme/tokens';
 
@@ -9,7 +9,7 @@ type Props = {
   variant?: 'glass' | 'strong';
   /** Bord gauche accentué crimson (carte « En cours »). */
   accentLeft?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 /** Surface verre `.glass` / `.glass-strong` du handoff. */
