@@ -1,12 +1,12 @@
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Check, Lock, Plane, X } from 'lucide-react-native';
+import { Check, GraduationCap, Lock, Plane, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import { useStudentProfile, useStudentDossier } from '@/lib/hooks/use-student-portal';
 import { buildMilestones, type Milestone } from '@/lib/dossier-milestones';
-import { Button, Chip, GlassCard, ScreenBackground } from '@/components/ui';
+import { Button, Chip, GlassCard, ScreenBackground, ScreenHeader } from '@/components/ui';
 import { colors, fontSize, spacing } from '@/theme/tokens';
 
 /** Onglet Parcours — timeline verticale 6 jalons (handoff §2). */
@@ -20,8 +20,16 @@ export default function ParcoursScreen() {
   return (
     <ScreenBackground>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <Text style={styles.eyebrow}>Mon parcours vers</Text>
-        <Text style={styles.title}>{dossier?.desired_program || 'la Chine'}</Text>
+        <ScreenHeader
+          eyebrow="Mon parcours vers"
+          title={dossier?.desired_program || 'la Chine'}
+          right={
+            <View style={styles.cscChip}>
+              <GraduationCap size={14} color={colors.ink70} />
+              <Text style={styles.cscText}>CSC</Text>
+            </View>
+          }
+        />
 
         {isLoading ? (
           <ActivityIndicator style={{ marginTop: 32 }} />
@@ -32,12 +40,19 @@ export default function ParcoursScreen() {
             contentContainerStyle={{ paddingTop: 16, paddingBottom: 120 }}
             showsVerticalScrollIndicator={false}>
             <GlassCard variant="strong" style={styles.journey}>
-              <View>
+              <View style={styles.journeyEnd}>
                 <Text style={styles.journeyCity}>Bamako</Text>
                 <Text style={styles.journeyMeta}>Aujourd’hui</Text>
               </View>
-              <Plane size={22} color={colors.crimsonVivid} style={{ transform: [{ rotate: '45deg' }] }} />
-              <View style={{ alignItems: 'flex-end' }}>
+              <View style={styles.journeyMid}>
+                <View style={styles.dottedLine}>
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <View key={i} style={styles.dash} />
+                  ))}
+                </View>
+                <Plane size={20} color={colors.crimsonVivid} style={styles.journeyPlane} />
+              </View>
+              <View style={[styles.journeyEnd, { alignItems: 'flex-end' }]}>
                 <Text style={styles.journeyCity}>Pékin</Text>
                 <Text style={styles.journeyMeta}>Sept. 2026</Text>
               </View>
@@ -118,7 +133,7 @@ function Node({ state, index }: { state: Milestone['state']; index: number }) {
   if (state === 'next') {
     return (
       <View style={[styles.node, styles.nodeNext]}>
-        <Text style={styles.nodeNum}>{String(index + 1).padStart(2, '0')}</Text>
+        <Text style={styles.nodeNum}>{index + 1}</Text>
       </View>
     );
   }
@@ -131,16 +146,24 @@ function Node({ state, index }: { state: Milestone['state']; index: number }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: spacing.screenX },
-  eyebrow: {
-    color: colors.crimsonVivid,
-    fontSize: fontSize.eyebrow,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-    marginTop: 12,
+  cscChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 26,
+    paddingHorizontal: 11,
+    borderRadius: 999,
+    backgroundColor: colors.glass,
+    borderWidth: 1,
+    borderColor: colors.glassLine,
   },
-  title: { color: colors.text, fontSize: fontSize.screenTitle, fontWeight: '600' },
+  cscText: { color: colors.ink70, fontSize: 11.5, fontWeight: '600' },
   journey: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  journeyEnd: { minWidth: 64 },
+  journeyMid: { flex: 1, alignItems: 'center', justifyContent: 'center', height: 24 },
+  dottedLine: { flexDirection: 'row', alignItems: 'center', gap: 4, position: 'absolute' },
+  dash: { width: 5, height: 2, borderRadius: 1, backgroundColor: colors.redLine },
+  journeyPlane: { transform: [{ rotate: '45deg' }] },
   journeyCity: { color: colors.text, fontSize: 15, fontWeight: '600' },
   journeyMeta: { color: colors.ink50, fontSize: fontSize.meta, marginTop: 2 },
   timeline: { marginTop: 18 },
