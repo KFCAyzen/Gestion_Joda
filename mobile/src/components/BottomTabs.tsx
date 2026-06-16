@@ -24,6 +24,9 @@ const ICONS: Record<string, { icon: LucideIcon; label: string }> = {
 export function BottomTabs({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
 
+  // Plein écran sur le chat : la barre est masquée (retour via le chevron du header).
+  if (state.routes[state.index]?.name === 'messages') return null;
+
   return (
     <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 14) }]} pointerEvents="box-none">
       <BlurView intensity={30} tint="dark" style={styles.bar}>

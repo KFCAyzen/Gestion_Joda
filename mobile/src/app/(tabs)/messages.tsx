@@ -48,8 +48,8 @@ export default function MessagesScreen() {
   const userId = user?.id;
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
-  // Hauteur de la barre flottante (paddingBottom max(insets,14) + corps ~72px).
-  const composerPad = Math.max(insets.bottom, 14) + 72;
+  // Pas de tabbar sur le chat (masquée) : on ne dégage que la zone sûre du bas.
+  const composerPad = Math.max(insets.bottom, 12) + 8;
 
   const { data: messages, isLoading, error } = useStudentChat(userId);
   const send = useSendChatMessage(userId);
