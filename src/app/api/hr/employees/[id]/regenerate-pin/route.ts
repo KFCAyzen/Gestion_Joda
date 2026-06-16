@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireRole, AuthSession } from "@/app/lib/auth";
-import { sendReportPinEmail } from "@/app/lib/emailService";
+import { sendReportPinEmail, EMAIL_APP_URL } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 
 const supabaseAdmin = createClient(
@@ -49,8 +49,10 @@ async function handle(req: NextRequest, _session: AuthSession) {
             if (emp) {
                 const fullName = `${emp.prenom} ${emp.nom}`.trim();
                 const origin = req.nextUrl.origin;
-                const reportUrl = `${origin}/fr/rapport`;
-                const smsMsg = `Joda Company - Votre code PIN pour les rapports journaliers : ${plain}. Confidentiel, ne le partagez pas. Formulaire : ${reportUrl}`;
+                // Email : lien vers le domaine Vercel (iCloud rejette les liens vers portal-joda.company).
+                const reportUrl = `${EMAIL_APP_URL}/fr/rapport`;
+                // SMS : pas de filtrage anti-phishing → on garde le domaine custom (origin).
+                const smsMsg = `Joda Company - Votre code PIN pour les rapports journaliers : ${plain}. Confidentiel, ne le partagez pas. Formulaire : ${origin}/fr/rapport`;
 
                 const tasks: Promise<void>[] = [];
                 if (emp.email) {

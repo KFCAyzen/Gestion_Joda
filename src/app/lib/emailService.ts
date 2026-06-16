@@ -2,6 +2,12 @@ import { Resend } from 'resend';
 
 const FROM_EMAIL = 'Joda Company <contact@portal-joda.company>';
 
+// Base URL utilisée dans TOUS les liens des emails. iCloud rejette
+// (554 5.7.1 [HM08]) les liens vers portal-joda.company (domaine custom récent,
+// sans réputation d'URL) → on linke vers le domaine Vercel, de confiance Apple,
+// qui sert le même déploiement. Ne pas remettre portal-joda.company ici.
+export const EMAIL_APP_URL = 'https://gestion-joda.vercel.app';
+
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
@@ -1200,7 +1206,7 @@ interface ReportPinEmailData {
 
 export async function sendReportPinEmail(data: ReportPinEmailData): Promise<{ ok: boolean; error?: string }> {
   const year = new Date().getFullYear();
-  const reportUrl = data.reportUrl ?? 'https://gestion-joda.vercel.app/fr/rapport';
+  const reportUrl = data.reportUrl ?? `${EMAIL_APP_URL}/fr/rapport`;
 
   if (!process.env.RESEND_API_KEY) {
     console.error('[Email] RESEND_API_KEY manquant');
