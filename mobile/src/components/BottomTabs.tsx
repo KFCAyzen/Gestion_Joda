@@ -25,7 +25,7 @@ export function BottomTabs({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 8) }]} pointerEvents="box-none">
+    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 14) }]} pointerEvents="box-none">
       <BlurView intensity={30} tint="dark" style={styles.bar}>
         {state.routes.map((route, i) => {
           const meta = ICONS[route.name];
@@ -45,7 +45,7 @@ export function BottomTabs({ state, navigation }: TabBarProps) {
                   colors={['rgba(255,90,95,0.9)', 'rgba(209,26,42,0.85)']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={[styles.pill, shadow.primary]}>
+                  style={[styles.pill, styles.pillActive]}>
                   <Icon size={20} color="#fff" strokeWidth={2.2} />
                 </LinearGradient>
               ) : (
@@ -73,16 +73,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassLine,
     backgroundColor: 'rgba(20,5,8,0.55)',
-    paddingVertical: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
     ...shadow.tabBar,
   },
-  item: { flex: 1, alignItems: 'center', gap: 3 },
+  item: { flex: 1, alignItems: 'center', gap: 5, paddingVertical: 4 },
   pill: {
     width: 44,
     height: 36,
     borderRadius: radius.sm + 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Lueur crimson + liseré supérieur (équivalent RN de l'inset highlight de la maquette).
+  pillActive: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.3)',
+    shadowColor: colors.crimson,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 22,
+    elevation: 8,
   },
   iconInactive: { width: 44, height: 36, alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: 10, color: colors.ink35, fontWeight: '600' },

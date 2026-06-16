@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -47,6 +47,9 @@ export default function MessagesScreen() {
   const { user } = useAuth();
   const userId = user?.id;
   const qc = useQueryClient();
+  const insets = useSafeAreaInsets();
+  // Hauteur de la barre flottante (paddingBottom max(insets,14) + corps ~72px).
+  const composerPad = Math.max(insets.bottom, 14) + 72;
 
   const { data: messages, isLoading, error } = useStudentChat(userId);
   const send = useSendChatMessage(userId);
@@ -161,7 +164,7 @@ export default function MessagesScreen() {
               ListEmptyComponent={<Text style={styles.empty}>Écris à ton agent pour démarrer la conversation.</Text>}
             />
 
-            <View style={styles.composer}>
+            <View style={[styles.composer, { paddingBottom: composerPad }]}>
               <Pressable
                 style={styles.clipBtn}
                 onPress={() => Alert.alert('Pièce jointe', 'Ajoute tes documents depuis l’onglet Documents.')}
@@ -259,7 +262,7 @@ const styles = StyleSheet.create({
   },
   bubbleText: { color: '#fff', fontSize: 13.5, lineHeight: 20 },
   empty: { color: colors.ink50, fontSize: 14, textAlign: 'center', marginTop: 40 },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, paddingVertical: 8, paddingBottom: 90 },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, paddingTop: 8 },
   clipBtn: {
     width: 42,
     height: 42,
