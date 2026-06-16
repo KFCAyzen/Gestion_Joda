@@ -53,3 +53,7 @@ release/
 
 # Claude Code — config locale à la machine
 .claude/
+
+# Logs d'exécution de tests (artefacts générés)
+tests/.last-run.log
+tests/*.log
