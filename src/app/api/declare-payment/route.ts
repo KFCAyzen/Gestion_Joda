@@ -110,10 +110,14 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // Passer en validation
+        // Passer en validation. On mémorise le montant déclaré (acompte ou total)
+        // dans `montant_declare` : il alimente le segment « en validation » de la
+        // barre de progression côté étudiant, et sera réglé dans `montant_paye`
+        // au moment de la validation staff.
         const updates: Record<string, unknown> = {
             status: "en_validation",
             initiated_by_student: true,
+            montant_declare: montant_declare,
         };
         if (proof_url) updates.facture_url = proof_url;
 

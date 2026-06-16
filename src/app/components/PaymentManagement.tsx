@@ -54,6 +54,8 @@ interface Payment {
     type: string;
     tranche: number | null;
     montant: number;
+    montant_paye?: number;
+    montant_declare?: number;
     status: string;
     date_limite: string;
     date_paiement: string | null;
@@ -214,18 +216,32 @@ export default function PaymentManagement() {
                 return;
             }
 
-            // 2. Mettre à jour le statut du paiement
+            // 2. Calcul du règlement partiel.
+            //    Montant validé = montant déclaré en attente, sinon (compat. soumission
+            //    staff sans déclaration) le reste dû de la tranche.
+            const montantPaye = Number(payment.montant_paye ?? 0);
+            const montantDeclare = Number(payment.montant_declare ?? 0);
+            const validatedAmount = montantDeclare > 0
+                ? montantDeclare
+                : Math.max(0, payment.montant - montantPaye);
+            const newMontantPaye = montantPaye + validatedAmount;
+            const fullySettled = newMontantPaye >= payment.montant;
+
+            // 3. Mettre à jour le paiement. Validé mais incomplet => reste « attente »
+            //    (la tranche reste due, le solde restant apparaît dans la barre).
             const nowIso = new Date().toISOString();
             await supabase.from('payments').update({
-                status: isValid ? 'paye' : 'retard',
+                status: isValid ? (fullySettled ? 'paye' : 'attente') : 'retard',
+                montant_paye: isValid ? newMontantPaye : montantPaye,
+                montant_declare: 0,
                 validated_by: user.id,
                 validated_at: nowIso,
-                date_paiement: isValid ? nowIso : null,
+                date_paiement: isValid && fullySettled ? nowIso : (isValid ? payment.date_paiement : null),
                 rejection_reason: isValid ? null : (rejectionReason ?? null),
                 rejected_at: isValid ? null : nowIso,
             }).eq('id', paymentId);
 
-            // 3. Si validé, créer une entrée comptable automatiquement
+            // 4. Si validé, créer une entrée comptable du montant réellement réglé.
             const typeEntree = payment.type === 'mandarin' || payment.type === 'anglais'
                 ? 'paiement_cours'
                 : 'paiement_procedure';
@@ -236,7 +252,7 @@ export default function PaymentManagement() {
 
             if (isValid) {
                 await supabase.from('entrees_comptables').insert({
-                    montant: payment.montant,
+                    montant: validatedAmount,
                     date: new Date().toISOString(),
                     type: typeEntree,
                     description: description,
@@ -252,14 +268,14 @@ export default function PaymentManagement() {
                 isValid
                     ? `Paiement approuvé — ${description}`
                     : `Paiement rejeté — ${description}`,
-                { payment_id: paymentId, validated: isValid, montant: payment.montant }
+                { payment_id: paymentId, validated: isValid, montant: validatedAmount }
             );
             if (isValid) {
                 await logActivity(
                     user.id, user.name, user.role,
                     "accounting_entry", "entrees_comptables", paymentId,
                     `Entrée comptable créée — ${description}`,
-                    { montant: payment.montant, type: typeEntree }
+                    { montant: validatedAmount, type: typeEntree }
                 );
             }
             showNotification(isValid ? t("messages.approveSuccess") : t("messages.rejectSuccess"), isValid ? "success" : "error");
@@ -274,7 +290,7 @@ export default function PaymentManagement() {
                     isValid,
                     paymentType: payment.type,
                     tranche: payment.tranche,
-                    amount: payment.montant,
+                    amount: validatedAmount,
                     rejectionReason: rejectionReason ?? null,
                 }),
             }).catch(console.error);

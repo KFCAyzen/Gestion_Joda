@@ -13,7 +13,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { Check, Clock, CreditCard, Lock, Paperclip, WalletCards, X } from 'lucide-react-native';
+import { Check, Clock, CreditCard, Hourglass, Lock, Paperclip, WalletCards, X } from 'lucide-react-native';
 
 import { usePayments, type Payment } from '@/lib/hooks/use-payments';
 import { useDeclarePayment, type ProofFile } from '@/lib/hooks/use-declare-payment';
@@ -49,8 +49,15 @@ function daysUntil(d: string): number {
   return Math.ceil((new Date(d).getTime() - Date.now()) / 86_400_000);
 }
 
-const SETTLED = new Set<Payment['status']>(['paye']);
+const PENDING = new Set<Payment['status']>(['en_validation']);
 const CANCELLED = new Set<Payment['status']>(['annule']);
+
+const TYPE_ORDER: Payment['type'][] = ['bourse', 'mandarin', 'anglais', 'inscription', 'autre'];
+
+/** Montant déjà validé / déclaré pour une tranche (colonnes ajoutées par migration). */
+const settledOf = (p: Payment): number => Number(p.montant_paye ?? 0);
+const pendingOf = (p: Payment): number => Number(p.montant_declare ?? 0);
+const remainingOf = (p: Payment): number => Math.max(0, p.montant - settledOf(p));
 
 /** Onglet Paiements — solde, progression réglée, échéancier (handoff §4 ScreenPay). */
 export default function PaymentsScreen() {
@@ -58,14 +65,22 @@ export default function PaymentsScreen() {
   const [declareOpen, setDeclareOpen] = useState(false);
 
   const rows = (data ?? []).filter((p) => !CANCELLED.has(p.status));
-  const paidRows = rows.filter((p) => SETTLED.has(p.status));
-  const dueRows = rows.filter((p) => !SETTLED.has(p.status));
-  // Déclarables : tout sauf déjà payé / déjà en cours de validation.
-  const declarable = dueRows.filter((p) => p.status !== 'en_validation');
-  const paidTotal = paidRows.reduce((s, p) => s + p.montant, 0);
-  const dueTotal = dueRows.reduce((s, p) => s + p.montant, 0);
-  const grand = paidTotal + dueTotal;
+  // Échéances ordonnées par procédure puis tranche.
+  const ordered = [...rows].sort((a, b) => {
+    const d = TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
+    return d !== 0 ? d : (a.tranche ?? 0) - (b.tranche ?? 0);
+  });
+
+  const grand = rows.reduce((s, p) => s + p.montant, 0);
+  const paidTotal = rows.reduce((s, p) => s + settledOf(p), 0);
+  const pendingTotal = rows.reduce((s, p) => s + pendingOf(p), 0);
+  const dueTotal = Math.max(0, grand - paidTotal); // reste réel à régler
   const pct = grand > 0 ? Math.round((paidTotal / grand) * 100) : 0;
+
+  const paidRows = rows.filter((p) => settledOf(p) >= p.montant && p.montant > 0);
+  const pendingRows = rows.filter((p) => PENDING.has(p.status) || pendingOf(p) > 0);
+  // Déclarables : il reste à régler ET rien n'est déjà en validation.
+  const declarable = rows.filter((p) => remainingOf(p) > 0 && !PENDING.has(p.status) && pendingOf(p) === 0);
 
   return (
     <ScreenBackground>
@@ -87,7 +102,9 @@ export default function PaymentsScreen() {
                 <Text style={styles.bigCurrency}>FCFA</Text>
               </View>
               <View style={styles.chips}>
-                {dueRows.length > 0 ? <Chip variant="due" label={`${dueRows.length} dû${dueRows.length > 1 ? 's' : ''} bientôt`} /> : null}
+                {pendingRows.length > 0 ? (
+                  <Chip variant="due" label={`${pendingRows.length} en validation · ${fmt(pendingTotal)} F`} />
+                ) : null}
                 <Chip variant="ghost" label={`${paidRows.length} payé${paidRows.length > 1 ? 's' : ''} · ${fmt(paidTotal)} F`} />
               </View>
               <View style={styles.progressHead}>
@@ -95,16 +112,16 @@ export default function PaymentsScreen() {
                 <Text style={styles.metaText}>{pct}%</Text>
               </View>
               <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${pct}%` }]} />
+                {pct > 0 ? <View style={[styles.segPaid, { width: `${pct}%` }]} /> : null}
               </View>
             </GlassCard>
 
             <Text style={styles.sectionEyebrow}>Échéancier</Text>
-            <View style={{ gap: spacing.rowGap }}>
-              {rows.length === 0 ? (
+            <View style={{ gap: spacing.cardGap }}>
+              {ordered.length === 0 ? (
                 <Text style={styles.subtitle}>Aucune échéance.</Text>
               ) : (
-                rows.map((p) => <ScheduleRow key={p.id} payment={p} />)
+                ordered.map((p) => <PaymentCard key={p.id} payment={p} />)
               )}
             </View>
 
@@ -204,11 +221,12 @@ function DeclareModal({
   async function submit() {
     if (!selected) return;
     const montantTranche = selected.montant;
+    const remaining = remainingOf(selected); // reste réel à régler sur la tranche
     const montantDeclare =
-      mode === 'complet' ? montantTranche : Math.max(1, parseInt(avance.replace(/\D/g, ''), 10) || 0);
+      mode === 'complet' ? remaining : Math.max(1, parseInt(avance.replace(/\D/g, ''), 10) || 0);
 
-    if (mode === 'avance' && (montantDeclare < 1 || montantDeclare > montantTranche)) {
-      Alert.alert('Montant invalide', `Saisis un acompte entre 1 et ${fmt(montantTranche)} FCFA.`);
+    if (montantDeclare < 1 || montantDeclare > remaining) {
+      Alert.alert('Montant invalide', `Saisis un montant entre 1 et ${fmt(remaining)} FCFA.`);
       return;
     }
 
@@ -262,10 +280,12 @@ function DeclareModal({
           </ScrollView>
         ) : null}
 
-        {/* Montant attendu */}
+        {/* Reste à régler sur la tranche (montant total - déjà validé) */}
         <View style={styles.expectedRow}>
-          <Text style={styles.expectedLabel}>Montant attendu</Text>
-          <Text style={styles.expectedAmount}>{selected ? `${fmt(selected.montant)} FCFA` : '—'}</Text>
+          <Text style={styles.expectedLabel}>
+            {selected && settledOf(selected) > 0 ? 'Reste sur la tranche' : 'Montant attendu'}
+          </Text>
+          <Text style={styles.expectedAmount}>{selected ? `${fmt(remainingOf(selected))} FCFA` : '—'}</Text>
         </View>
 
         {/* Mode complet / acompte */}
@@ -315,35 +335,68 @@ function DeclareModal({
   );
 }
 
-function ScheduleRow({ payment }: { payment: Payment }) {
-  const paid = SETTLED.has(payment.status);
-  // « due » = retard ou échéance proche ; sinon futur en attente.
-  const due = !paid && (payment.status === 'retard' || payment.status === 'en_validation' || !!payment.date_limite);
-  const tone = paid ? 'mint' : due ? 'amber' : 'ghost';
-  const Icon = paid ? Check : due ? Clock : Lock;
-  const dateStr = paid
+/**
+ * Carte d'une échéance avec SA propre barre de progression :
+ *   vert (réglé / montant_paye) · ambre (en validation / montant_declare) · reste.
+ */
+function PaymentCard({ payment }: { payment: Payment }) {
+  const total = payment.montant;
+  const settled = settledOf(payment);
+  const pending = pendingOf(payment);
+  const settledPct = total > 0 ? Math.min(100, Math.round((settled / total) * 100)) : 0;
+  const pendingPct = total > 0 ? Math.min(100 - settledPct, Math.round((pending / total) * 100)) : 0;
+  const remaining = Math.max(0, total - settled - pending);
+
+  const fullyPaid = payment.status === 'paye' || settled >= total;
+  const isPending = !fullyPaid && (PENDING.has(payment.status) || pending > 0);
+  const overdue = !fullyPaid && !isPending && payment.status === 'retard';
+
+  const tone = fullyPaid ? 'mint' : isPending ? 'amber' : overdue || payment.date_limite ? 'amber' : 'ghost';
+  const Icon = fullyPaid ? Check : isPending ? Hourglass : overdue || payment.date_limite ? Clock : Lock;
+
+  const sub = fullyPaid
     ? payment.date_paiement
-      ? `Payé · ${shortDate(payment.date_paiement)}`
-      : 'Payé'
-    : payment.date_limite
-      ? `Dû le ${shortDate(payment.date_limite)} · ${Math.max(0, daysUntil(payment.date_limite))}j`
-      : 'À venir';
+      ? `Réglé · ${shortDate(payment.date_paiement)}`
+      : 'Réglé'
+    : isPending
+      ? `${fmt(pending)} F en attente de validation`
+      : payment.date_limite
+        ? `Dû le ${shortDate(payment.date_limite)} · ${Math.max(0, daysUntil(payment.date_limite))}j`
+        : 'À venir';
 
   return (
-    <GlassCard style={[styles.row, due && styles.rowDue]}>
-      <IconBox tone={tone} size={40}>
-        <Icon size={18} color={iconTint[tone]} strokeWidth={2.2} />
-      </IconBox>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.rowTitle}>
-          {TYPE_LABEL[payment.type]}
-          {payment.tranche ? ` · T${payment.tranche}` : ''}
-        </Text>
-        <Text style={[styles.rowMeta, due && { color: colors.amber }]}>{dateStr}</Text>
+    <GlassCard style={[styles.pcard, isPending && styles.pcardPending]}>
+      <View style={styles.pcardHead}>
+        <IconBox tone={tone} size={38}>
+          <Icon size={17} color={iconTint[tone]} strokeWidth={2.2} />
+        </IconBox>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.pcardTitle}>
+            {TYPE_LABEL[payment.type]}
+            {payment.tranche ? ` · T${payment.tranche}` : ''}
+          </Text>
+          <Text style={[styles.pcardMeta, (isPending || overdue) && { color: colors.amber }]}>{sub}</Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          {fullyPaid ? (
+            <Chip variant="done" label="Réglé" />
+          ) : isPending ? (
+            <Chip variant="due" label="En validation" />
+          ) : null}
+          <Text style={[styles.pcardAmount, !fullyPaid && { marginTop: 4 }]}>{fmt(total)} F</Text>
+        </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text style={[styles.rowAmount, paid && styles.rowAmountPaid]}>{fmt(payment.montant)}</Text>
-        <Text style={styles.rowCurrency}>FCFA</Text>
+
+      {/* Barre de progression de la tranche */}
+      <View style={styles.pTrack}>
+        {settledPct > 0 ? <View style={[styles.segPaid, { width: `${settledPct}%` }]} /> : null}
+        {pendingPct > 0 ? <View style={[styles.segPending, { width: `${pendingPct}%` }]} /> : null}
+      </View>
+      <View style={styles.pLegend}>
+        <Text style={styles.legendText}>{settled > 0 ? `Réglé ${fmt(settled)} F` : 'Rien réglé'}</Text>
+        <Text style={[styles.legendText, !fullyPaid && remaining > 0 ? { color: colors.amber } : null]}>
+          {fullyPaid ? '100 %' : `Reste ${fmt(remaining)} F`}
+        </Text>
       </View>
     </GlassCard>
   );
@@ -366,8 +419,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 14 },
   progressHead: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, marginBottom: 7 },
   metaText: { color: colors.ink50, fontSize: 11.5 },
-  progressTrack: { height: 7, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: radius.pill, backgroundColor: colors.mint },
+  progressTrack: { flexDirection: 'row', height: 7, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden' },
   sectionEyebrow: {
     color: colors.ink50,
     fontSize: fontSize.eyebrow,
@@ -379,13 +431,26 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   subtitle: { color: colors.ink50, fontSize: 14 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 14 },
-  rowDue: { backgroundColor: 'rgba(251,191,36,0.08)', borderColor: 'rgba(251,191,36,0.3)' },
-  rowTitle: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
-  rowMeta: { color: colors.ink50, fontSize: 11.5, marginTop: 1 },
-  rowAmount: { color: colors.text, fontSize: 14.5, fontWeight: '600' },
-  rowAmountPaid: { color: colors.ink50 },
-  rowCurrency: { color: colors.ink35, fontSize: 10 },
+
+  // ── Carte d'échéance (en-tête + barre de progression par tranche) ──
+  pcard: { paddingVertical: 13, paddingHorizontal: 14 },
+  pcardPending: { backgroundColor: 'rgba(251,191,36,0.07)', borderColor: 'rgba(251,191,36,0.28)' },
+  pcardHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pcardTitle: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
+  pcardMeta: { color: colors.ink50, fontSize: 11.5, marginTop: 2 },
+  pcardAmount: { color: colors.text, fontSize: 14.5, fontWeight: '700' },
+  pTrack: {
+    flexDirection: 'row',
+    height: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.track,
+    overflow: 'hidden',
+    marginTop: 12,
+  },
+  segPaid: { height: '100%', backgroundColor: colors.mint },
+  segPending: { height: '100%', backgroundColor: colors.amber },
+  pLegend: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
+  legendText: { color: colors.ink50, fontSize: 11 },
   error: { color: colors.crimsonVivid, fontSize: 13 },
 
   // ── Modal déclaration ──

@@ -10,6 +10,10 @@ export type Payment = {
   id: string;
   student_id: string;
   montant: number;
+  /** Cumul réellement validé pour cette tranche (acomptes inclus). */
+  montant_paye?: number | null;
+  /** Montant déclaré en attente de validation staff. */
+  montant_declare?: number | null;
   type: 'bourse' | 'mandarin' | 'anglais' | 'inscription' | 'autre';
   tranche?: number | null;
   status: 'attente' | 'en_validation' | 'paye' | 'retard' | 'annule';
