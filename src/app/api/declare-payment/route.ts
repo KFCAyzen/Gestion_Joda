@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { z } from "zod";
+import { getServerSession } from "@/app/lib/auth";
 import { sendPaymentDeclarationEmail, getLang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 import { DEFAULT_PAYMENT_CONFIGS, getBourseServiceType } from "@/app/types/payment-config";
@@ -24,15 +23,10 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
     try {
-        const cookieStore = await cookies();
-        const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } }
-        );
-
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+        // Auth web (cookies) OU mobile (Bearer) via le helper partagé.
+        const session = await getServerSession(req);
+        if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+        const user = session.user;
 
         const { data: student } = await supabaseAdmin
             .from("students")
