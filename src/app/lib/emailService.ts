@@ -919,7 +919,7 @@ ${emailHeader()}
   <table cellpadding="0" cellspacing="0">
     <tr>
       <td style="background:#dc2626;border-radius:8px;">
-        <a href="https://portal-joda.company/utilisateurs" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+        <a href="https://gestion-joda.vercel.app/utilisateurs" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
           Activer le compte →
         </a>
       </td>
@@ -999,7 +999,7 @@ ${emailHeader(lang)}
   <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
     <tr>
       <td style="background:#dc2626;border-radius:8px;">
-        <a href="https://portal-joda.company/login" style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+        <a href="https://gestion-joda.vercel.app/login" style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
           ${isEn ? 'Sign in now →' : 'Me connecter maintenant →'}
         </a>
       </td>
@@ -1072,7 +1072,7 @@ ${emailHeader()}
   <table cellpadding="0" cellspacing="0">
     <tr>
       <td style="background:#dc2626;border-radius:8px;">
-        <a href="https://portal-joda.company" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
+        <a href="https://gestion-joda.vercel.app" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
           Voir le dossier →
         </a>
       </td>
@@ -1200,7 +1200,7 @@ interface ReportPinEmailData {
 
 export async function sendReportPinEmail(data: ReportPinEmailData): Promise<{ ok: boolean; error?: string }> {
   const year = new Date().getFullYear();
-  const reportUrl = data.reportUrl ?? 'https://portal-joda.company/fr/rapport';
+  const reportUrl = data.reportUrl ?? 'https://gestion-joda.vercel.app/fr/rapport';
 
   if (!process.env.RESEND_API_KEY) {
     console.error('[Email] RESEND_API_KEY manquant');

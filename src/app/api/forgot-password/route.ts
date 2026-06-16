@@ -99,7 +99,7 @@ function credentialsEmailHtml(
             <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#dc2626;border-radius:8px;">
-                  <a href="https://portal-joda.company/login"
+                  <a href="https://gestion-joda.vercel.app/login"
                      style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
                     ${isEn ? "Go to login →" : "Accéder à la connexion →"}
                   </a>
@@ -211,8 +211,8 @@ export async function POST(req: NextRequest) {
 
         if (channel === "sms" && recipientPhone) {
             const smsText = isEn
-                ? `JODA - Password reset\nUsername: ${displayUsername}\nTemp password: ${tempPassword}\nLogin: https://portal-joda.company`
-                : `JODA - Reinitialisation\nIdentifiant: ${displayUsername}\nMdp temp: ${tempPassword}\nConnexion: https://portal-joda.company`;
+                ? `JODA - Password reset\nUsername: ${displayUsername}\nTemp password: ${tempPassword}\nLogin: https://gestion-joda.vercel.app`
+                : `JODA - Reinitialisation\nIdentifiant: ${displayUsername}\nMdp temp: ${tempPassword}\nConnexion: https://gestion-joda.vercel.app`;
             await sendSmsToPhone(recipientPhone, smsText);
             console.log(`[forgot-password] Credentials sent via SMS to ${recipientPhone}`);
         } else if (recipientEmail) {
