@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
               </td></tr>
             </table>
 
-            <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#111827;">📋 Documents à fournir</p>
+            <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#111827;">Documents à fournir</p>
             <p style="margin:0 0 16px;font-size:13px;color:#6b7280;line-height:1.6;">
               Pour faire avancer votre dossier, veuillez préparer et transmettre les documents suivants :
             </p>
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
 
             <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px 20px;margin-bottom:28px;">
               <p style="margin:0;font-size:13px;color:#991b1b;line-height:1.6;">
-                ⚠️ <strong>Important :</strong> Tous les documents doivent être en cours de validité et fournis en copie numérique (PDF ou image). Un dossier incomplet ne pourra pas être traité.
+                <strong>Important :</strong> Tous les documents doivent être en cours de validité et fournis en copie numérique (PDF ou image). Un dossier incomplet ne pourra pas être traité.
               </p>
             </div>
 

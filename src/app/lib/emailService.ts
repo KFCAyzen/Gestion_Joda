@@ -88,8 +88,8 @@ export async function sendPaymentReminder(data: PaymentReminderData): Promise<bo
     : `${typeName} — ${isEn ? 'Instalment' : 'Tranche'} ${data.tranche}`;
 
   const subject = isEn
-    ? `⚠️ Payment reminder - ${data.daysLate} day(s) late`
-    : `⚠️ Rappel de paiement - ${data.daysLate} jour(s) de retard`;
+    ? `Payment reminder - ${data.daysLate} day(s) late`
+    : `Rappel de paiement - ${data.daysLate} jour(s) de retard`;
 
   const year = new Date().getFullYear();
 
@@ -112,7 +112,7 @@ export async function sendPaymentReminder(data: PaymentReminderData): Promise<bo
           <td style="padding:24px 40px;background:${urgencyColor}10;border-bottom:3px solid ${urgencyColor};">
             <div style="text-align:center;">
               <div style="display:inline-block;background:${urgencyColor};color:#ffffff;padding:8px 20px;border-radius:20px;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:12px;">
-                ⚠️ ${isEn ? `${urgencyLevel} urgency` : `Urgence ${urgencyLevel}`}
+                ${isEn ? `${urgencyLevel} urgency` : `Urgence ${urgencyLevel}`}
               </div>
               <h2 style="margin:0;color:${urgencyColor};font-size:20px;font-weight:700;">
                 ${isEn ? `Payment ${data.daysLate} day(s) late` : `Paiement en retard de ${data.daysLate} jour(s)`}
@@ -170,19 +170,19 @@ export async function sendPaymentReminder(data: PaymentReminderData): Promise<bo
             <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:16px 20px;margin-bottom:28px;border-radius:4px;">
               <p style="margin:0;font-size:13px;color:#991b1b;line-height:1.6;">
                 ${isEn
-                  ? '<strong>⚠️ Action required:</strong> Please regularize your situation as soon as possible to avoid additional penalties and the blocking of your file.'
-                  : '<strong>⚠️ Action requise :</strong> Veuillez régulariser votre situation dans les plus brefs délais pour éviter l\'accumulation de pénalités supplémentaires et le blocage de votre dossier.'}
+                  ? '<strong>Action required:</strong> Please regularize your situation as soon as possible to avoid additional penalties and the blocking of your file.'
+                  : '<strong>Action requise :</strong> Veuillez régulariser votre situation dans les plus brefs délais pour éviter l\'accumulation de pénalités supplémentaires et le blocage de votre dossier.'}
               </p>
             </div>
 
             <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:16px 20px;margin-bottom:28px;border-radius:8px;">
               <p style="margin:0 0 8px;font-size:13px;color:#166534;font-weight:600;">
-                ${isEn ? '💬 Need help?' : '💬 Besoin d\'aide ?'}
+                ${isEn ? 'Need help?' : 'Besoin d\'aide ?'}
               </p>
               <p style="margin:0;font-size:12px;color:#15803d;line-height:1.6;">
                 ${isEn
-                  ? 'If you are having difficulties, contact us immediately:<br>📧 Email: contact@joda.app<br>📞 Phone: +237 XXX XXX XXX'
-                  : 'Si vous rencontrez des difficultés, contactez-nous immédiatement :<br>📧 Email: contact@joda.app<br>📞 Téléphone: +237 XXX XXX XXX'}
+                  ? 'If you are having difficulties, contact us immediately:<br>Email: contact@portal-joda.company<br>Phone: +237 XXX XXX XXX'
+                  : 'Si vous rencontrez des difficultés, contactez-nous immédiatement :<br>Email: contact@portal-joda.company<br>Téléphone: +237 XXX XXX XXX'}
               </p>
             </div>
 
@@ -255,7 +255,7 @@ export async function sendPaymentResultEmail(data: PaymentResultEmailData): Prom
     await getResend().emails.send({
       from: FROM_EMAIL,
       to: [data.studentEmail],
-      subject: `${data.isValid ? '✅' : '❌'} ${statusLabel} — ${typeName} ${isEn ? 'Instalment' : 'Tranche'} ${data.tranche}`,
+      subject: `${statusLabel} — ${typeName} ${isEn ? 'Instalment' : 'Tranche'} ${data.tranche}`,
       html: `<!DOCTYPE html>
 <html lang="${lang}"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -338,7 +338,7 @@ export async function sendPaymentDeclarationEmail(data: PaymentDeclarationEmailD
     await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.staffEmails,
-      subject: `💳 Nouvelle déclaration de paiement — ${data.studentName}`,
+      subject: `Nouvelle déclaration de paiement — ${data.studentName}`,
       html: `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -409,7 +409,7 @@ export async function sendDocumentSubmissionEmail(data: DocumentSubmissionEmailD
     await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.staffEmails,
-      subject: `📂 Documents soumis — ${data.studentName}`,
+      subject: `Documents soumis — ${data.studentName}`,
       html: `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -467,7 +467,7 @@ export async function sendStudentMessageEmail(data: StudentMessageEmailData): Pr
     await getResend().emails.send({
       from: FROM_EMAIL,
       to: [data.studentEmail],
-      subject: `✉️ ${isEn ? 'New message' : 'Nouveau message'} — ${data.subject}`,
+      subject: `${isEn ? 'New message' : 'Nouveau message'} — ${data.subject}`,
       html: `<!DOCTYPE html>
 <html lang="${lang}"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -728,8 +728,8 @@ ${emailHeader(lang)}
   <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
     <p style="margin:0;font-size:13px;color:#713f12;line-height:1.6;">
       ${isEn
-        ? '💡 If you have questions or need help with your file, contact your Joda Company advisor via your student space.'
-        : '💡 Si vous avez des questions ou besoin d\'aide sur votre dossier, contactez votre conseiller Joda Company via votre espace étudiant.'}
+        ? 'If you have questions or need help with your file, contact your Joda Company advisor via your student space.'
+        : 'Si vous avez des questions ou besoin d\'aide sur votre dossier, contactez votre conseiller Joda Company via votre espace étudiant.'}
     </p>
   </div>
   <table cellpadding="0" cellspacing="0" style="margin-top:20px;">
@@ -776,8 +776,8 @@ export async function sendRegistrationConfirmationEmail(data: RegistrationConfir
       from: FROM_EMAIL,
       to: [data.studentEmail],
       subject: isEn
-        ? '✅ Registration received — Joda Company'
-        : '✅ Inscription reçue — Joda Company',
+        ? 'Registration received — Joda Company'
+        : 'Inscription reçue — Joda Company',
       html: `<!DOCTYPE html>
 <html lang="${lang}"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -787,9 +787,6 @@ export async function sendRegistrationConfirmationEmail(data: RegistrationConfir
 ${emailHeader(lang)}
 <tr><td style="padding:36px 40px;">
   <div style="text-align:center;margin-bottom:28px;">
-    <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:#f0fdf4;border-radius:50%;margin-bottom:12px;">
-      <span style="font-size:28px;">✅</span>
-    </div>
     <h2 style="margin:0;font-size:20px;font-weight:700;color:#111827;">
       ${isEn ? 'Registration received!' : 'Inscription reçue !'}
     </h2>
@@ -811,7 +808,7 @@ ${emailHeader(lang)}
           <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? 'Status' : 'Statut'}</td>
           <td style="padding:6px 0;">
             <span style="background:#fef9c3;color:#854d0e;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">
-              ${isEn ? '⏳ Pending activation' : '⏳ En attente d\'activation'}
+              ${isEn ? 'Pending activation' : 'En attente d\'activation'}
             </span>
           </td>
         </tr>
@@ -820,7 +817,7 @@ ${emailHeader(lang)}
   </table>
   <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
     <p style="margin:0;font-size:13px;color:#1e40af;line-height:1.6;">
-      💡 ${isEn
+      ${isEn
         ? 'Once your account is activated, you will receive another email. You can then sign in with your username and the password you chose during registration.'
         : 'Une fois votre compte activé, vous recevrez un autre email. Vous pourrez alors vous connecter avec votre identifiant et le mot de passe choisi lors de l\'inscription.'}
     </p>
@@ -866,7 +863,7 @@ export async function sendRegistrationPendingAdminEmail(data: RegistrationPendin
     await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.adminEmails,
-      subject: `🆕 Nouvelle inscription en attente — ${data.studentName}`,
+      subject: `Nouvelle inscription en attente — ${data.studentName}`,
       html: `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -876,7 +873,7 @@ export async function sendRegistrationPendingAdminEmail(data: RegistrationPendin
 ${emailHeader()}
 <tr><td style="padding:36px 40px;">
   <div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:12px 16px;margin-bottom:24px;">
-    <p style="margin:0;font-size:13px;color:#713f12;font-weight:600;">⏳ Un nouvel étudiant s'est inscrit et attend l'activation de son compte.</p>
+    <p style="margin:0;font-size:13px;color:#713f12;font-weight:600;">Un nouvel étudiant s'est inscrit et attend l'activation de son compte.</p>
   </div>
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
     <tr><td style="padding:20px 24px;">
@@ -962,8 +959,8 @@ export async function sendAccountActivatedEmail(data: AccountActivatedEmailData)
       from: FROM_EMAIL,
       to: [data.studentEmail],
       subject: isEn
-        ? '🎉 Your account has been activated — Joda Company'
-        : '🎉 Votre compte a été activé — Joda Company',
+        ? 'Your account has been activated — Joda Company'
+        : 'Votre compte a été activé — Joda Company',
       html: `<!DOCTYPE html>
 <html lang="${lang}"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -973,9 +970,6 @@ export async function sendAccountActivatedEmail(data: AccountActivatedEmailData)
 ${emailHeader(lang)}
 <tr><td style="padding:36px 40px;">
   <div style="text-align:center;margin-bottom:28px;">
-    <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:#f0fdf4;border-radius:50%;margin-bottom:12px;">
-      <span style="font-size:28px;">🎉</span>
-    </div>
     <h2 style="margin:0;font-size:20px;font-weight:700;color:#111827;">
       ${isEn ? 'Account activated!' : 'Compte activé !'}
     </h2>
@@ -1043,7 +1037,7 @@ export async function sendNewStudentAdminEmail(data: NewStudentAdminEmailData): 
     await getResend().emails.send({
       from: FROM_EMAIL,
       to: data.adminEmails,
-      subject: `👤 Nouveau compte étudiant — ${data.studentName}`,
+      subject: `Nouveau compte étudiant — ${data.studentName}`,
       html: `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -1135,8 +1129,8 @@ export async function sendPayslipEmail(data: PayslipEmailData): Promise<{ ok: bo
       from: FROM_EMAIL,
       to: [data.employeeEmail],
       subject: isEn
-        ? `📄 Your payslip — ${periode}`
-        : `📄 Votre bulletin de paie — ${periode}`,
+        ? `Your payslip — ${periode}`
+        : `Votre bulletin de paie — ${periode}`,
       attachments: [{ filename, content: data.pdfBase64 }],
       html: `<!DOCTYPE html>
 <html lang="${lang}"><head><meta charset="UTF-8"/></head>
@@ -1217,7 +1211,7 @@ export async function sendReportPinEmail(data: ReportPinEmailData): Promise<{ ok
     const result = await getResend().emails.send({
       from: FROM_EMAIL,
       to: [data.employeeEmail],
-      subject: '🔐 Votre code PIN — Rapports journaliers Joda',
+      subject: 'Votre code PIN — Rapports journaliers Joda',
       html: `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
@@ -1236,7 +1230,7 @@ ${emailHeader()}
   </div>
   <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:14px 18px;margin-bottom:24px;border-radius:4px;">
     <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
-      <strong>⚠️ Confidentiel :</strong> ne communiquez ce code à personne. En cas de perte ou de doute, demandez à la RH de le régénérer.
+      <strong>Confidentiel :</strong> ne communiquez ce code à personne. En cas de perte ou de doute, demandez à la RH de le régénérer.
     </p>
   </div>
   <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">Lien du formulaire :</p>
