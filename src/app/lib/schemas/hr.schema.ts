@@ -188,6 +188,14 @@ export const dailyReportSchema = z.object({
   activites: z.string().min(1, 'Activités requises'),
   heures_travaillees: z.number().min(0).max(24).default(8),
   observations: z.string().nullable().optional(),
+  // Compteurs d'appels (postes prospection / relation client) — entiers >= 0
+  // Optionnels : non renseignés, la DB applique le défaut 0.
+  nb_appels: z.number().int().min(0).optional(),
+  nb_rdv_confirmes: z.number().int().min(0).optional(),
+  nb_relances: z.number().int().min(0).optional(),
+  nb_indisponibles: z.number().int().min(0).optional(),
+  nb_rejets: z.number().int().min(0).optional(),
+  nb_autres: z.number().int().min(0).optional(),
   created_by: z.string().uuid().nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),

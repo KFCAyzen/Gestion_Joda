@@ -21,14 +21,34 @@ import {
     Zap,
 } from "lucide-react";
 import { EVAL_CRITERIA, fmtNote } from "../lib/hrEvaluation";
+import {
+    CALL_STAT_KEYS,
+    isCallActivityPoste,
+    isCallCenterPoste,
+    weekStartIso,
+    WEEKLY_CALL_QUOTA,
+    type CallStatKey,
+} from "../lib/callActivityStats";
 
-type PublicEmployee = { id: string; prenom: string; nom: string; poste?: string };
+type PublicEmployee = {
+    id: string;
+    prenom: string;
+    nom: string;
+    poste?: string;
+    departement?: string;
+};
 type PublicReport = {
     id: string;
     date: string;
     activites: string;
     heures_travaillees: number;
     observations: string | null;
+    nb_appels?: number;
+    nb_rdv_confirmes?: number;
+    nb_relances?: number;
+    nb_indisponibles?: number;
+    nb_rejets?: number;
+    nb_autres?: number;
     created_at: string;
 };
 type PublicEvaluation = {
@@ -332,6 +352,9 @@ export default function PublicReportPage() {
         heures_travaillees: "8",
         observations: "",
     });
+    const emptyCallStats = () =>
+        Object.fromEntries(CALL_STAT_KEYS.map((k) => [k, ""])) as Record<CallStatKey, string>;
+    const [callStats, setCallStats] = useState<Record<CallStatKey, string>>(emptyCallStats);
     const [submitting, setSubmitting] = useState(false);
     const [submitErr, setSubmitErr] = useState<string | null>(null);
 
@@ -460,6 +483,22 @@ export default function PublicReportPage() {
             setSubmitErr(t("errors.invalidHours"));
             return;
         }
+
+        // Compteurs d'appels : obligatoires (>= 0) pour les postes concernés.
+        const eligible = isCallActivityPoste(session.poste, session.departement);
+        const callPayload: Partial<Record<CallStatKey, number>> = {};
+        if (eligible) {
+            for (const k of CALL_STAT_KEYS) {
+                const raw = callStats[k].trim();
+                const n = Number(raw);
+                if (raw === "" || !Number.isInteger(n) || n < 0) {
+                    setSubmitErr(t("errors.callStatsRequired"));
+                    return;
+                }
+                callPayload[k] = n;
+            }
+        }
+
         setSubmitting(true);
         try {
             const res = await fetch("/api/hr/public/submit", {
@@ -472,6 +511,7 @@ export default function PublicReportPage() {
                     activites,
                     heures_travaillees: hours,
                     observations: form.observations.trim() || null,
+                    ...callPayload,
                 }),
             });
             const json = await res.json();
@@ -484,6 +524,7 @@ export default function PublicReportPage() {
                 return;
             }
             setForm({ date: todayIso(), activites: "", heures_travaillees: "8", observations: "" });
+            setCallStats(emptyCallStats());
             await refreshHistory(session, pinValue);
             // success overlay
             setShowSuccess(true);
@@ -510,6 +551,7 @@ export default function PublicReportPage() {
         setAuthError(null);
         setShowSuccess(false);
         setForm({ date: todayIso(), activites: "", heures_travaillees: "8", observations: "" });
+        setCallStats(emptyCallStats());
     };
 
     const dismissSuccess = () => {
@@ -679,6 +721,55 @@ export default function PublicReportPage() {
     // Authenticated step
     // ============================================================
     const e = session;
+    const showCallStats = isCallActivityPoste(e.poste, e.departement);
+    const showQuota = isCallCenterPoste(e.poste, e.departement);
+    const weekStart = weekStartIso(today);
+    const weekTotals = history.reduce(
+        (acc, r) => {
+            if (r.date >= weekStart && r.date <= today) {
+                acc.appels += r.nb_appels ?? 0;
+                acc.rdv += r.nb_rdv_confirmes ?? 0;
+            }
+            return acc;
+        },
+        { appels: 0, rdv: 0 }
+    );
+
+    const quotaCard = showQuota && (
+        <div className="overflow-hidden rounded-[14px] border border-zinc-200 bg-white p-[18px] shadow-[0_1px_2px_rgba(16,16,20,0.05)]">
+            <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-zinc-500">
+                <CalendarDays className="h-[13px] w-[13px]" />
+                {t("quota.title")}
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {[
+                    { label: t("form.callStats.nb_appels"), value: weekTotals.appels, goal: WEEKLY_CALL_QUOTA.nb_appels },
+                    { label: t("form.callStats.nb_rdv_confirmes"), value: weekTotals.rdv, goal: WEEKLY_CALL_QUOTA.nb_rdv_confirmes },
+                ].map((q) => {
+                    const pct = Math.min(100, Math.round((q.value / q.goal) * 100));
+                    const met = q.value >= q.goal;
+                    return (
+                        <div key={q.label}>
+                            <div className="flex items-baseline justify-between">
+                                <span className="text-[13px] font-medium text-zinc-700">{q.label}</span>
+                                <span className={`text-[13px] font-bold tabular-nums ${met ? "text-green-600" : "text-zinc-900"}`}>
+                                    {q.value}
+                                    <span className="text-zinc-400"> / {q.goal}</span>
+                                </span>
+                            </div>
+                            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-zinc-100">
+                                <div
+                                    className={`h-full rounded-full transition-all ${met ? "bg-green-500" : "bg-red-500"}`}
+                                    style={{ width: `${pct}%` }}
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            <p className="mt-2.5 text-[11px] text-zinc-400">{t("quota.hint")}</p>
+        </div>
+    );
 
     const formCard = (
         <div className="overflow-hidden rounded-[14px] border border-zinc-200 bg-white shadow-[0_4px_12px_-3px_rgba(16,16,20,0.08),0_2px_5px_-3px_rgba(16,16,20,0.05)]">
@@ -755,6 +846,36 @@ export default function PublicReportPage() {
                                 className="min-h-[96px] resize-none rounded-[10px] border border-zinc-200 bg-gray-50 px-3.5 py-3 text-sm leading-relaxed text-zinc-900 outline-none transition-all hover:border-zinc-300 focus:border-[#f1a3a3] focus:bg-white focus:ring-[3px] focus:ring-red-100 placeholder:text-zinc-400"
                             />
                         </div>
+
+                        {showCallStats && (
+                            <div className="flex flex-col gap-2.5 rounded-[10px] border border-zinc-200 bg-gray-50/60 p-3.5">
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.07em] text-zinc-500">
+                                    {t("form.callStats.title")} <span className="text-red-600">*</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                                    {CALL_STAT_KEYS.map((k) => (
+                                        <div key={k} className="flex flex-col gap-1">
+                                            <label className="text-[11px] font-medium leading-tight text-zinc-600">
+                                                {t(`form.callStats.${k}`)}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                inputMode="numeric"
+                                                value={callStats[k]}
+                                                onChange={(ev) => {
+                                                    setCallStats((s) => ({ ...s, [k]: ev.target.value }));
+                                                    setSubmitErr(null);
+                                                }}
+                                                placeholder="0"
+                                                className="h-11 rounded-[10px] border border-zinc-200 bg-white px-3 text-[14.5px] tabular-nums text-zinc-900 outline-none transition-all hover:border-zinc-300 focus:border-[#f1a3a3] focus:ring-[3px] focus:ring-red-100"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex flex-col gap-[7px]">
                             <label className="text-[11px] font-semibold uppercase tracking-[0.07em] text-zinc-500">
@@ -1031,6 +1152,8 @@ export default function PublicReportPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {quotaCard}
 
                         {/* Form + history */}
                         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
         const { data, error } = await supabaseAdmin
             .from("daily_reports")
-            .select("id, date, activites, heures_travaillees, observations, created_at")
+            .select("id, date, activites, heures_travaillees, observations, nb_appels, nb_rdv_confirmes, nb_relances, nb_indisponibles, nb_rejets, nb_autres, created_at")
             .eq("employee_id", employee_id)
             .order("date", { ascending: false })
             .limit(60);

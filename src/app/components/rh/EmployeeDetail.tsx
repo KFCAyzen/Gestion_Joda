@@ -71,6 +71,15 @@ import { printEmployeeEvaluation } from "../../lib/printEmployeeEvaluation";
 import { printEmployeeAnnualReport } from "../../lib/printEmployeeAnnualReport";
 import { payslipReference } from "../../lib/payslipRef";
 import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../../lib/hrEvaluation";
+import {
+    CALL_STAT_KEYS,
+    isCallActivityPoste,
+    isCallCenterPoste,
+    sumCallStats,
+    groupReportsByWeek,
+    quotaProductivityScore,
+    WEEKLY_CALL_QUOTA,
+} from "../../lib/callActivityStats";
 
 type DetailTab = "overview" | "history" | "reports" | "leaves" | "payroll" | "deductions" | "evaluations" | "annual";
 
@@ -91,6 +100,12 @@ function monthLabel(m: number): string {
     return ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."][m - 1] ?? `${m}`;
 }
 
+function fmtWeekRange(startIso: string, endIso: string): string {
+    const f = (s: string) =>
+        new Date(`${s}T00:00:00`).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+    return `${f(startIso)} → ${f(endIso)}`;
+}
+
 type TFn = (key: string, values?: Record<string, string | number>) => string;
 
 export default function EmployeeDetail({
@@ -107,6 +122,7 @@ export default function EmployeeDetail({
     creatorId: string;
 }) {
     const t = useTranslations("hrManagement");
+    const tcs = useTranslations("publicReport.form.callStats");
     const [tab, setTab] = useState<DetailTab>("overview");
     const [periodFrom, setPeriodFrom] = useState("");
     const [periodTo, setPeriodTo] = useState("");
@@ -293,6 +309,11 @@ export default function EmployeeDetail({
             .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     }, [reports, periodFrom, periodTo]);
 
+    const showCallStats = isCallActivityPoste(employee?.poste, employee?.departement);
+    const isCallCenter = isCallCenterPoste(employee?.poste, employee?.departement);
+    const callStatsTotals = useMemo(() => sumCallStats(reportsInPeriod), [reportsInPeriod]);
+    const weeklyCallStats = useMemo(() => groupReportsByWeek(reportsInPeriod), [reportsInPeriod]);
+
     const handlePrintReports = () => {
         if (!employee) return;
         const totalHours = reportsInPeriod.reduce((s, r) => s + (r.heures_travaillees || 0), 0);
@@ -312,6 +333,9 @@ export default function EmployeeDetail({
             summary: [
                 { label: t("detail.reportsPrint.reportCount"), value: String(reportsInPeriod.length) },
                 { label: t("detail.stats.hoursWorked"), value: `${totalHours} h` },
+                ...(showCallStats
+                    ? CALL_STAT_KEYS.map((k) => ({ label: tcs(k), value: String(callStatsTotals[k]) }))
+                    : []),
             ],
             observationsLabel: t("reports.col.observations"),
             entries: reportsInPeriod.map((r) => ({
@@ -319,11 +343,34 @@ export default function EmployeeDetail({
                 hours: `${r.heures_travaillees} h`,
                 activities: r.activites,
                 observations: r.observations ?? "",
+                stats: showCallStats
+                    ? CALL_STAT_KEYS.map((k) => ({ label: tcs(k), value: String(r[k] ?? 0) }))
+                    : undefined,
             })),
             emptyLabel: t("reports.empty"),
             generatedOn: t("detail.print.generatedOn", {
                 date: new Date().toLocaleString("fr-FR"),
             }),
+            weekly: isCallCenter
+                ? {
+                      title: t("detail.reportsPrint.weeklyQuotaTitle", {
+                          appels: WEEKLY_CALL_QUOTA.nb_appels,
+                          rdv: WEEKLY_CALL_QUOTA.nb_rdv_confirmes,
+                      }),
+                      weekLabel: t("detail.reportsPrint.week"),
+                      appelsLabel: tcs("nb_appels"),
+                      rdvLabel: tcs("nb_rdv_confirmes"),
+                      statusLabel: t("detail.reportsPrint.quotaStatus"),
+                      metLabel: t("detail.reportsPrint.quotaMet"),
+                      notMetLabel: t("detail.reportsPrint.quotaNotMet"),
+                      rows: weeklyCallStats.map((w) => ({
+                          week: fmtWeekRange(w.weekStart, w.weekEnd),
+                          appels: `${w.totals.nb_appels} / ${WEEKLY_CALL_QUOTA.nb_appels}`,
+                          rdv: `${w.totals.nb_rdv_confirmes} / ${WEEKLY_CALL_QUOTA.nb_rdv_confirmes}`,
+                          met: w.quotaAppelsMet && w.quotaRdvMet,
+                      })),
+                  }
+                : undefined,
         });
     };
 
@@ -612,23 +659,93 @@ export default function EmployeeDetail({
                                 </Button>
                             </div>
                         </div>
+
+                        {showCallStats && (
+                            <div className="space-y-2">
+                                <p className="text-xs uppercase tracking-wide text-rose-600 font-semibold">
+                                    {tcs("title")} · {reportsInPeriod.length} {t("detail.tabs.reports").toLowerCase()}
+                                </p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                    {CALL_STAT_KEYS.map((k) => (
+                                        <StatBox key={k} label={tcs(k)} value={String(callStatsTotals[k])} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {isCallCenter && (
+                            <div className="space-y-2">
+                                <p className="text-xs uppercase tracking-wide text-rose-600 font-semibold">
+                                    {t("detail.reportsPrint.weeklyQuotaTitle", {
+                                        appels: WEEKLY_CALL_QUOTA.nb_appels,
+                                        rdv: WEEKLY_CALL_QUOTA.nb_rdv_confirmes,
+                                    })}
+                                </p>
+                                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>{t("detail.reportsPrint.week")}</TableHead>
+                                                <TableHead className="text-right">{tcs("nb_appels")}</TableHead>
+                                                <TableHead className="text-right">{tcs("nb_rdv_confirmes")}</TableHead>
+                                                <TableHead className="text-center">{t("detail.reportsPrint.quotaStatus")}</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {weeklyCallStats.length === 0 ? (
+                                                <TableRow><TableCell colSpan={4} className="text-center py-6 text-slate-400">{t("reports.empty")}</TableCell></TableRow>
+                                            ) : (
+                                                weeklyCallStats.map((w) => {
+                                                    const met = w.quotaAppelsMet && w.quotaRdvMet;
+                                                    return (
+                                                        <TableRow key={w.weekStart}>
+                                                            <TableCell className="whitespace-nowrap">{fmtWeekRange(w.weekStart, w.weekEnd)}</TableCell>
+                                                            <TableCell className={`text-right tabular-nums ${w.quotaAppelsMet ? "text-emerald-600" : "text-rose-600"}`}>
+                                                                {w.totals.nb_appels} / {WEEKLY_CALL_QUOTA.nb_appels}
+                                                            </TableCell>
+                                                            <TableCell className={`text-right tabular-nums ${w.quotaRdvMet ? "text-emerald-600" : "text-rose-600"}`}>
+                                                                {w.totals.nb_rdv_confirmes} / {WEEKLY_CALL_QUOTA.nb_rdv_confirmes}
+                                                            </TableCell>
+                                                            <TableCell className="text-center">
+                                                                <Badge className={met ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}>
+                                                                    {met ? t("detail.reportsPrint.quotaMet") : t("detail.reportsPrint.quotaNotMet")}
+                                                                </Badge>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="max-h-[360px] overflow-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>{t("reports.col.date")}</TableHead>
                                         <TableHead>{t("reports.col.hours")}</TableHead>
+                                        {showCallStats &&
+                                            CALL_STAT_KEYS.map((k) => (
+                                                <TableHead key={k} className="text-right whitespace-nowrap">{tcs(k)}</TableHead>
+                                            ))}
                                         <TableHead>{t("reports.col.activities")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {reportsInPeriod.length === 0 ? (
-                                        <TableRow><TableCell colSpan={3} className="text-center py-6 text-slate-400">{t("reports.empty")}</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={showCallStats ? 9 : 3} className="text-center py-6 text-slate-400">{t("reports.empty")}</TableCell></TableRow>
                                     ) : (
                                         reportsInPeriod.map((r) => (
                                             <TableRow key={r.id}>
                                                 <TableCell>{r.date}</TableCell>
                                                 <TableCell>{r.heures_travaillees} h</TableCell>
+                                                {showCallStats &&
+                                                    CALL_STAT_KEYS.map((k) => (
+                                                        <TableCell key={k} className="text-right tabular-nums">{r[k] ?? 0}</TableCell>
+                                                    ))}
                                                 <TableCell className="max-w-md truncate" title={r.activites}>{r.activites}</TableCell>
                                             </TableRow>
                                         ))
@@ -723,6 +840,8 @@ export default function EmployeeDetail({
                     <EvaluationsSection
                         employeeId={employee.id}
                         evaluations={evaluations}
+                        reports={reports}
+                        showCallStats={showCallStats}
                         creatorId={creatorId}
                         evaluatorName={evaluatorName}
                         onPrint={handlePrintEvaluation}
@@ -1101,6 +1220,8 @@ const emptyEvalForm = {
 function EvaluationsSection({
     employeeId,
     evaluations,
+    reports,
+    showCallStats,
     creatorId,
     evaluatorName,
     onPrint,
@@ -1109,6 +1230,8 @@ function EvaluationsSection({
 }: {
     employeeId: string;
     evaluations: EmployeeEvaluation[];
+    reports: DailyReport[];
+    showCallStats: boolean;
     creatorId: string;
     evaluatorName: (ev: EmployeeEvaluation) => string;
     onPrint: (ev: EmployeeEvaluation) => void;
@@ -1116,6 +1239,7 @@ function EvaluationsSection({
     onSuccess: (msg: string) => void;
 }) {
     const t = useTranslations("hrManagement");
+    const tcs = useTranslations("publicReport.form.callStats");
     const create = useCreateEmployeeEvaluation();
     const del = useDeleteEmployeeEvaluation();
     const [adding, setAdding] = useState(false);
@@ -1139,6 +1263,20 @@ function EvaluationsSection({
     const periodGlobalAvg = useMemo(() => overallAverage(filtered), [filtered]);
     const periodCritAvg = useMemo(() => criterionAverages(filtered), [filtered]);
     const hasPeriod = periodFrom !== "" || periodTo !== "";
+
+    // Performance d'appels (objective) sur la même période — alimente l'évaluation.
+    const callReportsInPeriod = useMemo(
+        () =>
+            reports.filter((r) => {
+                if (periodFrom && r.date < periodFrom) return false;
+                if (periodTo && r.date > periodTo) return false;
+                return true;
+            }),
+        [reports, periodFrom, periodTo]
+    );
+    const callTotals = useMemo(() => sumCallStats(callReportsInPeriod), [callReportsInPeriod]);
+    const callWeekly = useMemo(() => groupReportsByWeek(callReportsInPeriod), [callReportsInPeriod]);
+    const productivitySuggestion = useMemo(() => quotaProductivityScore(callWeekly), [callWeekly]);
 
     const noteGlobale = useMemo(() => {
         const scores = EVAL_CRITERIA.map((c) => form[c.col]);
@@ -1261,6 +1399,48 @@ function EvaluationsSection({
                             <Input value={form.periode} placeholder={t("detail.evaluations.periodHint")} onChange={(e) => setForm({ ...form, periode: e.target.value })} />
                         </div>
                     </div>
+
+                    {showCallStats && (
+                        <div className="rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50/60 dark:bg-indigo-900/20 p-3 space-y-2">
+                            <p className="text-[11px] uppercase tracking-wide text-indigo-700 dark:text-indigo-300 font-semibold">
+                                {t("detail.evaluations.callPerfTitle")}
+                            </p>
+                            {callReportsInPeriod.length === 0 ? (
+                                <p className="text-xs text-slate-500">{t("detail.evaluations.callPerfEmpty")}</p>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {[
+                                            { label: tcs("nb_appels"), value: String(callTotals.nb_appels) },
+                                            { label: tcs("nb_rdv_confirmes"), value: String(callTotals.nb_rdv_confirmes) },
+                                            { label: t("detail.evaluations.weeksMet"), value: `${productivitySuggestion?.weeksMet ?? 0} / ${callWeekly.length}` },
+                                            { label: t("detail.evaluations.attainment"), value: `${Math.round((productivitySuggestion?.attainment ?? 0) * 100)} %` },
+                                        ].map((s) => (
+                                            <div key={s.label} className="rounded-md border border-indigo-100 dark:border-indigo-900/60 bg-white/70 dark:bg-slate-900/40 px-2.5 py-1.5">
+                                                <p className="text-[10px] uppercase tracking-wide text-slate-400">{s.label}</p>
+                                                <p className="text-sm font-semibold tabular-nums">{s.value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {productivitySuggestion && (
+                                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                                            <span className="text-xs text-slate-600 dark:text-slate-300">
+                                                {t("detail.evaluations.suggestedProductivity")}:{" "}
+                                                <span className="font-bold text-indigo-700 dark:text-indigo-300">{productivitySuggestion.score} / 5</span>
+                                            </span>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => setForm((f) => ({ ...f, note_productivite: productivitySuggestion.score }))}
+                                            >
+                                                {t("detail.evaluations.applyProductivity")}
+                                            </Button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
 
                     <div className="rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
                         {EVAL_CRITERIA.map((c) => (

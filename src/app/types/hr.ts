@@ -137,6 +137,13 @@ export interface DailyReport {
   activites: string;
   heures_travaillees: number;
   observations: string | null;
+  // Compteurs d'appels (postes prospection / relation client) — défaut 0
+  nb_appels: number;
+  nb_rdv_confirmes: number;
+  nb_relances: number;
+  nb_indisponibles: number;
+  nb_rejets: number;
+  nb_autres: number;
   created_by: string | null;
   created_at: string;
   updated_at: string;

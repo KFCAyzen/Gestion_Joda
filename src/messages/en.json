@@ -568,7 +568,12 @@
         "reset": "Reset",
         "periodLabel": "Period",
         "allPeriods": "All periods",
-        "reportCount": "Number of reports"
+        "reportCount": "Number of reports",
+        "weeklyQuotaTitle": "Weekly quota (min. {appels} calls · {rdv} confirmed appointments)",
+        "week": "Week",
+        "quotaStatus": "Status",
+        "quotaMet": "Met",
+        "quotaNotMet": "Not met"
       },
       "evaluations": {
         "hint": "Rate the employee on each criterion (1 to 5). The overall rating is the average of the criteria.",
@@ -595,6 +600,12 @@
         "added": "Evaluation saved",
         "deleted": "Evaluation deleted",
         "empty": "No evaluation recorded",
+        "callPerfTitle": "Call performance (over the period)",
+        "callPerfEmpty": "No call reports for the selected period.",
+        "weeksMet": "Weeks at quota",
+        "attainment": "Attainment rate",
+        "suggestedProductivity": "Suggested productivity score",
+        "applyProductivity": "Apply to Productivity",
         "confirmDelete": "Delete this evaluation?",
         "confirmDeleteDesc": "This evaluation will be permanently deleted.",
         "print": {
@@ -2877,12 +2888,25 @@
       "activitiesPlaceholder": "E.g. Followed up on 4 admission files, chased pending payments, updated the dashboard…",
       "observations": "Observations",
       "observationsPlaceholder": "Difficulties, remarks, points to flag (optional)…",
-      "submit": "Send report"
+      "submit": "Send report",
+      "callStats": {
+        "title": "Call statistics",
+        "nb_appels": "People called",
+        "nb_rdv_confirmes": "Confirmed appointments",
+        "nb_relances": "Follow-ups",
+        "nb_indisponibles": "Unavailable contacts",
+        "nb_rejets": "Rejections",
+        "nb_autres": "Other"
+      }
     },
     "limit": {
       "title": "Daily limit reached",
       "text": "You have sent your 2 reports for today. The form will reopen automatically tomorrow.",
       "chip": "Next submission available tomorrow"
+    },
+    "quota": {
+      "title": "This week's target",
+      "hint": "Total of your reports for this week (Monday → Sunday)."
     },
     "success": {
       "title": "Report sent",
@@ -2915,7 +2939,8 @@
       "activitiesRequired": "Please describe your activities.",
       "invalidHours": "Invalid number of hours (0 to 24).",
       "submitFailed": "Failed to submit the report",
-      "dailyLimit": "Limit reached: you can submit at most 2 reports per day."
+      "dailyLimit": "Limit reached: you can submit at most 2 reports per day.",
+      "callStatsRequired": "Fill in all call counters (0 is allowed)."
     }
   },
   "staffDocuments": {

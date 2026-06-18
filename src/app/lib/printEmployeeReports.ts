@@ -7,6 +7,18 @@ export interface ReportEntry {
   hours: string;
   activities: string;
   observations: string;
+  stats?: { label: string; value: string }[];
+}
+
+export interface WeeklyQuotaBlock {
+  title: string;
+  weekLabel: string;
+  appelsLabel: string;
+  rdvLabel: string;
+  statusLabel: string;
+  metLabel: string;
+  notMetLabel: string;
+  rows: { week: string; appels: string; rdv: string; met: boolean }[];
 }
 
 export interface EmployeeReportsData {
@@ -23,6 +35,7 @@ export interface EmployeeReportsData {
   entries: ReportEntry[];
   emptyLabel: string;
   generatedOn: string;
+  weekly?: WeeklyQuotaBlock;
 }
 
 const COMPANY = {
@@ -58,6 +71,37 @@ function renderSummary(data: EmployeeReportsData): string {
     </section>`;
 }
 
+function renderWeekly(data: EmployeeReportsData): string {
+  const w = data.weekly;
+  if (!w || w.rows.length === 0) return "";
+  const rows = w.rows
+    .map(
+      (r) => `
+      <tr>
+        <td>${esc(r.week)}</td>
+        <td class="num">${esc(r.appels)}</td>
+        <td class="num">${esc(r.rdv)}</td>
+        <td class="status ${r.met ? "ok" : "ko"}">${esc(r.met ? w.metLabel : w.notMetLabel)}</td>
+      </tr>`
+    )
+    .join("");
+  return `
+    <section class="block">
+      <h2>${esc(w.title)}</h2>
+      <table class="wq">
+        <thead>
+          <tr>
+            <th>${esc(w.weekLabel)}</th>
+            <th class="num">${esc(w.appelsLabel)}</th>
+            <th class="num">${esc(w.rdvLabel)}</th>
+            <th>${esc(w.statusLabel)}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </section>`;
+}
+
 function renderEntries(data: EmployeeReportsData): string {
   if (data.entries.length === 0) {
     return `<p class="empty">${esc(data.emptyLabel)}</p>`;
@@ -70,6 +114,16 @@ function renderEntries(data: EmployeeReportsData): string {
           <span class="report-date">${esc(e.date)}</span>
           <span class="report-hours">${esc(e.hours)}</span>
         </header>
+        ${
+          e.stats && e.stats.length > 0
+            ? `<div class="report-stats">${e.stats
+                .map(
+                  (s) =>
+                    `<span class="rs-chip"><span class="rs-label">${esc(s.label)}</span> ${esc(s.value)}</span>`
+                )
+                .join("")}</div>`
+            : ""
+        }
         <p class="report-act">${esc(e.activities)}</p>
         ${
           e.observations.trim()
@@ -178,8 +232,26 @@ export function printEmployeeReports(data: EmployeeReportsData): void {
     border-radius: 999px;
     padding: 1px 8px;
   }
+  .report-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; }
+  .rs-chip {
+    font-size: 10px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-weight: 600;
+  }
+  .rs-chip .rs-label { color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
   .report-act { margin: 0; white-space: pre-wrap; }
   .report-obs { margin: 6px 0 0; color: #4b5563; font-size: 11px; white-space: pre-wrap; }
+
+  table.wq { width: 100%; border-collapse: collapse; font-size: 11px; }
+  table.wq th, table.wq td { border: 1px solid #e5e7eb; padding: 5px 8px; text-align: left; }
+  table.wq th { background: #f8fafc; text-transform: uppercase; letter-spacing: .03em; font-size: 10px; color: #6b7280; }
+  table.wq td.num, table.wq th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.wq td.status { font-weight: 700; }
+  table.wq td.status.ok { color: #15803d; }
+  table.wq td.status.ko { color: #be123c; }
   .report-obs .obs-label { font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
   .empty { text-align: center; color: #9ca3af; padding: 24px; }
 
@@ -211,6 +283,8 @@ export function printEmployeeReports(data: EmployeeReportsData): void {
   <div class="period"><span class="period-label">${esc(data.periodLabel)}:</span> ${esc(data.period)}</div>
 
   ${renderSummary(data)}
+
+  ${renderWeekly(data)}
 
   <section class="block">
     ${renderEntries(data)}
