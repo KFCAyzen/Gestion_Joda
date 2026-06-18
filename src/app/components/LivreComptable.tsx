@@ -495,6 +495,13 @@ export default function LivreComptable() {
                                 Imprimer rapport
                             </button>
                             <button
+                                onClick={printReport}
+                                className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                                <Download className="h-3.5 w-3.5" />
+                                Télécharger rapport
+                            </button>
+                            <button
                                 onClick={exportCSV}
                                 className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700"
                             >

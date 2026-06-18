@@ -7,6 +7,7 @@ import {
     BadgePercent,
     CalendarDays,
     ClipboardList,
+    Download,
     History as HistoryIcon,
     Loader2,
     Mail,
@@ -465,10 +466,16 @@ export default function EmployeeDetail({
                         </p>
                     </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={handlePrint}>
-                    <Printer className="w-4 h-4 mr-1.5" />
-                    {t("detail.print.button")}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={handlePrint}>
+                        <Printer className="w-4 h-4 mr-1.5" />
+                        {t("detail.print.button")}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handlePrint}>
+                        <Download className="w-4 h-4 mr-1.5" />
+                        {t("detail.print.downloadButton")}
+                    </Button>
+                </div>
             </div>
 
                 {/* Header info */}
@@ -594,10 +601,14 @@ export default function EmployeeDetail({
                                     {t("detail.reportsPrint.reset")}
                                 </Button>
                             )}
-                            <div className="ml-auto">
+                            <div className="ml-auto flex flex-wrap gap-2">
                                 <Button size="sm" variant="outline" onClick={handlePrintReports} disabled={reportsInPeriod.length === 0}>
                                     <Printer className="w-4 h-4 mr-1.5" />
                                     {t("detail.reportsPrint.button")} ({reportsInPeriod.length})
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={handlePrintReports} disabled={reportsInPeriod.length === 0}>
+                                    <Download className="w-4 h-4 mr-1.5" />
+                                    {t("detail.reportsPrint.downloadButton")}
                                 </Button>
                             </div>
                         </div>
@@ -739,6 +750,10 @@ export default function EmployeeDetail({
                             <Button size="sm" variant="outline" onClick={handlePrintAnnual}>
                                 <Printer className="w-4 h-4 mr-1.5" />
                                 {t("detail.annual.print.button")}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={handlePrintAnnual}>
+                                <Download className="w-4 h-4 mr-1.5" />
+                                {t("detail.annual.print.downloadButton")}
                             </Button>
                         </div>
 
@@ -1303,6 +1318,9 @@ function EvaluationsSection({
                                 <div className="flex items-center gap-1">
                                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title={t("detail.evaluations.print.button")} onClick={() => onPrint(ev)}>
                                         <Printer className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title={t("detail.evaluations.print.downloadButton")} onClick={() => onPrint(ev)}>
+                                        <Download className="w-3.5 h-3.5" />
                                     </Button>
                                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setConfirmDel(ev.id)}>
                                         <Trash2 className="w-3.5 h-3.5 text-rose-600" />

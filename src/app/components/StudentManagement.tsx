@@ -48,7 +48,7 @@ import DocumentManagement from "./DocumentManagement";
 import { downloadReceipt } from "../utils/downloadReceipt";
 import { DropdownMenu } from "./shared";
 import PhoneInput from "./shared/PhoneInput";
-import { Eye, Edit, Printer, Trash2, Loader2 } from "lucide-react";
+import { Eye, Edit, Printer, Download, Trash2, Loader2 } from "lucide-react";
 import { DEFAULT_PHONE_COUNTRY_CODE, normalizePhoneNumber, splitPhoneNumber } from "../lib/phone";
 
 interface Student {
@@ -1037,6 +1037,17 @@ export default function StudentManagement() {
                                             ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                             : <Printer className="mr-2 h-4 w-4" />}
                                         {t("actions.printCard") || "Imprimer fiche"}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                                        disabled={isPrinting}
+                                        onClick={() => void printStudentCard(selectedStudent)}
+                                    >
+                                        {isPrinting
+                                            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            : <Download className="mr-2 h-4 w-4" />}
+                                        {t("actions.downloadCard") || "Télécharger fiche"}
                                     </Button>
                                     {canEdit && (
                                         <Button

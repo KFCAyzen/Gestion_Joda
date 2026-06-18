@@ -244,6 +244,7 @@
       "viewDetail": "View profile",
       "report": {
         "print": "Print report",
+        "download": "Download report",
         "docTitle": "Employee report",
         "subtitle": "{count} employee(s)",
         "summaryTitle": "Workforce summary",
@@ -474,6 +475,7 @@
       },
       "print": {
         "button": "Print summary",
+        "downloadButton": "Download summary",
         "docTitle": "Employee performance index",
         "generatedOn": "Document generated on {date}"
       }
@@ -549,6 +551,7 @@
       },
       "print": {
         "button": "Print dossier",
+        "downloadButton": "Download dossier",
         "docTitle": "Employee dossier",
         "profileTitle": "Detailed profile",
         "statsTitle": "Summary",
@@ -558,6 +561,7 @@
       },
       "reportsPrint": {
         "button": "Print reports",
+        "downloadButton": "Download reports",
         "docTitle": "Activity reports",
         "from": "From",
         "to": "To",
@@ -595,6 +599,7 @@
         "confirmDeleteDesc": "This evaluation will be permanently deleted.",
         "print": {
           "button": "Print evaluation",
+          "downloadButton": "Download evaluation",
           "docTitle": "Evaluation sheet"
         }
       },
@@ -611,6 +616,7 @@
         },
         "print": {
           "button": "Print summary",
+          "downloadButton": "Download summary",
           "docTitle": "Annual report"
         }
       }
@@ -908,7 +914,8 @@
       "add": "Add",
       "modify": "Edit",
       "understood": "Got it",
-      "printCard": "Print card"
+      "printCard": "Print card",
+      "downloadCard": "Download card"
     },
     "detail": {
       "contact": "Contact",
@@ -1475,6 +1482,7 @@
       "details": "View details",
       "printReceipt": "Print receipt",
       "printReport": "Print report",
+      "downloadReport": "Download report",
       "validate": "Validate",
       "reject": "Reject",
       "confirmReject": "Confirm rejection",

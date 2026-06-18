@@ -11,6 +11,7 @@ import {
     Eye,
     Filter as FilterIcon,
     Globe,
+    Download,
     KeyRound,
     Link2,
     Loader2,
@@ -446,10 +447,16 @@ function EvaluationsOverviewPanel({
                     </CardTitle>
                     <CardDescription>{t("evaluationsOverview.description")}</CardDescription>
                 </div>
-                <Button variant="outline" onClick={handlePrint} disabled={ranking.length === 0}>
-                    <Printer className="w-4 h-4 mr-2" />
-                    {t("evaluationsOverview.print.button")}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={handlePrint} disabled={ranking.length === 0}>
+                        <Printer className="w-4 h-4 mr-2" />
+                        {t("evaluationsOverview.print.button")}
+                    </Button>
+                    <Button variant="outline" onClick={handlePrint} disabled={ranking.length === 0}>
+                        <Download className="w-4 h-4 mr-2" />
+                        {t("evaluationsOverview.print.downloadButton")}
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="space-y-4">
                 {/* Filtre période */}
@@ -1004,6 +1011,14 @@ function EmployeesPanel({
                     >
                         <Printer className="w-4 h-4 mr-2" />
                         {t("employees.report.print")}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={handlePrintReport}
+                        disabled={employees.length === 0}
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        {t("employees.report.download")}
                     </Button>
                     <Button
                         variant="outline"

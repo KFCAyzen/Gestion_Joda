@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Filter, Plus, CheckCircle2, X, Printer } from "lucide-react";
+import { AlertTriangle, Filter, Plus, CheckCircle2, X, Download } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
 import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
@@ -635,7 +635,7 @@ export default function PaymentsPage() {
                                                                 onClick={() => handlePrint(payment)}
                                                                 className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                                             >
-                                                                <Printer className="h-3 w-3" />
+                                                                <Download className="h-3 w-3" />
                                                                 Reçu
                                                             </button>
                                                         ) : isOverdue ? (

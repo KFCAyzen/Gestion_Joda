@@ -244,6 +244,7 @@
       "viewDetail": "Voir le dossier",
       "report": {
         "print": "Imprimer le rapport",
+        "download": "Télécharger le rapport",
         "docTitle": "Rapport des employés",
         "subtitle": "{count} employé(s)",
         "summaryTitle": "Synthèse de l'effectif",
@@ -474,6 +475,7 @@
       },
       "print": {
         "button": "Imprimer la synthèse",
+        "downloadButton": "Télécharger la synthèse",
         "docTitle": "Indice de performance des employés",
         "generatedOn": "Document généré le {date}"
       }
@@ -549,6 +551,7 @@
       },
       "print": {
         "button": "Imprimer le dossier",
+        "downloadButton": "Télécharger le dossier",
         "docTitle": "Dossier employé",
         "profileTitle": "Profil détaillé",
         "statsTitle": "Synthèse",
@@ -558,6 +561,7 @@
       },
       "reportsPrint": {
         "button": "Imprimer les rapports",
+        "downloadButton": "Télécharger les rapports",
         "docTitle": "Rapports d'activité",
         "from": "Du",
         "to": "Au",
@@ -595,6 +599,7 @@
         "confirmDeleteDesc": "Cette évaluation sera définitivement supprimée.",
         "print": {
           "button": "Imprimer l'évaluation",
+          "downloadButton": "Télécharger l'évaluation",
           "docTitle": "Fiche d'évaluation"
         }
       },
@@ -611,6 +616,7 @@
         },
         "print": {
           "button": "Imprimer le bilan",
+          "downloadButton": "Télécharger le bilan",
           "docTitle": "Bilan annuel"
         }
       }
@@ -908,7 +914,8 @@
       "add": "Ajouter",
       "modify": "Modifier",
       "understood": "Compris",
-      "printCard": "Imprimer fiche"
+      "printCard": "Imprimer fiche",
+      "downloadCard": "Télécharger fiche"
     },
     "detail": {
       "contact": "Contact",
@@ -1475,6 +1482,7 @@
       "details": "Voir détails",
       "printReceipt": "Imprimer reçu",
       "printReport": "Imprimer rapport",
+      "downloadReport": "Télécharger rapport",
       "validate": "Valider",
       "reject": "Rejeter",
       "confirmReject": "Confirmer le rejet",

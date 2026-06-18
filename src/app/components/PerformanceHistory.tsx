@@ -1019,6 +1019,9 @@ export default function PerformanceHistory() {
                         <Button onClick={handlePrint} style={{ backgroundColor: "#dc2626" }}>
                             {t("actions.print")}
                         </Button>
+                        <Button onClick={handlePrint} variant="outline">
+                            {t("actions.downloadPdf")}
+                        </Button>
                         {isAdmin && (
                             <Button onClick={handleDownloadWord} className="bg-blue-600 hover:bg-blue-700">
                                 {t("actions.downloadWord")}

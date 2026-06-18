@@ -27,7 +27,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Download, FileSpreadsheet, FileText, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search, Eye, Edit, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Printer, TrendingUp, TrendingDown, Calendar, Settings, Plus, X, Trash2, Search, Eye, Edit, Loader2 } from "lucide-react";
 import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
 import { useNotificationContext } from "../context/NotificationContext";
 import ConfirmDialog from "./ConfirmDialog";
@@ -966,8 +966,12 @@ export default function AccountingPage() {
                                         </SelectContent>
                                     </Select>
                                     <Button variant="outline" size="sm" onClick={printReport} disabled={exporting}>
-                                        <Download className="h-4 w-4 mr-2" />
+                                        <Printer className="h-4 w-4 mr-2" />
                                         {t("actions.printReport")}
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={printReport} disabled={exporting}>
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {t("actions.downloadReport")}
                                     </Button>
                                     <Button variant="outline" size="sm" onClick={exportToExcel} disabled={exporting}>
                                         <FileSpreadsheet className="h-4 w-4 mr-2" />
