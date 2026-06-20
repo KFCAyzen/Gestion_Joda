@@ -121,7 +121,18 @@ export async function POST(req: NextRequest) {
         };
         if (proof_url) updates.facture_url = proof_url;
 
-        await supabaseAdmin.from("payments").update(updates).eq("id", paymentId);
+        // Cœur de la déclaration : si l'update échoue, la déclaration n'a PAS eu
+        // lieu. On doit renvoyer une erreur, surtout pas un 200 trompeur qui ferait
+        // croire au client que c'est passé (bug historique des notifs avalées).
+        const { error: updateError } = await supabaseAdmin
+            .from("payments")
+            .update(updates)
+            .eq("id", paymentId);
+
+        if (updateError) {
+            console.error("[declare-payment] update payment error:", updateError.message);
+            return NextResponse.json({ error: "Impossible d'enregistrer la déclaration" }, { status: 500 });
+        }
 
         // Notifier le staff
         const { data: staffUsers } = await supabaseAdmin
@@ -141,7 +152,7 @@ export async function POST(req: NextRequest) {
                 ? `acompte de ${montant_declare.toLocaleString("fr-FR")} FCFA`
                 : `paiement complet de ${montant_declare.toLocaleString("fr-FR")} FCFA`;
 
-            await supabaseAdmin.from("notifications").insert(
+            const { error: notifError } = await supabaseAdmin.from("notifications").insert(
                 staffUsers.map((staff: { id: string }) => ({
                     user_id: staff.id,
                     type: "paiement_en_attente",
@@ -151,6 +162,13 @@ export async function POST(req: NextRequest) {
                     metadata: { payment_id: paymentId, student_id: student.id, montant_declare },
                 }))
             );
+
+            // Best-effort (la déclaration est déjà enregistrée), mais on ne l'avale
+            // plus en silence : c'est précisément ce qui avait masqué le bug de
+            // contrainte notifications_type_check.
+            if (notifError) {
+                console.error("[declare-payment] staff notification error:", notifError.message);
+            }
         }
 
         // Récupérer email + téléphone de l'étudiant pour le notifier

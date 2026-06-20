@@ -2333,6 +2333,7 @@
       "approveSuccess": "Paiement approuvé",
       "rejectSuccess": "Paiement rejeté",
       "validateError": "Erreur lors de la validation",
+      "accountingEntryError": "Paiement validé mais l'écriture comptable a échoué — à régulariser en comptabilité",
       "updateSuccess": "Paiement mis à jour",
       "updateError": "Erreur lors de la modification"
     },

@@ -2333,6 +2333,7 @@
       "approveSuccess": "Payment approved",
       "rejectSuccess": "Payment rejected",
       "validateError": "Error during validation",
+      "accountingEntryError": "Payment validated but the accounting entry failed — to be reconciled in accounting",
       "updateSuccess": "Payment updated",
       "updateError": "Error while updating"
     },

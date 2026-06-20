@@ -115,7 +115,10 @@ export default function NotificationsPage() {
                 async (payment) => {
                     const userId = (payment.students as any)?.created_by;
                     if (!userId) return;
-                    await supabase.from("notifications").insert({
+                    // Un insert PostgREST ne throw pas : on inspecte l'erreur et on la
+                    // propage pour qu'elle remonte dans le catch (statut « erreur »),
+                    // sinon une notif perdue resterait invisible.
+                    const { error: notifError } = await supabase.from("notifications").insert({
                         user_id: userId,
                         type: "retard_paiement",
                         titre: t("types.retard_paiement"),
@@ -125,6 +128,10 @@ export default function NotificationsPage() {
                         }),
                         read: false,
                     });
+                    if (notifError) {
+                        console.error("Notification retard échouée:", notifError);
+                        throw notifError;
+                    }
                 },
                 2,
                 200

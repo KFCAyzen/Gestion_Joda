@@ -222,7 +222,9 @@ export default function ApplicationManagement() {
                 const student = students.find(s => s.id === formData.studentId);
 
                 if (studentUser?.created_by) {
-                    await supabase.from("notifications").insert({
+                    // Best-effort : un insert PostgREST ne throw pas, le try/catch
+                    // englobant ne l'attraperait pas — on inspecte et on logge.
+                    const { error: notifError } = await supabase.from("notifications").insert({
                         user_id: studentUser.created_by,
                         type: "mise_a_jour_dossier",
                         titre: t("studentNotification.title"),
@@ -232,6 +234,7 @@ export default function ApplicationManagement() {
                         }),
                         read: false,
                     });
+                    if (notifError) console.error("Notification conseiller échouée:", notifError);
                 }
 
                 if (student?.email) {

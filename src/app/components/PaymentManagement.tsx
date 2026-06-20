@@ -143,12 +143,18 @@ export default function PaymentManagement() {
 
         if (updates.length === 0) return;
 
-        await Promise.all(updates.map(({ payment, penalty }) =>
+        // Recalcul des pénalités (best-effort, rejoué au prochain montage). Un insert
+        // PostgREST ne throw pas : on logge les échecs au lieu de les avaler.
+        const results = await Promise.all(updates.map(({ payment, penalty }) =>
             supabase.from('payments').update({
                 penalites: penalty,
                 status: penalty > 0 ? 'retard' : payment.status,
             }).eq('id', payment.id)
         ));
+        const failed = results.filter((r) => r.error);
+        if (failed.length > 0) {
+            console.error(`Sync pénalités : ${failed.length} échec(s)`, failed[0].error);
+        }
     };
 
     useEffect(() => {
@@ -177,9 +183,14 @@ export default function PaymentManagement() {
         if (!user || isSubmittingId) return;
         setIsSubmittingId(paymentId);
         try {
-            await supabase.from('payments').update({
+            const { error: submitError } = await supabase.from('payments').update({
                 status: 'en_validation',
             }).eq('id', paymentId);
+            if (submitError) {
+                console.error("Erreur soumission:", submitError);
+                showNotification(t("messages.submitError"), "error");
+                return;
+            }
             await logActivity(
                 user.id, user.name, user.role,
                 "payment_update", "payment", paymentId,
@@ -230,7 +241,7 @@ export default function PaymentManagement() {
             // 3. Mettre à jour le paiement. Validé mais incomplet => reste « attente »
             //    (la tranche reste due, le solde restant apparaît dans la barre).
             const nowIso = new Date().toISOString();
-            await supabase.from('payments').update({
+            const { error: updateError } = await supabase.from('payments').update({
                 status: isValid ? (fullySettled ? 'paye' : 'attente') : 'retard',
                 montant_paye: isValid ? newMontantPaye : montantPaye,
                 montant_declare: 0,
@@ -240,6 +251,14 @@ export default function PaymentManagement() {
                 rejection_reason: isValid ? null : (rejectionReason ?? null),
                 rejected_at: isValid ? null : nowIso,
             }).eq('id', paymentId);
+
+            // Échec de la mise à jour du paiement : on s'arrête net, rien n'a changé
+            // d'irréversible. Surtout, on n'affiche pas un faux « validé » à l'agent.
+            if (updateError) {
+                console.error("Erreur mise à jour paiement:", updateError);
+                showNotification(t("messages.validateError"), "error");
+                return;
+            }
 
             // 4. Si validé, créer une entrée comptable du montant réellement réglé.
             const typeEntree = payment.type === 'mandarin' || payment.type === 'anglais'
@@ -251,7 +270,7 @@ export default function PaymentManagement() {
             const description = `${t("detail.type")} ${getTypeLabel(payment.type)} - ${t("detail.installment")} ${payment.tranche || 'N/A'} - ${studentName}`;
 
             if (isValid) {
-                await supabase.from('entrees_comptables').insert({
+                const { error: accountingError } = await supabase.from('entrees_comptables').insert({
                     montant: validatedAmount,
                     date: new Date().toISOString(),
                     type: typeEntree,
@@ -260,6 +279,16 @@ export default function PaymentManagement() {
                     payment_id: payment.id,
                     created_by: user.id,
                 });
+
+                // Le paiement est déjà passé « payé » : si la compta échoue, on ne peut
+                // pas le masquer. On alerte explicitement l'agent pour régularisation
+                // (sinon de l'argent encaissé n'apparaît jamais en comptabilité).
+                if (accountingError) {
+                    console.error("Erreur écriture comptable:", accountingError);
+                    showNotification(t("messages.accountingEntryError"), "error");
+                    queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+                    return;
+                }
             }
 
             await logActivity(
@@ -314,12 +343,20 @@ export default function PaymentManagement() {
         if (!editingPayment || !user) return;
         setSaving(true);
         try {
-            await supabase.from("payments").update({
+            // type/tranche sont contraints en base (payments_type_check, _tranche_check) :
+            // un insert PostgREST ne throw pas, on inspecte l'erreur pour ne pas afficher
+            // un faux « mis à jour ».
+            const { error: editError } = await supabase.from("payments").update({
                 montant: parseInt(editForm.montant, 10),
                 date_limite: editForm.date_limite || null,
                 type: editForm.type,
                 tranche: editForm.tranche ? parseInt(editForm.tranche, 10) : null,
             }).eq("id", editingPayment.id);
+            if (editError) {
+                console.error("Erreur modification paiement:", editError);
+                showNotification(t("messages.updateError"), "error");
+                return;
+            }
             await logActivity(
                 user.id, user.name, user.role,
                 "payment_update", "payment", editingPayment.id,

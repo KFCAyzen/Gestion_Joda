@@ -136,7 +136,23 @@ async function handleNotifyPaymentResult(req: NextRequest, session: AuthSession)
     const emailOk = results[0].status === "fulfilled" && results[0].value;
     const smsOk = results[1].status === "fulfilled" && results[1].value;
 
-    return NextResponse.json({ success: true, email: emailOk, sms: smsOk });
+    // Les tâches in-app (notif + message) suivent email/sms dans `results`. On ne
+    // les avalait pas : un insert PostgREST « fulfilled » peut porter une `error`
+    // dans sa valeur (il ne throw pas), et une promesse peut être rejetée. On
+    // inspecte les deux et on logge — sinon une notif/message perdu reste invisible.
+    let inAppOk = true;
+    for (let i = 2; i < results.length; i++) {
+      const r = results[i];
+      if (r.status === "rejected") {
+        inAppOk = false;
+        console.error("[notify-payment-result] in-app task rejected:", r.reason?.message ?? r.reason);
+      } else if (r.value && typeof r.value === "object" && "error" in r.value && (r.value as { error: unknown }).error) {
+        inAppOk = false;
+        console.error("[notify-payment-result] in-app insert error:", (r.value as { error: { message?: string } }).error?.message);
+      }
+    }
+
+    return NextResponse.json({ success: true, email: emailOk, sms: smsOk, inApp: inAppOk });
   } catch (err: any) {
     console.error("[notify-payment-result]", err?.message);
     return NextResponse.json({ error: err?.message || "Erreur serveur" }, { status: 500 });
