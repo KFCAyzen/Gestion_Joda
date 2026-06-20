@@ -409,6 +409,28 @@ export default function LivreComptable() {
         });
     };
 
+    const downloadReport = async () => {
+        const ops = rows.map((r) => ({
+            date: r.time,
+            description: r.description,
+            category: catLabel(r.categorie),
+            amount: r.montant,
+            type: r.kind,
+        }));
+        try {
+            const { generateAccountingReport } = await import("../lib/pdfGenerator");
+            await generateAccountingReport({
+                title: `Rapport comptable — ${periodLabel()}`,
+                period: { start: dayStart.toISOString(), end: dayEnd.toISOString() },
+                entries: ops,
+                summary: { totalEntrees, totalSorties, balance: solde },
+            });
+        } catch (err) {
+            console.error("Download report error:", err);
+            showNotification("Erreur lors de la génération du PDF", "error");
+        }
+    };
+
     const exportCSV = () => {
         const headers = ["Heure", "Type", "Désignation", "Catégorie", "Montant", "Validé par"];
         const lines = filtered.map((r) => [
@@ -495,7 +517,7 @@ export default function LivreComptable() {
                                 Imprimer rapport
                             </button>
                             <button
-                                onClick={printReport}
+                                onClick={downloadReport}
                                 className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
                                 <Download className="h-3.5 w-3.5" />
