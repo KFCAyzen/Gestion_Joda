@@ -39,6 +39,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -650,6 +651,9 @@ type EmployeeFormState = {
     type_horaire: "" | "temps_plein" | "temps_partiel" | "flexible" | "poste";
     numero_cnps: string;
     numero_compte_bancaire: string;
+    // Suivi d'appels (call center)
+    suivi_appels: boolean;
+    quota_appels: boolean;
 };
 
 const emptyEmployeeForm: EmployeeFormState = {
@@ -692,6 +696,8 @@ const emptyEmployeeForm: EmployeeFormState = {
     type_horaire: "",
     numero_cnps: "",
     numero_compte_bancaire: "",
+    suivi_appels: false,
+    quota_appels: false,
 };
 
 const MATRICULE_PREFIX = "EMP-";
@@ -839,6 +845,8 @@ function EmployeesPanel({
             type_horaire: e.type_horaire ?? "",
             numero_cnps: e.numero_cnps ?? "",
             numero_compte_bancaire: e.numero_compte_bancaire ?? "",
+            suivi_appels: e.suivi_appels ?? false,
+            quota_appels: e.quota_appels ?? false,
         });
         setStep(0);
         setModalOpen(true);
@@ -885,6 +893,9 @@ function EmployeesPanel({
                 type_horaire: form.type_horaire || null,
                 numero_cnps: form.numero_cnps.trim() || null,
                 numero_compte_bancaire: form.numero_compte_bancaire.trim() || null,
+                // Le quota implique forcément la saisie des compteurs.
+                suivi_appels: form.suivi_appels || form.quota_appels,
+                quota_appels: form.quota_appels,
             };
             if (editing) {
                 await update.mutateAsync({ id: editing.id, data: payload });
@@ -1776,6 +1787,49 @@ function StepContract({
                         onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                     />
                 </Field>
+            </div>
+            <div className="md:col-span-2 space-y-2 rounded-md border border-slate-200 dark:border-slate-700 p-3">
+                <Label className="text-sm font-medium">{t("employees.form.callTracking")}</Label>
+                <label className="flex items-start gap-2 cursor-pointer">
+                    <Checkbox
+                        className="mt-0.5"
+                        checked={form.suivi_appels}
+                        onCheckedChange={(v) =>
+                            setForm((f) => ({
+                                ...f,
+                                suivi_appels: v === true,
+                                // Décocher la saisie retire aussi le quota.
+                                quota_appels: v === true ? f.quota_appels : false,
+                            }))
+                        }
+                    />
+                    <span className="text-sm leading-tight">
+                        {t("employees.form.callTrackingEnabled")}
+                        <span className="block text-xs text-slate-500">
+                            {t("employees.form.callTrackingEnabledHint")}
+                        </span>
+                    </span>
+                </label>
+                <label className="flex items-start gap-2 cursor-pointer">
+                    <Checkbox
+                        className="mt-0.5"
+                        checked={form.quota_appels}
+                        onCheckedChange={(v) =>
+                            setForm((f) => ({
+                                ...f,
+                                quota_appels: v === true,
+                                // Cocher le quota active forcément la saisie.
+                                suivi_appels: v === true ? true : f.suivi_appels,
+                            }))
+                        }
+                    />
+                    <span className="text-sm leading-tight">
+                        {t("employees.form.callQuota")}
+                        <span className="block text-xs text-slate-500">
+                            {t("employees.form.callQuotaHint")}
+                        </span>
+                    </span>
+                </label>
             </div>
         </div>
     );

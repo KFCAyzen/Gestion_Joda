@@ -80,6 +80,9 @@ export interface Employee {
   // Identifiant social (paie)
   numero_cnps: string | null;
   numero_compte_bancaire: string | null;
+  // Suivi d'appels (call center) — désignation manuelle par l'admin
+  suivi_appels: boolean; // saisit les compteurs d'appels dans ses rapports
+  quota_appels: boolean; // soumis au quota hebdomadaire (300 appels / 90 RDV)
   created_at: string;
   updated_at: string;
 }

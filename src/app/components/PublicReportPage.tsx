@@ -23,8 +23,8 @@ import {
 import { EVAL_CRITERIA, fmtNote } from "../lib/hrEvaluation";
 import {
     CALL_STAT_KEYS,
-    isCallActivityPoste,
-    isCallCenterPoste,
+    employeeTracksCalls,
+    employeeHasCallQuota,
     weekStartIso,
     WEEKLY_CALL_QUOTA,
     type CallStatKey,
@@ -36,6 +36,8 @@ type PublicEmployee = {
     nom: string;
     poste?: string;
     departement?: string;
+    suivi_appels?: boolean;
+    quota_appels?: boolean;
 };
 type PublicReport = {
     id: string;
@@ -485,7 +487,7 @@ export default function PublicReportPage() {
         }
 
         // Compteurs d'appels : obligatoires (>= 0) pour les postes concernés.
-        const eligible = isCallActivityPoste(session.poste, session.departement);
+        const eligible = employeeTracksCalls(session);
         const callPayload: Partial<Record<CallStatKey, number>> = {};
         if (eligible) {
             for (const k of CALL_STAT_KEYS) {
@@ -721,8 +723,8 @@ export default function PublicReportPage() {
     // Authenticated step
     // ============================================================
     const e = session;
-    const showCallStats = isCallActivityPoste(e.poste, e.departement);
-    const showQuota = isCallCenterPoste(e.poste, e.departement);
+    const showCallStats = employeeTracksCalls(e);
+    const showQuota = employeeHasCallQuota(e);
     const weekStart = weekStartIso(today);
     const weekTotals = history.reduce(
         (acc, r) => {

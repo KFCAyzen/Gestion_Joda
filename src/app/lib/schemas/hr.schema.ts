@@ -89,6 +89,9 @@ export const employeeSchema = z.object({
   // Identifiant social (paie)
   numero_cnps: nullableString,
   numero_compte_bancaire: nullableString,
+  // Suivi d'appels (call center) — désignation manuelle par l'admin
+  suivi_appels: z.boolean().optional(),
+  quota_appels: z.boolean().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });

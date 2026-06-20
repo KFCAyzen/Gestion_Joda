@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
         const { data: emp, error: empError } = await supabaseAdmin
             .from("employees")
-            .select("id, prenom, nom, poste")
+            .select("id, prenom, nom, poste, departement, suivi_appels, quota_appels")
             .eq("id", employee_id)
             .maybeSingle();
 

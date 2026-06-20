@@ -1,7 +1,7 @@
 // Statistiques d'appels des rapports journaliers.
-// Renseignées uniquement par les postes de prospection / relation client
-// (secrétaire, call center, communication, responsable local).
-// Le poste est un texte libre : on cible par mots-clés (insensible accents/casse).
+// Renseignées uniquement par les employés que l'admin a désignés manuellement
+// via les cases « Saisie des compteurs d'appels » (suivi_appels) et
+// « Soumis au quota hebdomadaire » (quota_appels) sur la fiche employé.
 
 import type { DailyReport } from "../types/hr";
 
@@ -23,52 +23,21 @@ export const CALL_STAT_KEYS: CallStatKey[] = [
     "nb_autres",
 ];
 
-// Normalise une chaîne : minuscules + suppression des accents.
-function normalize(s: string): string {
-    return s
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[̀-ͯ]/g, "");
+// Forme minimale d'un employé portant les indicateurs de suivi d'appels.
+// Le `quota_appels` implique le suivi (un call center saisit toujours ses compteurs).
+export interface CallFlagsHolder {
+    suivi_appels?: boolean | null;
+    quota_appels?: boolean | null;
 }
 
-// Mots-clés (déjà normalisés) qui rendent les compteurs d'appels visibles.
-const CALL_POSTE_KEYWORDS = [
-    "secretaire",
-    "call center",
-    "call-center",
-    "callcenter",
-    "centre d'appel",
-    "centre d appel",
-    "communication",
-    "responsable local",
-];
-
-// Détermine si un poste (ou son département) doit saisir les compteurs d'appels.
-export function isCallActivityPoste(
-    poste?: string | null,
-    departement?: string | null
-): boolean {
-    const haystack = normalize(`${poste ?? ""} ${departement ?? ""}`);
-    return CALL_POSTE_KEYWORDS.some((kw) => haystack.includes(kw));
+// L'employé saisit-il les compteurs d'appels ? (sélection manuelle de l'admin)
+export function employeeTracksCalls(emp?: CallFlagsHolder | null): boolean {
+    return Boolean(emp?.suivi_appels || emp?.quota_appels);
 }
 
-// Mots-clés ciblant spécifiquement les call centers (sous-ensemble des postes
-// d'appels) — ce sont eux qui sont soumis au quota hebdomadaire.
-const CALL_CENTER_KEYWORDS = [
-    "call center",
-    "call-center",
-    "callcenter",
-    "centre d'appel",
-    "centre d appel",
-];
-
-// Détermine si un poste est un call center (soumis au quota hebdomadaire).
-export function isCallCenterPoste(
-    poste?: string | null,
-    departement?: string | null
-): boolean {
-    const haystack = normalize(`${poste ?? ""} ${departement ?? ""}`);
-    return CALL_CENTER_KEYWORDS.some((kw) => haystack.includes(kw));
+// L'employé est-il soumis au quota hebdomadaire ? (sous-ensemble des call centers)
+export function employeeHasCallQuota(emp?: CallFlagsHolder | null): boolean {
+    return Boolean(emp?.quota_appels);
 }
 
 // Quota hebdomadaire minimum d'un call center.

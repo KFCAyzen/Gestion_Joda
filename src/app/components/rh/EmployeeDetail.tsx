@@ -74,8 +74,8 @@ import { payslipReference } from "../../lib/payslipRef";
 import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../../lib/hrEvaluation";
 import {
     CALL_STAT_KEYS,
-    isCallActivityPoste,
-    isCallCenterPoste,
+    employeeTracksCalls,
+    employeeHasCallQuota,
     sumCallStats,
     groupReportsByWeek,
     quotaProductivityScore,
@@ -310,8 +310,8 @@ export default function EmployeeDetail({
             .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     }, [reports, periodFrom, periodTo]);
 
-    const showCallStats = isCallActivityPoste(employee?.poste, employee?.departement);
-    const isCallCenter = isCallCenterPoste(employee?.poste, employee?.departement);
+    const showCallStats = employeeTracksCalls(employee);
+    const isCallCenter = employeeHasCallQuota(employee);
     const callStatsTotals = useMemo(() => sumCallStats(reportsInPeriod), [reportsInPeriod]);
     const weeklyCallStats = useMemo(() => groupReportsByWeek(reportsInPeriod), [reportsInPeriod]);
 

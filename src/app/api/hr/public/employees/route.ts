@@ -10,7 +10,7 @@ export async function GET() {
     try {
         const { data, error } = await supabaseAdmin
             .from("employees")
-            .select("id, prenom, nom, poste, departement")
+            .select("id, prenom, nom, poste, departement, suivi_appels, quota_appels")
             .eq("statut", "actif")
             .order("nom", { ascending: true });
 
