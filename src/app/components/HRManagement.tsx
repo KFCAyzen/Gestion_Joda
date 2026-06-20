@@ -86,6 +86,7 @@ import {
 import HRConfigPanel from "./rh/HRConfigPanel";
 import { useRouter } from "@/i18n/navigation";
 import { printEmployeesReport } from "../lib/printEmployeesReport";
+import type { PrintAction } from "../lib/htmlDocToPdf";
 import { payslipReference } from "../lib/payslipRef";
 import { computeCameroonPayroll } from "../lib/cameroonPayroll";
 import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../lib/hrEvaluation";
@@ -394,7 +395,7 @@ function EvaluationsOverviewPanel({
             ? `${periodFrom || "…"} → ${periodTo || "…"}`
             : t("detail.reportsPrint.allPeriods");
 
-    const handlePrint = () => {
+    const handlePrint = (action: PrintAction = "print") => {
         printEmployeesReport({
             docTitle: t("evaluationsOverview.print.docTitle"),
             subtitle: `${t("detail.reportsPrint.periodLabel")}: ${periodText}`,
@@ -434,7 +435,7 @@ function EvaluationsOverviewPanel({
             generatedOn: t("evaluationsOverview.print.generatedOn", {
                 date: new Date().toLocaleString("fr-FR"),
             }),
-        });
+        }, action);
     };
 
     return (
@@ -448,11 +449,11 @@ function EvaluationsOverviewPanel({
                     <CardDescription>{t("evaluationsOverview.description")}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" onClick={handlePrint} disabled={ranking.length === 0}>
+                    <Button variant="outline" onClick={() => handlePrint("print")} disabled={ranking.length === 0}>
                         <Printer className="w-4 h-4 mr-2" />
                         {t("evaluationsOverview.print.button")}
                     </Button>
-                    <Button variant="outline" onClick={handlePrint} disabled={ranking.length === 0}>
+                    <Button variant="outline" onClick={() => handlePrint("download")} disabled={ranking.length === 0}>
                         <Download className="w-4 h-4 mr-2" />
                         {t("evaluationsOverview.print.downloadButton")}
                     </Button>
@@ -941,7 +942,7 @@ function EmployeesPanel({
         }
     };
 
-    const handlePrintReport = () => {
+    const handlePrintReport = (action: PrintAction = "print") => {
         const count = (s: EmployeeStatus) => employees.filter((e) => e.statut === s).length;
         const payroll = employees
             .filter((e) => e.statut === "actif")
@@ -990,7 +991,7 @@ function EmployeesPanel({
             })),
             emptyLabel: t("employees.empty"),
             generatedOn,
-        });
+        }, action);
     };
 
     return (
@@ -1006,7 +1007,7 @@ function EmployeesPanel({
                 <div className="flex flex-wrap gap-2">
                     <Button
                         variant="outline"
-                        onClick={handlePrintReport}
+                        onClick={() => handlePrintReport("print")}
                         disabled={employees.length === 0}
                     >
                         <Printer className="w-4 h-4 mr-2" />
@@ -1014,7 +1015,7 @@ function EmployeesPanel({
                     </Button>
                     <Button
                         variant="outline"
-                        onClick={handlePrintReport}
+                        onClick={() => handlePrintReport("download")}
                         disabled={employees.length === 0}
                     >
                         <Download className="w-4 h-4 mr-2" />

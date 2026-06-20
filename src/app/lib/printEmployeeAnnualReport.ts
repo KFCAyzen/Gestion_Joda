@@ -2,6 +2,8 @@
 // dédiée et déclenche l'impression. Le composant appelant fournit des libellés/valeurs
 // déjà traduits/formatés — ce helper reste purement présentation.
 
+import { PrintAction, downloadHtmlDocAsPdf, pdfFilename } from "./htmlDocToPdf";
+
 export interface AnnualColumn {
   label: string;
   align?: "left" | "right";
@@ -91,10 +93,8 @@ function renderMonthly(data: EmployeeAnnualReportData): string {
     </section>`;
 }
 
-export function printEmployeeAnnualReport(data: EmployeeAnnualReportData): void {
+export function printEmployeeAnnualReport(data: EmployeeAnnualReportData, action: PrintAction = "print"): void {
   if (typeof window === "undefined") return;
-  const win = window.open("", "_blank", "width=900,height=1000");
-  if (!win) return;
 
   const origin = window.location.origin;
 
@@ -230,6 +230,13 @@ export function printEmployeeAnnualReport(data: EmployeeAnnualReportData): void 
 </body>
 </html>`;
 
+  if (action === "download") {
+    void downloadHtmlDocAsPdf(html, pdfFilename(data.docTitle, data.fullName, data.year));
+    return;
+  }
+
+  const win = window.open("", "_blank", "width=900,height=1000");
+  if (!win) return;
   win.document.open();
   win.document.write(html);
   win.document.close();

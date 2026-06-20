@@ -2,6 +2,8 @@
 // document imprimable (une fenêtre dédiée) et déclenche l'impression. Le composant
 // appelant fournit des libellés/valeurs déjà traduits — ce helper reste présentation.
 
+import { PrintAction, downloadHtmlDocAsPdf, pdfFilename } from "./htmlDocToPdf";
+
 export interface ReportEntry {
   date: string;
   hours: string;
@@ -137,10 +139,8 @@ function renderEntries(data: EmployeeReportsData): string {
     .join("");
 }
 
-export function printEmployeeReports(data: EmployeeReportsData): void {
+export function printEmployeeReports(data: EmployeeReportsData, action: PrintAction = "print"): void {
   if (typeof window === "undefined") return;
-  const win = window.open("", "_blank", "width=900,height=1000");
-  if (!win) return;
 
   const origin = window.location.origin;
 
@@ -298,6 +298,13 @@ export function printEmployeeReports(data: EmployeeReportsData): void {
 </body>
 </html>`;
 
+  if (action === "download") {
+    void downloadHtmlDocAsPdf(html, pdfFilename(data.docTitle, data.fullName));
+    return;
+  }
+
+  const win = window.open("", "_blank", "width=900,height=1000");
+  if (!win) return;
   win.document.open();
   win.document.write(html);
   win.document.close();

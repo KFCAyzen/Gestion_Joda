@@ -2,6 +2,8 @@
 // dans une fenêtre dédiée et déclenche l'impression. Le composant appelant fournit
 // des libellés/valeurs déjà traduits — ce helper reste purement présentation.
 
+import { PrintAction, downloadHtmlDocAsPdf, pdfFilename } from "./htmlDocToPdf";
+
 export interface EvaluationCriterionRow {
   label: string;
   score: number; // 1..5
@@ -103,10 +105,8 @@ function renderBlocks(data: EmployeeEvaluationData): string {
     .join("");
 }
 
-export function printEmployeeEvaluation(data: EmployeeEvaluationData): void {
+export function printEmployeeEvaluation(data: EmployeeEvaluationData, action: PrintAction = "print"): void {
   if (typeof window === "undefined") return;
-  const win = window.open("", "_blank", "width=900,height=1000");
-  if (!win) return;
 
   const origin = window.location.origin;
 
@@ -249,6 +249,13 @@ export function printEmployeeEvaluation(data: EmployeeEvaluationData): void {
 </body>
 </html>`;
 
+  if (action === "download") {
+    void downloadHtmlDocAsPdf(html, pdfFilename(data.docTitle, data.fullName, data.date));
+    return;
+  }
+
+  const win = window.open("", "_blank", "width=900,height=1000");
+  if (!win) return;
   win.document.open();
   win.document.write(html);
   win.document.close();

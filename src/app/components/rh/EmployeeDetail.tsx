@@ -69,6 +69,7 @@ import {
 import { printEmployeeReports } from "../../lib/printEmployeeReports";
 import { printEmployeeEvaluation } from "../../lib/printEmployeeEvaluation";
 import { printEmployeeAnnualReport } from "../../lib/printEmployeeAnnualReport";
+import type { PrintAction } from "../../lib/htmlDocToPdf";
 import { payslipReference } from "../../lib/payslipRef";
 import { EVAL_CRITERIA, fmtNote, overallAverage, criterionAverages } from "../../lib/hrEvaluation";
 import {
@@ -269,7 +270,7 @@ export default function EmployeeDetail({
         [t, totalHours, approvedLeaves, pendingLeaves, totalPaid, employee, totalDeductions, payslips.length, reports.length, lastEvaluation]
     );
 
-    const handlePrint = () => {
+    const handlePrint = (action: PrintAction = "print") => {
         if (!employee) return;
         printEmployeeDossier({
             docTitle: t("detail.print.docTitle"),
@@ -296,7 +297,7 @@ export default function EmployeeDetail({
             generatedOn: t("detail.print.generatedOn", {
                 date: new Date().toLocaleString("fr-FR"),
             }),
-        });
+        }, action);
     };
 
     const reportsInPeriod = useMemo(() => {
@@ -314,7 +315,7 @@ export default function EmployeeDetail({
     const callStatsTotals = useMemo(() => sumCallStats(reportsInPeriod), [reportsInPeriod]);
     const weeklyCallStats = useMemo(() => groupReportsByWeek(reportsInPeriod), [reportsInPeriod]);
 
-    const handlePrintReports = () => {
+    const handlePrintReports = (action: PrintAction = "print") => {
         if (!employee) return;
         const totalHours = reportsInPeriod.reduce((s, r) => s + (r.heures_travaillees || 0), 0);
         const periodText =
@@ -371,10 +372,10 @@ export default function EmployeeDetail({
                       })),
                   }
                 : undefined,
-        });
+        }, action);
     };
 
-    const handlePrintAnnual = () => {
+    const handlePrintAnnual = (action: PrintAction = "print") => {
         if (!employee) return;
         printEmployeeAnnualReport({
             docTitle: t("detail.annual.print.docTitle"),
@@ -431,7 +432,7 @@ export default function EmployeeDetail({
             generatedOn: t("detail.print.generatedOn", {
                 date: new Date().toLocaleString("fr-FR"),
             }),
-        });
+        }, action);
     };
 
     const evaluatorName = (ev: EmployeeEvaluation): string => {
@@ -440,7 +441,7 @@ export default function EmployeeDetail({
         return u ? `${u.prenom} ${u.nom}` : "—";
     };
 
-    const handlePrintEvaluation = (ev: EmployeeEvaluation) => {
+    const handlePrintEvaluation = (ev: EmployeeEvaluation, action: PrintAction = "print") => {
         if (!employee) return;
         printEmployeeEvaluation({
             docTitle: t("detail.evaluations.print.docTitle"),
@@ -471,7 +472,7 @@ export default function EmployeeDetail({
             generatedOn: t("detail.print.generatedOn", {
                 date: new Date().toLocaleString("fr-FR"),
             }),
-        });
+        }, action);
     };
 
     if (employeesQ.isLoading && !employee) {
@@ -514,11 +515,11 @@ export default function EmployeeDetail({
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={handlePrint}>
+                    <Button size="sm" variant="outline" onClick={() => handlePrint("print")}>
                         <Printer className="w-4 h-4 mr-1.5" />
                         {t("detail.print.button")}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handlePrint}>
+                    <Button size="sm" variant="outline" onClick={() => handlePrint("download")}>
                         <Download className="w-4 h-4 mr-1.5" />
                         {t("detail.print.downloadButton")}
                     </Button>
@@ -649,11 +650,11 @@ export default function EmployeeDetail({
                                 </Button>
                             )}
                             <div className="ml-auto flex flex-wrap gap-2">
-                                <Button size="sm" variant="outline" onClick={handlePrintReports} disabled={reportsInPeriod.length === 0}>
+                                <Button size="sm" variant="outline" onClick={() => handlePrintReports("print")} disabled={reportsInPeriod.length === 0}>
                                     <Printer className="w-4 h-4 mr-1.5" />
                                     {t("detail.reportsPrint.button")} ({reportsInPeriod.length})
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={handlePrintReports} disabled={reportsInPeriod.length === 0}>
+                                <Button size="sm" variant="outline" onClick={() => handlePrintReports("download")} disabled={reportsInPeriod.length === 0}>
                                     <Download className="w-4 h-4 mr-1.5" />
                                     {t("detail.reportsPrint.downloadButton")}
                                 </Button>
@@ -866,11 +867,11 @@ export default function EmployeeDetail({
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button size="sm" variant="outline" onClick={handlePrintAnnual}>
+                            <Button size="sm" variant="outline" onClick={() => handlePrintAnnual("print")}>
                                 <Printer className="w-4 h-4 mr-1.5" />
                                 {t("detail.annual.print.button")}
                             </Button>
-                            <Button size="sm" variant="outline" onClick={handlePrintAnnual}>
+                            <Button size="sm" variant="outline" onClick={() => handlePrintAnnual("download")}>
                                 <Download className="w-4 h-4 mr-1.5" />
                                 {t("detail.annual.print.downloadButton")}
                             </Button>
@@ -1234,7 +1235,7 @@ function EvaluationsSection({
     showCallStats: boolean;
     creatorId: string;
     evaluatorName: (ev: EmployeeEvaluation) => string;
-    onPrint: (ev: EmployeeEvaluation) => void;
+    onPrint: (ev: EmployeeEvaluation, action?: PrintAction) => void;
     onError: (e: unknown) => void;
     onSuccess: (msg: string) => void;
 }) {
@@ -1496,10 +1497,10 @@ function EvaluationsSection({
                                     <span className="text-xs text-slate-500">{ev.date_evaluation}{ev.periode ? ` · ${ev.periode}` : ""}</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title={t("detail.evaluations.print.button")} onClick={() => onPrint(ev)}>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title={t("detail.evaluations.print.button")} onClick={() => onPrint(ev, "print")}>
                                         <Printer className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title={t("detail.evaluations.print.downloadButton")} onClick={() => onPrint(ev)}>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title={t("detail.evaluations.print.downloadButton")} onClick={() => onPrint(ev, "download")}>
                                         <Download className="w-3.5 h-3.5" />
                                     </Button>
                                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setConfirmDel(ev.id)}>

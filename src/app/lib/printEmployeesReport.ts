@@ -2,6 +2,8 @@
 // dans une fenêtre dédiée et déclenche l'impression. Le composant appelant fournit
 // des libellés/valeurs déjà traduits — ce helper reste purement présentation.
 
+import { PrintAction, downloadHtmlDocAsPdf, pdfFilename } from "./htmlDocToPdf";
+
 export interface RosterColumn {
   key: string;
   label: string;
@@ -86,10 +88,8 @@ function renderTable(data: EmployeesReportData): string {
     </section>`;
 }
 
-export function printEmployeesReport(data: EmployeesReportData): void {
+export function printEmployeesReport(data: EmployeesReportData, action: PrintAction = "print"): void {
   if (typeof window === "undefined") return;
-  const win = window.open("", "_blank", "width=1000,height=1100");
-  if (!win) return;
 
   const origin = window.location.origin;
 
@@ -199,6 +199,13 @@ export function printEmployeesReport(data: EmployeesReportData): void {
 </body>
 </html>`;
 
+  if (action === "download") {
+    void downloadHtmlDocAsPdf(html, pdfFilename(data.docTitle));
+    return;
+  }
+
+  const win = window.open("", "_blank", "width=1000,height=1100");
+  if (!win) return;
   win.document.open();
   win.document.write(html);
   win.document.close();
