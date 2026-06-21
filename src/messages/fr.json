@@ -1502,6 +1502,9 @@
       "validate": "Valider",
       "reject": "Rejeter",
       "confirmReject": "Confirmer le rejet",
+      "edit": "Modifier",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
       "cancel": "Annuler",
       "close": "Fermer"
     },
@@ -1546,7 +1549,9 @@
     },
     "details": {
       "entryTitle": "Détails - Entrée",
-      "expenseTitle": "Détails - Sortie"
+      "expenseTitle": "Détails - Sortie",
+      "editEntryTitle": "Modifier l'entrée",
+      "editExpenseTitle": "Modifier la sortie"
     },
     "detail": {
       "rejectionReason": "Motif du rejet"

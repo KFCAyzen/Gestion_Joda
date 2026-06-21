@@ -1267,6 +1267,11 @@ export default function AccountingPage() {
                                                                         ...(isAdmin
                                                                             ? [
                                                                                   {
+                                                                                      label: t("actions.edit"),
+                                                                                      icon: <Edit className="h-4 w-4" />,
+                                                                                      onClick: () => openEditEntree(e),
+                                                                                  },
+                                                                                  {
                                                                                       label: t("actions.delete"),
                                                                                       icon: <Trash2 className="h-4 w-4" />,
                                                                                       onClick: () => handleDeleteEntree(e.id),
@@ -1443,6 +1448,11 @@ export default function AccountingPage() {
                                                                             : []),
                                                                         ...(isAdmin
                                                                             ? [
+                                                                                  {
+                                                                                      label: t("actions.edit"),
+                                                                                      icon: <Edit className="h-4 w-4" />,
+                                                                                      onClick: () => openEditSortie(s),
+                                                                                  },
                                                                                   {
                                                                                       label: t("actions.delete"),
                                                                                       icon: <Trash2 className="h-4 w-4" />,
@@ -1753,6 +1763,98 @@ export default function AccountingPage() {
                             {t("actions.confirmReject")}
                         </Button>
                     </div>
+                </div>
+            </div>
+        )}
+
+        {/* Edit entry modal. */}
+        {editingEntree && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">{t("details.editEntryTitle")}</h3>
+                        <button onClick={() => setEditingEntree(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); handleSaveEntree(); }} className="space-y-3">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label className="text-xs">{t("forms.amount")}</Label>
+                                <Input type="number" min="0" required value={editEntreeForm.montant} onChange={(e) => setEditEntreeForm((p) => ({ ...p, montant: e.target.value }))} placeholder="0" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs">{t("forms.type")}</Label>
+                                <Select value={editEntreeForm.type} onValueChange={(value) => setEditEntreeForm((p) => ({ ...p, type: value ?? "" }))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {TYPES_ENTREES_DYNAMIC.map((ty) => (
+                                            <SelectItem key={ty} value={ty}>{getEntryTypeLabel(ty)}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs">{t("forms.date")}</Label>
+                                <Input type="date" required value={editEntreeForm.date} onChange={(e) => setEditEntreeForm((p) => ({ ...p, date: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs">{t("forms.description")}</Label>
+                                <Input type="text" required value={editEntreeForm.description} onChange={(e) => setEditEntreeForm((p) => ({ ...p, description: e.target.value }))} placeholder={t("forms.descriptionPlaceholder")} />
+                            </div>
+                        </div>
+                        <div className="mt-5 flex justify-end gap-2">
+                            <Button type="button" variant="outline" size="sm" onClick={() => setEditingEntree(null)}>{t("actions.cancel")}</Button>
+                            <Button type="submit" size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={savingEdit}>
+                                {savingEdit && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                                {savingEdit ? t("actions.saving") : t("actions.save")}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+
+        {/* Edit expense modal. */}
+        {editingSortie && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-rose-700">{t("details.editExpenseTitle")}</h3>
+                        <button onClick={() => setEditingSortie(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 text-xl">&times;</button>
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); handleSaveSortie(); }} className="space-y-3">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label className="text-xs">{t("forms.amount")}</Label>
+                                <Input type="number" min="0" required value={editSortieForm.montant} onChange={(e) => setEditSortieForm((p) => ({ ...p, montant: e.target.value }))} placeholder="0" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs">{t("forms.category")}</Label>
+                                <Select value={editSortieForm.categorie} onValueChange={(value) => setEditSortieForm((p) => ({ ...p, categorie: value ?? "" }))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {CATEGORIES_SORTIES.map((c) => (
+                                            <SelectItem key={c} value={c}>{getCategoryLabel(c)}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs">{t("forms.date")}</Label>
+                                <Input type="date" required value={editSortieForm.date} onChange={(e) => setEditSortieForm((p) => ({ ...p, date: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs">{t("forms.description")}</Label>
+                                <Input type="text" required value={editSortieForm.description} onChange={(e) => setEditSortieForm((p) => ({ ...p, description: e.target.value }))} placeholder={t("forms.descriptionPlaceholder")} />
+                            </div>
+                        </div>
+                        <div className="mt-5 flex justify-end gap-2">
+                            <Button type="button" variant="outline" size="sm" onClick={() => setEditingSortie(null)}>{t("actions.cancel")}</Button>
+                            <Button type="submit" size="sm" className="bg-rose-600 hover:bg-rose-700 text-white" disabled={savingEdit}>
+                                {savingEdit && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                                {savingEdit ? t("actions.saving") : t("actions.save")}
+                            </Button>
+                        </div>
+                    </form>
                 </div>
             </div>
         )}

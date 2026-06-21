@@ -1502,6 +1502,9 @@
       "validate": "Validate",
       "reject": "Reject",
       "confirmReject": "Confirm rejection",
+      "edit": "Edit",
+      "save": "Save",
+      "saving": "Saving...",
       "cancel": "Cancel",
       "close": "Close"
     },
@@ -1546,7 +1549,9 @@
     },
     "details": {
       "entryTitle": "Details - Income",
-      "expenseTitle": "Details - Expense"
+      "expenseTitle": "Details - Expense",
+      "editEntryTitle": "Edit income",
+      "editExpenseTitle": "Edit expense"
     },
     "detail": {
       "rejectionReason": "Rejection reason"
