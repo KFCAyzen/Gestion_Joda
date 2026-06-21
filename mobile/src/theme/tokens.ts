@@ -20,6 +20,10 @@ export const colors = {
   mintDeep: '#0f8f6e',
   amber: '#fbbf24',
   amberDeep: '#b45309',
+  blue: '#60a5fa',
+  blueDeep: '#2563eb',
+  purple: '#a78bfa',
+  purpleDeep: '#7c3aed',
 
   text: '#ffffff',
   ink70: 'rgba(255,255,255,0.70)',
@@ -40,7 +44,10 @@ export const gradients = {
   crimson: ['#ff5a5f', '#d11a2a'] as const,
   crimsonButton: ['#ff5a5f', '#d11a2a'] as const,
   agentAvatar: ['#fb7185', '#e11d2a'] as const,
+  staffAvatar: ['#fb7185', '#e11d2a'] as const,
   studentAvatar: ['#60a5fa', '#2563eb'] as const,
+  mint: ['#34d9a8', '#0f8f6e'] as const,
+  purple: ['#a78bfa', '#7c3aed'] as const,
 };
 
 export const radius = {

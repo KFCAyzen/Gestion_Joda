@@ -18,11 +18,11 @@ export function Avatar({
 }: {
   name: string;
   size?: number;
-  kind?: 'agent' | 'student';
+  kind?: 'agent' | 'student' | 'staff';
 }) {
   return (
     <LinearGradient
-      colors={kind === 'agent' ? gradients.agentAvatar : gradients.studentAvatar}
+      colors={kind === 'student' ? gradients.studentAvatar : gradients.agentAvatar}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.base, { width: size, height: size, borderRadius: size / 2 }]}>

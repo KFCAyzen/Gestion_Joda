@@ -15,7 +15,7 @@ import { colors, gradients, radius, shadow } from '@/theme/tokens';
 type Props = {
   label: string;
   onPress?: () => void;
-  variant?: 'primary' | 'glass';
+  variant?: 'primary' | 'glass' | 'mint' | 'danger';
   size?: 'md' | 'sm';
   disabled?: boolean;
   loading?: boolean;
@@ -41,8 +41,10 @@ export function Button({
   const br = size === 'sm' ? radius.sm : radius.md;
   const dim = disabled || loading;
 
+  const onGradient = variant === 'primary' || variant === 'mint' || variant === 'danger';
+
   const content = loading ? (
-    <ActivityIndicator color={variant === 'primary' ? '#fff' : colors.ink70} />
+    <ActivityIndicator color={onGradient ? '#fff' : colors.ink70} />
   ) : (
     <View style={styles.inner}>
       {icon}
@@ -50,17 +52,23 @@ export function Button({
     </View>
   );
 
-  if (variant === 'primary') {
+  if (onGradient) {
+    const palette =
+      variant === 'mint'
+        ? gradients.mint
+        : variant === 'danger'
+          ? (['#ff6b6b', '#b91c1c'] as const)
+          : gradients.crimsonButton;
     return (
       <Pressable
         onPress={onPress}
         disabled={dim}
         style={[fullWidth && styles.fullWidth, dim && styles.dim, style]}>
         <LinearGradient
-          colors={gradients.crimsonButton}
+          colors={palette}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.base, { height, borderRadius: br }, shadow.primary]}>
+          style={[styles.base, { height, borderRadius: br }, variant === 'primary' && shadow.primary]}>
           {content}
         </LinearGradient>
       </Pressable>
