@@ -12,6 +12,8 @@ import {
     X,
     CheckCircle2,
     AlertTriangle,
+    Pencil,
+    Trash2,
 } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useEntreesComptables, useSortiesComptables, ENTREES_KEY, SORTIES_KEY } from "../lib/hooks/use-accounting";
@@ -178,6 +180,18 @@ export default function LivreComptable() {
 
     const canCreateEntry = hasPermission("accounting.create");
     const canValidateEntry = hasPermission("accounting.validate");
+    const canEditEntry = hasPermission("accounting.edit");
+    const canDeleteEntry = hasPermission("accounting.delete");
+
+    const [editingRow, setEditingRow] = useState<LedgerRow | null>(null);
+    const [editForm, setEditForm] = useState({
+        montant: "",
+        description: "",
+        type: "revenus_divers",
+        categorie: "divers",
+        date: "",
+    });
+    const [savingEdit, setSavingEdit] = useState(false);
 
     const getUserName = useCallback(
         (id: string | null): string => {
@@ -391,6 +405,77 @@ export default function LivreComptable() {
         }
     };
 
+    const openEdit = (row: LedgerRow) => {
+        const raw = row.raw;
+        setEditingRow(row);
+        setEditForm({
+            montant: String(raw.montant),
+            description: raw.description,
+            type: row.kind === "entree" ? (raw as EntreeComptable).type : "revenus_divers",
+            categorie: row.kind === "sortie" ? (raw as SortieComptable).categorie : "divers",
+            date: raw.date ? raw.date.slice(0, 10) : "",
+        });
+    };
+
+    const handleSaveEdit = async () => {
+        if (!user || !editingRow || !canEditEntry) return;
+        if (!editForm.montant || !editForm.description) return;
+        setSavingEdit(true);
+        try {
+            const table = editingRow.kind === "entree" ? "entrees_comptables" : "sorties_comptables";
+            const payload: Record<string, unknown> = {
+                montant: Number(editForm.montant),
+                description: editForm.description,
+                date: editForm.date || editingRow.raw.date,
+            };
+            if (editingRow.kind === "entree") payload.type = editForm.type;
+            else payload.categorie = editForm.categorie;
+
+            await supabase.from(table).update(payload).eq("id", editingRow.id);
+            await logActivity(
+                user.id, user.name, user.role,
+                editingRow.kind === "entree" ? "accounting_entry" : "accounting_expense",
+                table, editingRow.id,
+                `${editingRow.kind === "entree" ? "Entrée" : "Sortie"} comptable modifiée — ${editForm.description}`,
+                { montant: Number(editForm.montant) }
+            );
+            showNotification("Opération modifiée", "success");
+            setEditingRow(null);
+            queryClient.invalidateQueries({ queryKey: editingRow.kind === "entree" ? ENTREES_KEY : SORTIES_KEY });
+        } catch (err) {
+            showNotification("Erreur lors de la modification", "error");
+        } finally {
+            setSavingEdit(false);
+        }
+    };
+
+    const handleDelete = (row: LedgerRow) => {
+        if (!user || !canDeleteEntry) return;
+        setConfirmDialog({
+            isOpen: true,
+            title: `Supprimer cette ${row.kind === "entree" ? "entrée" : "sortie"} ?`,
+            description: `Cette opération de ${fmt(row.montant)} F (${row.description}) sera définitivement supprimée.`,
+            onConfirm: async () => {
+                closeConfirm();
+                const table = row.kind === "entree" ? "entrees_comptables" : "sorties_comptables";
+                try {
+                    await supabase.from(table).delete().eq("id", row.id);
+                    await logActivity(
+                        user.id, user.name, user.role,
+                        row.kind === "entree" ? "accounting_entry" : "accounting_expense",
+                        table, row.id,
+                        `${row.kind === "entree" ? "Entrée" : "Sortie"} comptable supprimée — ${row.description}`,
+                        { montant: row.montant }
+                    );
+                    showNotification("Opération supprimée", "success");
+                    queryClient.invalidateQueries({ queryKey: row.kind === "entree" ? ENTREES_KEY : SORTIES_KEY });
+                } catch (err) {
+                    showNotification("Erreur lors de la suppression", "error");
+                }
+            },
+        });
+    };
+
     const printReport = async () => {
         const ops = rows.map((r) => ({
             date: r.time,
@@ -602,6 +687,11 @@ export default function LivreComptable() {
                                             </th>
                                         )
                                     )}
+                                    {(canEditEntry || canDeleteEntry) && (
+                                        <th className="px-3 py-2.5 text-right text-[10px] font-semibold uppercase tracking-widest text-gray-400 last:pr-0">
+                                            Actions
+                                        </th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
@@ -674,6 +764,30 @@ export default function LivreComptable() {
                                                 getUserName(row.validatedBy)
                                             )}
                                         </td>
+                                        {(canEditEntry || canDeleteEntry) && (
+                                            <td className="py-3 pl-3 pr-0 text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    {canEditEntry && (
+                                                        <button
+                                                            onClick={() => openEdit(row)}
+                                                            title="Modifier"
+                                                            className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                    {canDeleteEntry && (
+                                                        <button
+                                                            onClick={() => handleDelete(row)}
+                                                            title="Supprimer"
+                                                            className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -862,6 +976,110 @@ export default function LivreComptable() {
                                 }`}
                             >
                                 {saving ? "Enregistrement…" : "Enregistrer"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit operation modal */}
+            {editingRow && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                Modifier {editingRow.kind === "entree" ? "l'entrée" : "la sortie"}
+                            </h2>
+                            <button onClick={() => setEditingRow(null)} className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    Montant (FCFA)
+                                </label>
+                                <input
+                                    type="number"
+                                    value={editForm.montant}
+                                    onChange={(e) => setEditForm((f) => ({ ...f, montant: e.target.value }))}
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    Désignation
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editForm.description}
+                                    onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={editForm.date}
+                                    onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
+                                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                                />
+                            </div>
+
+                            {editingRow.kind === "entree" ? (
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                        Type
+                                    </label>
+                                    <Select value={editForm.type} onValueChange={(v) => setEditForm((f) => ({ ...f, type: v ?? f.type }))}>
+                                        <SelectTrigger className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {TYPES_ENTREES.map((t) => (
+                                                <SelectItem key={t} value={t}>{catLabel(t)}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                        Catégorie
+                                    </label>
+                                    <Select value={editForm.categorie} onValueChange={(v) => setEditForm((f) => ({ ...f, categorie: v ?? f.categorie }))}>
+                                        <SelectTrigger className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {CATEGORIES_SORTIES.map((c) => (
+                                                <SelectItem key={c} value={c}>{catLabel(c)}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                onClick={() => setEditingRow(null)}
+                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={handleSaveEdit}
+                                disabled={savingEdit || !editForm.montant || !editForm.description}
+                                className="flex-1 rounded-xl bg-gray-900 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
+                            >
+                                {savingEdit ? "Enregistrement…" : "Enregistrer"}
                             </button>
                         </div>
                     </div>
