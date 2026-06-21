@@ -14,6 +14,7 @@ import {
     AlertTriangle,
     Pencil,
     Trash2,
+    Lock,
 } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useEntreesComptables, useSortiesComptables, ENTREES_KEY, SORTIES_KEY } from "../lib/hooks/use-accounting";
@@ -57,6 +58,7 @@ interface SortieComptable {
     validated_at: string | null;
     created_by: string | null;
     created_at: string;
+    payslip_id: string | null;
 }
 
 interface LedgerRow {
@@ -70,6 +72,7 @@ interface LedgerRow {
     validatedBy: string | null;
     validatedAt: string | null;
     needsValidation: boolean;
+    linkedToPayslip: boolean;
     raw: EntreeComptable | SortieComptable;
 }
 
@@ -260,6 +263,7 @@ export default function LivreComptable() {
             validatedBy: e.created_by,
             validatedAt: null,
             needsValidation: false,
+            linkedToPayslip: false,
             raw: e,
         })),
         ...daySorties.map((s): LedgerRow => ({
@@ -273,6 +277,7 @@ export default function LivreComptable() {
             validatedBy: s.validated_by,
             validatedAt: s.validated_at,
             needsValidation: !s.validated_by,
+            linkedToPayslip: !!s.payslip_id,
             raw: s,
         })),
     ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
@@ -406,6 +411,10 @@ export default function LivreComptable() {
     };
 
     const openEdit = (row: LedgerRow) => {
+        if (row.linkedToPayslip) {
+            showNotification("Sortie liée à un bulletin de paie : modifiez le bulletin", "error");
+            return;
+        }
         const raw = row.raw;
         setEditingRow(row);
         setEditForm({
@@ -451,6 +460,10 @@ export default function LivreComptable() {
 
     const handleDelete = (row: LedgerRow) => {
         if (!user || !canDeleteEntry) return;
+        if (row.linkedToPayslip) {
+            showNotification("Sortie liée à un bulletin de paie : supprimez le bulletin", "error");
+            return;
+        }
         setConfirmDialog({
             isOpen: true,
             title: `Supprimer cette ${row.kind === "entree" ? "entrée" : "sortie"} ?`,
@@ -766,26 +779,36 @@ export default function LivreComptable() {
                                         </td>
                                         {(canEditEntry || canDeleteEntry) && (
                                             <td className="py-3 pl-3 pr-0 text-right">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    {canEditEntry && (
-                                                        <button
-                                                            onClick={() => openEdit(row)}
-                                                            title="Modifier"
-                                                            className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </button>
-                                                    )}
-                                                    {canDeleteEntry && (
-                                                        <button
-                                                            onClick={() => handleDelete(row)}
-                                                            title="Supprimer"
-                                                            className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                {row.linkedToPayslip ? (
+                                                    <span
+                                                        title="Sortie générée par un bulletin de paie — gérée via le bulletin"
+                                                        className="inline-flex items-center justify-end gap-1 text-[11px] font-medium text-gray-400"
+                                                    >
+                                                        <Lock className="h-3.5 w-3.5" />
+                                                        Via bulletin
+                                                    </span>
+                                                ) : (
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        {canEditEntry && (
+                                                            <button
+                                                                onClick={() => openEdit(row)}
+                                                                title="Modifier"
+                                                                className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200"
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                        {canDeleteEntry && (
+                                                            <button
+                                                                onClick={() => handleDelete(row)}
+                                                                title="Supprimer"
+                                                                className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </td>
                                         )}
                                     </tr>
