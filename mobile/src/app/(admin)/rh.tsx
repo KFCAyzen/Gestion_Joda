@@ -5,9 +5,11 @@ import { router } from 'expo-router';
 import { Check, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
-import { useAdminEmployees, useAdminLeaves, useAdminPayslips, useReviewLeave } from '@/lib/hooks/use-admin';
+import { Star } from 'lucide-react-native';
+
+import { useAdminEmployees, useAdminLeaves, useAdminPayslips, useAdminPerformance, useReviewLeave } from '@/lib/hooks/use-admin';
 import { useStaffReports, useReviewReport, isPendingReport } from '@/lib/hooks/use-staff';
-import { Avatar, Button, Chip, GlassCard, ScreenBackground, ScreenHeader, SegFilter, StatTile, text as T, useToast } from '@/components/ui';
+import { Avatar, Button, Chip, GlassCard, ProgressBar, ScreenBackground, ScreenHeader, SegFilter, StatTile, text as T, useToast } from '@/components/ui';
 import { colors, spacing } from '@/theme/tokens';
 import { fmtFCFA, shortDate } from '@/lib/format';
 
@@ -16,7 +18,21 @@ const TABS = [
   { id: 'conges', label: 'Congés' },
   { id: 'paie', label: 'Paie' },
   { id: 'rapports', label: 'Rapports' },
+  { id: 'evals', label: 'Évals' },
 ];
+
+function scoreColor(s: number): string {
+  return s >= 70 ? colors.mint : s >= 40 ? colors.amber : colors.crimsonVivid;
+}
+function Stars({ v }: { v: number }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 1 }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star key={n} size={12} color={n <= Math.round(v) ? colors.amber : 'rgba(255,255,255,0.2)'} fill={n <= Math.round(v) ? colors.amber : 'transparent'} />
+      ))}
+    </View>
+  );
+}
 
 const EMP_STATUS: Record<string, 'done' | 'due' | 'ghost'> = { actif: 'done', suspendu: 'due', inactif: 'ghost' };
 
@@ -29,6 +45,7 @@ export default function AdminRH() {
   const { data: leaves } = useAdminLeaves();
   const { data: payslips } = useAdminPayslips();
   const { data: reports } = useStaffReports();
+  const { data: perf } = useAdminPerformance();
   const reviewLeave = useReviewLeave();
   const reviewReport = useReviewReport();
 
@@ -130,6 +147,35 @@ export default function AdminRH() {
                   </GlassCard>
                 ))
               : null}
+
+            {tab === 'evals'
+              ? (perf?.employees ?? []).map((e) => (
+                  <GlassCard key={e.rank} style={{ gap: 9 }}>
+                    <View style={styles.card}>
+                      <Text style={styles.pos}>{e.rank}</Text>
+                      <Avatar name={e.name} kind="agent" size={40} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={T.t1} numberOfLines={1}>{e.name}</Text>
+                        <Text style={T.t3}>{e.dept || '—'}</Text>
+                      </View>
+                      <Text style={[styles.indexNum, { color: scoreColor(e.index) }]}>{e.index}</Text>
+                    </View>
+                    <ProgressBar pct={e.index} />
+                    <View style={styles.evalMeta}>
+                      {e.evals > 0 ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                          <Stars v={e.rating} />
+                          <Text style={T.t3}>{e.rating.toFixed(1)}/5</Text>
+                        </View>
+                      ) : (
+                        <Text style={T.t3}>Pas de notation</Text>
+                      )}
+                      <Text style={T.t3}>{e.reports} rapports · {Math.round(e.hours)}h</Text>
+                    </View>
+                  </GlassCard>
+                ))
+              : null}
+            {tab === 'evals' && !(perf?.employees ?? []).length ? <Text style={styles.empty}>Aucune évaluation.</Text> : null}
           </ScrollView>
         )}
       </SafeAreaView>
@@ -142,4 +188,8 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: 10 },
   card: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   btnRow: { flexDirection: 'row', gap: 9 },
+  pos: { width: 20, fontWeight: '700', color: colors.ink50, textAlign: 'center' },
+  indexNum: { fontSize: 18, fontWeight: '700' },
+  evalMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
 });

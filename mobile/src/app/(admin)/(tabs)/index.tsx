@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 
 import { useAuth } from '@/lib/auth-context';
-import { useAdminDashboard } from '@/lib/hooks/use-admin';
+import { useAdminDashboard, useActivityLogs, type ActivityLog } from '@/lib/hooks/use-admin';
 import {
   Avatar,
   BellBtn,
@@ -25,10 +25,49 @@ const VIEWS = [
   { id: 'mois', label: 'Mois' },
 ];
 
+const LOG_COLOR: Record<string, string> = {
+  create: colors.mint,
+  delete: colors.crimsonVivid,
+  reject: colors.crimsonVivid,
+  validate: '#34d9a8',
+  payment: colors.amber,
+  accounting: colors.amber,
+  update: colors.blue,
+  upload: '#2dd4bf',
+};
+function logColor(type: string): string {
+  for (const k of Object.keys(LOG_COLOR)) if (type.includes(k)) return LOG_COLOR[k];
+  return colors.ink50;
+}
+
+type JournalGroup = { period: string; entries: { id: string; time: string; actor: string; desc: string; color: string }[] };
+function groupJournal(logs: ActivityLog[]): JournalGroup[] {
+  const today = new Date().toDateString();
+  const order = ['MATIN', 'APRÈS-MIDI', 'SOIR'];
+  const groups: Record<string, JournalGroup['entries']> = {};
+  for (const l of logs) {
+    const d = new Date(l.created_at);
+    if (d.toDateString() !== today) continue;
+    const h = d.getHours();
+    const period = h < 12 ? 'MATIN' : h < 17 ? 'APRÈS-MIDI' : 'SOIR';
+    (groups[period] ||= []).push({
+      id: l.id,
+      time: d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      actor: l.user_name,
+      desc: l.description,
+      color: logColor(l.activity_type),
+    });
+  }
+  return order.filter((p) => groups[p]?.length).map((p) => ({ period: p, entries: groups[p].slice(0, 6) }));
+}
+
 export default function AdminBord() {
   const { user } = useAuth();
   const { data, isLoading } = useAdminDashboard();
+  const { data: logs } = useActivityLogs();
   const [view, setView] = useState('aujourdhui');
+
+  const journal = useMemo(() => groupJournal(logs ?? []), [logs]);
 
   const maxFlux = useMemo(() => Math.max(1, ...(data?.flux ?? []).map((b) => b.v)), [data]);
   const topMax = Math.max(1, data?.topUniv[0]?.count ?? 1);
@@ -115,11 +154,28 @@ export default function AdminBord() {
 
             {/* Journal d'activité */}
             <SectionLabel title="Journal d'activité" action="Tout voir" onAction={() => router.navigate('/(admin)/logs' as Href)} />
-            <Pressable onPress={() => router.navigate('/(admin)/logs' as Href)}>
-              <GlassCard>
-                <Text style={T.t2}>Consulter le flux complet des activités de l'équipe (paiements, dossiers, validations…).</Text>
-              </GlassCard>
-            </Pressable>
+            <GlassCard>
+              {journal.length ? (
+                journal.map((grp) => (
+                  <View key={grp.period}>
+                    <Text style={styles.periodLabel}>{grp.period}</Text>
+                    {grp.entries.map((e) => (
+                      <View key={e.id} style={styles.jentry}>
+                        <Text style={styles.jtime}>{e.time}</Text>
+                        <View style={[styles.jdot, { backgroundColor: e.color }]} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[T.t2, { color: '#fff' }]} numberOfLines={2}>
+                            <Text style={{ fontWeight: '700' }}>{e.actor}</Text> {e.desc}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ))
+              ) : (
+                <Text style={T.t3}>Aucune activité aujourd'hui.</Text>
+              )}
+            </GlassCard>
           </ScrollView>
         )}
       </SafeAreaView>
@@ -149,4 +205,9 @@ const styles = StyleSheet.create({
 
   topTitle: { color: colors.ink50, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+
+  periodLabel: { color: colors.ink35, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, marginTop: 10, marginBottom: 4 },
+  jentry: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingVertical: 7 },
+  jtime: { color: colors.ink50, fontSize: 10.5, width: 38, marginTop: 1 },
+  jdot: { width: 7, height: 7, borderRadius: 4, marginTop: 5 },
 });

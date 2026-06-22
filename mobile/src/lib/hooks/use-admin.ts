@@ -445,7 +445,16 @@ export function useFrais() {
   });
 }
 
-/* ── Performances (agents / employés / journalier) ──────────────────────── */
+/* ── Performances ─────────────────────────────────────────────────────────
+   Port fidèle du moteur web (PerformanceHistory.tsx + lib/hrPerformance.ts) :
+   - Agents : score composite Revenu 40 % + Activité 25 % + Rapidité 20 %
+     + Dossier 15 %, chaque composante normalisée vs le meilleur agent.
+   - Employés : indice = 70 % notation (note_globale /5 → /100) + 30 % régularité
+     des rapports (nb + heures, normalisés).
+   - Filtrage par période identique (date_paiement|created_at ≥ début).
+   ─────────────────────────────────────────────────────────────────────────── */
+export type Period = 'week' | 'month' | 'quarter' | 'year' | 'all';
+export type AgentTypeStat = { c: number; a: number };
 export type AgentPerf = {
   id: string;
   name: string;
@@ -455,110 +464,255 @@ export type AgentPerf = {
   dossiers: number;
   score: number;
   revenue: number;
+  avgValidationDays: number | null;
+  breakdown: { revenue: number; activity: number; speed: number; dossier: number };
+  types: { bourse: AgentTypeStat; mandarin: AgentTypeStat; anglais: AgentTypeStat };
+  alerts: { validation: number; attente: number; retard: number };
 };
-export type EmployeePerf = { rank: number; name: string; dept: string; index: number; rating: number; evals: number; reports: number };
+export type EmployeePerf = { rank: number; name: string; dept: string; index: number; rating: number; evals: number; reports: number; hours: number };
 export type DailyPerf = { date: string; total: number; courses: { c: number; a: number }; proc: { c: number; a: number } };
 export type AdminPerformance = {
   revenue: number;
+  enValidation: number;
   avgIndex: number;
   agents: AgentPerf[];
   employees: EmployeePerf[];
   daily: DailyPerf[];
 };
 
-const STAFF_ROLES = ['agent', 'supervisor', 'user', 'admin'];
+const STAFF_BASE_ROLES = new Set(['agent', 'supervisor', 'user']);
+const COURSE_TYPES = new Set(['mandarin', 'anglais', 'inscription']);
+const EVAL_SCORE_MAX = 5;
+const SCORE_WEIGHTS = { revenue: 0.4, activity: 0.25, speed: 0.2, dossier: 0.15 } as const;
 
-export function useAdminPerformance() {
+function periodStartOf(period: Period): Date | null {
+  if (period === 'all') return null;
+  const d = new Date();
+  if (period === 'week') d.setDate(d.getDate() - 7);
+  else if (period === 'month') d.setMonth(d.getMonth() - 1);
+  else if (period === 'quarter') d.setMonth(d.getMonth() - 3);
+  else d.setFullYear(d.getFullYear() - 1);
+  return d;
+}
+function norm(value: number, max: number): number {
+  return max > 0 ? Math.min(value / max, 1) : 0;
+}
+
+export function useAdminPerformance(period: Period = 'month') {
   return useQuery({
-    queryKey: ['admin', 'performance'],
+    queryKey: ['admin', 'performance', period],
     queryFn: async (): Promise<AdminPerformance> => {
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-      const [users, entrees, dossiers, students, evals, reports, employees] = await Promise.all([
-        supabase.from('users').select('id, name, role').in('role', STAFF_ROLES),
-        supabase.from('entrees_comptables').select('montant, type, created_by, date').gte('date', monthStart),
-        supabase.from('dossier_bourses').select('created_by'),
-        supabase.from('students').select('created_by'),
-        supabase.from('hr_employee_evaluations').select('employee_id, note_globale, note'),
-        supabase.from('daily_reports').select('employee_id, heures_travaillees, date'),
+      const start = periodStartOf(period);
+
+      const [usersR, paysR, studentsR, dossiersR, logsR, historyR, employeesR, evalsR, reportsR] = await Promise.all([
+        supabase.from('users').select('id, name, username, role'),
+        supabase.from('payments').select('student_id, montant, penalites, type, status, created_at, date_paiement, validated_by, validated_at'),
+        supabase.from('students').select('id, created_by'),
+        supabase.from('dossier_bourses').select('id, student_id'),
+        supabase.from('activity_logs').select('user_id, activity_type, created_at').not('activity_type', 'in', '(login,logout,config_update)').order('created_at', { ascending: false }).limit(5000),
+        supabase.from('dossier_history').select('performed_by, performed_at').order('performed_at', { ascending: false }).limit(5000),
         supabase.from('employees').select('id, nom, prenom, poste'),
+        supabase.from('hr_employee_evaluations').select('employee_id, note_globale, date_evaluation'),
+        supabase.from('daily_reports').select('employee_id, heures_travaillees, date'),
       ]);
 
-      const entRows = (entrees.data as any[]) ?? [];
-      const revenueTotal = entRows.reduce((s, e) => s + Number(e.montant || 0), 0);
+      const users = (usersR.data as any[]) ?? [];
+      const allPays = (paysR.data as any[]) ?? [];
+      const studentsById = new Map<string, { created_by: string | null }>();
+      for (const s of (studentsR.data as any[]) ?? []) studentsById.set(s.id, { created_by: s.created_by });
+      const creatorSet = new Set([...studentsById.values()].map((s) => s.created_by).filter(Boolean) as string[]);
 
-      // Agents : revenu encaissé / créateur.
-      const revByUser = new Map<string, number>();
-      for (const e of entRows) if (e.created_by) revByUser.set(e.created_by, (revByUser.get(e.created_by) ?? 0) + Number(e.montant || 0));
-      const dosByUser = new Map<string, number>();
-      for (const d of (dossiers.data as any[]) ?? []) if (d.created_by) dosByUser.set(d.created_by, (dosByUser.get(d.created_by) ?? 0) + 1);
-      const stuByUser = new Map<string, number>();
-      for (const s of (students.data as any[]) ?? []) if (s.created_by) stuByUser.set(s.created_by, (stuByUser.get(s.created_by) ?? 0) + 1);
+      const inPeriod = (p: any) => !start || new Date(p.date_paiement || p.created_at) >= start;
+      const payePays = allPays.filter((p) => p.status === 'paye' && inPeriod(p));
+      const enValPays = allPays.filter((p) => p.status === 'en_validation');
+      const attentePays = allPays.filter((p) => p.status === 'attente');
+      const retardPays = allPays.filter((p) => p.status === 'retard');
 
-      const maxRev = Math.max(1, ...[...revByUser.values()]);
-      const agents: AgentPerf[] = ((users.data as any[]) ?? [])
-        .map((u) => {
-          const revenue = revByUser.get(u.id) ?? 0;
-          return {
-            id: u.id,
-            name: u.name,
-            role: u.role,
-            rank: 0,
-            students: stuByUser.get(u.id) ?? 0,
-            dossiers: dosByUser.get(u.id) ?? 0,
-            score: Math.round((revenue / maxRev) * 100),
-            revenue,
-          };
-        })
-        .sort((a, b) => b.score - a.score)
-        .map((a, i) => ({ ...a, rank: i + 1 }));
+      const revenueTotal = payePays.reduce((s, p) => s + Number(p.montant || 0), 0);
 
-      // Employés : index via évaluations + rapports.
-      const empMap = new Map<string, { name: string; dept: string }>();
-      for (const e of (employees.data as any[]) ?? []) empMap.set(e.id, { name: `${e.prenom ?? ''} ${e.nom ?? ''}`.trim(), dept: e.poste ?? '' });
-      const ratingByEmp = new Map<string, { sum: number; n: number }>();
-      for (const ev of (evals.data as any[]) ?? []) {
-        const v = Number(ev.note_globale ?? ev.note ?? 0);
-        if (!v) continue;
-        const cur = ratingByEmp.get(ev.employee_id) ?? { sum: 0, n: 0 };
-        cur.sum += v;
-        cur.n += 1;
-        ratingByEmp.set(ev.employee_id, cur);
+      // ── Agrégats par agent ──────────────────────────────────────────────────
+      type Acc = {
+        id: string; name: string; role: string;
+        revenue: number; students: number; dossiers: number; activity: number; dossierActions: number;
+        types: { bourse: AgentTypeStat; mandarin: AgentTypeStat; anglais: AgentTypeStat };
+        alerts: { validation: number; attente: number; retard: number };
+        delays: number[];
+      };
+      const acc = new Map<string, Acc>();
+      const make = (u: any): Acc => ({
+        id: u.id, name: u.name || u.username || u.id, role: u.role,
+        revenue: 0, students: 0, dossiers: 0, activity: 0, dossierActions: 0,
+        types: { bourse: { c: 0, a: 0 }, mandarin: { c: 0, a: 0 }, anglais: { c: 0, a: 0 } },
+        alerts: { validation: 0, attente: 0, retard: 0 }, delays: [],
+      });
+      for (const u of users) {
+        if (STAFF_BASE_ROLES.has(u.role)) acc.set(u.id, make(u));
+        else if (u.role !== 'student' && creatorSet.has(u.id)) acc.set(u.id, make(u));
       }
-      const reportsByEmp = new Map<string, number>();
-      for (const r of (reports.data as any[]) ?? []) reportsByEmp.set(r.employee_id, (reportsByEmp.get(r.employee_id) ?? 0) + 1);
 
-      const employeesPerf: EmployeePerf[] = [...empMap.entries()]
-        .map(([id, e]) => {
-          const rt = ratingByEmp.get(id);
-          const rating = rt && rt.n ? rt.sum / rt.n : 0;
-          const ratingOn5 = rating > 5 ? rating / 4 : rating; // tolère note /20
-          const reportsCount = reportsByEmp.get(id) ?? 0;
-          const index = Math.min(100, Math.round((ratingOn5 / 5) * 70 + Math.min(reportsCount, 20) * 1.5));
-          return { rank: 0, name: e.name, dept: e.dept, index, rating: ratingOn5, evals: rt?.n ?? 0, reports: reportsCount };
+      for (const p of payePays) {
+        const agentId = studentsById.get(p.student_id)?.created_by;
+        if (!agentId || !acc.has(agentId)) continue;
+        const e = acc.get(agentId)!;
+        const amt = Number(p.montant || 0);
+        e.revenue += amt;
+        if (p.type === 'bourse') { e.types.bourse.c++; e.types.bourse.a += amt; }
+        else if (p.type === 'mandarin') { e.types.mandarin.c++; e.types.mandarin.a += amt; }
+        else if (p.type === 'anglais') { e.types.anglais.c++; e.types.anglais.a += amt; }
+        if (p.validated_by && p.validated_at) {
+          const days = (new Date(p.validated_at).getTime() - new Date(p.created_at).getTime()) / 86_400_000;
+          if (days >= 0) acc.get(p.validated_by)?.delays.push(days);
+        }
+      }
+      for (const p of [...enValPays, ...attentePays, ...retardPays]) {
+        const agentId = studentsById.get(p.student_id)?.created_by;
+        if (!agentId || !acc.has(agentId)) continue;
+        const e = acc.get(agentId)!;
+        if (p.status === 'en_validation') e.alerts.validation++;
+        else if (p.status === 'attente') e.alerts.attente++;
+        else e.alerts.retard++;
+      }
+      for (const s of studentsById.values()) if (s.created_by && acc.has(s.created_by)) acc.get(s.created_by)!.students++;
+      for (const d of (dossiersR.data as any[]) ?? []) {
+        const agentId = studentsById.get(d.student_id)?.created_by;
+        if (agentId && acc.has(agentId)) acc.get(agentId)!.dossiers++;
+      }
+      for (const log of (logsR.data as any[]) ?? []) {
+        if (start && new Date(log.created_at) < start) continue;
+        if (acc.has(log.user_id)) acc.get(log.user_id)!.activity++;
+      }
+      for (const h of (historyR.data as any[]) ?? []) {
+        if (!h.performed_by) continue;
+        if (start && new Date(h.performed_at) < start) continue;
+        if (acc.has(h.performed_by)) acc.get(h.performed_by)!.dossierActions++;
+      }
+
+      const all = [...acc.values()];
+      const maxRevenue = Math.max(1, ...all.map((a) => a.revenue));
+      const maxActivity = Math.max(1, ...all.map((a) => a.activity));
+      const maxDossierActions = Math.max(1, ...all.map((a) => a.dossierActions));
+      const avgDelay = (a: Acc) => (a.delays.length ? a.delays.reduce((s, d) => s + d, 0) / a.delays.length : null);
+      const maxDelay = Math.max(1, ...all.map(avgDelay).filter((d): d is number => d !== null));
+
+      const scored: AgentPerf[] = all.map((a) => {
+        const delay = avgDelay(a);
+        const rScore = norm(a.revenue, maxRevenue) * 100;
+        const aScore = norm(a.activity, maxActivity) * 100;
+        const sScore = delay !== null ? (1 - norm(delay, maxDelay)) * 100 : 50;
+        const dScore = norm(a.dossierActions, maxDossierActions) * 100;
+        const composite = Math.round(SCORE_WEIGHTS.revenue * rScore + SCORE_WEIGHTS.activity * aScore + SCORE_WEIGHTS.speed * sScore + SCORE_WEIGHTS.dossier * dScore);
+        return {
+          id: a.id, name: a.name, role: a.role, rank: 0,
+          students: a.students, dossiers: a.dossiers, score: composite, revenue: a.revenue,
+          avgValidationDays: delay,
+          breakdown: { revenue: Math.round(rScore), activity: Math.round(aScore), speed: Math.round(sScore), dossier: Math.round(dScore) },
+          types: a.types, alerts: a.alerts,
+        };
+      });
+      const active = scored.filter((a) => a.score > 0 || a.breakdown.activity > 0 || a.revenue > 0).sort((a, b) => b.score - a.score);
+      const inactive = scored.filter((a) => !(a.score > 0 || a.breakdown.activity > 0 || a.revenue > 0)).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+      const agents = [...active, ...inactive].map((a, i) => ({ ...a, rank: i + 1 }));
+
+      // ── Employés : notation 70 % + rapports 30 % (computeEmployeePerformance) ─
+      const evalsInPeriod = ((evalsR.data as any[]) ?? []).filter((ev) => !start || new Date(ev.date_evaluation) >= start);
+      const reportsInPeriod = ((reportsR.data as any[]) ?? []).filter((r) => !start || new Date(r.date) >= start);
+      const empMap = new Map<string, { name: string; dept: string }>();
+      for (const e of (employeesR.data as any[]) ?? []) empMap.set(e.id, { name: `${e.prenom ?? ''} ${e.nom ?? ''}`.trim(), dept: e.poste ?? '' });
+
+      const evalByEmp = new Map<string, number[]>();
+      for (const ev of evalsInPeriod) {
+        const arr = evalByEmp.get(ev.employee_id) ?? [];
+        arr.push(Number(ev.note_globale || 0));
+        evalByEmp.set(ev.employee_id, arr);
+      }
+      const repByEmp = new Map<string, { count: number; hours: number }>();
+      for (const r of reportsInPeriod) {
+        const cur = repByEmp.get(r.employee_id) ?? { count: 0, hours: 0 };
+        cur.count++;
+        cur.hours += Number(r.heures_travaillees || 0);
+        repByEmp.set(r.employee_id, cur);
+      }
+      const empIds = new Set<string>([...evalByEmp.keys(), ...repByEmp.keys()]);
+      const base = [...empIds].map((id) => {
+        const evals = evalByEmp.get(id) ?? [];
+        const rep = repByEmp.get(id) ?? { count: 0, hours: 0 };
+        const evalAvg = evals.length ? evals.reduce((s, v) => s + v, 0) / evals.length : 0;
+        return { id, evals: evals.length, evalAvg, reportCount: rep.count, hours: rep.hours };
+      });
+      const maxCount = Math.max(0, ...base.map((b) => b.reportCount));
+      const maxHours = Math.max(0, ...base.map((b) => b.hours));
+      const employeesPerf: EmployeePerf[] = base
+        .map((b) => {
+          const hasNotation = b.evals > 0;
+          const hasReports = b.reportCount > 0;
+          const notationScore = hasNotation ? (b.evalAvg / EVAL_SCORE_MAX) * 100 : null;
+          const reportScore = (0.5 * norm(b.reportCount, maxCount) + 0.5 * norm(b.hours, maxHours)) * 100;
+          let index: number;
+          if (hasNotation && hasReports) index = 0.7 * (notationScore as number) + 0.3 * reportScore;
+          else if (hasNotation) index = notationScore as number;
+          else index = reportScore;
+          const info = empMap.get(b.id);
+          return { rank: 0, name: info?.name || 'Employé', dept: info?.dept || '', index: Math.round(index), rating: b.evalAvg, evals: b.evals, reports: b.reportCount, hours: b.hours };
         })
         .sort((a, b) => b.index - a.index)
         .map((e, i) => ({ ...e, rank: i + 1 }));
-
       const avgIndex = employeesPerf.length ? Math.round(employeesPerf.reduce((s, e) => s + e.index, 0) / employeesPerf.length) : 0;
 
-      // Journalier : entrées des 3 derniers jours, cours vs procédures.
-      const daily: DailyPerf[] = [];
-      for (let i = 0; i < 3; i++) {
-        const day = new Date(Date.now() - i * 86_400_000);
-        const dayRows = entRows.filter((e) => new Date(e.date).toDateString() === day.toDateString());
-        const courses = dayRows.filter((e) => String(e.type).includes('cours'));
-        const proc = dayRows.filter((e) => !String(e.type).includes('cours'));
-        daily.push({
-          date: i === 0 ? "Aujourd'hui" : i === 1 ? 'Hier' : day.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit' }),
-          total: dayRows.reduce((s, e) => s + Number(e.montant || 0), 0),
-          courses: { c: courses.length, a: courses.reduce((s, e) => s + Number(e.montant || 0), 0) },
-          proc: { c: proc.length, a: proc.reduce((s, e) => s + Number(e.montant || 0), 0) },
-        });
+      // ── Journalier : paye payments par jour, cours vs procédures ─────────────
+      const dayGroups = new Map<string, any[]>();
+      for (const p of payePays) {
+        const key = new Date(p.date_paiement || p.created_at).toISOString().split('T')[0];
+        (dayGroups.get(key) ?? dayGroups.set(key, []).get(key)!).push(p);
       }
+      const daily: DailyPerf[] = [...dayGroups.keys()]
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+        .map((key) => {
+          const dp = dayGroups.get(key)!;
+          const courses = dp.filter((p) => COURSE_TYPES.has(p.type));
+          const proc = dp.filter((p) => !COURSE_TYPES.has(p.type));
+          const today = new Date().toISOString().split('T')[0];
+          const yest = new Date(Date.now() - 86_400_000).toISOString().split('T')[0];
+          const label = key === today ? "Aujourd'hui" : key === yest ? 'Hier' : new Date(key + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
+          return {
+            date: label,
+            total: dp.reduce((s, p) => s + Number(p.montant || 0), 0),
+            courses: { c: courses.length, a: courses.reduce((s, p) => s + Number(p.montant || 0), 0) },
+            proc: { c: proc.length, a: proc.reduce((s, p) => s + Number(p.montant || 0), 0) },
+          };
+        });
 
-      return { revenue: revenueTotal, avgIndex, agents, employees: employeesPerf, daily };
+      return { revenue: revenueTotal, enValidation: enValPays.length, avgIndex, agents, employees: employeesPerf, daily };
     },
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+/* ── Configuration des frais (table payment_config) ──────────────────────── */
+export type PaymentConfigRow = {
+  service_type: string;
+  label: string;
+  tranches: { tranche: number; label: string; montant: number }[];
+  grace_days: number;
+  daily_penalty: number;
+  deadline_offset_days: number;
+};
+
+export function usePaymentConfigs() {
+  return useQuery({
+    queryKey: ['admin', 'payment_config'],
+    queryFn: async (): Promise<PaymentConfigRow[]> => {
+      const { data, error } = await supabase.from('payment_config').select('*').order('service_type', { ascending: true });
+      if (error) throw error;
+      return ((data as any[]) ?? []).map((c) => ({
+        service_type: c.service_type,
+        label: c.label,
+        tranches: Array.isArray(c.tranches) ? c.tranches : [],
+        grace_days: Number(c.grace_days ?? 0),
+        daily_penalty: Number(c.daily_penalty ?? 0),
+        deadline_offset_days: Number(c.deadline_offset_days ?? 0),
+      }));
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

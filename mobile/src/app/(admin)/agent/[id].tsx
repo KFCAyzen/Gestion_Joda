@@ -51,14 +51,46 @@ export default function AdminAgentDetail() {
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <StatTile value={String(a.students)} label="Étudiants" />
             <StatTile value={String(a.dossiers)} label="Dossiers" />
+            <StatTile value={a.avgValidationDays !== null ? `${a.avgValidationDays.toFixed(1)}j` : '—'} label="Délai valid." />
+          </View>
+
+          {/* Décomposition du score */}
+          <View style={styles.brk}>
+            {[
+              ['Revenu', a.breakdown.revenue],
+              ['Activité', a.breakdown.activity],
+              ['Rapidité', a.breakdown.speed],
+              ['Dossier', a.breakdown.dossier],
+            ].map(([k, v]) => (
+              <View key={k as string} style={styles.brkCell}>
+                <Text style={styles.brkLabel}>{k}</Text>
+                <Text style={[styles.brkValue, { color: scoreColor(v as number) }]}>{v}%</Text>
+              </View>
+            ))}
           </View>
 
           <GlassCard>
             <View style={styles.revRow}>
-              <Text style={[T.t1, { fontSize: 14 }]}>Revenu encaissé · mois</Text>
+              <Text style={[T.t1, { fontSize: 14 }]}>Revenu encaissé</Text>
               <Text style={styles.revAmt}>{fmtFCFA(a.revenue)} F</Text>
             </View>
+            <View style={styles.typeRow}>
+              {([['Bourse', '#cdbcff', a.types.bourse], ['Mandarin', colors.crimsonVivid, a.types.mandarin], ['Anglais', '#bcd6ff', a.types.anglais]] as const).map(([label, color, st]) => (
+                <View key={label} style={styles.typeCell}>
+                  <Text style={[styles.typeLabel, { color }]}>{label}</Text>
+                  <Text style={styles.typeAmt}>{fmtFCFA(st.a)}</Text>
+                </View>
+              ))}
+            </View>
           </GlassCard>
+
+          {a.alerts.validation + a.alerts.attente + a.alerts.retard > 0 ? (
+            <View style={styles.tagRow}>
+              {a.alerts.validation > 0 ? <Text style={[styles.tag, styles.tagVal]}>{a.alerts.validation} en validation</Text> : null}
+              {a.alerts.attente > 0 ? <Text style={[styles.tag, styles.tagAtt]}>{a.alerts.attente} en attente</Text> : null}
+              {a.alerts.retard > 0 ? <Text style={[styles.tag, styles.tagRet]}>{a.alerts.retard} en retard</Text> : null}
+            </View>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
     </ScreenBackground>
@@ -73,4 +105,17 @@ const styles = StyleSheet.create({
   scoreLabel: { fontSize: 8.5, color: colors.ink50, textTransform: 'uppercase', letterSpacing: 1 },
   revRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   revAmt: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  brk: { flexDirection: 'row', gap: 8 },
+  brkCell: { flex: 1, backgroundColor: colors.glass, borderWidth: 1, borderColor: colors.glassLine, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  brkLabel: { color: colors.ink35, fontSize: 8.5, fontWeight: '700', textTransform: 'uppercase' },
+  brkValue: { fontSize: 16, fontWeight: '700', marginTop: 3 },
+  typeRow: { flexDirection: 'row', gap: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)', marginTop: 12, paddingTop: 12 },
+  typeCell: { flex: 1, alignItems: 'center' },
+  typeLabel: { fontSize: 10.5, fontWeight: '700' },
+  typeAmt: { color: colors.ink70, fontSize: 12.5, fontWeight: '700', marginTop: 3 },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  tag: { fontSize: 11, fontWeight: '600', paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999, overflow: 'hidden' },
+  tagVal: { color: '#8bf0d2', backgroundColor: 'rgba(52,217,168,0.13)' },
+  tagAtt: { color: '#ffe09a', backgroundColor: 'rgba(251,191,36,0.13)' },
+  tagRet: { color: '#ffb3b3', backgroundColor: 'rgba(239,68,68,0.13)' },
 });
