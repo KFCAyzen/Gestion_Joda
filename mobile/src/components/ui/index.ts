@@ -7,6 +7,7 @@ export { Ring, MiniRing } from './Ring';
 export { IconBox, iconTint, useIconTint, type IconTone } from './IconBox';
 export { BellBtn } from './BellBtn';
 export { ScreenHeader } from './ScreenHeader';
+export { ThemeToggle } from './ThemeToggle';
 export { ToastProvider, useToast } from './Toast';
 export {
   SegFilter,

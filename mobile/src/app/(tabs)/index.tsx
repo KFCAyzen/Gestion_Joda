@@ -10,7 +10,7 @@ import { useStudentProfile, useStudentDossier } from '@/lib/hooks/use-student-po
 import { useDocuments } from '@/lib/hooks/use-documents';
 import { REQUIRED_KEYS } from '@/lib/required-docs';
 import { buildMilestones } from '@/lib/dossier-milestones';
-import { Avatar, BellBtn, Button, Chip, GlassCard, MiniRing, Ring, ScreenBackground, ScreenHeader } from '@/components/ui';
+import { Avatar, BellBtn, Button, Chip, GlassCard, MiniRing, Ring, ScreenBackground, ScreenHeader, ThemeToggle } from '@/components/ui';
 import { fontSize, radius, spacing, type Palette } from '@/theme/tokens';
 import { useColors } from '@/theme/theme';
 
@@ -98,6 +98,7 @@ export default function HomeScreen() {
           title={name}
           right={
             <View style={styles.headerRight}>
+              <ThemeToggle />
               <BellBtn hasUnread />
               <Pressable onLongPress={confirmLogout} delayLongPress={400}>
                 <Avatar name={name || '?'} kind="student" />
