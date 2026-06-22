@@ -1,0 +1,152 @@
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, type Href } from 'expo-router';
+
+import { useAuth } from '@/lib/auth-context';
+import { useAdminDashboard } from '@/lib/hooks/use-admin';
+import {
+  Avatar,
+  BellBtn,
+  GlassCard,
+  ProgressBar,
+  ScreenBackground,
+  ScreenHeader,
+  SectionLabel,
+  SegFilter,
+  text as T,
+} from '@/components/ui';
+import { colors, radius, spacing } from '@/theme/tokens';
+import { fmtCompact } from '@/lib/format';
+
+const VIEWS = [
+  { id: 'aujourdhui', label: "Aujourd'hui" },
+  { id: 'semaine', label: 'Semaine' },
+  { id: 'mois', label: 'Mois' },
+];
+
+export default function AdminBord() {
+  const { user } = useAuth();
+  const { data, isLoading } = useAdminDashboard();
+  const [view, setView] = useState('aujourdhui');
+
+  const maxFlux = useMemo(() => Math.max(1, ...(data?.flux ?? []).map((b) => b.v)), [data]);
+  const topMax = Math.max(1, data?.topUniv[0]?.count ?? 1);
+
+  return (
+    <ScreenBackground>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <ScreenHeader
+          eyebrow="Vue d'ensemble · Joda Company"
+          title="Tableau de bord"
+          right={
+            <View style={styles.headerRight}>
+              <Pressable onPress={() => router.navigate('/(admin)/notifications' as Href)}>
+                <BellBtn hasUnread />
+              </Pressable>
+              <Avatar name={user?.name || 'Admin'} kind="staff" size={42} />
+            </View>
+          }
+        />
+
+        {isLoading || !data ? (
+          <ActivityIndicator style={{ marginTop: 40 }} />
+        ) : (
+          <ScrollView contentContainerStyle={{ paddingBottom: 130, gap: spacing.cardGap }} showsVerticalScrollIndicator={false}>
+            <SegFilter options={VIEWS} value={view} onChange={setView} />
+
+            {/* Stats opérationnelles */}
+            <GlassCard variant="strong">
+              <View style={styles.statRow}>
+                <View style={[styles.statCol, styles.statColBorder]}>
+                  <Text style={styles.statLabel}>À TRAITER</Text>
+                  <Text style={styles.statBig}>{data.aTraiter}</Text>
+                  <Text style={T.t3}>dossiers en attente</Text>
+                </View>
+                <View style={styles.statCol}>
+                  <Text style={styles.statLabel}>DOSSIERS OUVERTS</Text>
+                  <Text style={styles.statBig}>{data.dossiersOuverts}</Text>
+                  <Text style={[T.t3, { color: colors.mint }]}>+{data.dossiersGrowth} ce mois</Text>
+                </View>
+              </View>
+              <View style={styles.divider} />
+              <Text style={styles.statLabel}>ENCAISSÉ CE MOIS</Text>
+              <View style={styles.encaisseRow}>
+                <Text style={styles.encaisse}>{fmtCompact(data.encaisseMois)}</Text>
+                <Text style={T.t3}>FCFA</Text>
+              </View>
+            </GlassCard>
+
+            {/* Flux 7 jours */}
+            <GlassCard>
+              <SectionLabel title="Flux 7 jours" action="candidatures" />
+              <View style={styles.barchart}>
+                {data.flux.map((b, i) => (
+                  <View key={i} style={styles.barcol}>
+                    {b.today && b.v > 0 ? <Text style={styles.barValue}>{b.v}</Text> : null}
+                    <View
+                      style={[
+                        styles.bar,
+                        { height: Math.max(4, (b.v / maxFlux) * 90) },
+                        b.today ? styles.barToday : styles.barMuted,
+                      ]}
+                    />
+                    <Text style={[styles.barLabel, b.today && { color: '#fff', fontWeight: '700' }]}>{b.l}</Text>
+                  </View>
+                ))}
+              </View>
+            </GlassCard>
+
+            {/* Top universités */}
+            {data.topUniv.length ? (
+              <GlassCard>
+                <Text style={styles.topTitle}>Top 3 universités · semaine</Text>
+                {data.topUniv.map((u, i) => (
+                  <View key={i} style={{ marginBottom: i < data.topUniv.length - 1 ? 12 : 0 }}>
+                    <View style={styles.topRow}>
+                      <Text style={[T.t2, { color: '#fff', flex: 1 }]} numberOfLines={1}>{u.name}</Text>
+                      <Text style={T.t1}>{u.count}</Text>
+                    </View>
+                    <ProgressBar pct={(u.count / topMax) * 100} style={{ marginTop: 6 }} />
+                  </View>
+                ))}
+              </GlassCard>
+            ) : null}
+
+            {/* Journal d'activité */}
+            <SectionLabel title="Journal d'activité" action="Tout voir" onAction={() => router.navigate('/(admin)/logs' as Href)} />
+            <Pressable onPress={() => router.navigate('/(admin)/logs' as Href)}>
+              <GlassCard>
+                <Text style={T.t2}>Consulter le flux complet des activités de l'équipe (paiements, dossiers, validations…).</Text>
+              </GlassCard>
+            </Pressable>
+          </ScrollView>
+        )}
+      </SafeAreaView>
+    </ScreenBackground>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, paddingHorizontal: spacing.screenX },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  statRow: { flexDirection: 'row' },
+  statCol: { flex: 1, paddingHorizontal: 14 },
+  statColBorder: { borderRightWidth: 1, borderRightColor: colors.glassLine, paddingLeft: 0 },
+  statLabel: { color: colors.ink35, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4 },
+  statBig: { color: colors.text, fontSize: 38, fontWeight: '600', letterSpacing: -1.5, marginTop: 4 },
+  divider: { height: 1, backgroundColor: colors.glassLine, marginVertical: 14, marginHorizontal: -16 },
+  encaisseRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 4 },
+  encaisse: { color: colors.text, fontSize: 34, fontWeight: '600', letterSpacing: -1.5 },
+
+  barchart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 120, marginTop: 8 },
+  barcol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
+  bar: { width: 18, borderRadius: 6 },
+  barToday: { backgroundColor: colors.crimsonVivid },
+  barMuted: { backgroundColor: 'rgba(255,255,255,0.12)' },
+  barValue: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  barLabel: { color: colors.ink50, fontSize: 11 },
+
+  topTitle: { color: colors.ink50, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+});
