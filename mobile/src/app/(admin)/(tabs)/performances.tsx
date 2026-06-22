@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
@@ -14,9 +14,10 @@ import {
   ScreenBackground,
   ScreenHeader,
   SegFilter,
-  text as T,
+  useText,
 } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { darkColors, radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtCompact, fmtFCFA } from '@/lib/format';
 
 const MODES = [
@@ -33,7 +34,7 @@ const PERIODS = [
 const MEDALS = ['🥇', '🥈', '🥉'];
 const fmtCompactN = (n: number) => (Math.abs(n) >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace('.', ',')}M` : n >= 1_000 ? `${Math.round(n / 1_000)}K` : String(Math.round(n)));
 
-function scoreColor(s: number): string {
+function scoreColor(s: number, colors: Palette): string {
   return s >= 70 ? colors.mint : s >= 40 ? colors.amber : colors.crimsonVivid;
 }
 
@@ -47,16 +48,20 @@ const ROLE_CHIP: Record<string, 'done' | 'live' | 'due' | 'ghost'> = {
 const ROLE_LABEL: Record<string, string> = { supervisor: 'Superviseur', admin: 'Admin', agent: 'Agent', user: 'Utilisateur', super_admin: 'Super admin' };
 
 function Stars({ v }: { v: number }) {
+  const colors = useColors();
   return (
     <View style={{ flexDirection: 'row', gap: 1 }}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <Star key={n} size={13} color={n <= Math.round(v) ? colors.amber : 'rgba(255,255,255,0.2)'} fill={n <= Math.round(v) ? colors.amber : 'transparent'} />
+        <Star key={n} size={13} color={n <= Math.round(v) ? colors.amber : colors.track} fill={n <= Math.round(v) ? colors.amber : 'transparent'} />
       ))}
     </View>
   );
 }
 
 export default function AdminPerf() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const [mode, setMode] = useState('agents');
   const [period, setPeriod] = useState('month');
   const { data, isLoading } = useAdminPerformance(period as Period);
@@ -77,7 +82,7 @@ export default function AdminPerf() {
               <>
                 <GlassCard variant="strong" style={styles.headCard}>
                   <View>
-                    <Text style={[T.eyebrow, { color: '#8bf0d2' }]}>Revenu encaissé</Text>
+                    <Text style={[T.eyebrow, { color: colors.mintIcon }]}>Revenu encaissé</Text>
                     <Text style={styles.headAmt}>
                       {fmtFCFA(data.revenue)} <Text style={styles.headUnit}>F</Text>
                     </Text>
@@ -98,7 +103,7 @@ export default function AdminPerf() {
               <>
                 <GlassCard variant="strong" style={styles.headCard}>
                   <View>
-                    <Text style={[T.eyebrow, { color: '#8bf0d2' }]}>Indice de performance moyen</Text>
+                    <Text style={[T.eyebrow, { color: colors.mintIcon }]}>Indice de performance moyen</Text>
                     <Text style={styles.headAmt}>
                       {data.avgIndex}
                       <Text style={styles.headUnit}> / 100</Text>
@@ -117,7 +122,7 @@ export default function AdminPerf() {
                         <Text style={T.t1} numberOfLines={1}>{e.name}</Text>
                         <Text style={T.t3}>{e.dept || '—'}</Text>
                       </View>
-                      <Text style={[styles.scoreNum, { color: scoreColor(e.index) }]}>{e.index}</Text>
+                      <Text style={[styles.scoreNum, { color: scoreColor(e.index, colors) }]}>{e.index}</Text>
                     </View>
                     <ProgressBar pct={e.index} />
                     <View style={styles.rowBetween}>
@@ -148,11 +153,11 @@ export default function AdminPerf() {
                     <View style={{ flexDirection: 'row', gap: 10 }}>
                       <View style={[styles.dayBox, styles.dayBlue]}>
                         <View style={styles.dayHead}>
-                          <BookOpen size={12} color="#bcd6ff" />
-                          <Text style={[T.t3, { color: '#bcd6ff' }]}>Cours</Text>
+                          <BookOpen size={12} color={colors.blueIcon} />
+                          <Text style={[T.t3, { color: colors.blueIcon }]}>Cours</Text>
                         </View>
                         <Text style={T.t3}>{d.courses.c} paiements</Text>
-                        <Text style={[styles.dayAmt, { color: '#bcd6ff' }]}>{fmtCompact(d.courses.a)}</Text>
+                        <Text style={[styles.dayAmt, { color: colors.blueIcon }]}>{fmtCompact(d.courses.a)}</Text>
                       </View>
                       <View style={[styles.dayBox, styles.dayMint]}>
                         <View style={styles.dayHead}>
@@ -175,6 +180,9 @@ export default function AdminPerf() {
 }
 
 function AgentCard({ a, onPress }: { a: AgentPerf; onPress: () => void }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   return (
     <Pressable onPress={onPress}>
       <GlassCard style={{ gap: 11 }}>
@@ -194,7 +202,7 @@ function AgentCard({ a, onPress }: { a: AgentPerf; onPress: () => void }) {
             </View>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[styles.scoreNum, { color: scoreColor(a.score) }]}>{a.score}</Text>
+            <Text style={[styles.scoreNum, { color: scoreColor(a.score, colors) }]}>{a.score}</Text>
             <Text style={T.t3}>/100</Text>
           </View>
         </View>
@@ -217,9 +225,9 @@ function AgentCard({ a, onPress }: { a: AgentPerf; onPress: () => void }) {
 
         {/* Répartition par type */}
         <View style={styles.typeRow}>
-          <TypeCell label="Bourse" color="#cdbcff" stat={a.types.bourse} />
+          <TypeCell label="Bourse" color={colors.purpleIcon} stat={a.types.bourse} />
           <TypeCell label="Mandarin" color={colors.crimsonVivid} stat={a.types.mandarin} />
-          <TypeCell label="Anglais" color="#bcd6ff" stat={a.types.anglais} />
+          <TypeCell label="Anglais" color={colors.blueIcon} stat={a.types.anglais} />
         </View>
 
         {/* Tags d'alerte */}
@@ -236,6 +244,8 @@ function AgentCard({ a, onPress }: { a: AgentPerf; onPress: () => void }) {
 }
 
 function TypeCell({ label, color, stat }: { label: string; color: string; stat: { c: number; a: number } }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.typeCell}>
       <Text style={[styles.typeLabel, { color }]}>{label}</Text>
@@ -245,37 +255,38 @@ function TypeCell({ label, color, stat }: { label: string; color: string; stat: 
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  headCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headAmt: { color: colors.text, fontSize: 24, fontWeight: '600', marginTop: 5 },
-  headUnit: { fontSize: 12, color: colors.ink50, fontWeight: '400' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pos: { width: 20, fontWeight: '700', color: colors.ink50, textAlign: 'center' },
-  scoreNum: { fontSize: 19, fontWeight: '700' },
-  medal: { position: 'absolute', bottom: -4, right: -4, fontSize: 15 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
-  dayBox: { flex: 1, borderRadius: 12, padding: 10, borderWidth: 1, gap: 2 },
-  dayBlue: { backgroundColor: 'rgba(96,165,250,0.10)', borderColor: 'rgba(96,165,250,0.25)' },
-  dayMint: { backgroundColor: 'rgba(52,217,168,0.10)', borderColor: 'rgba(52,217,168,0.25)' },
-  dayHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  dayAmt: { fontSize: 14, fontWeight: '700', marginTop: 2 },
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    headCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    headAmt: { color: colors.text, fontSize: 24, fontWeight: '600', marginTop: 5 },
+    headUnit: { fontSize: 12, color: colors.ink50, fontWeight: '400' },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    pos: { width: 20, fontWeight: '700', color: colors.ink50, textAlign: 'center' },
+    scoreNum: { fontSize: 19, fontWeight: '700' },
+    medal: { position: 'absolute', bottom: -4, right: -4, fontSize: 15 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
+    dayBox: { flex: 1, borderRadius: 12, padding: 10, borderWidth: 1, gap: 2 },
+    dayBlue: { backgroundColor: 'rgba(96,165,250,0.10)', borderColor: 'rgba(96,165,250,0.25)' },
+    dayMint: { backgroundColor: 'rgba(52,217,168,0.10)', borderColor: 'rgba(52,217,168,0.25)' },
+    dayHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    dayAmt: { fontSize: 14, fontWeight: '700', marginTop: 2 },
 
-  brk: { flexDirection: 'row', gap: 6 },
-  brkCell: { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, paddingVertical: 8, alignItems: 'center' },
-  brkLabel: { color: colors.ink35, fontSize: 8.5, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-  brkValue: { color: colors.ink70, fontSize: 12, fontWeight: '700', marginTop: 2 },
+    brk: { flexDirection: 'row', gap: 6 },
+    brkCell: { flex: 1, backgroundColor: colors.softFill, borderRadius: 10, paddingVertical: 8, alignItems: 'center' },
+    brkLabel: { color: colors.ink35, fontSize: 8.5, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+    brkValue: { color: colors.ink70, fontSize: 12, fontWeight: '700', marginTop: 2 },
 
-  typeRow: { flexDirection: 'row', gap: 6, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)', paddingTop: 9 },
-  typeCell: { flex: 1, alignItems: 'center' },
-  typeLabel: { fontSize: 10, fontWeight: '700' },
-  typeCount: { color: colors.ink50, fontSize: 10.5, marginTop: 2 },
-  typeAmt: { fontSize: 12.5, fontWeight: '700', marginTop: 1 },
+    typeRow: { flexDirection: 'row', gap: 6, borderTopWidth: 1, borderTopColor: colors.glassLine, paddingTop: 9 },
+    typeCell: { flex: 1, alignItems: 'center' },
+    typeLabel: { fontSize: 10, fontWeight: '700' },
+    typeCount: { color: colors.ink50, fontSize: 10.5, marginTop: 2 },
+    typeAmt: { fontSize: 12.5, fontWeight: '700', marginTop: 1 },
 
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tag: { fontSize: 10.5, fontWeight: '600', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
-  tagVal: { color: '#8bf0d2', backgroundColor: 'rgba(52,217,168,0.13)' },
-  tagAtt: { color: '#ffe09a', backgroundColor: 'rgba(251,191,36,0.13)' },
-  tagRet: { color: '#ffb3b3', backgroundColor: 'rgba(239,68,68,0.13)' },
-});
+    tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    tag: { fontSize: 10.5, fontWeight: '600', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
+    tagVal: { color: colors.mintIcon, backgroundColor: 'rgba(52,217,168,0.13)' },
+    tagAtt: { color: colors.amberIcon, backgroundColor: 'rgba(251,191,36,0.13)' },
+    tagRet: { color: colors.redIcon, backgroundColor: 'rgba(239,68,68,0.13)' },
+  });

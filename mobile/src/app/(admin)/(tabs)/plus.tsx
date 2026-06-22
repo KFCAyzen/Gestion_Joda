@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
@@ -32,11 +33,12 @@ import {
   ScreenBackground,
   ScreenHeader,
   SectionLabel,
-  iconTint,
-  text as T,
+  useIconTint,
+  useText,
   type IconTone,
 } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 type Item = { module: AdminModule; label: string; sub: string; icon: LucideIcon; tone: IconTone; route: string };
 type Group = { title: string; items: Item[] };
@@ -84,6 +86,10 @@ const GROUPS: Group[] = [
 ];
 
 export default function AdminPlus() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
   const { user, logout } = useAuth();
   const role = user?.role;
 
@@ -158,9 +164,10 @@ export default function AdminPlus() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  name: { color: colors.text, fontSize: 18, fontWeight: '600' },
-  version: { color: colors.ink35, fontSize: 11, textAlign: 'center', paddingVertical: 8 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    identity: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    name: { color: colors.text, fontSize: 18, fontWeight: '600' },
+    version: { color: colors.ink35, fontSize: 11, textAlign: 'center', paddingVertical: 8 },
+  });

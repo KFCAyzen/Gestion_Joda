@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowDownLeft, ArrowUpRight, TriangleAlert } from 'lucide-react-native';
@@ -10,10 +10,11 @@ import {
   ScreenBackground,
   ScreenHeader,
   SegFilter,
-  iconTint,
-  text as T,
+  useIconTint,
+  useText,
 } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtCompact, fmtFCFA, shortDate } from '@/lib/format';
 
 const VIEWS = [
@@ -25,6 +26,10 @@ const VIEWS = [
 ];
 
 export default function AdminCompta() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
   const { data, isLoading } = useAccountingLedger();
   const [view, setView] = useState('mois');
   const [filter, setFilter] = useState('tout');
@@ -117,22 +122,23 @@ export default function AdminCompta() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  solde: { fontSize: 32, fontWeight: '700', letterSpacing: -1, marginTop: 8 },
-  cur: { fontSize: 13, color: colors.ink50, fontWeight: '400' },
-  flowRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  flowBox: { flex: 1, borderRadius: 12, padding: 10, borderWidth: 1 },
-  flowIn: { backgroundColor: 'rgba(52,217,168,0.10)', borderColor: 'rgba(52,217,168,0.25)' },
-  flowOut: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
-  flowHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  flowAmt: { fontSize: 15, fontWeight: '700', marginTop: 4 },
-  alertCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: 'rgba(251,191,36,0.32)' },
-  lrow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  lrowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
-  lk: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  lkIn: { backgroundColor: 'rgba(52,217,168,0.13)' },
-  lkOut: { backgroundColor: colors.redGlass },
-  la: { fontSize: 14, fontWeight: '700' },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    solde: { fontSize: 32, fontWeight: '700', letterSpacing: -1, marginTop: 8 },
+    cur: { fontSize: 13, color: colors.ink50, fontWeight: '400' },
+    flowRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+    flowBox: { flex: 1, borderRadius: 12, padding: 10, borderWidth: 1 },
+    flowIn: { backgroundColor: 'rgba(52,217,168,0.10)', borderColor: 'rgba(52,217,168,0.25)' },
+    flowOut: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
+    flowHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    flowAmt: { fontSize: 15, fontWeight: '700', marginTop: 4 },
+    alertCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: 'rgba(251,191,36,0.32)' },
+    lrow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+    lrowBorder: { borderBottomWidth: 1, borderBottomColor: colors.glassLine },
+    lk: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    lkIn: { backgroundColor: 'rgba(52,217,168,0.13)' },
+    lkOut: { backgroundColor: colors.redGlass },
+    la: { fontSize: 14, fontWeight: '700' },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
+  });

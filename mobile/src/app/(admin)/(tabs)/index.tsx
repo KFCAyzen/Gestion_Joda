@@ -14,9 +14,10 @@ import {
   ScreenHeader,
   SectionLabel,
   SegFilter,
-  text as T,
+  useText,
 } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { darkColors, radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtCompact } from '@/lib/format';
 
 const VIEWS = [
@@ -25,19 +26,20 @@ const VIEWS = [
   { id: 'mois', label: 'Mois' },
 ];
 
+// Couleurs des pastilles du journal — accents vifs lisibles en clair comme en sombre.
 const LOG_COLOR: Record<string, string> = {
-  create: colors.mint,
-  delete: colors.crimsonVivid,
-  reject: colors.crimsonVivid,
+  create: darkColors.mint,
+  delete: darkColors.crimsonVivid,
+  reject: darkColors.crimsonVivid,
   validate: '#34d9a8',
-  payment: colors.amber,
-  accounting: colors.amber,
-  update: colors.blue,
+  payment: darkColors.amber,
+  accounting: darkColors.amber,
+  update: darkColors.blue,
   upload: '#2dd4bf',
 };
 function logColor(type: string): string {
   for (const k of Object.keys(LOG_COLOR)) if (type.includes(k)) return LOG_COLOR[k];
-  return colors.ink50;
+  return darkColors.ink50;
 }
 
 type JournalGroup = { period: string; entries: { id: string; time: string; actor: string; desc: string; color: string }[] };
@@ -62,6 +64,9 @@ function groupJournal(logs: ActivityLog[]): JournalGroup[] {
 }
 
 export default function AdminBord() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { user } = useAuth();
   const { data, isLoading } = useAdminDashboard();
   const { data: logs } = useActivityLogs();
@@ -130,7 +135,7 @@ export default function AdminBord() {
                         b.today ? styles.barToday : styles.barMuted,
                       ]}
                     />
-                    <Text style={[styles.barLabel, b.today && { color: '#fff', fontWeight: '700' }]}>{b.l}</Text>
+                    <Text style={[styles.barLabel, b.today && { color: colors.text, fontWeight: '700' }]}>{b.l}</Text>
                   </View>
                 ))}
               </View>
@@ -143,7 +148,7 @@ export default function AdminBord() {
                 {data.topUniv.map((u, i) => (
                   <View key={i} style={{ marginBottom: i < data.topUniv.length - 1 ? 12 : 0 }}>
                     <View style={styles.topRow}>
-                      <Text style={[T.t2, { color: '#fff', flex: 1 }]} numberOfLines={1}>{u.name}</Text>
+                      <Text style={[T.t2, { color: colors.text, flex: 1 }]} numberOfLines={1}>{u.name}</Text>
                       <Text style={T.t1}>{u.count}</Text>
                     </View>
                     <ProgressBar pct={(u.count / topMax) * 100} style={{ marginTop: 6 }} />
@@ -164,7 +169,7 @@ export default function AdminBord() {
                         <Text style={styles.jtime}>{e.time}</Text>
                         <View style={[styles.jdot, { backgroundColor: e.color }]} />
                         <View style={{ flex: 1 }}>
-                          <Text style={[T.t2, { color: '#fff' }]} numberOfLines={2}>
+                          <Text style={[T.t2, { color: colors.text }]} numberOfLines={2}>
                             <Text style={{ fontWeight: '700' }}>{e.actor}</Text> {e.desc}
                           </Text>
                         </View>
@@ -183,31 +188,32 @@ export default function AdminBord() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  statRow: { flexDirection: 'row' },
-  statCol: { flex: 1, paddingHorizontal: 14 },
-  statColBorder: { borderRightWidth: 1, borderRightColor: colors.glassLine, paddingLeft: 0 },
-  statLabel: { color: colors.ink35, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4 },
-  statBig: { color: colors.text, fontSize: 38, fontWeight: '600', letterSpacing: -1.5, marginTop: 4 },
-  divider: { height: 1, backgroundColor: colors.glassLine, marginVertical: 14, marginHorizontal: -16 },
-  encaisseRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 4 },
-  encaisse: { color: colors.text, fontSize: 34, fontWeight: '600', letterSpacing: -1.5 },
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    statRow: { flexDirection: 'row' },
+    statCol: { flex: 1, paddingHorizontal: 14 },
+    statColBorder: { borderRightWidth: 1, borderRightColor: colors.glassLine, paddingLeft: 0 },
+    statLabel: { color: colors.ink35, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4 },
+    statBig: { color: colors.text, fontSize: 38, fontWeight: '600', letterSpacing: -1.5, marginTop: 4 },
+    divider: { height: 1, backgroundColor: colors.glassLine, marginVertical: 14, marginHorizontal: -16 },
+    encaisseRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 4 },
+    encaisse: { color: colors.text, fontSize: 34, fontWeight: '600', letterSpacing: -1.5 },
 
-  barchart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 120, marginTop: 8 },
-  barcol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
-  bar: { width: 18, borderRadius: 6 },
-  barToday: { backgroundColor: colors.crimsonVivid },
-  barMuted: { backgroundColor: 'rgba(255,255,255,0.12)' },
-  barValue: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  barLabel: { color: colors.ink50, fontSize: 11 },
+    barchart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 120, marginTop: 8 },
+    barcol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
+    bar: { width: 18, borderRadius: 6 },
+    barToday: { backgroundColor: colors.crimsonVivid },
+    barMuted: { backgroundColor: colors.track },
+    barValue: { color: colors.text, fontSize: 11, fontWeight: '700' },
+    barLabel: { color: colors.ink50, fontSize: 11 },
 
-  topTitle: { color: colors.ink50, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    topTitle: { color: colors.ink50, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
+    topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 
-  periodLabel: { color: colors.ink35, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, marginTop: 10, marginBottom: 4 },
-  jentry: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingVertical: 7 },
-  jtime: { color: colors.ink50, fontSize: 10.5, width: 38, marginTop: 1 },
-  jdot: { width: 7, height: 7, borderRadius: 4, marginTop: 5 },
-});
+    periodLabel: { color: colors.ink35, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, marginTop: 10, marginBottom: 4 },
+    jentry: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingVertical: 7 },
+    jtime: { color: colors.ink50, fontSize: 10.5, width: 38, marginTop: 1 },
+    jdot: { width: 7, height: 7, borderRadius: 4, marginTop: 5 },
+  });
