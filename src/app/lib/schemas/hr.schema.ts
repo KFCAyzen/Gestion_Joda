@@ -92,6 +92,8 @@ export const employeeSchema = z.object({
   // Suivi d'appels (call center) — désignation manuelle par l'admin
   suivi_appels: z.boolean().optional(),
   quota_appels: z.boolean().optional(),
+  // Archivage (soft-delete) : non null = employé archivé, masqué des listes.
+  archived_at: z.string().nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -99,6 +101,7 @@ export const employeeSchema = z.object({
 export const createEmployeeSchema = employeeSchema
   .omit({
     id: true,
+    archived_at: true,
     created_at: true,
     updated_at: true,
   })
@@ -113,7 +116,7 @@ export const createEmployeeSchema = employeeSchema
   });
 
 export const updateEmployeeSchema = employeeSchema
-  .omit({ id: true, created_at: true, updated_at: true })
+  .omit({ id: true, archived_at: true, created_at: true, updated_at: true })
   .partial();
 
 // ─── Leave request ─────────────────────────────────────────────────────────

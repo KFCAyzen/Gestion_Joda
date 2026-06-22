@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+    Archive,
     Briefcase,
     CalendarDays,
     Check,
@@ -68,9 +69,11 @@ import {
 } from "../lib/phone";
 import {
     useEmployees,
+    useArchivedEmployees,
     useCreateEmployee,
     useUpdateEmployee,
     useDeleteEmployee,
+    useRestoreEmployee,
     useLeaveRequests,
     useCreateLeaveRequest,
     useReviewLeaveRequest,
@@ -734,6 +737,12 @@ function EmployeesPanel({
     const create = useCreateEmployee();
     const update = useUpdateEmployee();
     const del = useDeleteEmployee();
+    const restore = useRestoreEmployee();
+    const [showArchived, setShowArchived] = useState(false);
+    const archivedQ = useArchivedEmployees(showArchived);
+    const archivedEmployees = archivedQ.data ?? [];
+    const list = showArchived ? archivedEmployees : employees;
+    const listLoading = showArchived ? archivedQ.isLoading : loading;
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<Employee | null>(null);
     const [form, setForm] = useState<EmployeeFormState>(emptyEmployeeForm);
@@ -953,6 +962,15 @@ function EmployeesPanel({
         }
     };
 
+    const handleRestore = async (e: Employee) => {
+        try {
+            await restore.mutateAsync(e.id);
+            onSuccess(t("messages.employeeRestored"));
+        } catch (err) {
+            onError(err);
+        }
+    };
+
     const handlePrintReport = (action: PrintAction = "print") => {
         const count = (s: EmployeeStatus) => employees.filter((e) => e.statut === s).length;
         const payroll = employees
@@ -1041,7 +1059,16 @@ function EmployeesPanel({
                         <Link2 className="w-4 h-4 mr-2" />
                         {t("employees.copyPublicLink")}
                     </Button>
-                    <Button onClick={openCreate}>
+                    <Button
+                        variant={showArchived ? "default" : "outline"}
+                        onClick={() => setShowArchived((v) => !v)}
+                    >
+                        <Archive className="w-4 h-4 mr-2" />
+                        {showArchived
+                            ? t("employees.showActive")
+                            : t("employees.showArchived")}
+                    </Button>
+                    <Button onClick={openCreate} disabled={showArchived}>
                         <Plus className="w-4 h-4 mr-2" />
                         {t("employees.add")}
                     </Button>
@@ -1063,12 +1090,15 @@ function EmployeesPanel({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {loading ? (
+                        {listLoading ? (
                             <LoadingRow cols={9} />
-                        ) : employees.length === 0 ? (
-                            <EmptyRow cols={9} label={t("employees.empty")} />
+                        ) : list.length === 0 ? (
+                            <EmptyRow
+                                cols={9}
+                                label={showArchived ? t("employees.emptyArchived") : t("employees.empty")}
+                            />
                         ) : (
-                            employees.map((e) => (
+                            list.map((e) => (
                                 <TableRow key={e.id}>
                                     <TableCell className="font-medium">
                                         {e.prenom} {e.nom}
@@ -1108,34 +1138,49 @@ function EmployeesPanel({
                                     <TableCell className="text-right">
                                         <div className="flex justify-end">
                                             <DropdownMenu
-                                                actions={[
-                                                    {
-                                                        label: t("employees.viewDetail"),
-                                                        icon: <User className="w-4 h-4" />,
-                                                        onClick: () => onView(e),
-                                                    },
-                                                    {
-                                                        label: t("employees.regeneratePin"),
-                                                        icon: regeneratingId === e.id ? (
-                                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                                        ) : (
-                                                            <KeyRound className="w-4 h-4" />
-                                                        ),
-                                                        onClick: () => handleRegeneratePin(e),
-                                                        disabled: regeneratingId === e.id,
-                                                    },
-                                                    {
-                                                        label: t("employees.editTitle"),
-                                                        icon: <Pencil className="w-4 h-4" />,
-                                                        onClick: () => openEdit(e),
-                                                    },
-                                                    {
-                                                        label: t("employees.confirmDeleteTitle"),
-                                                        icon: <Trash2 className="w-4 h-4" />,
-                                                        onClick: () => setConfirmDel(e),
-                                                        variant: "danger",
-                                                    },
-                                                ]}
+                                                actions={
+                                                    showArchived
+                                                        ? [
+                                                              {
+                                                                  label: t("employees.viewDetail"),
+                                                                  icon: <User className="w-4 h-4" />,
+                                                                  onClick: () => onView(e),
+                                                              },
+                                                              {
+                                                                  label: t("employees.restore"),
+                                                                  icon: <RotateCcw className="w-4 h-4" />,
+                                                                  onClick: () => handleRestore(e),
+                                                              },
+                                                          ]
+                                                        : [
+                                                              {
+                                                                  label: t("employees.viewDetail"),
+                                                                  icon: <User className="w-4 h-4" />,
+                                                                  onClick: () => onView(e),
+                                                              },
+                                                              {
+                                                                  label: t("employees.regeneratePin"),
+                                                                  icon: regeneratingId === e.id ? (
+                                                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                                                  ) : (
+                                                                      <KeyRound className="w-4 h-4" />
+                                                                  ),
+                                                                  onClick: () => handleRegeneratePin(e),
+                                                                  disabled: regeneratingId === e.id,
+                                                              },
+                                                              {
+                                                                  label: t("employees.editTitle"),
+                                                                  icon: <Pencil className="w-4 h-4" />,
+                                                                  onClick: () => openEdit(e),
+                                                              },
+                                                              {
+                                                                  label: t("employees.confirmDeleteTitle"),
+                                                                  icon: <Trash2 className="w-4 h-4" />,
+                                                                  onClick: () => setConfirmDel(e),
+                                                                  variant: "danger",
+                                                              },
+                                                          ]
+                                                }
                                             />
                                         </div>
                                     </TableCell>

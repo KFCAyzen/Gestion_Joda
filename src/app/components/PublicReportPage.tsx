@@ -518,11 +518,7 @@ export default function PublicReportPage() {
             });
             const json = await res.json();
             if (!res.ok) {
-                setSubmitErr(
-                    json?.code === "daily_limit"
-                        ? t("errors.dailyLimit")
-                        : json.error || t("errors.submitFailed")
-                );
+                setSubmitErr(json.error || t("errors.submitFailed"));
                 return;
             }
             setForm({ date: todayIso(), activites: "", heures_travaillees: "8", observations: "" });
@@ -562,12 +558,6 @@ export default function PublicReportPage() {
     };
 
     const today = todayIso();
-    const todayCount = useMemo(
-        () => history.filter((r) => r.date === today).length,
-        [history, today]
-    );
-    const remainingToday = Math.max(0, 2 - todayCount);
-    const atLimit = remainingToday <= 0;
 
     const evalAvg = useMemo(
         () =>
@@ -785,22 +775,7 @@ export default function PublicReportPage() {
                 </div>
             </div>
             <div className="p-5">
-                {atLimit ? (
-                    <div className="rounded-[10px] border border-amber-100 bg-amber-50 px-[22px] py-6 text-center">
-                        <div className="mx-auto mb-3 grid h-[54px] w-[54px] place-items-center rounded-2xl border border-amber-100 bg-white text-amber-600">
-                            <AlertTriangle className="h-6 w-6" />
-                        </div>
-                        <div className="text-base font-bold text-amber-700">{t("limit.title")}</div>
-                        <div className="mx-auto mt-1.5 max-w-[320px] text-[13px] leading-relaxed text-amber-700/85">
-                            {t("limit.text")}
-                        </div>
-                        <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full border border-amber-100 bg-white px-3.5 py-1.5 text-[12.5px] font-semibold text-amber-700">
-                            <Clock className="h-3.5 w-3.5" />
-                            {t("limit.chip")}
-                        </div>
-                    </div>
-                ) : (
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                             <div className="flex flex-col gap-[7px]">
                                 <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-zinc-500">
@@ -911,7 +886,6 @@ export default function PublicReportPage() {
                             {t("form.submit")}
                         </button>
                     </form>
-                )}
             </div>
         </div>
     );
@@ -1129,29 +1103,6 @@ export default function PublicReportPage() {
                                         })}
                                     </div>
                                 </div>
-                                <div
-                                    className={`min-w-[96px] rounded-xl border px-3.5 py-2.5 text-center ${
-                                        atLimit
-                                            ? "border-amber-100 bg-amber-50"
-                                            : "border-green-100 bg-green-50"
-                                    }`}
-                                >
-                                    <div
-                                        className={`flex items-center justify-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] ${
-                                            atLimit ? "text-amber-700" : "text-green-700"
-                                        }`}
-                                    >
-                                        <ClipboardList className="h-[11px] w-[11px]" />
-                                        {t("remainingShort")}
-                                    </div>
-                                    <div
-                                        className={`mt-0.5 text-[15px] font-bold tabular-nums ${
-                                            atLimit ? "text-amber-700" : "text-green-700"
-                                        }`}
-                                    >
-                                        {remainingToday}/2
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -1195,10 +1146,7 @@ export default function PublicReportPage() {
                             </div>
                             <div className="text-lg font-bold text-zinc-900">{t("success.title")}</div>
                             <div className="mt-1.5 text-[13.5px] leading-relaxed text-zinc-500">
-                                {t("success.message", { name: e.prenom })}{" "}
-                                {remainingToday > 0
-                                    ? t("success.remaining", { count: remainingToday })
-                                    : t("success.limitReached")}
+                                {t("success.message", { name: e.prenom })}
                             </div>
                         </motion.div>
                     </motion.div>
