@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
-import { colors } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 type RingProps = {
   size?: number;
@@ -14,6 +14,7 @@ type RingProps = {
 
 /** Anneau de progression `Ring` — arc en dégradé crimson, départ à -90°. */
 export function Ring({ size = 132, strokeWidth = 12, pct, children }: RingProps) {
+  const colors = useColors();
   const r = (size - strokeWidth) / 2;
   const c = 2 * Math.PI * r;
   const offset = c * (1 - Math.max(0, Math.min(100, pct)) / 100);
@@ -56,7 +57,9 @@ type MiniRingProps = {
 };
 
 /** `MiniRing` — petit anneau couleur unie (métriques). */
-export function MiniRing({ size = 50, strokeWidth = 5, pct, color = colors.crimson, children }: MiniRingProps) {
+export function MiniRing({ size = 50, strokeWidth = 5, pct, color, children }: MiniRingProps) {
+  const colors = useColors();
+  const stroke = color ?? colors.crimson;
   const r = (size - strokeWidth) / 2;
   const c = 2 * Math.PI * r;
   const offset = c * (1 - Math.max(0, Math.min(100, pct)) / 100);
@@ -70,7 +73,7 @@ export function MiniRing({ size = 50, strokeWidth = 5, pct, color = colors.crims
           cx={center}
           cy={center}
           r={r}
-          stroke={color}
+          stroke={stroke}
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"

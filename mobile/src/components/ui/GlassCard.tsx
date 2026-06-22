@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, radius, shadow, spacing } from '@/theme/tokens';
+import { radius, shadow, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 type Props = {
   children: ReactNode;
@@ -14,6 +15,8 @@ type Props = {
 
 /** Surface verre `.glass` / `.glass-strong` du handoff. */
 export function GlassCard({ children, variant = 'glass', accentLeft, style }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View
       style={[
@@ -27,24 +30,25 @@ export function GlassCard({ children, variant = 'glass', accentLeft, style }: Pr
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.cardPad,
-    ...shadow.card,
-  },
-  glass: {
-    backgroundColor: colors.glass,
-    borderColor: colors.glassLine,
-  },
-  strong: {
-    backgroundColor: colors.glass2,
-    borderColor: colors.glassLine2,
-    borderRadius: radius.xl,
-  },
-  accentLeft: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.crimson,
-  },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    base: {
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      padding: spacing.cardPad,
+      ...shadow.card,
+    },
+    glass: {
+      backgroundColor: colors.glass,
+      borderColor: colors.glassLine,
+    },
+    strong: {
+      backgroundColor: colors.glass2,
+      borderColor: colors.glassLine2,
+      borderRadius: radius.xl,
+    },
+    accentLeft: {
+      borderLeftWidth: 3,
+      borderLeftColor: colors.crimson,
+    },
+  });

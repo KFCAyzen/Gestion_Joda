@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, gradients, radius, shadow } from '@/theme/tokens';
+import { gradients, radius, shadow, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 type Props = {
   label: string;
@@ -37,6 +38,8 @@ export function Button({
   icon,
   style,
 }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const height = size === 'sm' ? 38 : 48;
   const br = size === 'sm' ? radius.sm : radius.md;
   const dim = disabled || loading;
@@ -85,12 +88,13 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
-  inner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  glass: { backgroundColor: colors.glass2, borderWidth: 1, borderColor: colors.glassLine2 },
-  fullWidth: { alignSelf: 'stretch' },
-  dim: { opacity: 0.6 },
-  label: { color: '#fff', fontSize: 14.5, fontWeight: '600' },
-  labelGlass: { color: colors.ink70 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    base: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
+    inner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    glass: { backgroundColor: colors.glass2, borderWidth: 1, borderColor: colors.glassLine2 },
+    fullWidth: { alignSelf: 'stretch' },
+    dim: { opacity: 0.6 },
+    label: { color: '#fff', fontSize: 14.5, fontWeight: '600' },
+    labelGlass: { color: colors.ink70 },
+  });

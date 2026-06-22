@@ -4,7 +4,7 @@ export { Chip } from './Chip';
 export { Button } from './Button';
 export { Avatar } from './Avatar';
 export { Ring, MiniRing } from './Ring';
-export { IconBox, iconTint, type IconTone } from './IconBox';
+export { IconBox, iconTint, useIconTint, type IconTone } from './IconBox';
 export { BellBtn } from './BellBtn';
 export { ScreenHeader } from './ScreenHeader';
 export { ToastProvider, useToast } from './Toast';

@@ -4,9 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { Tabs } from 'expo-router';
+import { useMemo } from 'react';
 import { FileText, House, MessageSquare, Route, WalletCards, type LucideIcon } from 'lucide-react-native';
 
-import { colors, radius, shadow } from '@/theme/tokens';
+import { radius, shadow, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 // Type des props passées à `tabBar` par expo-router (qui embarque sa propre
 // copie de react-navigation, distincte du paquet standalone).
@@ -23,13 +25,16 @@ const ICONS: Record<string, { icon: LucideIcon; label: string }> = {
 /** Barre d'onglets flottante `.pm-tabs` (verre + onglet actif en pastille crimson). */
 export function BottomTabs({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const light = colors.bgBase !== '#100307';
 
   // Plein écran sur le chat : la barre est masquée (retour via le chevron du header).
   if (state.routes[state.index]?.name === 'messages') return null;
 
   return (
     <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 14) }]} pointerEvents="box-none">
-      <BlurView intensity={30} tint="dark" style={styles.bar}>
+      <BlurView intensity={30} tint={light ? 'light' : 'dark'} style={styles.bar}>
         {state.routes.map((route, i) => {
           const meta = ICONS[route.name];
           if (!meta) return null;
@@ -67,38 +72,39 @@ export function BottomTabs({ state, navigation }: TabBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 14 },
-  bar: {
-    flexDirection: 'row',
-    borderRadius: 26,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    backgroundColor: 'rgba(20,5,8,0.55)',
-    paddingVertical: 9,
-    paddingHorizontal: 8,
-    ...shadow.tabBar,
-  },
-  item: { flex: 1, alignItems: 'center', gap: 5, paddingVertical: 4 },
-  pill: {
-    width: 44,
-    height: 36,
-    borderRadius: radius.sm + 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Lueur crimson + liseré supérieur (équivalent RN de l'inset highlight de la maquette).
-  pillActive: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.3)',
-    shadowColor: colors.crimson,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 22,
-    elevation: 8,
-  },
-  iconInactive: { width: 44, height: 36, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 10, color: colors.ink35, fontWeight: '600' },
-  labelActive: { color: '#fff' },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 14 },
+    bar: {
+      flexDirection: 'row',
+      borderRadius: 26,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      backgroundColor: colors.tabBarBg,
+      paddingVertical: 9,
+      paddingHorizontal: 8,
+      ...shadow.tabBar,
+    },
+    item: { flex: 1, alignItems: 'center', gap: 5, paddingVertical: 4 },
+    pill: {
+      width: 44,
+      height: 36,
+      borderRadius: radius.sm + 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // Lueur crimson + liseré supérieur (équivalent RN de l'inset highlight de la maquette).
+    pillActive: {
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(255,255,255,0.3)',
+      shadowColor: colors.crimson,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.45,
+      shadowRadius: 22,
+      elevation: 8,
+    },
+    iconInactive: { width: 44, height: 36, alignItems: 'center', justifyContent: 'center' },
+    label: { fontSize: 10, color: colors.ink35, fontWeight: '600' },
+    labelActive: { color: colors.text },
+  });
