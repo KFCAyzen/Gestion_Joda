@@ -12,6 +12,7 @@ export async function GET() {
             .from("employees")
             .select("id, prenom, nom, poste, departement, suivi_appels, quota_appels")
             .eq("statut", "actif")
+            .is("archived_at", null)
             .order("nom", { ascending: true });
 
         if (error) {

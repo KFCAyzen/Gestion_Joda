@@ -66,7 +66,27 @@ export function useEmployees() {
       const { data, error } = await supabase
         .from('employees')
         .select('*')
+        .is('archived_at', null)
         .order('nom', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Employee[];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+// Employés archivés (soft-delete) — chargés à la demande pour l'onglet « Archivés ».
+export const ARCHIVED_EMPLOYEES_KEY = ['hr', 'employees', 'archived'] as const;
+export function useArchivedEmployees(enabled = true) {
+  return useQuery({
+    queryKey: ARCHIVED_EMPLOYEES_KEY,
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .not('archived_at', 'is', null)
+        .order('archived_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as Employee[];
     },
@@ -110,19 +130,40 @@ export function useUpdateEmployee() {
   });
 }
 
+// Archivage (soft-delete) : on ne supprime jamais physiquement un employé —
+// cela déclencherait un ON DELETE CASCADE qui effacerait son historique
+// (rapports, fiches de paie, congés, évaluations). On marque `archived_at` :
+// l'employé disparaît des listes mais toutes ses données restent intactes.
 export function useDeleteEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('employees').delete().eq('id', id);
+      const { error } = await supabase
+        .from('employees')
+        .update({ archived_at: new Date().toISOString() })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: EMPLOYEES_KEY });
-      qc.invalidateQueries({ queryKey: LEAVE_REQUESTS_KEY });
-      qc.invalidateQueries({ queryKey: PAYSLIPS_KEY });
-      qc.invalidateQueries({ queryKey: DAILY_REPORTS_KEY });
-      qc.invalidateQueries({ queryKey: EVALUATIONS_KEY });
+      qc.invalidateQueries({ queryKey: ARCHIVED_EMPLOYEES_KEY });
+    },
+  });
+}
+
+export function useRestoreEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('employees')
+        .update({ archived_at: null })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: EMPLOYEES_KEY });
+      qc.invalidateQueries({ queryKey: ARCHIVED_EMPLOYEES_KEY });
     },
   });
 }

@@ -105,7 +105,8 @@
     "messages": {
       "employeeCreated": "Employee created",
       "employeeUpdated": "Employee updated",
-      "employeeDeleted": "Employee deleted",
+      "employeeDeleted": "Employee archived",
+      "employeeRestored": "Employee restored",
       "leaveCreated": "Leave request submitted",
       "leaveApproved": "Leave approved",
       "leaveRejected": "Leave rejected",
@@ -123,8 +124,8 @@
       "editTitle": "Edit employee",
       "empty": "No employee yet",
       "matriculeAutoHint": "The code is generated automatically",
-      "confirmDeleteTitle": "Delete this employee?",
-      "confirmDeleteDesc": "All related data (leaves, payslips, reports) for {name} will also be removed.",
+      "confirmDeleteTitle": "Archive this employee?",
+      "confirmDeleteDesc": "{name} will be removed from the lists. Their history (leaves, payslips, reports) is preserved and can be restored.",
       "col": {
         "name": "Name",
         "matricule": "Code",
@@ -247,6 +248,10 @@
       "pinSentNone": "PIN not sent (missing email/phone)",
       "pinHiddenHint": "PIN is hashed on the server. Click Regenerate to obtain a new PIN to share.",
       "viewDetail": "View profile",
+      "restore": "Restore",
+      "showArchived": "Show archived",
+      "showActive": "Show active",
+      "emptyArchived": "No archived employee",
       "report": {
         "print": "Print report",
         "download": "Download report",
@@ -2863,7 +2868,6 @@
     "topbarSubtitle": "Employee space",
     "greeting": "Hello,",
     "dateLabel": "Date",
-    "remainingShort": "Remaining",
     "footer": "© {year} Joda Company · Report portal",
     "footerShort": "© {year} Joda Company",
     "todayBadge": "Today",
@@ -2887,9 +2891,8 @@
       "pin": "PIN code",
       "pinHint": "6-digit code sent by HR (via SMS or email).",
       "submit": "Continue",
-      "securityNote": "Secure and confidential access. Maximum 2 reports per day per employee."
+      "securityNote": "Secure and confidential access."
     },
-    "remaining": "Remaining today",
     "form": {
       "title": "New report",
       "description": "Describe your activities for the day.",
@@ -2910,20 +2913,13 @@
         "nb_autres": "Other"
       }
     },
-    "limit": {
-      "title": "Daily limit reached",
-      "text": "You have sent your 2 reports for today. The form will reopen automatically tomorrow.",
-      "chip": "Next submission available tomorrow"
-    },
     "quota": {
       "title": "This week's target",
       "hint": "Total of your reports for this week (Monday → Sunday)."
     },
     "success": {
       "title": "Report sent",
-      "message": "Thank you {name}, your daily report has been sent to HR.",
-      "remaining": "You have {count, plural, one {# submission} other {# submissions}} left today.",
-      "limitReached": "You have reached today's limit."
+      "message": "Thank you {name}, your daily report has been sent to HR."
     },
     "history": {
       "title": "My recent reports",
@@ -2950,7 +2946,6 @@
       "activitiesRequired": "Please describe your activities.",
       "invalidHours": "Invalid number of hours (0 to 24).",
       "submitFailed": "Failed to submit the report",
-      "dailyLimit": "Limit reached: you can submit at most 2 reports per day.",
       "callStatsRequired": "Fill in all call counters (0 is allowed)."
     }
   },

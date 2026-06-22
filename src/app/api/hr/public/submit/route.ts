@@ -7,8 +7,6 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const DAILY_LIMIT = 2;
-
 const bodySchema = z.object({
     employee_id: z.string().uuid(),
     pin: z.string().min(4).max(12),
@@ -55,22 +53,6 @@ export async function POST(req: NextRequest) {
         }
         if (!ok) {
             return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
-        }
-
-        const { count, error: countError } = await supabaseAdmin
-            .from("daily_reports")
-            .select("id", { count: "exact", head: true })
-            .eq("employee_id", employee_id)
-            .eq("date", date);
-
-        if (countError) {
-            return NextResponse.json({ error: countError.message }, { status: 500 });
-        }
-        if ((count ?? 0) >= DAILY_LIMIT) {
-            return NextResponse.json(
-                { error: `Limite quotidienne atteinte (${DAILY_LIMIT} rapports maximum par jour)`, code: "daily_limit" },
-                { status: 429 }
-            );
         }
 
         const { data: report, error: insertError } = await supabaseAdmin

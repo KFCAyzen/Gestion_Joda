@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
             .from("employees")
             .select("id, prenom, nom, poste, departement, suivi_appels, quota_appels")
             .eq("id", employee_id)
+            .is("archived_at", null)
             .maybeSingle();
 
         if (empError || !emp) {

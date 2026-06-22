@@ -105,7 +105,8 @@
     "messages": {
       "employeeCreated": "Employé créé",
       "employeeUpdated": "Employé mis à jour",
-      "employeeDeleted": "Employé supprimé",
+      "employeeDeleted": "Employé archivé",
+      "employeeRestored": "Employé restauré",
       "leaveCreated": "Demande de congé enregistrée",
       "leaveApproved": "Congé approuvé",
       "leaveRejected": "Congé rejeté",
@@ -123,8 +124,8 @@
       "editTitle": "Modifier l'employé",
       "empty": "Aucun employé enregistré",
       "matriculeAutoHint": "Le matricule est généré automatiquement",
-      "confirmDeleteTitle": "Supprimer cet employé ?",
-      "confirmDeleteDesc": "Toutes les données associées (congés, fiches de paie, rapports) de {name} seront aussi supprimées.",
+      "confirmDeleteTitle": "Archiver cet employé ?",
+      "confirmDeleteDesc": "{name} sera retiré des listes. Son historique (congés, fiches de paie, rapports) est conservé et peut être restauré.",
       "col": {
         "name": "Nom",
         "matricule": "Matricule",
@@ -247,6 +248,10 @@
       "pinSentNone": "PIN non envoyé (e-mail/téléphone manquant)",
       "pinHiddenHint": "Code haché côté serveur. Cliquez sur Régénérer pour obtenir un nouveau code à transmettre.",
       "viewDetail": "Voir le dossier",
+      "restore": "Restaurer",
+      "showArchived": "Voir les archivés",
+      "showActive": "Voir les actifs",
+      "emptyArchived": "Aucun employé archivé",
       "report": {
         "print": "Imprimer le rapport",
         "download": "Télécharger le rapport",
@@ -2863,7 +2868,6 @@
     "topbarSubtitle": "Espace employé",
     "greeting": "Bonjour,",
     "dateLabel": "Date",
-    "remainingShort": "Restants",
     "footer": "© {year} Joda Company · Portail de rapport",
     "footerShort": "© {year} Joda Company",
     "todayBadge": "Aujourd'hui",
@@ -2887,9 +2891,8 @@
       "pin": "Code PIN",
       "pinHint": "Code à 6 chiffres transmis par les RH (par SMS ou e-mail).",
       "submit": "Continuer",
-      "securityNote": "Accès sécurisé et confidentiel. Maximum 2 rapports par jour et par employé."
+      "securityNote": "Accès sécurisé et confidentiel."
     },
-    "remaining": "Restants aujourd'hui",
     "form": {
       "title": "Nouveau rapport",
       "description": "Décrivez vos activités de la journée.",
@@ -2910,20 +2913,13 @@
         "nb_autres": "Autres"
       }
     },
-    "limit": {
-      "title": "Limite quotidienne atteinte",
-      "text": "Vous avez envoyé vos 2 rapports pour aujourd'hui. Le formulaire se rouvrira automatiquement demain.",
-      "chip": "Prochain envoi possible demain"
-    },
     "quota": {
       "title": "Objectif de la semaine",
       "hint": "Cumul de vos rapports de cette semaine (lundi → dimanche)."
     },
     "success": {
       "title": "Rapport envoyé",
-      "message": "Merci {name}, votre rapport du jour a bien été transmis aux RH.",
-      "remaining": "Il vous reste {count, plural, one {# envoi} other {# envois}} aujourd'hui.",
-      "limitReached": "Vous avez atteint la limite du jour."
+      "message": "Merci {name}, votre rapport du jour a bien été transmis aux RH."
     },
     "history": {
       "title": "Mes rapports récents",
@@ -2950,7 +2946,6 @@
       "activitiesRequired": "Veuillez décrire vos activités.",
       "invalidHours": "Nombre d'heures invalide (0 à 24).",
       "submitFailed": "Échec de l'envoi du rapport",
-      "dailyLimit": "Limite atteinte : vous ne pouvez envoyer que 2 rapports par jour.",
       "callStatsRequired": "Renseignez tous les compteurs d'appels (0 accepté)."
     }
   },
