@@ -13,13 +13,17 @@ import {
   ScreenBackground,
   ScreenHeader,
   SegFilter,
-  text as T,
+  useText,
   useToast,
 } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtFCFA, relTime } from '@/lib/format';
 
 export default function StaffPaiements() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { user } = useAuth();
   const { data: payments, isLoading } = useStaffPayments();
   const validate = useValidatePayment(user?.id);
@@ -53,7 +57,7 @@ export default function StaffPaiements() {
         ) : (
           <ScrollView contentContainerStyle={{ paddingBottom: 130, gap: 11 }} showsVerticalScrollIndicator={false}>
             <GlassCard variant="strong">
-              <Text style={[T.eyebrow, { color: '#ffd9a0' }]}>En attente de validation</Text>
+              <Text style={[T.eyebrow, { color: colors.amberIcon }]}>En attente de validation</Text>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryAmount}>{fmtFCFA(total)}</Text>
                 <Chip variant="due" label={`${pending.length} déclaration${pending.length > 1 ? 's' : ''}`} />
@@ -159,56 +163,57 @@ export default function StaffPaiements() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  summaryRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8, marginBottom: 2 },
-  summaryAmount: { color: colors.text, fontSize: 34, fontWeight: '600', letterSpacing: -1 },
-  payTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  declRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
-  proofRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
-  proofThumb: {
-    width: 46,
-    height: 46,
-    borderRadius: radius.sm,
-    backgroundColor: colors.glass2,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnRow: { flexDirection: 'row', gap: 9, marginTop: 12 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    summaryRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8, marginBottom: 2 },
+    summaryAmount: { color: colors.text, fontSize: 34, fontWeight: '600', letterSpacing: -1 },
+    payTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    declRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
+    proofRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
+    proofThumb: {
+      width: 46,
+      height: 46,
+      borderRadius: radius.sm,
+      backgroundColor: colors.glass2,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnRow: { flexDirection: 'row', gap: 9, marginTop: 12 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
 
-  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#160409',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.glassLine2,
-    padding: 18,
-    paddingBottom: 34,
-  },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.glassLine2, marginBottom: 14 },
-  sheetHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
-  closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: colors.glass2,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  proofBig: {
-    height: 220,
-    borderRadius: radius.md,
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-});
+    sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: colors.sheetBg,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: colors.glassLine2,
+      padding: 18,
+      paddingBottom: 34,
+    },
+    grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.glassLine2, marginBottom: 14 },
+    sheetHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+    closeBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: colors.glass2,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    proofBig: {
+      height: 220,
+      borderRadius: radius.md,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 14,
+    },
+  });

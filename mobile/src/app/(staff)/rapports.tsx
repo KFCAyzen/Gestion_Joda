@@ -13,13 +13,17 @@ import {
   ScreenBackground,
   ScreenHeader,
   SegFilter,
-  text as T,
+  useText,
   useToast,
 } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { shortDate } from '@/lib/format';
 
 export default function StaffRapports() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { data: reports, isLoading } = useStaffReports();
   const review = useReviewReport();
   const toast = useToast();
@@ -49,7 +53,7 @@ export default function StaffRapports() {
         ) : (
           <ScrollView contentContainerStyle={{ paddingBottom: 60, gap: 11 }} showsVerticalScrollIndicator={false}>
             <GlassCard variant="strong">
-              <Text style={[T.eyebrow, { color: '#ffb3b3' }]}>Rapports journaliers · équipe</Text>
+              <Text style={[T.eyebrow, { color: colors.redIcon }]}>Rapports journaliers · équipe</Text>
               <View style={styles.summaryRow}>
                 <View>
                   <Text style={styles.bigNum}>{pending.length}</Text>
@@ -119,21 +123,22 @@ export default function StaffRapports() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  summaryRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 },
-  bigNum: { color: colors.text, fontSize: 30, fontWeight: '600' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  hoursRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  activityBox: {
-    marginTop: 11,
-    padding: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    borderRadius: 12,
-  },
-  activityText: { color: colors.ink70, fontSize: 13, lineHeight: 19, marginTop: 4 },
-  btnRow: { flexDirection: 'row', gap: 9, marginTop: 12 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    summaryRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 8 },
+    bigNum: { color: colors.text, fontSize: 30, fontWeight: '600' },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    hoursRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    activityBox: {
+      marginTop: 11,
+      padding: 12,
+      backgroundColor: colors.softFill,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      borderRadius: 12,
+    },
+    activityText: { color: colors.ink70, fontSize: 13, lineHeight: 19, marginTop: 4 },
+    btnRow: { flexDirection: 'row', gap: 9, marginTop: 12 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });

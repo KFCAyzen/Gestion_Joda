@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
@@ -16,14 +17,19 @@ import {
   ScreenBackground,
   ScreenHeader,
   SectionLabel,
-  iconTint,
-  text as T,
+  useIconTint,
+  useText,
   useToast,
 } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtFCFA } from '@/lib/format';
 
 export default function StaffStudentDetail() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: s, isLoading } = useStaffStudentDetail(id);
   const toast = useToast();
@@ -63,7 +69,7 @@ export default function StaffStudentDetail() {
         <ScrollView contentContainerStyle={{ paddingBottom: 120, gap: spacing.cardGap }} showsVerticalScrollIndicator={false}>
           {/* HERO */}
           <GlassCard variant="strong" style={styles.hero}>
-            <Plane size={120} color="rgba(255,255,255,0.05)" strokeWidth={1} style={styles.filigree} />
+            <Plane size={120} color={colors.watermark} strokeWidth={1} style={styles.filigree} />
             <View style={styles.heroRow}>
               <Ring pct={s.pct} size={92} strokeWidth={10}>
                 <Text style={styles.ringValue}>
@@ -160,39 +166,40 @@ export default function StaffStudentDetail() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-  hero: { overflow: 'hidden' },
-  filigree: { position: 'absolute', top: -22, right: -16 },
-  heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
-  ringValue: { color: colors.text, fontSize: 22, fontWeight: '600' },
-  ringPct: { fontSize: 12, color: colors.ink50 },
-  ringLabel: { color: colors.ink50, fontSize: 8.5, textTransform: 'uppercase', letterSpacing: 1 },
-  dest: { color: colors.text, fontSize: 19, fontWeight: '600', marginTop: 2 },
-  actions: { flexDirection: 'row', gap: 10 },
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+    hero: { overflow: 'hidden' },
+    filigree: { position: 'absolute', top: -22, right: -16 },
+    heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
+    ringValue: { color: colors.text, fontSize: 22, fontWeight: '600' },
+    ringPct: { fontSize: 12, color: colors.ink50 },
+    ringLabel: { color: colors.ink50, fontSize: 8.5, textTransform: 'uppercase', letterSpacing: 1 },
+    dest: { color: colors.text, fontSize: 19, fontWeight: '600', marginTop: 2 },
+    actions: { flexDirection: 'row', gap: 10 },
 
-  mRow: { flexDirection: 'row', gap: 12 },
-  mColLeft: { alignItems: 'center' },
-  mDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-  },
-  mDotDone: { backgroundColor: 'rgba(52,217,168,0.13)', borderColor: 'rgba(52,217,168,0.32)' },
-  mDotNow: { backgroundColor: colors.crimsonDeep, borderColor: 'transparent' },
-  mNum: { fontSize: 11, fontWeight: '700', color: colors.ink35 },
-  mLine: { width: 2, flex: 1, minHeight: 16, backgroundColor: colors.glassLine, marginTop: 2 },
-  mLineDone: { backgroundColor: 'rgba(52,217,168,0.32)' },
-  mLabel: { color: '#fff', fontSize: 13.5, fontWeight: '500', paddingTop: 1 },
-  mNow: { color: '#ffb3b3', fontSize: 11.5, marginTop: 1 },
+    mRow: { flexDirection: 'row', gap: 12 },
+    mColLeft: { alignItems: 'center' },
+    mDot: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+    },
+    mDotDone: { backgroundColor: 'rgba(52,217,168,0.13)', borderColor: 'rgba(52,217,168,0.32)' },
+    mDotNow: { backgroundColor: colors.crimsonDeep, borderColor: 'transparent' },
+    mNum: { fontSize: 11, fontWeight: '700', color: colors.ink35 },
+    mLine: { width: 2, flex: 1, minHeight: 16, backgroundColor: colors.glassLine, marginTop: 2 },
+    mLineDone: { backgroundColor: 'rgba(52,217,168,0.32)' },
+    mLabel: { color: colors.text, fontSize: 13.5, fontWeight: '500', paddingTop: 1 },
+    mNow: { color: colors.redIcon, fontSize: 11.5, marginTop: 1 },
 
-  payRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  payBig: { color: colors.text, fontSize: 21, fontWeight: '600', marginTop: 2 },
-  payUnit: { fontSize: 12, color: colors.ink50, fontWeight: '400' },
-});
+    payRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    payBig: { color: colors.text, fontSize: 21, fontWeight: '600', marginTop: 2 },
+    payUnit: { fontSize: 12, color: colors.ink50, fontWeight: '400' },
+  });

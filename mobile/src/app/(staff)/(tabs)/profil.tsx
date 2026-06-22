@@ -19,12 +19,13 @@ import {
   SectionLabel,
   StatTile,
   Toggle,
-  iconTint,
-  text as T,
+  useIconTint,
+  useText,
   useToast,
   type IconTone,
 } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors, useThemePref } from '@/theme/theme';
 
 const ROLE_LABEL: Record<string, string> = {
   agent: 'Conseiller / Agent',
@@ -35,12 +36,16 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default function StaffProfil() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
+  const { mode, setPref } = useThemePref();
   const { user, logout } = useAuth();
   const { data: badges } = useStaffBadges(user?.id);
   const { data: dossiers } = useStaffDossiers();
   const toast = useToast();
   const [notif, setNotif] = useState(true);
-  const [dark, setDark] = useState(true);
 
   const stats = useMemo(() => {
     const list = dossiers ?? [];
@@ -107,7 +112,7 @@ export default function StaffProfil() {
           <SectionLabel title="Préférences" />
           <ListCard>
             <Row tone="ghost" icon={<Bell size={17} color={colors.ink70} />} label="Notifications" right={<Toggle on={notif} onPress={() => setNotif((v) => !v)} />} />
-            <Row tone="ghost" icon={<Moon size={17} color={colors.ink70} />} label="Thème sombre" right={<Toggle on={dark} onPress={() => setDark((v) => !v)} />} />
+            <Row tone="ghost" icon={<Moon size={17} color={colors.ink70} />} label="Thème sombre" right={<Toggle on={mode === 'dark'} onPress={() => setPref(mode === 'dark' ? 'light' : 'dark')} />} />
             <Row tone="ghost" icon={<Globe size={17} color={colors.ink70} />} label="Langue" right={<Text style={T.t2}>Français</Text>} onPress={() => toast('Choix de langue à venir')} last />
           </ListCard>
 
@@ -145,6 +150,8 @@ function Row({
   danger?: boolean;
   last?: boolean;
 }) {
+  const colors = useColors();
+  const T = useText();
   return (
     <ListRow onPress={onPress} last={last}>
       <IconBox tone={tone} size={38}>
@@ -159,10 +166,11 @@ function Row({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  name: { color: colors.text, fontSize: 18, fontWeight: '600' },
-  kgrid: { flexDirection: 'row', gap: 10 },
-  version: { color: colors.ink35, fontSize: 11, textAlign: 'center', paddingVertical: 8 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    identity: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    name: { color: colors.text, fontSize: 18, fontWeight: '600' },
+    kgrid: { flexDirection: 'row', gap: 10 },
+    version: { color: colors.ink35, fontSize: 11, textAlign: 'center', paddingVertical: 8 },
+  });

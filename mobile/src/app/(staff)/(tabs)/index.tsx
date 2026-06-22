@@ -20,13 +20,18 @@ import {
   ScreenHeader,
   SectionLabel,
   StatTile,
-  iconTint,
-  text as T,
+  useIconTint,
+  useText,
 } from '@/components/ui';
-import { colors, fontSize, spacing } from '@/theme/tokens';
+import { fontSize, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtCompact, fmtFCFA, relTime } from '@/lib/format';
 
 export default function StaffHome() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
   const { user } = useAuth();
   const first = (user?.name ?? user?.username ?? '').split(' ')[0] || 'Agent';
 
@@ -74,8 +79,8 @@ export default function StaffHome() {
         <ScrollView contentContainerStyle={{ paddingBottom: 130, gap: spacing.cardGap }} showsVerticalScrollIndicator={false}>
           {/* HERO — activité du jour */}
           <GlassCard variant="strong" style={styles.hero}>
-            <TrendingUp size={140} color="rgba(255,255,255,0.05)" strokeWidth={1} style={styles.filigree} />
-            <Text style={[T.eyebrow, { color: '#ffb3b3' }]}>Activité du jour</Text>
+            <TrendingUp size={140} color={colors.watermark} strokeWidth={1} style={styles.filigree} />
+            <Text style={[T.eyebrow, { color: colors.redIcon }]}>Activité du jour</Text>
             <View style={styles.heroRow}>
               <Ring pct={stats.dayPct} size={104} strokeWidth={11}>
                 <Text style={styles.ringValue}>
@@ -170,17 +175,18 @@ export default function StaffHome() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  hero: { overflow: 'hidden' },
-  filigree: { position: 'absolute', top: -30, right: -24 },
-  heroRow: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 12 },
-  ringValue: { color: colors.text, fontSize: 26, fontWeight: '600', lineHeight: 28 },
-  ringPct: { fontSize: 14, color: colors.ink50 },
-  ringLabel: { color: colors.ink50, fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 1.1, marginTop: 2 },
-  heroBig: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  chipRow: { flexDirection: 'row', gap: 8, marginTop: 11 },
-  kgrid: { flexDirection: 'row', gap: 10 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 18 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    hero: { overflow: 'hidden' },
+    filigree: { position: 'absolute', top: -30, right: -24 },
+    heroRow: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 12 },
+    ringValue: { color: colors.text, fontSize: 26, fontWeight: '600', lineHeight: 28 },
+    ringPct: { fontSize: 14, color: colors.ink50 },
+    ringLabel: { color: colors.ink50, fontSize: 9.5, textTransform: 'uppercase', letterSpacing: 1.1, marginTop: 2 },
+    heroBig: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    chipRow: { flexDirection: 'row', gap: 8, marginTop: 11 },
+    kgrid: { flexDirection: 'row', gap: 10 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 18 },
+  });

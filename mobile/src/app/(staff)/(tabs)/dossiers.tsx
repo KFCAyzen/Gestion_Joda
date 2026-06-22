@@ -13,9 +13,10 @@ import {
   ScreenHeader,
   SearchBar,
   SegFilter,
-  text as T,
+  useText,
 } from '@/components/ui';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtCompact } from '@/lib/format';
 
 const FILTERS = [
@@ -26,6 +27,9 @@ const FILTERS = [
 ];
 
 export default function StaffDossiers() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { data: dossiers, isLoading } = useStaffDossiers();
   const [f, setF] = useState('all');
   const [q, setQ] = useState('');
@@ -95,19 +99,20 @@ export default function StaffDossiers() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  card: {
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    borderRadius: radius.lg,
-    padding: 14,
-    gap: 12,
-  },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  metaRow: { flexDirection: 'row', gap: 14, flexWrap: 'wrap' },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    card: {
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      borderRadius: radius.lg,
+      padding: 14,
+      gap: 12,
+    },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    metaRow: { flexDirection: 'row', gap: 14, flexWrap: 'wrap' },
+    metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });
