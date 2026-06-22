@@ -27,7 +27,8 @@ import {
 } from '@/lib/hooks/use-messages';
 import { supabase } from '@/lib/supabase';
 import { Avatar, ScreenBackground } from '@/components/ui';
-import { colors, fontSize, gradients, radius, spacing } from '@/theme/tokens';
+import { fontSize, gradients, radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 type Row = { kind: 'sep'; id: string; label: string } | { kind: 'msg'; id: string; message: ChatMessage };
 
@@ -44,6 +45,8 @@ function dayLabel(iso: string): string {
 
 /** Onglet Messages — chat temps réel avec l'agent (handoff §5 ScreenChat). */
 export default function MessagesScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { user } = useAuth();
   const userId = user?.id;
   const qc = useQueryClient();
@@ -194,6 +197,8 @@ export default function MessagesScreen() {
 }
 
 function Bubble({ message, own }: { message: ChatMessage; own: boolean }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   if (own) {
     return (
       <View style={[styles.bubbleRow, styles.bubbleRowOwn]}>
@@ -210,91 +215,93 @@ function Bubble({ message, own }: { message: ChatMessage; own: boolean }) {
   return (
     <View style={[styles.bubbleRow, styles.bubbleRowThem]}>
       <View style={[styles.bubble, styles.bubbleThem]}>
-        <Text style={styles.bubbleText}>{message.content}</Text>
+        <Text style={[styles.bubbleText, styles.bubbleTextThem]}>{message.content}</Text>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  flex: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerName: { color: colors.text, fontSize: 15.5, fontWeight: '600' },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-  onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.mint },
-  statusText: { color: colors.mint, fontSize: 11.5 },
-  daySep: {
-    color: colors.ink35,
-    fontSize: 10.5,
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-    textAlign: 'center',
-    marginVertical: 2,
-  },
-  bubbleRow: { flexDirection: 'row' },
-  bubbleRowOwn: { justifyContent: 'flex-end' },
-  bubbleRowThem: { justifyContent: 'flex-start' },
-  bubble: { maxWidth: '80%', paddingHorizontal: 14, paddingVertical: 11, borderRadius: 20 },
-  bubbleOwn: {
-    borderBottomRightRadius: 6,
-    shadowColor: colors.crimson,
-    shadowOpacity: 0.32,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-  },
-  bubbleThem: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    borderBottomLeftRadius: 6,
-  },
-  bubbleText: { color: '#fff', fontSize: 13.5, lineHeight: 20 },
-  empty: { color: colors.ink50, fontSize: 14, textAlign: 'center', marginTop: 40 },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, paddingTop: 8 },
-  clipBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  input: {
-    flex: 1,
-    maxHeight: 110,
-    minHeight: 46,
-    backgroundColor: colors.glass,
-    borderColor: colors.glassLine,
-    borderWidth: 1,
-    borderRadius: 23,
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 12,
-    color: '#fff',
-    fontSize: 14,
-  },
-  sendBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: colors.crimsonDeep,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendBtnOff: { opacity: 0.5 },
-  error: { color: colors.crimsonVivid, fontSize: 13 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    flex: { flex: 1 },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+    iconBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 13,
+      backgroundColor: colors.softFill,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerName: { color: colors.text, fontSize: 15.5, fontWeight: '600' },
+    statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+    onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.mint },
+    statusText: { color: colors.mint, fontSize: 11.5 },
+    daySep: {
+      color: colors.ink35,
+      fontSize: 10.5,
+      textTransform: 'uppercase',
+      letterSpacing: 1.4,
+      textAlign: 'center',
+      marginVertical: 2,
+    },
+    bubbleRow: { flexDirection: 'row' },
+    bubbleRowOwn: { justifyContent: 'flex-end' },
+    bubbleRowThem: { justifyContent: 'flex-start' },
+    bubble: { maxWidth: '80%', paddingHorizontal: 14, paddingVertical: 11, borderRadius: 20 },
+    bubbleOwn: {
+      borderBottomRightRadius: 6,
+      shadowColor: colors.crimson,
+      shadowOpacity: 0.32,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 4,
+    },
+    bubbleThem: {
+      backgroundColor: colors.softFill2,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      borderBottomLeftRadius: 6,
+    },
+    bubbleText: { color: '#fff', fontSize: 13.5, lineHeight: 20 },
+    bubbleTextThem: { color: colors.text },
+    empty: { color: colors.ink50, fontSize: 14, textAlign: 'center', marginTop: 40 },
+    composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, paddingTop: 8 },
+    clipBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      backgroundColor: colors.softFill,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    input: {
+      flex: 1,
+      maxHeight: 110,
+      minHeight: 46,
+      backgroundColor: colors.glass,
+      borderColor: colors.glassLine,
+      borderWidth: 1,
+      borderRadius: 23,
+      paddingHorizontal: 18,
+      paddingTop: 12,
+      paddingBottom: 12,
+      color: colors.text,
+      fontSize: 14,
+    },
+    sendBtn: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.crimsonDeep,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendBtnOff: { opacity: 0.5 },
+    error: { color: colors.crimsonVivid, fontSize: 13 },
+  });

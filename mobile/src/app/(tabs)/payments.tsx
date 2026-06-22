@@ -23,11 +23,12 @@ import {
   Chip,
   GlassCard,
   IconBox,
-  iconTint,
+  useIconTint,
   ScreenBackground,
   ScreenHeader,
 } from '@/components/ui';
-import { colors, fontSize, radius, spacing } from '@/theme/tokens';
+import { fontSize, radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 const TYPE_LABEL: Record<Payment['type'], string> = {
   bourse: 'Procédure bourse',
@@ -61,6 +62,8 @@ const remainingOf = (p: Payment): number => Math.max(0, p.montant - settledOf(p)
 
 /** Onglet Paiements — solde, progression réglée, échéancier (handoff §4 ScreenPay). */
 export default function PaymentsScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { data, isLoading, error } = usePayments();
   const [declareOpen, setDeclareOpen] = useState(false);
 
@@ -95,7 +98,7 @@ export default function PaymentsScreen() {
           <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
             {/* Hero solde */}
             <GlassCard variant="strong" style={styles.hero}>
-              <WalletCards size={120} color="rgba(255,255,255,0.05)" strokeWidth={1} style={styles.filigree} />
+              <WalletCards size={120} color={colors.watermark} strokeWidth={1} style={styles.filigree} />
               <Text style={styles.eyebrowMuted}>Reste à régler</Text>
               <View style={styles.amountRow}>
                 <Text style={styles.bigAmount}>{fmt(dueTotal)}</Text>
@@ -154,6 +157,8 @@ function DeclareModal({
   payments: Payment[];
   onClose: () => void;
 }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const declare = useDeclarePayment();
 
@@ -340,6 +345,9 @@ function DeclareModal({
  *   vert (réglé / montant_paye) · ambre (en validation / montant_declare) · reste.
  */
 function PaymentCard({ payment }: { payment: Payment }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const iconTint = useIconTint();
   const total = payment.montant;
   const settled = settledOf(payment);
   const pending = pendingOf(payment);
@@ -402,150 +410,151 @@ function PaymentCard({ payment }: { payment: Payment }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  eyebrowMuted: {
-    color: colors.ink50,
-    fontSize: fontSize.eyebrow,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-  },
-  hero: { overflow: 'hidden', paddingTop: spacing.heroPad, paddingBottom: 18 },
-  filigree: { position: 'absolute', top: -22, right: -22 },
-  amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 6 },
-  bigAmount: { color: colors.text, fontSize: fontSize.bigAmount, fontWeight: '600', letterSpacing: -1 },
-  bigCurrency: { color: colors.ink50, fontSize: 14, fontWeight: '600' },
-  chips: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 14 },
-  progressHead: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, marginBottom: 7 },
-  metaText: { color: colors.ink50, fontSize: 11.5 },
-  progressTrack: { flexDirection: 'row', height: 7, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden' },
-  sectionEyebrow: {
-    color: colors.ink50,
-    fontSize: fontSize.eyebrow,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-    marginTop: 16,
-    marginBottom: 9,
-    marginLeft: 4,
-  },
-  subtitle: { color: colors.ink50, fontSize: 14 },
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    eyebrowMuted: {
+      color: colors.ink50,
+      fontSize: fontSize.eyebrow,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.6,
+    },
+    hero: { overflow: 'hidden', paddingTop: spacing.heroPad, paddingBottom: 18 },
+    filigree: { position: 'absolute', top: -22, right: -22 },
+    amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 6 },
+    bigAmount: { color: colors.text, fontSize: fontSize.bigAmount, fontWeight: '600', letterSpacing: -1 },
+    bigCurrency: { color: colors.ink50, fontSize: 14, fontWeight: '600' },
+    chips: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 14 },
+    progressHead: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, marginBottom: 7 },
+    metaText: { color: colors.ink50, fontSize: 11.5 },
+    progressTrack: { flexDirection: 'row', height: 7, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden' },
+    sectionEyebrow: {
+      color: colors.ink50,
+      fontSize: fontSize.eyebrow,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.6,
+      marginTop: 16,
+      marginBottom: 9,
+      marginLeft: 4,
+    },
+    subtitle: { color: colors.ink50, fontSize: 14 },
 
-  // ── Carte d'échéance (en-tête + barre de progression par tranche) ──
-  pcard: { paddingVertical: 13, paddingHorizontal: 14 },
-  pcardPending: { backgroundColor: 'rgba(251,191,36,0.07)', borderColor: 'rgba(251,191,36,0.28)' },
-  pcardHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  pcardTitle: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
-  pcardMeta: { color: colors.ink50, fontSize: 11.5, marginTop: 2 },
-  pcardAmount: { color: colors.text, fontSize: 14.5, fontWeight: '700' },
-  pTrack: {
-    flexDirection: 'row',
-    height: 7,
-    borderRadius: radius.pill,
-    backgroundColor: colors.track,
-    overflow: 'hidden',
-    marginTop: 12,
-  },
-  segPaid: { height: '100%', backgroundColor: colors.mint },
-  segPending: { height: '100%', backgroundColor: colors.amber },
-  pLegend: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
-  legendText: { color: colors.ink50, fontSize: 11 },
-  error: { color: colors.crimsonVivid, fontSize: 13 },
+    // ── Carte d'échéance (en-tête + barre de progression par tranche) ──
+    pcard: { paddingVertical: 13, paddingHorizontal: 14 },
+    pcardPending: { backgroundColor: 'rgba(251,191,36,0.07)', borderColor: 'rgba(251,191,36,0.28)' },
+    pcardHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    pcardTitle: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
+    pcardMeta: { color: colors.ink50, fontSize: 11.5, marginTop: 2 },
+    pcardAmount: { color: colors.text, fontSize: 14.5, fontWeight: '700' },
+    pTrack: {
+      flexDirection: 'row',
+      height: 7,
+      borderRadius: radius.pill,
+      backgroundColor: colors.track,
+      overflow: 'hidden',
+      marginTop: 12,
+    },
+    segPaid: { height: '100%', backgroundColor: colors.mint },
+    segPending: { height: '100%', backgroundColor: colors.amber },
+    pLegend: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
+    legendText: { color: colors.ink50, fontSize: 11 },
+    error: { color: colors.crimsonVivid, fontSize: 13 },
 
-  // ── Modal déclaration ──
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#160409',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    paddingHorizontal: spacing.screenX,
-    paddingTop: 18,
-    gap: 12,
-  },
-  sheetHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  sheetEyebrow: {
-    color: colors.ink50,
-    fontSize: fontSize.eyebrow,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-  },
-  sheetTitle: { color: colors.text, fontSize: 18, fontWeight: '600', marginTop: 2 },
-  closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trancheChip: {
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-  },
-  trancheChipOn: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
-  trancheChipText: { color: colors.ink70, fontSize: 12, fontWeight: '600' },
-  trancheChipTextOn: { color: colors.text },
-  expectedRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.redGlass,
-    borderWidth: 1,
-    borderColor: colors.redLine,
-    borderRadius: radius.md,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  expectedLabel: { color: colors.ink70, fontSize: 13 },
-  expectedAmount: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  modeRow: { flexDirection: 'row', gap: 8 },
-  modeBtn: {
-    flex: 1,
-    paddingVertical: 11,
-    borderRadius: radius.sm,
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    alignItems: 'center',
-  },
-  modeBtnOn: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
-  modeText: { color: colors.ink50, fontSize: 12.5, fontWeight: '600' },
-  modeTextOn: { color: colors.text },
-  avanceInput: {
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    borderRadius: radius.sm,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    color: '#fff',
-    fontSize: 15,
-  },
-  proofBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-    borderStyle: 'dashed',
-    borderRadius: radius.sm,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  proofText: { flex: 1, color: colors.ink70, fontSize: 13 },
-});
+    // ── Modal déclaration ──
+    backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
+    sheet: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: colors.sheetBg,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      paddingHorizontal: spacing.screenX,
+      paddingTop: 18,
+      gap: 12,
+    },
+    sheetHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    sheetEyebrow: {
+      color: colors.ink50,
+      fontSize: fontSize.eyebrow,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.6,
+    },
+    sheetTitle: { color: colors.text, fontSize: 18, fontWeight: '600', marginTop: 2 },
+    closeBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 12,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    trancheChip: {
+      paddingHorizontal: 13,
+      paddingVertical: 8,
+      borderRadius: radius.pill,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+    },
+    trancheChipOn: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
+    trancheChipText: { color: colors.ink70, fontSize: 12, fontWeight: '600' },
+    trancheChipTextOn: { color: colors.text },
+    expectedRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.redGlass,
+      borderWidth: 1,
+      borderColor: colors.redLine,
+      borderRadius: radius.md,
+      paddingHorizontal: 16,
+      paddingVertical: 13,
+    },
+    expectedLabel: { color: colors.ink70, fontSize: 13 },
+    expectedAmount: { color: colors.text, fontSize: 15, fontWeight: '700' },
+    modeRow: { flexDirection: 'row', gap: 8 },
+    modeBtn: {
+      flex: 1,
+      paddingVertical: 11,
+      borderRadius: radius.sm,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+    },
+    modeBtnOn: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
+    modeText: { color: colors.ink50, fontSize: 12.5, fontWeight: '600' },
+    modeTextOn: { color: colors.text },
+    avanceInput: {
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      borderRadius: radius.sm,
+      paddingHorizontal: 16,
+      paddingVertical: 13,
+      color: colors.text,
+      fontSize: 15,
+    },
+    proofBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      borderStyle: 'dashed',
+      borderRadius: radius.sm,
+      paddingHorizontal: 16,
+      paddingVertical: 13,
+    },
+    proofText: { flex: 1, color: colors.ink70, fontSize: 13 },
+  });

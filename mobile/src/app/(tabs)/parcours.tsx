@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -7,10 +8,13 @@ import { useAuth } from '@/lib/auth-context';
 import { useStudentProfile, useStudentDossier } from '@/lib/hooks/use-student-portal';
 import { buildMilestones, type Milestone } from '@/lib/dossier-milestones';
 import { Button, Chip, GlassCard, ScreenBackground, ScreenHeader } from '@/components/ui';
-import { colors, fontSize, spacing } from '@/theme/tokens';
+import { fontSize, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 /** Onglet Parcours — timeline verticale 6 jalons (handoff §2). */
 export default function ParcoursScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { user } = useAuth();
   const { data: profile } = useStudentProfile(user?.id);
   const { data: dossier, isLoading, error } = useStudentDossier(profile?.id);
@@ -71,6 +75,8 @@ export default function ParcoursScreen() {
 }
 
 function TimelineRow({ milestone, isLast, index }: { milestone: Milestone; isLast: boolean; index: number }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { state } = milestone;
   const lineColor = state === 'done' ? colors.mint : colors.glassLine;
 
@@ -109,6 +115,8 @@ function TimelineRow({ milestone, isLast, index }: { milestone: Milestone; isLas
 }
 
 function Node({ state, index }: { state: Milestone['state']; index: number }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   if (state === 'done') {
     return (
       <View style={[styles.node, styles.nodeDone]}>
@@ -144,44 +152,45 @@ function Node({ state, index }: { state: Milestone['state']; index: number }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  cscChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 26,
-    paddingHorizontal: 11,
-    borderRadius: 999,
-    backgroundColor: colors.glass,
-    borderWidth: 1,
-    borderColor: colors.glassLine,
-  },
-  cscText: { color: colors.ink70, fontSize: 11.5, fontWeight: '600' },
-  journey: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  journeyEnd: { minWidth: 64 },
-  journeyMid: { flex: 1, alignItems: 'center', justifyContent: 'center', height: 24 },
-  dottedLine: { flexDirection: 'row', alignItems: 'center', gap: 4, position: 'absolute' },
-  dash: { width: 5, height: 2, borderRadius: 1, backgroundColor: colors.redLine },
-  journeyPlane: { transform: [{ rotate: '45deg' }] },
-  journeyCity: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  journeyMeta: { color: colors.ink50, fontSize: fontSize.meta, marginTop: 2 },
-  timeline: { marginTop: 18 },
-  row: { flexDirection: 'row', gap: 14 },
-  gutter: { alignItems: 'center', width: 44 },
-  line: { width: 2, flex: 1, marginVertical: 4, borderRadius: 1 },
-  node: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
-  nodeDone: { backgroundColor: 'rgba(52,217,168,0.13)', borderColor: colors.mint },
-  nodeNow: { backgroundColor: colors.crimsonDeep, borderColor: colors.crimsonVivid },
-  nodeNowDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#fff' },
-  nodeBlocked: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
-  nodeNext: { backgroundColor: colors.glass, borderColor: colors.glassLine },
-  nodeLock: { backgroundColor: colors.glass, borderColor: colors.glassLine },
-  nodeNum: { color: colors.ink70, fontSize: 13, fontWeight: '700' },
-  content: { flex: 1, paddingBottom: 18 },
-  plainContent: { paddingTop: 10, gap: 6 },
-  label: { color: colors.text, fontSize: fontSize.cardTitle, fontWeight: '600' },
-  labelMuted: { color: colors.ink35 },
-  doneMeta: { color: colors.mint, fontSize: fontSize.meta, fontWeight: '600' },
-  error: { color: colors.crimsonVivid, fontSize: 13 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    cscChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      height: 26,
+      paddingHorizontal: 11,
+      borderRadius: 999,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+    },
+    cscText: { color: colors.ink70, fontSize: 11.5, fontWeight: '600' },
+    journey: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    journeyEnd: { minWidth: 64 },
+    journeyMid: { flex: 1, alignItems: 'center', justifyContent: 'center', height: 24 },
+    dottedLine: { flexDirection: 'row', alignItems: 'center', gap: 4, position: 'absolute' },
+    dash: { width: 5, height: 2, borderRadius: 1, backgroundColor: colors.redLine },
+    journeyPlane: { transform: [{ rotate: '45deg' }] },
+    journeyCity: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    journeyMeta: { color: colors.ink50, fontSize: fontSize.meta, marginTop: 2 },
+    timeline: { marginTop: 18 },
+    row: { flexDirection: 'row', gap: 14 },
+    gutter: { alignItems: 'center', width: 44 },
+    line: { width: 2, flex: 1, marginVertical: 4, borderRadius: 1 },
+    node: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
+    nodeDone: { backgroundColor: 'rgba(52,217,168,0.13)', borderColor: colors.mint },
+    nodeNow: { backgroundColor: colors.crimsonDeep, borderColor: colors.crimsonVivid },
+    nodeNowDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#fff' },
+    nodeBlocked: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
+    nodeNext: { backgroundColor: colors.glass, borderColor: colors.glassLine },
+    nodeLock: { backgroundColor: colors.glass, borderColor: colors.glassLine },
+    nodeNum: { color: colors.ink70, fontSize: 13, fontWeight: '700' },
+    content: { flex: 1, paddingBottom: 18 },
+    plainContent: { paddingTop: 10, gap: 6 },
+    label: { color: colors.text, fontSize: fontSize.cardTitle, fontWeight: '600' },
+    labelMuted: { color: colors.ink35 },
+    doneMeta: { color: colors.mint, fontSize: fontSize.meta, fontWeight: '600' },
+    error: { color: colors.crimsonVivid, fontSize: 13 },
+  });

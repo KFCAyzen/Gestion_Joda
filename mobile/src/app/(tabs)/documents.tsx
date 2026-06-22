@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,14 +16,17 @@ import {
   Chip,
   GlassCard,
   IconBox,
-  iconTint,
+  useIconTint,
   ScreenBackground,
   ScreenHeader,
   type IconTone,
 } from '@/components/ui';
-import { colors, fontSize, radius, spacing } from '@/theme/tokens';
+import { fontSize, radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 export default function DocumentsScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { user } = useAuth();
   const { data: profile } = useStudentProfile(user?.id);
   const studentId = profile?.id;
@@ -180,6 +183,9 @@ function DocRow({
   uploading: boolean;
   onUpload: () => void;
 }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const iconTint = useIconTint();
   const status = doc?.status;
   const received = status === 'valide' || status === 'en_attente';
 
@@ -199,7 +205,7 @@ function DocRow({
     Icon = Upload;
   }
 
-  const subColor = !received && !docDef.optional ? '#ffb3b3' : colors.ink50;
+  const subColor = !received && !docDef.optional ? colors.redIcon : colors.ink50;
 
   return (
     <GlassCard style={[styles.row, docDef.optional && !doc ? styles.rowOptional : null]}>
@@ -229,25 +235,26 @@ function DocRow({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  eyebrowMuted: {
-    color: colors.ink50,
-    fontSize: fontSize.eyebrow,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-  },
-  progressTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  ratio: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  ratioDone: { color: colors.mint },
-  progressTrack: { height: 8, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden', marginTop: 10 },
-  progressFill: { height: '100%', borderRadius: radius.pill, backgroundColor: colors.mint },
-  progressNote: { color: colors.ink70, fontSize: fontSize.meta, marginTop: 9 },
-  progressStrong: { color: colors.text, fontWeight: '700' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13 },
-  rowOptional: { opacity: 0.72 },
-  rowTitle: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
-  rowMeta: { fontSize: 11.5, marginTop: 2 },
-  error: { color: colors.crimsonVivid, fontSize: 13 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    eyebrowMuted: {
+      color: colors.ink50,
+      fontSize: fontSize.eyebrow,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.6,
+    },
+    progressTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+    ratio: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    ratioDone: { color: colors.mint },
+    progressTrack: { height: 8, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden', marginTop: 10 },
+    progressFill: { height: '100%', borderRadius: radius.pill, backgroundColor: colors.mint },
+    progressNote: { color: colors.ink70, fontSize: fontSize.meta, marginTop: 9 },
+    progressStrong: { color: colors.text, fontWeight: '700' },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13 },
+    rowOptional: { opacity: 0.72 },
+    rowTitle: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
+    rowMeta: { fontSize: 11.5, marginTop: 2 },
+    error: { color: colors.crimsonVivid, fontSize: 13 },
+  });
