@@ -3,6 +3,7 @@ import { Animated, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, shadow } from '@/theme/tokens';
+// Toast est monté à la racine (forcée sombre) : on garde la palette sombre statique.
 
 type ToastFn = (message: string) => void;
 

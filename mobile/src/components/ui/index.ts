@@ -20,5 +20,6 @@ export {
   Toggle,
   CountBadge,
   text,
+  useText,
   type SegOption,
 } from './primitives';

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -11,7 +11,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search } from 'lucide-react-native';
 
-import { colors, fontSize, gradients, radius, spacing } from '@/theme/tokens';
+import { colors as defaultColors, fontSize, gradients, radius, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 /* ── Segmented filter (`.seg2` / `.fchip`) ───────────────────────────────── */
 export type SegOption = { id: string; label: string; count?: number | null };
@@ -27,6 +28,7 @@ export function SegFilter({
   onChange: (id: string) => void;
   style?: StyleProp<ViewStyle>;
 }) {
+  const styles = useStyles();
   return (
     <View style={[styles.seg, style]}>
       {options.map((o) => {
@@ -56,6 +58,8 @@ export function SearchBar({
   placeholder?: string;
   style?: StyleProp<ViewStyle>;
 }) {
+  const colors = useColors();
+  const styles = useStyles();
   return (
     <View style={[styles.search, style]}>
       <Search size={18} color={colors.ink50} />
@@ -80,6 +84,7 @@ export function SectionLabel({
   action?: string;
   onAction?: () => void;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.seclbl}>
       <Text style={styles.seclblText}>{title}</Text>
@@ -94,6 +99,7 @@ export function SectionLabel({
 
 /* ── List card container (`.glass.listcard`) ─────────────────────────────── */
 export function ListCard({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const styles = useStyles();
   return <View style={[styles.listcard, style]}>{children}</View>;
 }
 
@@ -109,10 +115,12 @@ export function ListRow({
   last?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const colors = useColors();
+  const styles = useStyles();
   const inner = <View style={[styles.litem, !last && styles.litemBorder, style]}>{children}</View>;
   if (!onPress) return inner;
   return (
-    <Pressable onPress={onPress} android_ripple={{ color: 'rgba(255,255,255,0.04)' }}>
+    <Pressable onPress={onPress} android_ripple={{ color: colors.softFill }}>
       {inner}
     </Pressable>
   );
@@ -120,6 +128,7 @@ export function ListRow({
 
 /* ── Progress bar (`.pbar`) ──────────────────────────────────────────────── */
 export function ProgressBar({ pct, style }: { pct: number; style?: StyleProp<ViewStyle> }) {
+  const styles = useStyles();
   const w = Math.max(0, Math.min(100, pct));
   return (
     <View style={[styles.pbar, style]}>
@@ -149,6 +158,8 @@ export function StatTile({
   valueColor?: string;
   style?: StyleProp<ViewStyle>;
 }) {
+  const colors = useColors();
+  const styles = useStyles();
   return (
     <View style={[styles.kpi, style]}>
       <Text style={[styles.kpiValue, valueColor ? { color: valueColor } : null]} numberOfLines={1}>
@@ -166,6 +177,7 @@ export function StatTile({
 
 /* ── Toggle switch ───────────────────────────────────────────────────────── */
 export function Toggle({ on, onPress }: { on: boolean; onPress?: () => void }) {
+  const styles = useStyles();
   return (
     <Pressable onPress={onPress} hitSlop={8}>
       {on ? (
@@ -186,29 +198,47 @@ export function Toggle({ on, onPress }: { on: boolean; onPress?: () => void }) {
 }
 
 /* ── Count badge (pastille rouge) ────────────────────────────────────────── */
-export function CountBadge({ count, color = colors.crimsonVivid }: { count: number; color?: string }) {
+export function CountBadge({ count, color }: { count: number; color?: string }) {
+  const colors = useColors();
+  const styles = useStyles();
   return (
-    <View style={[styles.badge, { backgroundColor: color }]}>
+    <View style={[styles.badge, { backgroundColor: color ?? colors.crimsonVivid }]}>
       <Text style={styles.badgeText}>{count}</Text>
     </View>
   );
 }
 
-export const text = StyleSheet.create({
-  t1: { color: colors.text, fontSize: 14.5, fontWeight: '600' },
-  t2: { color: colors.ink70, fontSize: fontSize.meta },
-  t3: { color: colors.ink50, fontSize: 11.5 },
-  amount: { color: colors.text, fontSize: 17, fontWeight: '600' },
-  eyebrow: {
-    color: colors.ink50,
-    fontSize: fontSize.eyebrow,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-  },
-});
+const makeText = (colors: Palette) =>
+  StyleSheet.create({
+    t1: { color: colors.text, fontSize: 14.5, fontWeight: '600' },
+    t2: { color: colors.ink70, fontSize: fontSize.meta },
+    t3: { color: colors.ink50, fontSize: 11.5 },
+    amount: { color: colors.text, fontSize: 17, fontWeight: '600' },
+    eyebrow: {
+      color: colors.ink50,
+      fontSize: fontSize.eyebrow,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.6,
+    },
+  });
 
-const styles = StyleSheet.create({
+/** Styles de texte statiques (sombre) — pour le code non thémé (Agent/Admin actuels). */
+export const text = makeText(defaultColors);
+
+/** Styles de texte réactifs au thème. */
+export function useText() {
+  const colors = useColors();
+  return useMemo(() => makeText(colors), [colors]);
+}
+
+/** Styles internes des primitives, réactifs au thème. */
+function useStyles() {
+  const colors = useColors();
+  return useMemo(() => makeStyles(colors), [colors]);
+}
+
+const makeStyles = (colors: Palette) => StyleSheet.create({
   seg: { flexDirection: 'row', gap: 8 },
   fchip: {
     paddingHorizontal: 14,
@@ -251,7 +281,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   litem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13 },
-  litemBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
+  litemBorder: { borderBottomWidth: 1, borderBottomColor: colors.glassLine },
 
   pbar: { height: 7, borderRadius: radius.pill, backgroundColor: colors.track, overflow: 'hidden' },
   pbarFill: { height: '100%', borderRadius: radius.pill },
