@@ -1,28 +1,31 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { useActivityLogs, type ActivityLog } from '@/lib/hooks/use-admin';
-import { Chip, GlassCard, ScreenBackground, ScreenHeader, text as T } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { Chip, GlassCard, ScreenBackground, ScreenHeader, useText } from '@/components/ui';
+import { darkColors, spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { relTime } from '@/lib/format';
 
+// Pastilles de couleur du journal — accents vifs lisibles en clair comme en sombre.
 const TYPE_COLOR: Record<string, string> = {
-  create: colors.mint,
-  delete: colors.crimsonVivid,
-  reject: colors.crimsonVivid,
+  create: darkColors.mint,
+  delete: darkColors.crimsonVivid,
+  reject: darkColors.crimsonVivid,
   validate: '#34d9a8',
   payment_validate: '#34d9a8',
-  update: colors.blue,
+  update: darkColors.blue,
   login: '#818cf8',
   upload: '#2dd4bf',
-  payment: colors.purple,
-  accounting_entry: colors.amber,
+  payment: darkColors.purple,
+  accounting_entry: darkColors.amber,
 };
 
 function colorFor(type: string): string {
   for (const key of Object.keys(TYPE_COLOR)) if (type.includes(key)) return TYPE_COLOR[key];
-  return colors.ink50;
+  return darkColors.ink50;
 }
 
 function groupByDay(list: ActivityLog[]) {
@@ -43,6 +46,9 @@ function groupByDay(list: ActivityLog[]) {
 }
 
 export default function AdminLogs() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { data, isLoading } = useActivityLogs();
   const groups = groupByDay(data ?? []);
 
@@ -83,12 +89,13 @@ export default function AdminLogs() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  dayLabel: { color: colors.ink35, fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4 },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, paddingVertical: 11 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
-  dot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    dayLabel: { color: colors.ink35, fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4 },
+    row: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, paddingVertical: 11 },
+    rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.glassLine },
+    dot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });

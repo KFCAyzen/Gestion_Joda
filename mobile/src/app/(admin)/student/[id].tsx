@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
@@ -16,14 +17,19 @@ import {
   ScreenBackground,
   ScreenHeader,
   SectionLabel,
-  iconTint,
-  text as T,
+  useIconTint,
+  useText,
   useToast,
 } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtFCFA } from '@/lib/format';
 
 export default function AdminStudentDetail() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: s, isLoading } = useStaffStudentDetail(id);
   const toast = useToast();
@@ -56,7 +62,7 @@ export default function AdminStudentDetail() {
         <ScreenHeader eyebrow={`Dossier · ${s.ref}`} title={s.name} sm onBack={() => router.back()} />
         <ScrollView contentContainerStyle={{ paddingBottom: 60, gap: spacing.cardGap }} showsVerticalScrollIndicator={false}>
           <GlassCard variant="strong" style={styles.hero}>
-            <Plane size={120} color="rgba(255,255,255,0.05)" strokeWidth={1} style={styles.filigree} />
+            <Plane size={120} color={colors.watermark} strokeWidth={1} style={styles.filigree} />
             <View style={styles.heroRow}>
               <Ring pct={s.pct} size={92} strokeWidth={10}>
                 <Text style={styles.ringValue}>{s.pct}<Text style={styles.ringPct}>%</Text></Text>
@@ -110,17 +116,18 @@ export default function AdminStudentDetail() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-  hero: { overflow: 'hidden' },
-  filigree: { position: 'absolute', top: -22, right: -16 },
-  heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
-  ringValue: { color: colors.text, fontSize: 22, fontWeight: '600' },
-  ringPct: { fontSize: 12, color: colors.ink50 },
-  ringLabel: { color: colors.ink50, fontSize: 8.5, textTransform: 'uppercase', letterSpacing: 1 },
-  dest: { color: colors.text, fontSize: 19, fontWeight: '600', marginTop: 2 },
-  payRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  payBig: { color: colors.text, fontSize: 21, fontWeight: '600', marginTop: 2 },
-  payUnit: { fontSize: 12, color: colors.ink50, fontWeight: '400' },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+    hero: { overflow: 'hidden' },
+    filigree: { position: 'absolute', top: -22, right: -16 },
+    heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
+    ringValue: { color: colors.text, fontSize: 22, fontWeight: '600' },
+    ringPct: { fontSize: 12, color: colors.ink50 },
+    ringLabel: { color: colors.ink50, fontSize: 8.5, textTransform: 'uppercase', letterSpacing: 1 },
+    dest: { color: colors.text, fontSize: 19, fontWeight: '600', marginTop: 2 },
+    payRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    payBig: { color: colors.text, fontSize: 21, fontWeight: '600', marginTop: 2 },
+    payUnit: { fontSize: 12, color: colors.ink50, fontWeight: '400' },
+  });

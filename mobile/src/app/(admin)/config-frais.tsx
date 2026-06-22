@@ -1,13 +1,18 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { usePaymentConfigs } from '@/lib/hooks/use-admin';
-import { GlassCard, ScreenBackground, ScreenHeader, text as T } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { GlassCard, ScreenBackground, ScreenHeader, useText } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtFCFA } from '@/lib/format';
 
 export default function AdminConfigFrais() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { data, isLoading } = usePaymentConfigs();
 
   return (
@@ -48,6 +53,9 @@ export default function AdminConfigFrais() {
 }
 
 function Cell({ label, value }: { label: string; value: string }) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   return (
     <View style={styles.cell}>
       <Text style={styles.cellValue}>{value}</Text>
@@ -56,13 +64,14 @@ function Cell({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  note: { color: colors.ink50, fontSize: 12, lineHeight: 17 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  amount: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  grid: { flexDirection: 'row', gap: 8 },
-  cell: { flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.glassLine, borderRadius: 12, padding: 9, alignItems: 'center' },
-  cellValue: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    note: { color: colors.ink50, fontSize: 12, lineHeight: 17 },
+    head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    amount: { color: colors.text, fontSize: 15, fontWeight: '700' },
+    grid: { flexDirection: 'row', gap: 8 },
+    cell: { flex: 1, backgroundColor: colors.softFill, borderWidth: 1, borderColor: colors.glassLine, borderRadius: 12, padding: 9, alignItems: 'center' },
+    cellValue: { color: colors.text, fontSize: 15, fontWeight: '700' },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });

@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 import { FileText } from 'lucide-react-native';
 
 import { useStaffDossiers, type Bucket } from '@/lib/hooks/use-staff';
-import { Avatar, Chip, GlassCard, ProgressBar, ScreenBackground, ScreenHeader, SegFilter, text as T } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { Avatar, Chip, GlassCard, ProgressBar, ScreenBackground, ScreenHeader, SegFilter, useText } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 const FILTERS = [
   { id: 'all', label: 'Tous' },
@@ -16,6 +17,9 @@ const FILTERS = [
 ];
 
 export default function AdminDossiers() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { data, isLoading } = useStaffDossiers();
   const [f, setF] = useState('all');
   const list = (data ?? []).filter((d) => f === 'all' || d.bucket === (f as Bucket));
@@ -59,10 +63,11 @@ export default function AdminDossiers() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });

@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 
 import { useAuth } from '@/lib/auth-context';
 import { useStaffThreads } from '@/lib/hooks/use-staff-chat';
-import { Avatar, CountBadge, ListCard, ListRow, ScreenBackground, ScreenHeader, SearchBar, text as T } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { Avatar, CountBadge, ListCard, ListRow, ScreenBackground, ScreenHeader, SearchBar, useText } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 export default function AdminMessagerie() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { user } = useAuth();
   const { data: threads, isLoading } = useStaffThreads(user?.id);
   const [q, setQ] = useState('');
@@ -52,10 +56,11 @@ export default function AdminMessagerie() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rowBottom: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
-  unread: { color: '#fff', fontWeight: '600' },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    rowBottom: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
+    unread: { color: colors.text, fontWeight: '600' },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });

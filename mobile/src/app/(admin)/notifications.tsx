@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -5,8 +6,9 @@ import { Bell, CheckCheck, CreditCard, FileText, TriangleAlert } from 'lucide-re
 
 import { useAuth } from '@/lib/auth-context';
 import { useAdminNotifications, useMarkAllNotificationsRead, type AppNotification } from '@/lib/hooks/use-admin';
-import { Button, GlassCard, IconBox, ScreenBackground, ScreenHeader, iconTint, text as T, useToast, type IconTone } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { Button, GlassCard, IconBox, ScreenBackground, ScreenHeader, useIconTint, useText, useToast, type IconTone } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { relTime } from '@/lib/format';
 
 function groupByDay(list: AppNotification[]) {
@@ -28,6 +30,10 @@ function toneFor(type: string): { tone: IconTone; icon: typeof Bell } {
 }
 
 export default function AdminNotifications() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
   const { user } = useAuth();
   const { data, isLoading } = useAdminNotifications(user?.id);
   const markAll = useMarkAllNotificationsRead(user?.id);
@@ -64,7 +70,7 @@ export default function AdminNotifications() {
                           <Icon size={17} color={iconTint[tone]} />
                         </IconBox>
                         <View style={{ flex: 1 }}>
-                          <Text style={[T.t1, { fontSize: 14 }, !n.read && { color: '#fff' }]}>{n.titre}</Text>
+                          <Text style={[T.t1, { fontSize: 14 }, !n.read && { color: colors.text }]}>{n.titre}</Text>
                           <Text style={T.t2}>{n.message}</Text>
                           <Text style={T.t3}>{relTime(n.created_at)}</Text>
                         </View>
@@ -83,11 +89,12 @@ export default function AdminNotifications() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  dayLabel: { color: colors.ink35, fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4 },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 11 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.crimsonVivid, marginTop: 6 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    dayLabel: { color: colors.ink35, fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4 },
+    row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 11 },
+    rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.glassLine },
+    dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.crimsonVivid, marginTop: 6 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });

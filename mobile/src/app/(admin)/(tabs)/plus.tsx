@@ -3,7 +3,6 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 import {
-  Bell,
   Building2,
   ChevronRight,
   ClipboardList,
@@ -33,6 +32,7 @@ import {
   ScreenBackground,
   ScreenHeader,
   SectionLabel,
+  ThemeToggle,
   useIconTint,
   useText,
   type IconTone,
@@ -115,9 +115,7 @@ export default function AdminPlus() {
                 <Chip variant="live" label={roleLabel(role)} />
               </View>
             </View>
-            <IconBox tone="ghost" size={40}>
-              <Bell size={18} color={colors.ink70} />
-            </IconBox>
+            <ThemeToggle />
           </GlassCard>
 
           {GROUPS.map((g) => {

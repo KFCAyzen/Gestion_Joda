@@ -9,8 +9,9 @@ import { Star } from 'lucide-react-native';
 
 import { useAdminEmployees, useAdminLeaves, useAdminPayslips, useAdminPerformance, useReviewLeave } from '@/lib/hooks/use-admin';
 import { useStaffReports, useReviewReport, isPendingReport } from '@/lib/hooks/use-staff';
-import { Avatar, Button, Chip, GlassCard, ProgressBar, ScreenBackground, ScreenHeader, SegFilter, StatTile, text as T, useToast } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { Avatar, Button, Chip, GlassCard, ProgressBar, ScreenBackground, ScreenHeader, SegFilter, StatTile, useText, useToast } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtFCFA, shortDate } from '@/lib/format';
 
 const TABS = [
@@ -21,14 +22,15 @@ const TABS = [
   { id: 'evals', label: 'Évals' },
 ];
 
-function scoreColor(s: number): string {
+function scoreColor(s: number, colors: Palette): string {
   return s >= 70 ? colors.mint : s >= 40 ? colors.amber : colors.crimsonVivid;
 }
 function Stars({ v }: { v: number }) {
+  const colors = useColors();
   return (
     <View style={{ flexDirection: 'row', gap: 1 }}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <Star key={n} size={12} color={n <= Math.round(v) ? colors.amber : 'rgba(255,255,255,0.2)'} fill={n <= Math.round(v) ? colors.amber : 'transparent'} />
+        <Star key={n} size={12} color={n <= Math.round(v) ? colors.amber : colors.track} fill={n <= Math.round(v) ? colors.amber : 'transparent'} />
       ))}
     </View>
   );
@@ -37,6 +39,9 @@ function Stars({ v }: { v: number }) {
 const EMP_STATUS: Record<string, 'done' | 'due' | 'ghost'> = { actif: 'done', suspendu: 'due', inactif: 'ghost' };
 
 export default function AdminRH() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { user } = useAuth();
   const [tab, setTab] = useState('employes');
   const toast = useToast();
@@ -158,7 +163,7 @@ export default function AdminRH() {
                         <Text style={T.t1} numberOfLines={1}>{e.name}</Text>
                         <Text style={T.t3}>{e.dept || '—'}</Text>
                       </View>
-                      <Text style={[styles.indexNum, { color: scoreColor(e.index) }]}>{e.index}</Text>
+                      <Text style={[styles.indexNum, { color: scoreColor(e.index, colors) }]}>{e.index}</Text>
                     </View>
                     <ProgressBar pct={e.index} />
                     <View style={styles.evalMeta}>
@@ -183,13 +188,14 @@ export default function AdminRH() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  statRow: { flexDirection: 'row', gap: 10 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  btnRow: { flexDirection: 'row', gap: 9 },
-  pos: { width: 20, fontWeight: '700', color: colors.ink50, textAlign: 'center' },
-  indexNum: { fontSize: 18, fontWeight: '700' },
-  evalMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    statRow: { flexDirection: 'row', gap: 10 },
+    card: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    btnRow: { flexDirection: 'row', gap: 9 },
+    pos: { width: 20, fontWeight: '700', color: colors.ink50, textAlign: 'center' },
+    indexNum: { fontSize: 18, fontWeight: '700' },
+    evalMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
+  });

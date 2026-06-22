@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
 
 import { useUniversities, flagFor } from '@/lib/hooks/use-admin';
-import { Chip, GlassCard, ScreenBackground, ScreenHeader, SearchBar, text as T } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { Chip, GlassCard, ScreenBackground, ScreenHeader, SearchBar, useText } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 export default function AdminUniversites() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { data, isLoading } = useUniversities();
   const [q, setQ] = useState('');
   const list = (data ?? []).filter((u) => !q || `${u.nom} ${u.pays ?? ''} ${u.ville ?? ''}`.toLowerCase().includes(q.toLowerCase()));
@@ -44,10 +48,11 @@ export default function AdminUniversites() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  flag: { fontSize: 30 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    card: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    flag: { fontSize: 30 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });

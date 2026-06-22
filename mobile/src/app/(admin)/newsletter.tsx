@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -5,8 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Mail, Send, Users } from 'lucide-react-native';
 
 import { supabase } from '@/lib/supabase';
-import { Button, GlassCard, IconBox, ListCard, ListRow, ScreenBackground, ScreenHeader, iconTint, text as T, useToast } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { Button, GlassCard, IconBox, ListCard, ListRow, ScreenBackground, ScreenHeader, useIconTint, useText, useToast } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 function useAudiences() {
   return useQuery({
@@ -29,6 +31,10 @@ function useAudiences() {
 }
 
 export default function AdminNewsletter() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
   const { data, isLoading } = useAudiences();
   const toast = useToast();
 
@@ -73,9 +79,10 @@ export default function AdminNewsletter() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  compose: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  section: { color: colors.ink70, fontSize: 12.5, fontWeight: '700', marginTop: 4 },
-  count: { color: colors.text, fontSize: 16, fontWeight: '700' },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    compose: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    section: { color: colors.ink70, fontSize: 12.5, fontWeight: '700', marginTop: 4 },
+    count: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  });

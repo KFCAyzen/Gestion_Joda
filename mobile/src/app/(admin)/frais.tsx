@@ -1,10 +1,12 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { useFrais } from '@/lib/hooks/use-admin';
-import { Avatar, Chip, GlassCard, ScreenBackground, ScreenHeader, text as T } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { Avatar, Chip, GlassCard, ScreenBackground, ScreenHeader, useText } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtFCFA, shortDate } from '@/lib/format';
 
 const STATUS: Record<string, { label: string; chip: 'done' | 'due' | 'live' | 'ghost' }> = {
@@ -16,6 +18,9 @@ const STATUS: Record<string, { label: string; chip: 'done' | 'due' | 'live' | 'g
 };
 
 export default function AdminFrais() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { data, isLoading } = useFrais();
   const totalCollected = (data ?? []).reduce((s, f) => s + f.collected, 0);
   const totalLate = (data ?? []).reduce((s, f) => s + f.late, 0);
@@ -53,7 +58,7 @@ export default function AdminFrais() {
                   return (
                     <View key={tr.id} style={styles.tranche}>
                       <View style={{ flex: 1 }}>
-                        <Text style={[T.t2, { color: '#fff' }]} numberOfLines={1}>{tr.label}</Text>
+                        <Text style={[T.t2, { color: colors.text }]} numberOfLines={1}>{tr.label}</Text>
                         <Text style={T.t3}>{tr.dateLimite ? `Échéance ${shortDate(tr.dateLimite)}` : '—'}</Text>
                       </View>
                       <Text style={styles.amount}>{fmtFCFA(tr.montant)}</Text>
@@ -71,11 +76,12 @@ export default function AdminFrais() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  kpi: { fontSize: 20, fontWeight: '700', marginTop: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  tranche: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)' },
-  amount: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
-  empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    kpi: { fontSize: 20, fontWeight: '700', marginTop: 4 },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    tranche: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.glassLine },
+    amount: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
+    empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
+  });

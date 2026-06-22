@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { GraduationCap, Users } from 'lucide-react-native';
 
 import { useLanguageCourses } from '@/lib/hooks/use-admin';
-import { GlassCard, IconBox, ScreenBackground, ScreenHeader, SegFilter, StatTile, text as T } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { GlassCard, IconBox, ScreenBackground, ScreenHeader, SegFilter, StatTile, useIconTint, useText } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 import { fmtFCFA } from '@/lib/format';
 
 export default function AdminCours() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
+  const iconTint = useIconTint();
   const { data, isLoading } = useLanguageCourses();
   const [tab, setTab] = useState('mandarin');
   const stats = tab === 'mandarin' ? data?.mandarin : data?.anglais;
@@ -33,7 +38,7 @@ export default function AdminCours() {
           <ScrollView contentContainerStyle={{ paddingBottom: 60, gap: spacing.cardGap }} showsVerticalScrollIndicator={false}>
             <GlassCard variant="strong" style={styles.hero}>
               <IconBox tone={tab === 'mandarin' ? 'red' : 'blue'} size={48}>
-                <GraduationCap size={22} color={tab === 'mandarin' ? '#ffb3b3' : '#a9cdfb'} />
+                <GraduationCap size={22} color={tab === 'mandarin' ? iconTint.red : iconTint.blue} />
               </IconBox>
               <View style={{ flex: 1 }}>
                 <Text style={T.eyebrow}>{tab === 'mandarin' ? 'Cours de mandarin' : 'Cours d’anglais'}</Text>
@@ -61,10 +66,11 @@ export default function AdminCours() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  revenue: { color: colors.text, fontSize: 22, fontWeight: '700', marginTop: 4 },
-  unit: { fontSize: 12, color: colors.ink50, fontWeight: '400' },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    hero: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    revenue: { color: colors.text, fontSize: 22, fontWeight: '700', marginTop: 4 },
+    unit: { fontSize: 12, color: colors.ink50, fontWeight: '400' },
+    infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  });

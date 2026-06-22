@@ -1,13 +1,18 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { CreditCard, Database, FileText, Receipt } from 'lucide-react-native';
 
 import { useStorageStats } from '@/lib/hooks/use-admin';
-import { GlassCard, IconBox, ScreenBackground, ScreenHeader, text as T } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { GlassCard, IconBox, ScreenBackground, ScreenHeader, useText } from '@/components/ui';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 export default function AdminStockage() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const T = useText();
   const { data, isLoading } = useStorageStats();
 
   const buckets = [
@@ -70,12 +75,13 @@ export default function AdminStockage() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: spacing.screenX },
-  bigNum: { color: colors.text, fontSize: 34, fontWeight: '700', letterSpacing: -1, marginTop: 6 },
-  barTrack: { flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.track, marginTop: 14 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
-  swatch: { width: 12, height: 12, borderRadius: 3 },
-  dbRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: spacing.screenX },
+    bigNum: { color: colors.text, fontSize: 34, fontWeight: '700', letterSpacing: -1, marginTop: 6 },
+    barTrack: { flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.track, marginTop: 14 },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+    rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.glassLine },
+    swatch: { width: 12, height: 12, borderRadius: 3 },
+    dbRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  });
