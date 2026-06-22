@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/lib/auth-context';
+import { type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 /**
  * Écran imposé quand `must_change_password === true` (1re connexion ou après
@@ -10,6 +12,8 @@ import { useAuth } from '@/lib/auth-context';
  * rien d'autre tant que le flag n'est pas levé.
  */
 export default function ChangePasswordScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { changePassword, logout } = useAuth();
   const [pwd, setPwd] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -40,7 +44,7 @@ export default function ChangePasswordScreen() {
         <TextInput
           style={styles.input}
           placeholder="Nouveau mot de passe"
-          placeholderTextColor="#888"
+          placeholderTextColor={colors.ink35}
           secureTextEntry
           value={pwd}
           onChangeText={setPwd}
@@ -48,7 +52,7 @@ export default function ChangePasswordScreen() {
         <TextInput
           style={styles.input}
           placeholder="Confirme le mot de passe"
-          placeholderTextColor="#888"
+          placeholderTextColor={colors.ink35}
           secureTextEntry
           value={confirm}
           onChangeText={setConfirm}
@@ -71,37 +75,38 @@ export default function ChangePasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#100307' },
-  inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 18, gap: 12 },
-  eyebrow: {
-    color: '#fbbf24',
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-  },
-  title: { color: '#fff', fontSize: 26, fontWeight: '600' },
-  subtitle: { color: 'rgba(255,255,255,0.6)', fontSize: 14, marginBottom: 8 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: '#fff',
-    fontSize: 15,
-  },
-  button: {
-    backgroundColor: '#d11a2a',
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  link: { color: 'rgba(255,255,255,0.6)', fontSize: 13, textAlign: 'center', marginTop: 10 },
-  error: { color: '#ff5a5f', fontSize: 13 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgBase },
+    inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 18, gap: 12 },
+    eyebrow: {
+      color: colors.amber,
+      fontSize: 11,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.6,
+    },
+    title: { color: colors.text, fontSize: 26, fontWeight: '600' },
+    subtitle: { color: colors.ink70, fontSize: 14, marginBottom: 8 },
+    input: {
+      backgroundColor: colors.glass,
+      borderColor: colors.glassLine,
+      borderWidth: 1,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      color: colors.text,
+      fontSize: 15,
+    },
+    button: {
+      backgroundColor: colors.crimsonDeep,
+      borderRadius: 14,
+      paddingVertical: 15,
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    buttonDisabled: { opacity: 0.6 },
+    buttonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+    link: { color: colors.ink70, fontSize: 13, textAlign: 'center', marginTop: 10 },
+    error: { color: colors.crimsonVivid, fontSize: 13 },
+  });

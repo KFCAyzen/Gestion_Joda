@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,8 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/lib/auth-context';
+import { type Palette } from '@/theme/tokens';
+import { useColors } from '@/theme/theme';
 
 export default function SignInScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { login, forgotPassword } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -52,7 +56,7 @@ export default function SignInScreen() {
           <TextInput
             style={styles.input}
             placeholder="Identifiant ou email"
-            placeholderTextColor="#888"
+            placeholderTextColor={colors.ink35}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
@@ -62,7 +66,7 @@ export default function SignInScreen() {
           <TextInput
             style={styles.input}
             placeholder="Mot de passe"
-            placeholderTextColor="#888"
+            placeholderTextColor={colors.ink35}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -88,39 +92,40 @@ export default function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#100307' },
-  flex: { flex: 1 },
-  inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 18, gap: 12 },
-  eyebrow: {
-    color: '#ff5a5f',
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-  },
-  title: { color: '#fff', fontSize: 28, fontWeight: '600' },
-  subtitle: { color: 'rgba(255,255,255,0.6)', fontSize: 14, marginBottom: 8 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: '#fff',
-    fontSize: 15,
-  },
-  button: {
-    backgroundColor: '#d11a2a',
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  link: { color: 'rgba(255,255,255,0.6)', fontSize: 13, textAlign: 'center', marginTop: 10 },
-  error: { color: '#ff5a5f', fontSize: 13 },
-  notice: { color: '#34d9a8', fontSize: 13 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgBase },
+    flex: { flex: 1 },
+    inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 18, gap: 12 },
+    eyebrow: {
+      color: colors.crimsonVivid,
+      fontSize: 11,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.6,
+    },
+    title: { color: colors.text, fontSize: 28, fontWeight: '600' },
+    subtitle: { color: colors.ink70, fontSize: 14, marginBottom: 8 },
+    input: {
+      backgroundColor: colors.glass,
+      borderColor: colors.glassLine,
+      borderWidth: 1,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      color: colors.text,
+      fontSize: 15,
+    },
+    button: {
+      backgroundColor: colors.crimsonDeep,
+      borderRadius: 14,
+      paddingVertical: 15,
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    buttonDisabled: { opacity: 0.6 },
+    buttonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+    link: { color: colors.ink70, fontSize: 13, textAlign: 'center', marginTop: 10 },
+    error: { color: colors.crimsonVivid, fontSize: 13 },
+    notice: { color: colors.mint, fontSize: 13 },
+  });
