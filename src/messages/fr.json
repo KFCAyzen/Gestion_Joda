@@ -366,6 +366,13 @@
       "viewTitle": "Détail du rapport",
       "viewHint": "Cliquer pour voir le détail",
       "submittedAt": "Envoyé le",
+      "compile": "Compilation",
+      "compileTitle": "Compilation des rapports par employé",
+      "compileHoursSuffix": "cumulées",
+      "period": "Période",
+      "allPeriods": "Toutes périodes",
+      "employeesCount": "employé(s)",
+      "reportsCount": "rapport(s)",
       "filters": {
         "title": "Filtres",
         "reset": "Réinitialiser",

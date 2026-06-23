@@ -310,7 +310,12 @@ export default function EmployeeDetail({
             .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     }, [reports, periodFrom, periodTo]);
 
-    const showCallStats = employeeTracksCalls(employee);
+    // Affiche les compteurs d'appels si l'employé est désigné « suivi d'appels »
+    // OU si au moins un de ses rapports contient des compteurs renseignés
+    // (robuste même quand le flag n'a pas (encore) été coché côté admin).
+    const showCallStats =
+        employeeTracksCalls(employee) ||
+        reports.some((r) => CALL_STAT_KEYS.some((k) => (r[k] ?? 0) > 0));
     const isCallCenter = employeeHasCallQuota(employee);
     const callStatsTotals = useMemo(() => sumCallStats(reportsInPeriod), [reportsInPeriod]);
     const weeklyCallStats = useMemo(() => groupReportsByWeek(reportsInPeriod), [reportsInPeriod]);
