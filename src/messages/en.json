@@ -366,6 +366,13 @@
       "viewTitle": "Report details",
       "viewHint": "Click to view details",
       "submittedAt": "Submitted at",
+      "compile": "Compile",
+      "compileTitle": "Reports compilation by employee",
+      "compileHoursSuffix": "total",
+      "period": "Period",
+      "allPeriods": "All periods",
+      "employeesCount": "employee(s)",
+      "reportsCount": "report(s)",
       "filters": {
         "title": "Filters",
         "reset": "Reset",

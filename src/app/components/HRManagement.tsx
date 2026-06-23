@@ -87,6 +87,12 @@ import {
     useGenerateDuePayslips,
     useEmployeeEvaluations,
 } from "../lib/hooks/use-hr";
+import {
+    CALL_STAT_KEYS,
+    employeeTracksCalls,
+    sumCallStats,
+    type CallStatKey,
+} from "../lib/callActivityStats";
 import HRConfigPanel from "./rh/HRConfigPanel";
 import { useRouter } from "@/i18n/navigation";
 import { printEmployeesReport } from "../lib/printEmployeesReport";
@@ -2762,8 +2768,10 @@ function ReportsPanel({
     onSuccess: (msg: string) => void;
 }) {
     const t = useTranslations("hrManagement");
+    const tcs = useTranslations("publicReport.form.callStats");
     const create = useCreateDailyReport();
     const del = useDeleteDailyReport();
+    const [compileOpen, setCompileOpen] = useState(false);
     const [filterEmp, setFilterEmp] = useState<string>("all");
     const [filterDept, setFilterDept] = useState<string>("all");
     const [filterCountry, setFilterCountry] = useState<string>("all");
@@ -2853,6 +2861,46 @@ function ReportsPanel({
         });
     }, [reports, filterEmp, filterDept, filterCountry, filterFrom, filterTo, employeeById, employeeCountryCode]);
 
+    // Compilation par employé : regroupe les rapports filtrés (période + filtres
+    // actifs) par employé, avec totaux (heures, compteurs d'appels).
+    const compiled = useMemo(() => {
+        const groups = new Map<
+            string,
+            { emp: Employee | undefined; rows: DailyReport[] }
+        >();
+        for (const r of filtered) {
+            let g = groups.get(r.employee_id);
+            if (!g) {
+                g = { emp: employeeById.get(r.employee_id), rows: [] };
+                groups.set(r.employee_id, g);
+            }
+            g.rows.push(r);
+        }
+        return Array.from(groups.entries())
+            .map(([id, g]) => {
+                const rows = [...g.rows].sort((a, b) => (a.date < b.date ? 1 : -1));
+                const totalHours = rows.reduce((s, r) => s + (r.heures_travaillees || 0), 0);
+                const tracksCalls =
+                    employeeTracksCalls(g.emp) ||
+                    rows.some((r) => CALL_STAT_KEYS.some((k) => (r[k] ?? 0) > 0));
+                return {
+                    id,
+                    name: g.emp ? `${g.emp.prenom} ${g.emp.nom}` : employeeLabel(id),
+                    poste: g.emp?.poste ?? "",
+                    rows,
+                    totalHours,
+                    tracksCalls,
+                    callTotals: sumCallStats(rows),
+                };
+            })
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [filtered, employeeById, employeeLabel]);
+
+    const periodLabel = useMemo(() => {
+        if (filterFrom || filterTo) return `${filterFrom || "…"} → ${filterTo || "…"}`;
+        return t("reports.allPeriods");
+    }, [filterFrom, filterTo, t]);
+
     const openCreate = () => {
         setForm({
             employee_id: employees[0]?.id ?? "",
@@ -2907,10 +2955,20 @@ function ReportsPanel({
                         </CardTitle>
                         <CardDescription>{t("reports.description")}</CardDescription>
                     </div>
-                    <Button onClick={openCreate} disabled={employees.length === 0}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        {t("reports.add")}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setCompileOpen(true)}
+                            disabled={filtered.length === 0}
+                        >
+                            <ClipboardList className="w-4 h-4 mr-2" />
+                            {t("reports.compile")}
+                        </Button>
+                        <Button onClick={openCreate} disabled={employees.length === 0}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            {t("reports.add")}
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -3209,6 +3267,29 @@ function ReportsPanel({
                                 {viewing.observations || "—"}
                             </div>
                         </div>
+                        {(employeeTracksCalls(employeeById.get(viewing.employee_id)) ||
+                            CALL_STAT_KEYS.some((k) => (viewing[k] ?? 0) > 0)) && (
+                            <div>
+                                <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                    {tcs("title")}
+                                </p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {CALL_STAT_KEYS.map((k) => (
+                                        <div
+                                            key={k}
+                                            className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-2.5 text-center"
+                                        >
+                                            <p className="text-lg font-semibold tabular-nums">
+                                                {viewing[k] ?? 0}
+                                            </p>
+                                            <p className="text-[11px] text-slate-500 leading-tight">
+                                                {tcs(k)}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div className="flex justify-end pt-2">
                             <Button variant="outline" onClick={() => setViewing(null)}>
                                 {t("common.close")}
@@ -3216,6 +3297,95 @@ function ReportsPanel({
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            <Modal
+                isOpen={compileOpen}
+                onClose={() => setCompileOpen(false)}
+                title={t("reports.compileTitle")}
+                size="lg"
+            >
+                <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                        <span className="text-slate-500">
+                            {t("reports.period")}: <span className="font-medium text-slate-700 dark:text-slate-200">{periodLabel}</span>
+                        </span>
+                        <span className="text-slate-500">
+                            {compiled.length} {t("reports.employeesCount")} · {filtered.length} {t("reports.reportsCount")}
+                        </span>
+                    </div>
+
+                    {compiled.length === 0 ? (
+                        <p className="text-center text-slate-400 py-8 text-sm">{t("reports.empty")}</p>
+                    ) : (
+                        <div className="max-h-[60vh] overflow-auto space-y-5 pr-1">
+                            {compiled.map((g) => (
+                                <div key={g.id} className="rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-3 py-2">
+                                        <div>
+                                            <p className="font-semibold">{g.name}</p>
+                                            {g.poste && <p className="text-xs text-slate-500">{g.poste}</p>}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                                            <Badge variant="secondary">
+                                                {g.rows.length} {t("reports.reportsCount")}
+                                            </Badge>
+                                            <Badge variant="secondary">
+                                                {g.totalHours}h {t("reports.compileHoursSuffix")}
+                                            </Badge>
+                                        </div>
+                                    </div>
+
+                                    {g.tracksCalls && (
+                                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 px-3 pt-3">
+                                            {CALL_STAT_KEYS.map((k) => (
+                                                <div
+                                                    key={k}
+                                                    className="rounded-md border border-slate-200 dark:border-slate-700 p-2 text-center"
+                                                >
+                                                    <p className="text-base font-semibold tabular-nums">
+                                                        {g.callTotals[k]}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-500 leading-tight">
+                                                        {tcs(k)}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="divide-y divide-slate-100 dark:divide-slate-800 px-3 py-2">
+                                        {g.rows.map((r) => (
+                                            <div key={r.id} className="py-2">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="text-xs font-medium text-slate-500">{r.date}</span>
+                                                    <span className="text-xs text-slate-400">{r.heures_travaillees}h</span>
+                                                </div>
+                                                <p className="text-sm whitespace-pre-wrap break-words mt-0.5">{r.activites || "—"}</p>
+                                                {r.observations && (
+                                                    <p className="text-xs text-slate-500 whitespace-pre-wrap break-words mt-1">
+                                                        {t("reports.col.observations")}: {r.observations}
+                                                    </p>
+                                                )}
+                                                {g.tracksCalls && CALL_STAT_KEYS.some((k) => (r[k] ?? 0) > 0) && (
+                                                    <p className="text-[11px] text-slate-400 mt-1">
+                                                        {CALL_STAT_KEYS.map((k) => `${tcs(k)}: ${r[k] ?? 0}`).join(" · ")}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="flex justify-end pt-1">
+                        <Button variant="outline" onClick={() => setCompileOpen(false)}>
+                            {t("common.close")}
+                        </Button>
+                    </div>
+                </div>
             </Modal>
 
             <ConfirmDialog
