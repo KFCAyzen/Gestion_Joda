@@ -9,7 +9,8 @@ import { useStudentProfile, useStudentDossier } from '@/lib/hooks/use-student-po
 import { useDocuments } from '@/lib/hooks/use-documents';
 import { REQUIRED_KEYS } from '@/lib/required-docs';
 import { buildMilestones } from '@/lib/dossier-milestones';
-import { Avatar, BellBtn, Button, Chip, GlassCard, MiniRing, Ring, ScreenBackground, ScreenHeader } from '@/components/ui';
+import { Avatar, Button, Chip, GlassCard, MiniRing, Ring, ScreenBackground, ScreenHeader } from '@/components/ui';
+import { NotificationBell } from '@/components/NotificationBell';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 
 const TYPE_LABEL: Record<Payment['type'], string> = {
@@ -94,7 +95,7 @@ export default function HomeScreen() {
           title={name}
           right={
             <View style={styles.headerRight}>
-              <BellBtn hasUnread />
+              <NotificationBell />
               <Pressable onLongPress={confirmLogout} delayLongPress={400}>
                 <Avatar name={name || '?'} kind="student" />
               </Pressable>

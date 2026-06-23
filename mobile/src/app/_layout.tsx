@@ -1,3 +1,5 @@
+import '../../global.css';
+
 import { Stack } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -35,6 +37,7 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={!!user && !mustChange}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="notifications" options={{ presentation: 'card' }} />
       </Stack.Protected>
     </Stack>
   );

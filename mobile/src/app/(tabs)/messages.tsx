@@ -27,7 +27,7 @@ import {
 } from '@/lib/hooks/use-messages';
 import { supabase } from '@/lib/supabase';
 import { Avatar, ScreenBackground } from '@/components/ui';
-import { colors, fontSize, gradients, radius, spacing } from '@/theme/tokens';
+import { colors, gradients, spacing } from '@/theme/tokens';
 
 type Row = { kind: 'sep'; id: string; label: string } | { kind: 'msg'; id: string; message: ChatMessage };
 

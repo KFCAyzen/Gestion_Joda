@@ -18,7 +18,6 @@ import { Check, Clock, CreditCard, Hourglass, Lock, Paperclip, WalletCards, X } 
 import { usePayments, type Payment } from '@/lib/hooks/use-payments';
 import { useDeclarePayment, type ProofFile } from '@/lib/hooks/use-declare-payment';
 import {
-  BellBtn,
   Button,
   Chip,
   GlassCard,
@@ -27,6 +26,7 @@ import {
   ScreenBackground,
   ScreenHeader,
 } from '@/components/ui';
+import { NotificationBell } from '@/components/NotificationBell';
 import { colors, fontSize, radius, spacing } from '@/theme/tokens';
 
 const TYPE_LABEL: Record<Payment['type'], string> = {
@@ -85,7 +85,7 @@ export default function PaymentsScreen() {
   return (
     <ScreenBackground>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <ScreenHeader eyebrow="Mes paiements" title="Solde" right={<BellBtn hasUnread />} />
+        <ScreenHeader eyebrow="Mes paiements" title="Solde" right={<NotificationBell />} />
 
         {isLoading ? (
           <ActivityIndicator style={{ marginTop: 32 }} />
