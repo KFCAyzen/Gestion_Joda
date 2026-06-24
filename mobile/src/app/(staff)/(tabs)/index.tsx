@@ -93,7 +93,7 @@ export default function StaffHome() {
                 <Text style={styles.heroBig}>
                   {stats.handled} action{stats.handled > 1 ? 's' : ''} sur {stats.target}
                 </Text>
-                <Text style={[T.t2, { marginTop: 3 }]}>Paiements & rapports traités aujourd'hui.</Text>
+                <Text style={[T.t2, { marginTop: 3 }]}>Paiements & rapports traités aujourd&apos;hui.</Text>
                 <View style={styles.chipRow}>
                   <Chip variant="live" label={`${stats.pendingPayments.length + stats.pendingReports.length} en attente`} />
                   <Chip variant="done" label={`${stats.handled} faits`} />

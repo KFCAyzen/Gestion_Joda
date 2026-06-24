@@ -178,7 +178,7 @@ export default function AdminBord() {
                   </View>
                 ))
               ) : (
-                <Text style={T.t3}>Aucune activité aujourd'hui.</Text>
+                <Text style={T.t3}>Aucune activité aujourd&apos;hui.</Text>
               )}
             </GlassCard>
           </ScrollView>

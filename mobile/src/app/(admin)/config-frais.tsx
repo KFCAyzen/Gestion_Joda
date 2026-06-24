@@ -23,7 +23,7 @@ export default function AdminConfigFrais() {
           <ActivityIndicator style={{ marginTop: 40 }} />
         ) : (
           <ScrollView contentContainerStyle={{ paddingBottom: 60, gap: 11 }} showsVerticalScrollIndicator={false}>
-            <Text style={styles.note}>Grille par type de frais — l'édition se fait depuis l'interface web.</Text>
+            <Text style={styles.note}>Grille par type de frais — l&apos;édition se fait depuis l&apos;interface web.</Text>
             {(data ?? []).map((c) => {
               const total = c.tranches.reduce((s, tr) => s + Number(tr.montant || 0), 0);
               return (
