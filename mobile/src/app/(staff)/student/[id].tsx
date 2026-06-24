@@ -21,7 +21,7 @@ import {
   useText,
   useToast,
 } from '@/components/ui';
-import { radius, spacing, type Palette } from '@/theme/tokens';
+import { spacing, type Palette } from '@/theme/tokens';
 import { useColors } from '@/theme/theme';
 import { fmtFCFA } from '@/lib/format';
 

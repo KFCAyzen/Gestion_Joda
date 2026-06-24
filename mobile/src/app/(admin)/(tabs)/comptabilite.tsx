@@ -13,7 +13,7 @@ import {
   useIconTint,
   useText,
 } from '@/components/ui';
-import { radius, spacing, type Palette } from '@/theme/tokens';
+import { spacing, type Palette } from '@/theme/tokens';
 import { useColors } from '@/theme/theme';
 import { fmtCompact, fmtFCFA, shortDate } from '@/lib/format';
 

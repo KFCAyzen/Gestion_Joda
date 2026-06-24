@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 import { ChevronRight, TrendingUp, WalletCards } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import { useStaffDossiers, useStaffPayments, useStaffReports, isPendingReport } from '@/lib/hooks/use-staff';
-import { useStaffThreads } from '@/lib/hooks/use-staff-chat';
 import {
   Avatar,
   BellBtn,
@@ -23,7 +22,7 @@ import {
   useIconTint,
   useText,
 } from '@/components/ui';
-import { fontSize, spacing, type Palette } from '@/theme/tokens';
+import { spacing, type Palette } from '@/theme/tokens';
 import { useColors } from '@/theme/theme';
 import { fmtCompact, fmtFCFA, relTime } from '@/lib/format';
 
@@ -38,7 +37,6 @@ export default function StaffHome() {
   const { data: dossiers, isLoading } = useStaffDossiers();
   const { data: payments } = useStaffPayments();
   const { data: reports } = useStaffReports();
-  const { data: threads } = useStaffThreads(user?.id);
 
   const stats = useMemo(() => {
     const list = dossiers ?? [];

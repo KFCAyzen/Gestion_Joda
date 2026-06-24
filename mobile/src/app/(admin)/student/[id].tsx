@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { Check, FileText, MessageSquare, Plane } from 'lucide-react-native';
+import { FileText, MessageSquare, Plane } from 'lucide-react-native';
 
 import { useStaffStudentDetail } from '@/lib/hooks/use-staff';
 import {

@@ -13,7 +13,6 @@ import {
   LogOut,
   Mail,
   MessageSquare,
-  Receipt,
   Settings2,
   Users,
   WalletCards,

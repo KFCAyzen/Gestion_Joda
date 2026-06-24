@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '../supabase';
 import { apiFetch } from '../api';
-import { buildMilestones } from '../dossier-milestones';
-import { REQUIRED_KEYS } from '../required-docs';
+import { buildMilestones, type Milestone } from '../dossier-milestones';
+import { REQUIRED_DOCS, REQUIRED_KEYS } from '../required-docs';
 import type { DossierStatus } from './use-student-portal';
 
 /* ============================================================
@@ -125,9 +125,6 @@ export function useStaffDossiers() {
 }
 
 /* ── Détail d'une fiche étudiant ─────────────────────────────────────────── */
-import { REQUIRED_DOCS } from '../required-docs';
-import type { Milestone } from '../dossier-milestones';
-
 export type StaffStudentDetail = {
   id: string;
   name: string;

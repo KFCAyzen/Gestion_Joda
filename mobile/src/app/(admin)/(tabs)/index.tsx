@@ -16,7 +16,7 @@ import {
   SegFilter,
   useText,
 } from '@/components/ui';
-import { darkColors, radius, spacing, type Palette } from '@/theme/tokens';
+import { darkColors, spacing, type Palette } from '@/theme/tokens';
 import { useColors } from '@/theme/theme';
 import { fmtCompact } from '@/lib/format';
 
