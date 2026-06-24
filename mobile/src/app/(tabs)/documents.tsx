@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { Check, FileText, Sparkles, Upload } from 'lucide-react-native';
+import { Check, Sparkles, Upload } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import { useStudentProfile } from '@/lib/hooks/use-student-portal';
@@ -11,7 +11,6 @@ import { useDocuments, useUploadDocument, type StudentDocument } from '@/lib/hoo
 import { REQUIRED_DOCS, REQUIRED_KEYS, type DocKey } from '@/lib/required-docs';
 import { apiFetch } from '@/lib/api';
 import {
-  BellBtn,
   Button,
   Chip,
   GlassCard,
@@ -21,6 +20,7 @@ import {
   ScreenHeader,
   type IconTone,
 } from '@/components/ui';
+import { NotificationBell } from '@/components/NotificationBell';
 import { fontSize, radius, spacing, type Palette } from '@/theme/tokens';
 import { useColors } from '@/theme/theme';
 
@@ -113,7 +113,7 @@ export default function DocumentsScreen() {
   return (
     <ScreenBackground>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <ScreenHeader eyebrow="Mes documents" title="Dossier" right={<BellBtn hasUnread />} />
+        <ScreenHeader eyebrow="Mes documents" title="Dossier" right={<NotificationBell />} />
 
         {isLoading ? (
           <ActivityIndicator style={{ marginTop: 32 }} />

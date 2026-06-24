@@ -1,3 +1,5 @@
+import '../../global.css';
+
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
@@ -53,6 +55,7 @@ function RootNavigator() {
         </Stack.Protected>
         <Stack.Protected guard={ready && space === 'student'}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="notifications" options={{ presentation: 'card' }} />
         </Stack.Protected>
         <Stack.Protected guard={ready && space === 'staff'}>
           <Stack.Screen name="(staff)" />
