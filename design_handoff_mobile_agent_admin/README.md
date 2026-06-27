@@ -67,7 +67,7 @@ Barre d'onglets : **Accueil · Dossiers · Paiements · Messages · Profil** (+ 
 | **Accueil** | Activité du jour (anneau de progression), KPIs (dossiers actifs, encaissé, à valider), files paiements / rapports / dossiers récents | tableau-de-bord (vue agent) |
 | **Dossiers** | Liste filtrable + recherche (À traiter / En revue / Complets) → **Fiche étudiant** | dossiers / ScholarshipFileManagement |
 | **Fiche étudiant** | Parcours en 6 jalons, documents reçus/manquants, paiements (encaissé/restant), actions Message/Appeler | etudiants / DossierWorkflow |
-| **Paiements** | File de validation, aperçu justificatif (sheet), Valider/Rejeter | frais / PaymentManagement |
+| **Paiements** | File de validation, aperçu justificatif (sheet), Valider/Rejeter | frais / PaymentsPage |
 | **Messages → Chat** | Conversations + chat avec composer | communication / ComPage |
 | **Rapports** | Validation des rapports journaliers de l'équipe | rh (reports) / PublicReportPage |
 | **Profil** | Identité, stats, accès validation, préférences, déconnexion | layout / compte |
@@ -89,7 +89,7 @@ Navigation : **4 onglets** (Bord · Perfs · Compta · Plus) + un hub **Plus** v
 | **Candidatures** | `ApplicationManagement.tsx` | Statuts `en_attente`/`document_recu`/`document_manquant`/`en_cours` · filtre À traiter/Toutes → fiche |
 | **Étudiants** | `StudentManagement.tsx` | Liste + recherche → **fiche détaillée** (anneau dossier, 6 jalons, documents, paiements encaissé/restant) |
 | **Dossiers** | `ScholarshipFileManagement.tsx` | Filtre par statut workflow (`document_manquant`,`en_attente_universite`,`visa_en_cours`,`admission_validee`) · progression étape /6 |
-| **Frais** | `PaymentManagement.tsx` | Tranches par étudiant, statut payé/attente/retard, totaux encaissé/retard, pénalités |
+| **Frais** | `PaymentsPage.tsx` | Tranches par étudiant, statut payé/attente/retard, totaux encaissé/retard, pénalités |
 | **Cours de langues** | `CoursLangues.tsx` | Onglets Mandarin/Anglais · inscrits actifs, revenu cumulé, inscriptions |
 | **Messagerie → Chat** | `ComPage.tsx` | Conversations étudiants + chat |
 | **Newsletter** | `NewsletterPage.tsx` | Composer push/e-mail, audiences, campagnes (Envoyée/Programmée + taux d'ouverture) |
