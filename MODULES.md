@@ -263,11 +263,10 @@
 
 ### Composants
 - `ApplicationFeeManagement.tsx` — Enregistrement des frais de candidature
-- `PaymentManagement.tsx` — Gestion et validation des paiements
-- `PaymentsPage.tsx` — Vue caisse du jour (à valider, encaissements, comptabilité journalière)
+- `PaymentsPage.tsx` — Vue caisse du jour (à valider/rejeter, acomptes, encaissements, comptabilité journalière)
 
 ### Sources de données (TanStack Query)
-- `usePayments()` + `useStudents()` dans `ApplicationFeeManagement`, `PaymentManagement`, `PaymentsPage`
+- `usePayments()` + `useStudents()` dans `ApplicationFeeManagement`, `PaymentsPage`
 - `useEntreesComptables()` + `useSortiesComptables()` dans `PaymentsPage` (filtrées sur `todayStr` via `useMemo`)
 - Sync pénalités : exécutée une seule fois au montage via `syncedRef`, puis `invalidateQueries(PAYMENTS_KEY)`
 

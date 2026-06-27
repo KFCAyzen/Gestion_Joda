@@ -257,7 +257,7 @@ export function useStaffPayments() {
 }
 
 /**
- * Valide / rejette un paiement déclaré — miroir de `PaymentManagement.tsx` :
+ * Valide / rejette un paiement déclaré — miroir de `PaymentsPage.tsx` (web) :
  * met à jour le paiement, crée l'entrée comptable si validé, notifie l'étudiant.
  */
 export function useValidatePayment(userId?: string) {
