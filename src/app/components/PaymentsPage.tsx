@@ -34,6 +34,8 @@ interface Payment {
     type: string;
     tranche: number | null;
     montant: number;
+    montant_paye?: number;
+    montant_declare?: number;
     status: string;
     date_limite: string;
     date_paiement: string | null;
@@ -42,6 +44,8 @@ interface Payment {
     validated_at: string | null;
     created_at: string;
     initiated_by_student?: boolean;
+    rejection_reason?: string | null;
+    rejected_at?: string | null;
 }
 
 interface AccountingEntry {
@@ -155,6 +159,8 @@ export default function PaymentsPage() {
     }>({ isOpen: false, title: "", description: "", onConfirm: () => {} });
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [penaltyModal, setPenaltyModal] = useState<Payment | null>(null);
+    const [rejectModal, setRejectModal] = useState<{ open: boolean; paymentId: string; reason: string }>({ open: false, paymentId: "", reason: "" });
+    const [rejecting, setRejecting] = useState(false);
     const [newPayment, setNewPayment] = useState({
         student_id: "",
         type: "bourse",
@@ -221,6 +227,32 @@ export default function PaymentsPage() {
 
     const studentMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
 
+    // Notifie l'étudiant du résultat (email + SMS + notif in-app + message direct).
+    // Fire-and-forget : la décision est déjà enregistrée en base, la notif est best-effort.
+    const notifyPaymentResult = (
+        payment: { student_id: string; type: string; tranche: number | null },
+        isValid: boolean,
+        amount: number,
+        rejectionReason: string | null
+    ) => {
+        // L'API n'accepte que ces types ; on retombe sur « autre » pour les
+        // programmes internationaux (language_program_intl, …) afin d'éviter un 400.
+        const NOTIFY_TYPES = ["bourse", "mandarin", "anglais", "inscription", "autre"];
+        const paymentType = NOTIFY_TYPES.includes(payment.type) ? payment.type : "autre";
+        fetch("/api/notify-payment-result", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                studentId: payment.student_id,
+                isValid,
+                paymentType,
+                tranche: payment.tranche ?? undefined,
+                amount,
+                rejectionReason,
+            }),
+        }).catch(console.error);
+    };
+
     const handleValidate = async (paymentId: string) => {
         if (!user || !canValidatePayment) return;
         const { data: payment } = await supabase
@@ -230,11 +262,39 @@ export default function PaymentsPage() {
             .single();
         if (!payment) return;
 
+        // Règlement partiel : on valide le montant déclaré en attente, sinon
+        // (paiement créé/soumis sans déclaration) le reste dû de la tranche.
+        // Validé mais incomplet => la tranche reste « attente » avec son solde.
+        const montantPaye = Number(payment.montant_paye ?? 0);
+        const montantDeclare = Number(payment.montant_declare ?? 0);
+        const validatedAmount = montantDeclare > 0
+            ? montantDeclare
+            : Math.max(0, payment.montant - montantPaye);
+        const newMontantPaye = montantPaye + validatedAmount;
+        const fullySettled = newMontantPaye >= payment.montant;
+
         const nowIso = new Date().toISOString();
-        await supabase
+        const { error: updateError } = await supabase
             .from("payments")
-            .update({ status: "paye", validated_by: user.id, validated_at: nowIso, date_paiement: nowIso })
+            .update({
+                status: fullySettled ? "paye" : "attente",
+                montant_paye: newMontantPaye,
+                montant_declare: 0,
+                validated_by: user.id,
+                validated_at: nowIso,
+                date_paiement: fullySettled ? nowIso : payment.date_paiement,
+                rejection_reason: null,
+                rejected_at: null,
+            })
             .eq("id", paymentId);
+
+        // Échec de l'update : rien d'irréversible n'a eu lieu, on s'arrête sans
+        // afficher un faux « validé » ni écrire en compta.
+        if (updateError) {
+            console.error("Erreur validation paiement:", updateError);
+            showNotification("Erreur lors de la validation", "error");
+            return;
+        }
 
         const typeEntree =
             payment.type === "mandarin" || payment.type === "anglais"
@@ -244,8 +304,9 @@ export default function PaymentsPage() {
             ? `${payment.students.nom} ${payment.students.prenom}`
             : "Étudiant";
 
-        await supabase.from("entrees_comptables").insert({
-            montant: payment.montant,
+        // On comptabilise le montant réellement validé (acompte ou solde).
+        const { error: accountingError } = await supabase.from("entrees_comptables").insert({
+            montant: validatedAmount,
             date: new Date().toISOString(),
             type: typeEntree,
             description: `${typeLabel(payment.type, payment.tranche)} — ${studentName}`,
@@ -254,20 +315,77 @@ export default function PaymentsPage() {
             created_by: user.id,
         });
 
+        // Le paiement est déjà passé validé : si la compta échoue, on alerte
+        // explicitement pour régularisation (sinon de l'argent encaissé n'apparaît
+        // jamais en comptabilité).
+        if (accountingError) {
+            console.error("Erreur écriture comptable:", accountingError);
+            showNotification("Paiement validé mais l'écriture comptable a échoué", "error");
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+            notifyPaymentResult(payment, true, validatedAmount, null);
+            return;
+        }
+
         await logActivity(
             user.id, user.name, user.role,
             "payment_validate", "payment", paymentId,
             `Paiement validé — ${typeLabel(payment.type, payment.tranche)} — ${studentName}`,
-            { payment_id: paymentId, montant: payment.montant }
+            { payment_id: paymentId, validated: true, montant: validatedAmount }
         );
         await logActivity(
             user.id, user.name, user.role,
             "accounting_entry", "entrees_comptables", paymentId,
             `Entrée comptable créée — ${typeLabel(payment.type, payment.tranche)} — ${studentName}`,
-            { montant: payment.montant, type: typeEntree }
+            { montant: validatedAmount, type: typeEntree }
         );
-        showNotification("Paiement validé avec succès", "success");
+        showNotification(
+            fullySettled ? "Paiement validé avec succès" : "Acompte validé — solde restant dû",
+            "success"
+        );
         queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+        notifyPaymentResult(payment, true, validatedAmount, null);
+    };
+
+    const handleReject = async (paymentId: string, reason: string) => {
+        if (!user || !canValidatePayment) return;
+        const { data: payment } = await supabase
+            .from("payments")
+            .select("*, students(nom, prenom)")
+            .eq("id", paymentId)
+            .single();
+        if (!payment) return;
+
+        const nowIso = new Date().toISOString();
+        const { error: updateError } = await supabase
+            .from("payments")
+            .update({
+                status: "retard",
+                montant_declare: 0,
+                validated_by: user.id,
+                validated_at: nowIso,
+                rejection_reason: reason || null,
+                rejected_at: nowIso,
+            })
+            .eq("id", paymentId);
+
+        if (updateError) {
+            console.error("Erreur rejet paiement:", updateError);
+            showNotification("Erreur lors du rejet", "error");
+            return;
+        }
+
+        const studentName = payment.students
+            ? `${payment.students.nom} ${payment.students.prenom}`
+            : "Étudiant";
+        await logActivity(
+            user.id, user.name, user.role,
+            "payment_validate", "payment", paymentId,
+            `Paiement rejeté — ${typeLabel(payment.type, payment.tranche)} — ${studentName}`,
+            { payment_id: paymentId, validated: false }
+        );
+        showNotification("Paiement rejeté", "success");
+        queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+        notifyPaymentResult(payment, false, 0, reason || null);
     };
 
     const handleValidateAll = async () => {
@@ -594,9 +712,16 @@ export default function PaymentsPage() {
                                                         >
                                                             {ini}
                                                         </div>
-                                                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                                                            {name}
-                                                        </span>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                                                {name}
+                                                            </span>
+                                                            {payment.initiated_by_student && payment.status === "en_validation" && (
+                                                                <span className="mt-0.5 w-fit rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
+                                                                    Déclaré par l&apos;étudiant
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-3 py-3.5">
@@ -609,6 +734,16 @@ export default function PaymentsPage() {
                                                 </td>
                                                 <td className="px-3 py-3.5 text-sm font-medium text-gray-900 dark:text-gray-100">
                                                     {fmt(payment.montant)}
+                                                    {(payment.montant_declare ?? 0) > 0 && (
+                                                        <div className="text-[11px] font-normal text-blue-600 dark:text-blue-400">
+                                                            {fmt(payment.montant_declare!)} déclaré
+                                                        </div>
+                                                    )}
+                                                    {(payment.montant_paye ?? 0) > 0 && (payment.montant_paye ?? 0) < payment.montant && (
+                                                        <div className="text-[11px] font-normal text-green-600 dark:text-green-400">
+                                                            {fmt(payment.montant_paye!)} déjà réglé
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="px-3 py-3.5 text-sm text-gray-500 dark:text-gray-400">
                                                     {fmtDate(payment.date_limite)}
@@ -646,22 +781,32 @@ export default function PaymentsPage() {
                                                                 Pénalité
                                                             </button>
                                                         ) : canValidatePayment ? (
-                                                            <button
-                                                                onClick={() =>
-                                                                    setConfirmDialog({
-                                                                        isOpen: true,
-                                                                        title: "Valider ce paiement ?",
-                                                                        description: `Confirmer la validation du paiement de ${name}.`,
-                                                                        onConfirm: async () => {
-                                                                            closeConfirm();
-                                                                            await handleValidate(payment.id);
-                                                                        },
-                                                                    })
-                                                                }
-                                                                className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
-                                                            >
-                                                                Valider
-                                                            </button>
+                                                            <>
+                                                                {payment.status === "en_validation" && (
+                                                                    <button
+                                                                        onClick={() => setRejectModal({ open: true, paymentId: payment.id, reason: "" })}
+                                                                        className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                    >
+                                                                        Rejeter
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    onClick={() =>
+                                                                        setConfirmDialog({
+                                                                            isOpen: true,
+                                                                            title: "Valider ce paiement ?",
+                                                                            description: `Confirmer la validation du paiement de ${name}.`,
+                                                                            onConfirm: async () => {
+                                                                                closeConfirm();
+                                                                                await handleValidate(payment.id);
+                                                                            },
+                                                                        })
+                                                                    }
+                                                                    className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                                                                >
+                                                                    Valider
+                                                                </button>
+                                                            </>
                                                         ) : (
                                                             <span className="text-xs text-gray-400">—</span>
                                                         )}
@@ -922,6 +1067,58 @@ export default function PaymentsPage() {
                                 className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                             >
                                 {saving ? "Enregistrement…" : "Enregistrer"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reject declaration modal */}
+            {rejectModal.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-red-600">Rejeter le paiement</h2>
+                            <button
+                                onClick={() => setRejectModal({ open: false, paymentId: "", reason: "" })}
+                                className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                            Indiquez le motif du rejet. Il sera communiqué à l&apos;étudiant par email et SMS.
+                        </p>
+                        <textarea
+                            rows={4}
+                            placeholder="Ex : le montant déclaré ne correspond pas au justificatif…"
+                            value={rejectModal.reason}
+                            onChange={(e) => setRejectModal((s) => ({ ...s, reason: e.target.value }))}
+                            className="w-full resize-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400"
+                        />
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                onClick={() => setRejectModal({ open: false, paymentId: "", reason: "" })}
+                                disabled={rejecting}
+                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const { paymentId, reason } = rejectModal;
+                                    setRejecting(true);
+                                    try {
+                                        await handleReject(paymentId, reason.trim());
+                                    } finally {
+                                        setRejecting(false);
+                                        setRejectModal({ open: false, paymentId: "", reason: "" });
+                                    }
+                                }}
+                                disabled={rejecting}
+                                className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                            >
+                                {rejecting ? "Rejet…" : "Confirmer le rejet"}
                             </button>
                         </div>
                     </div>
