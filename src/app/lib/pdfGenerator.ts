@@ -214,7 +214,7 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   // ── Titre — collé au logo
   const titleX = logoX + logoW + 4; // ~34 mm
 
-  doc.setTextColor(...DARK);
+  doc.setTextColor(...WHITE);
 
   // Nom société
   doc.setFontSize(17);
@@ -230,7 +230,7 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   const rightCol = 118;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.setTextColor(...DARK);
+  doc.setTextColor(...WHITE);
   doc.text(`E-mail  : ${COMPANY.email}`,   rightCol, 12);
   doc.setFontSize(7);
   doc.text(`Adresse : ${COMPANY.address}`, rightCol, 18);
@@ -246,7 +246,7 @@ const addHeader = (doc: jsPDF, title: string, logoData: string | null): number =
   const colW = (pageW - marginL - marginR) / 3;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.setTextColor(...DARK);
+  doc.setTextColor(...WHITE);
   doc.text(`Tel.    : ${COMPANY.phone}`,   marginL,        29);
   doc.text(`Web     : ${COMPANY.website}`, marginL + colW, 29);
   if (COMPANY.nui) doc.text(`NIU     : ${COMPANY.nui}`, marginL + 2 * colW, 29);
