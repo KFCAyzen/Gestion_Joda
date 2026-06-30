@@ -474,22 +474,57 @@ export function useUpdateCandidature(actor?: Actor) {
 }
 
 /* ── Cours de langues (à partir des paiements mandarin/anglais) ──────────── */
-export type CourseStats = { active: number; revenue: number };
+export type CoursePayment = { id: string; studentName: string; tranche: number | null; amount: number; status: string };
+export type CourseStats = { active: number; revenue: number; payments: CoursePayment[] };
 export function useLanguageCourses() {
   return useQuery({
     queryKey: ['admin', 'courses'],
     queryFn: async (): Promise<{ mandarin: CourseStats; anglais: CourseStats }> => {
-      const { data } = await supabase.from('payments').select('type, montant, montant_paye, status, student_id').in('type', ['mandarin', 'anglais']);
-      const rows = (data as any[]) ?? [];
+      const [payRes, stuRes] = await Promise.all([
+        supabase.from('payments').select('id, type, tranche, montant, montant_paye, status, student_id, created_at').in('type', ['mandarin', 'anglais']).order('created_at', { ascending: false }),
+        supabase.from('students').select('id, nom, prenom'),
+      ]);
+      const rows = (payRes.data as any[]) ?? [];
+      const names = new Map<string, string>();
+      for (const s of (stuRes.data as { id: string; nom: string; prenom: string }[]) ?? []) {
+        names.set(s.id, `${s.prenom ?? ''} ${s.nom ?? ''}`.trim());
+      }
       const calc = (t: string): CourseStats => {
         const sub = rows.filter((r) => r.type === t);
         const active = new Set(sub.map((r) => r.student_id)).size;
         const revenue = sub.reduce((s, r) => s + Number(r.montant_paye ?? (r.status === 'paye' ? r.montant : 0)), 0);
-        return { active, revenue };
+        const payments: CoursePayment[] = sub.map((r) => ({
+          id: r.id,
+          studentName: names.get(r.student_id) || 'Étudiant',
+          tranche: r.tranche ?? null,
+          amount: Number(r.montant || 0),
+          status: r.status,
+        }));
+        return { active, revenue, payments };
       };
       return { mandarin: calc('mandarin'), anglais: calc('anglais') };
     },
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+/** Marque un paiement de cours comme payé — miroir `CoursLangues.handleMarkPaid`. */
+export function useMarkCoursePaid(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (paymentId: string) => {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from('payments')
+        .update({ status: 'paye', date_paiement: nowIso, validated_by: actor?.id ?? null, validated_at: nowIso })
+        .eq('id', paymentId);
+      if (error) throw error;
+      await logActivity(actor ?? {}, 'payment_validate', 'payments', paymentId, 'Paiement de cours marqué payé', { payment_id: paymentId });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'courses'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'ledger'] });
+    },
   });
 }
 
