@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '../supabase';
 import { logActivity } from '../activity-log';
+import { DOSSIER_TRANSITIONS } from '../dossier-milestones';
 import type { DossierStatus } from './use-student-portal';
 
 type Actor = { id?: string | null; name?: string | null; role?: string | null };
@@ -318,6 +319,7 @@ export type Candidature = {
   name: string;
   program: string;
   status: DossierStatus;
+  universityId: string | null;
   createdAt: string;
 };
 
@@ -326,7 +328,7 @@ export function useCandidatures() {
     queryKey: ['admin', 'candidatures'],
     queryFn: async (): Promise<Candidature[]> => {
       const [dos, students] = await Promise.all([
-        supabase.from('dossier_bourses').select('id, student_id, status, desired_program, created_at').order('created_at', { ascending: false }).limit(200),
+        supabase.from('dossier_bourses').select('id, student_id, status, desired_program, university_id, created_at').order('created_at', { ascending: false }).limit(200),
         supabase.from('students').select('id, nom, prenom'),
       ]);
       const names = new Map<string, string>();
@@ -339,10 +341,73 @@ export function useCandidatures() {
         name: names.get(d.student_id) || 'Étudiant',
         program: d.desired_program || 'Dossier',
         status: d.status,
+        universityId: d.university_id ?? null,
         createdAt: d.created_at,
       }));
     },
     staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Traite une candidature — miroir partiel de `ApplicationManagement` :
+ * affecte/remplace l'université et/ou fait avancer le statut (transitions
+ * validées via DOSSIER_TRANSITIONS). Journalise + historise.
+ */
+export function useUpdateCandidature(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      dossierId,
+      studentName,
+      universityId,
+      status,
+      fromStatus,
+    }: {
+      dossierId: string;
+      studentName: string;
+      universityId?: string | null;
+      status?: DossierStatus;
+      fromStatus?: DossierStatus;
+    }) => {
+      const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (universityId !== undefined) patch.university_id = universityId;
+      if (status !== undefined) {
+        if (fromStatus) {
+          const allowed = DOSSIER_TRANSITIONS[fromStatus] ?? [];
+          if (!allowed.includes(status)) throw new Error('Transition non autorisée');
+        }
+        patch.status = status;
+      }
+
+      const { error } = await supabase.from('dossier_bourses').update(patch).eq('id', dossierId);
+      if (error) throw error;
+
+      if (status !== undefined) {
+        const { error: histErr } = await supabase.from('dossier_history').insert({
+          dossier_id: dossierId,
+          action: 'status_change',
+          status,
+          description: `${fromStatus ?? '?'} → ${status}`,
+          performed_by: actor?.id ?? null,
+        });
+        if (histErr) console.warn('[dossier_history] insert error:', histErr.message);
+        await logActivity(actor ?? {}, 'application_status_change', 'dossier_bourses', dossierId, `Candidature ${studentName} : ${fromStatus ?? '?'} → ${status}`, {
+          previous_status: fromStatus,
+          new_status: status,
+        });
+      }
+      if (universityId !== undefined) {
+        await logActivity(actor ?? {}, 'application_status_change', 'dossier_bourses', dossierId, `Candidature ${studentName} — université affectée`, {
+          university_id: universityId,
+        });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'candidatures'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'dossiers'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+    },
   });
 }
 
