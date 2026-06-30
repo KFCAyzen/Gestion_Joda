@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Check, Star, UserPlus, X } from 'lucide-react-native';
+import { Check, Plus, Star, UserPlus, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 
@@ -14,6 +14,7 @@ import {
   useReviewLeave,
   useUpsertEmployee,
   useSetEmployeeStatus,
+  useGeneratePayslips,
 } from '@/lib/hooks/use-admin';
 import { useStaffReports, useReviewReport, isPendingReport } from '@/lib/hooks/use-staff';
 import { Avatar, Button, Chip, GlassCard, ProgressBar, ScreenBackground, ScreenHeader, SegFilter, StatTile, useText, useToast } from '@/components/ui';
@@ -62,8 +63,19 @@ export default function AdminRH() {
   const reviewReport = useReviewReport();
   const upsertEmp = useUpsertEmployee();
   const setEmpStatus = useSetEmployeeStatus();
+  const genPayslips = useGeneratePayslips();
 
   const canManage = user?.role === 'admin' || user?.role === 'super_admin';
+  const canPayroll = ['supervisor', 'admin', 'super_admin'].includes(user?.role ?? '');
+
+  async function generatePayroll() {
+    try {
+      const r = await genPayslips.mutateAsync(undefined);
+      toast(r.count > 0 ? `${r.count} bulletin(s) généré(s) ✓` : 'Aucun bulletin dû');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec de la génération');
+    }
+  }
 
   const emptyEmp = { id: undefined as string | undefined, matricule: '', prenom: '', nom: '', poste: '', departement: '', telephone: '', email: '', salaireBase: '', statut: 'actif' };
   const [empModal, setEmpModal] = useState(false);
@@ -197,6 +209,9 @@ export default function AdminRH() {
                 })
               : null}
 
+            {tab === 'paie' && canPayroll ? (
+              <Button label="Générer la paie due" loading={genPayslips.isPending} icon={<Plus size={16} color="#fff" />} onPress={generatePayroll} />
+            ) : null}
             {tab === 'paie'
               ? (payslips ?? []).map((p: any) => (
                   <GlassCard key={p.id} style={styles.card}>

@@ -745,6 +745,24 @@ export function useReviewLeave() {
   });
 }
 
+/**
+ * Génère les bulletins de paie dus — miroir `/api/hr/generate-payslips`
+ * (RPC `hr_generate_due_payslips` côté serveur, moteur de paie légal Cameroun).
+ * Sans paramètre = toutes les périodes dues.
+ */
+export function useGeneratePayslips() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params?: { year?: number; month?: number }) => {
+      const res = await apiFetch('/api/hr/generate-payslips', { method: 'POST', body: JSON.stringify(params ?? {}) });
+      const data = (await res.json().catch(() => ({}))) as { generated?: unknown[]; error?: string };
+      if (!res.ok) throw new Error(data.error || `Échec de la génération (HTTP ${res.status}).`);
+      return { count: (data.generated ?? []).length };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'payslips'] }),
+  });
+}
+
 export function useAdminPayslips() {
   return useQuery({
     queryKey: ['admin', 'payslips'],
