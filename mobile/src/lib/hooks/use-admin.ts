@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '../supabase';
+import { apiFetch } from '../api';
 import { logActivity } from '../activity-log';
 import { DOSSIER_TRANSITIONS } from '../dossier-milestones';
 import type { DossierStatus } from './use-student-portal';
+import type { UserRole } from '../auth-context';
 
 type Actor = { id?: string | null; name?: string | null; role?: string | null };
 
@@ -469,6 +471,49 @@ export function useToggleUserActive() {
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
       const { error } = await supabase.from('users').update({ is_active: active }).eq('id', id);
       if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  });
+}
+
+/**
+ * Réinitialise le mot de passe d'un compte — passe par `/api/reset-password`
+ * (génère un mot de passe temporaire + email). Bearer via apiFetch.
+ */
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiFetch('/api/reset-password', { method: 'POST', body: JSON.stringify({ userId }) });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || `Échec de la réinitialisation (HTTP ${res.status}).`);
+      }
+    },
+  });
+}
+
+export type CreateUserInput = {
+  name: string;
+  email: string;
+  username: string;
+  password: string;
+  role: UserRole;
+  telephone?: string | null;
+};
+
+/**
+ * Crée un compte du personnel — passe par `/api/create-user` (auth.admin +
+ * profil + email). Le serveur applique aussi les règles de rôle.
+ */
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateUserInput) => {
+      const res = await apiFetch('/api/create-user', { method: 'POST', body: JSON.stringify(input) });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || `Échec de la création (HTTP ${res.status}).`);
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   });
