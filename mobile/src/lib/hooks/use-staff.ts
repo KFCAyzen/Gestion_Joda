@@ -2,9 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '../supabase';
 import { apiFetch } from '../api';
-import { buildMilestones, type Milestone } from '../dossier-milestones';
+import { buildMilestones, DOSSIER_TRANSITIONS, type Milestone } from '../dossier-milestones';
 import { REQUIRED_DOCS, REQUIRED_KEYS } from '../required-docs';
+import { logActivity } from '../activity-log';
 import type { DossierStatus } from './use-student-portal';
+
+type Actor = { id?: string | null; name?: string | null; role?: string | null };
 
 /* ============================================================
    Hooks de l'app Agent — composent les vraies données Supabase
@@ -128,9 +131,16 @@ export function useStaffDossiers() {
 export type StaffStudentDetail = {
   id: string;
   name: string;
+  /** Champs bruts éditables (préremplissage du formulaire). */
+  firstName: string;
+  lastName: string;
+  level: string;
   ref: string;
   program: string;
   dest: string;
+  /** Dossier bourse lié (pour le changement de statut) — null si aucun. */
+  dossierId: string | null;
+  status: DossierStatus | null;
   pct: number;
   step: number;
   stepLabel: string;
@@ -156,7 +166,7 @@ export function useStaffStudentDetail(studentId?: string) {
       ]);
       if (stuRes.error || !stuRes.data) throw stuRes.error ?? new Error('Étudiant introuvable');
       const s = stuRes.data as any;
-      const dossier = dosRes.data as { status: DossierStatus; desired_program?: string; study_level?: string } | null;
+      const dossier = dosRes.data as { id: string; status: DossierStatus; desired_program?: string; study_level?: string } | null;
       const status = dossier?.status ?? null;
       const milestones = buildMilestones(status ?? undefined);
       const done = milestones.filter((m) => m.state === 'done').length;
@@ -178,9 +188,14 @@ export function useStaffStudentDetail(studentId?: string) {
       return {
         id: s.id,
         name: `${s.prenom ?? ''} ${s.nom ?? ''}`.trim() || 'Étudiant',
+        firstName: s.prenom ?? '',
+        lastName: s.nom ?? '',
+        level: s.niveau ?? '',
         ref: `JD-${String(s.id).slice(0, 4).toUpperCase()}`,
         program: dossier?.desired_program || s.filiere || s.choix || 'Dossier étudiant',
         dest: dossier?.study_level || s.niveau || '—',
+        dossierId: dossier?.id ?? null,
+        status,
         pct: Math.round((done / milestones.length) * 100),
         step: nowIdx >= 0 ? nowIdx + 1 : milestones.length,
         stepLabel: milestones[nowIdx]?.label ?? 'Terminé',
@@ -196,6 +211,110 @@ export function useStaffStudentDetail(studentId?: string) {
     },
     enabled: !!studentId,
     staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Change le statut d'un dossier bourse — miroir de
+ * `DossierWorkflow.handleStatusChange` (web) : valide la transition, met à jour
+ * `dossier_bourses`, journalise dans `dossier_history` + `activity_logs`.
+ */
+export function useChangeDossierStatus(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      dossierId,
+      studentId,
+      fromStatus,
+      toStatus,
+      studentName,
+    }: {
+      dossierId: string;
+      studentId: string;
+      fromStatus: DossierStatus;
+      toStatus: DossierStatus;
+      studentName: string;
+    }) => {
+      const allowed = DOSSIER_TRANSITIONS[fromStatus] ?? [];
+      if (!allowed.includes(toStatus)) throw new Error('Transition non autorisée');
+
+      const { error: upErr } = await supabase
+        .from('dossier_bourses')
+        .update({ status: toStatus, updated_at: new Date().toISOString() })
+        .eq('id', dossierId);
+      if (upErr) throw upErr;
+
+      // Historique (best-effort : la MAJ a déjà eu lieu, on n'échoue pas dessus).
+      const { error: histErr } = await supabase.from('dossier_history').insert({
+        dossier_id: dossierId,
+        action: 'status_change',
+        status: toStatus,
+        description: `${fromStatus} → ${toStatus}`,
+        performed_by: actor?.id ?? null,
+      });
+      if (histErr) console.warn('[dossier_history] insert error:', histErr.message);
+
+      await logActivity(
+        actor ?? {},
+        'dossier_status_change',
+        'dossier_bourses',
+        dossierId,
+        `Dossier ${studentName} : ${fromStatus} → ${toStatus}`,
+        { dossier_id: dossierId, previous_status: fromStatus, new_status: toStatus },
+      );
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['staff', 'student', vars.studentId] });
+      qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });
+    },
+  });
+}
+
+/**
+ * Met à jour les infos d'un étudiant — miroir partiel de
+ * `StudentManagement` (web). Champs éditables côté fiche staff : identité +
+ * contact + niveau. Journalise dans `activity_logs`.
+ */
+export function useUpdateStudent(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      studentId,
+      prenom,
+      nom,
+      telephone,
+      niveau,
+    }: {
+      studentId: string;
+      prenom: string;
+      nom: string;
+      telephone: string | null;
+      niveau: string | null;
+    }) => {
+      const { error } = await supabase
+        .from('students')
+        .update({
+          prenom: prenom.trim(),
+          nom: nom.trim(),
+          telephone: telephone?.trim() || null,
+          niveau: niveau?.trim() || null,
+        })
+        .eq('id', studentId);
+      if (error) throw error;
+
+      await logActivity(
+        actor ?? {},
+        'student_update',
+        'students',
+        studentId,
+        `Modification étudiant ${`${prenom} ${nom}`.trim()}`,
+        { student_id: studentId },
+      );
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['staff', 'student', vars.studentId] });
+      qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });
+    },
   });
 }
 

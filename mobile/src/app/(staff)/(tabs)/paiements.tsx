@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Check, ChevronRight, Clock, FileText, X } from 'lucide-react-native';
+import { Check, CheckCheck, ChevronRight, Clock, FileText, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import { useStaffPayments, useValidatePayment, type StaffPayment } from '@/lib/hooks/use-staff';
@@ -9,6 +9,7 @@ import {
   Avatar,
   Button,
   Chip,
+  CountUp,
   GlassCard,
   ScreenBackground,
   ScreenHeader,
@@ -31,6 +32,7 @@ export default function StaffPaiements() {
 
   const [tab, setTab] = useState('pending');
   const [proof, setProof] = useState<StaffPayment | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const pending = useMemo(() => (payments ?? []).filter((p) => p.status === 'en_validation'), [payments]);
   const treated = useMemo(() => (payments ?? []).filter((p) => p.status !== 'en_validation'), [payments]);
@@ -47,6 +49,37 @@ export default function StaffPaiements() {
     }
   }
 
+  // Parité web `handleValidateAll` : valide en série toutes les déclarations en
+  // attente (chacune passe par la même logique — compta + notif étudiant).
+  function confirmValidateAll() {
+    if (!pending.length || bulkBusy) return;
+    Alert.alert(
+      'Tout valider',
+      `Valider les ${pending.length} déclaration${pending.length > 1 ? 's' : ''} en attente (${fmtFCFA(total)} FCFA) ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Tout valider', style: 'default', onPress: validateAll },
+      ],
+    );
+  }
+
+  async function validateAll() {
+    setBulkBusy(true);
+    let ok = 0;
+    // Snapshot : la liste se vide au fur et à mesure des invalidations.
+    const ids = pending.map((p) => p.id);
+    for (const id of ids) {
+      try {
+        await validate.mutateAsync({ paymentId: id, isValid: true });
+        ok += 1;
+      } catch {
+        /* on continue : un échec isolé ne doit pas bloquer le lot */
+      }
+    }
+    setBulkBusy(false);
+    toast(ok === ids.length ? `${ok} paiement${ok > 1 ? 's' : ''} validé${ok > 1 ? 's' : ''} ✓` : `${ok}/${ids.length} validés`);
+  }
+
   return (
     <ScreenBackground>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -59,10 +92,21 @@ export default function StaffPaiements() {
             <GlassCard variant="strong">
               <Text style={[T.eyebrow, { color: colors.amberIcon }]}>En attente de validation</Text>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryAmount}>{fmtFCFA(total)}</Text>
+                <CountUp to={total} format={(n) => fmtFCFA(Math.round(n))} style={styles.summaryAmount} />
                 <Chip variant="due" label={`${pending.length} déclaration${pending.length > 1 ? 's' : ''}`} />
               </View>
               <Text style={T.t3}>FCFA · à vérifier puis valider</Text>
+              {pending.length > 1 ? (
+                <Button
+                  label={bulkBusy ? 'Validation…' : 'Tout valider'}
+                  size="sm"
+                  variant="mint"
+                  icon={<CheckCheck size={16} color="#fff" strokeWidth={2.4} />}
+                  onPress={confirmValidateAll}
+                  disabled={bulkBusy}
+                  style={{ marginTop: 12 }}
+                />
+              ) : null}
             </GlassCard>
 
             <SegFilter
