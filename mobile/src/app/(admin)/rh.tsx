@@ -1,12 +1,20 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Check, Star, X } from 'lucide-react-native';
+import { Check, Star, UserPlus, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 
-import { useAdminEmployees, useAdminLeaves, useAdminPayslips, useAdminPerformance, useReviewLeave } from '@/lib/hooks/use-admin';
+import {
+  useAdminEmployees,
+  useAdminLeaves,
+  useAdminPayslips,
+  useAdminPerformance,
+  useReviewLeave,
+  useUpsertEmployee,
+  useSetEmployeeStatus,
+} from '@/lib/hooks/use-admin';
 import { useStaffReports, useReviewReport, isPendingReport } from '@/lib/hooks/use-staff';
 import { Avatar, Button, Chip, GlassCard, ProgressBar, ScreenBackground, ScreenHeader, SegFilter, StatTile, useText, useToast } from '@/components/ui';
 import { spacing, type Palette } from '@/theme/tokens';
@@ -52,9 +60,70 @@ export default function AdminRH() {
   const { data: perf } = useAdminPerformance();
   const reviewLeave = useReviewLeave();
   const reviewReport = useReviewReport();
+  const upsertEmp = useUpsertEmployee();
+  const setEmpStatus = useSetEmployeeStatus();
+
+  const canManage = user?.role === 'admin' || user?.role === 'super_admin';
+
+  const emptyEmp = { id: undefined as string | undefined, matricule: '', prenom: '', nom: '', poste: '', departement: '', telephone: '', email: '', salaireBase: '', statut: 'actif' };
+  const [empModal, setEmpModal] = useState(false);
+  const [empForm, setEmpForm] = useState(emptyEmp);
 
   const pendingReports = useMemo(() => (reports ?? []).filter((r) => isPendingReport(r.status)), [reports]);
   const pendingLeaves = (leaves ?? []).filter((l: any) => (l.status ?? 'en_attente') === 'en_attente');
+
+  function openCreateEmp() {
+    setEmpForm(emptyEmp);
+    setEmpModal(true);
+  }
+  function openEditEmp(e: any) {
+    setEmpForm({
+      id: e.id,
+      matricule: e.matricule ?? '',
+      prenom: e.prenom ?? '',
+      nom: e.nom ?? '',
+      poste: e.poste ?? '',
+      departement: e.departement ?? '',
+      telephone: e.telephone ?? '',
+      email: e.email ?? '',
+      salaireBase: String(e.salaire_base ?? e.salaire ?? ''),
+      statut: e.statut ?? 'actif',
+    });
+    setEmpModal(true);
+  }
+  async function saveEmp() {
+    if (!empForm.prenom.trim() || !empForm.nom.trim() || !empForm.poste.trim()) {
+      toast('Prénom, nom et poste requis');
+      return;
+    }
+    try {
+      await upsertEmp.mutateAsync({
+        id: empForm.id,
+        matricule: empForm.matricule,
+        prenom: empForm.prenom,
+        nom: empForm.nom,
+        poste: empForm.poste,
+        departement: empForm.departement,
+        telephone: empForm.telephone,
+        email: empForm.email,
+        salaireBase: parseInt(empForm.salaireBase || '0', 10) || 0,
+        statut: empForm.statut,
+      });
+      setEmpModal(false);
+      toast(empForm.id ? 'Employé mis à jour ✓' : 'Employé créé ✓');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec de l’enregistrement');
+    }
+  }
+  async function toggleEmpStatus(e: any) {
+    const next = e.statut === 'actif' ? 'suspendu' : 'actif';
+    try {
+      await setEmpStatus.mutateAsync({ id: e.id, statut: next });
+      toast(next === 'actif' ? 'Employé réactivé' : 'Employé suspendu');
+    } catch {
+      toast('Échec');
+    }
+  }
 
   return (
     <ScreenBackground>
@@ -73,21 +142,35 @@ export default function AdminRH() {
           <ActivityIndicator style={{ marginTop: 40 }} />
         ) : (
           <ScrollView contentContainerStyle={{ paddingBottom: 60, gap: 11 }} showsVerticalScrollIndicator={false}>
-            {tab === 'employes'
-              ? (employees ?? []).map((e: any) => (
-                  <GlassCard key={e.id} style={styles.card}>
-                    <Avatar name={`${e.prenom ?? ''} ${e.nom ?? ''}`} kind="agent" size={42} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={T.t1} numberOfLines={1}>{`${e.prenom ?? ''} ${e.nom ?? ''}`.trim()}</Text>
-                      <Text style={T.t3}>{e.matricule ?? e.poste ?? '—'}</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end', gap: 5 }}>
-                      <Chip variant={EMP_STATUS[e.statut] ?? 'ghost'} label={e.statut ?? '—'} />
-                      {e.salaire_base ?? e.salaire ? <Text style={T.t3}>{fmtFCFA(Number(e.salaire_base ?? e.salaire))} F</Text> : null}
-                    </View>
-                  </GlassCard>
-                ))
-              : null}
+            {tab === 'employes' ? (
+              <>
+                {canManage ? (
+                  <Button label="Nouvel employé" icon={<UserPlus size={16} color="#fff" />} onPress={openCreateEmp} />
+                ) : null}
+                {(employees ?? []).map((e: any) => (
+                  <Pressable key={e.id} onPress={() => (canManage ? openEditEmp(e) : undefined)} disabled={!canManage}>
+                    <GlassCard style={styles.card}>
+                      <Avatar name={`${e.prenom ?? ''} ${e.nom ?? ''}`} kind="agent" size={42} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={T.t1} numberOfLines={1}>{`${e.prenom ?? ''} ${e.nom ?? ''}`.trim()}</Text>
+                        <Text style={T.t3}>{e.poste ?? e.matricule ?? '—'}{e.departement ? ` · ${e.departement}` : ''}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end', gap: 5 }}>
+                        {canManage ? (
+                          <Pressable onPress={() => toggleEmpStatus(e)} style={[styles.statusPill, e.statut === 'actif' ? styles.statusOn : styles.statusOff]}>
+                            <Text style={[styles.statusTxt, { color: e.statut === 'actif' ? colors.mint : colors.amber }]}>{e.statut === 'actif' ? 'Actif' : e.statut === 'suspendu' ? 'Suspendu' : (e.statut ?? '—')}</Text>
+                          </Pressable>
+                        ) : (
+                          <Chip variant={EMP_STATUS[e.statut] ?? 'ghost'} label={e.statut ?? '—'} />
+                        )}
+                        {e.salaire_base ?? e.salaire ? <Text style={T.t3}>{fmtFCFA(Number(e.salaire_base ?? e.salaire))} F</Text> : null}
+                      </View>
+                    </GlassCard>
+                  </Pressable>
+                ))}
+                {!(employees ?? []).length ? <Text style={styles.empty}>Aucun employé.</Text> : null}
+              </>
+            ) : null}
 
             {tab === 'conges'
               ? (leaves ?? []).map((l: any) => {
@@ -183,7 +266,98 @@ export default function AdminRH() {
           </ScrollView>
         )}
       </SafeAreaView>
+
+      {/* Modal employé — parité HRManagement (sous-ensemble de champs) */}
+      <Modal visible={empModal} transparent animationType="slide" onRequestClose={() => setEmpModal(false)}>
+        <Pressable style={styles.overlay} onPress={() => setEmpModal(false)}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.grab} />
+            <View style={styles.sheetHead}>
+              <Text style={[T.t1, { fontSize: 17 }]}>{empForm.id ? 'Modifier l’employé' : 'Nouvel employé'}</Text>
+              <Pressable style={styles.closeBtn} onPress={() => setEmpModal(false)}>
+                <X size={18} color={colors.ink70} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={{ maxHeight: 430 }} showsVerticalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <RHField label="Prénom" value={empForm.prenom} onChange={(v) => setEmpForm((f) => ({ ...f, prenom: v }))} colors={colors} T={T} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <RHField label="Nom" value={empForm.nom} onChange={(v) => setEmpForm((f) => ({ ...f, nom: v }))} colors={colors} T={T} />
+                </View>
+              </View>
+              <RHField label="Poste" value={empForm.poste} onChange={(v) => setEmpForm((f) => ({ ...f, poste: v }))} colors={colors} T={T} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <RHField label="Département" value={empForm.departement} onChange={(v) => setEmpForm((f) => ({ ...f, departement: v }))} colors={colors} T={T} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <RHField label="Matricule" value={empForm.matricule} onChange={(v) => setEmpForm((f) => ({ ...f, matricule: v }))} colors={colors} T={T} />
+                </View>
+              </View>
+              <RHField label="Téléphone" value={empForm.telephone} onChange={(v) => setEmpForm((f) => ({ ...f, telephone: v }))} colors={colors} T={T} keyboardType="phone-pad" />
+              <RHField label="Email" value={empForm.email} onChange={(v) => setEmpForm((f) => ({ ...f, email: v }))} colors={colors} T={T} />
+              <RHField label="Salaire de base (FCFA)" value={empForm.salaireBase} onChange={(v) => setEmpForm((f) => ({ ...f, salaireBase: v.replace(/[^0-9]/g, '') }))} colors={colors} T={T} keyboardType="number-pad" />
+
+              <Text style={[T.t3, { marginBottom: 8, marginTop: 4 }]}>Statut</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {['actif', 'suspendu', 'inactif'].map((st) => (
+                  <Pressable key={st} onPress={() => setEmpForm((f) => ({ ...f, statut: st }))} style={[styles.chip, empForm.statut === st && styles.chipOn]}>
+                    <Text style={[styles.chipTxt, empForm.statut === st && { color: '#fff' }]}>{st}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalBtns}>
+              <Button label="Annuler" variant="glass" onPress={() => setEmpModal(false)} style={{ flex: 1 }} />
+              <Button label={empForm.id ? 'Enregistrer' : 'Créer'} loading={upsertEmp.isPending} onPress={saveEmp} style={{ flex: 1.4 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenBackground>
+  );
+}
+
+function RHField({
+  label,
+  value,
+  onChange,
+  colors,
+  T,
+  keyboardType,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  colors: Palette;
+  T: ReturnType<typeof useText>;
+  keyboardType?: 'default' | 'phone-pad' | 'number-pad';
+}) {
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text style={[T.t3, { marginBottom: 6 }]}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        keyboardType={keyboardType ?? 'default'}
+        autoCapitalize="none"
+        placeholderTextColor={colors.ink35}
+        style={{
+          backgroundColor: colors.glass2,
+          borderWidth: 1,
+          borderColor: colors.glassLine,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 11,
+          color: colors.text,
+          fontSize: 14.5,
+        }}
+      />
+    </View>
   );
 }
 
@@ -197,4 +371,43 @@ const makeStyles = (colors: Palette) =>
     indexNum: { fontSize: 18, fontWeight: '700' },
     evalMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
+
+    statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
+    statusOn: { backgroundColor: 'rgba(52,217,168,0.13)', borderColor: 'rgba(52,217,168,0.32)' },
+    statusOff: { backgroundColor: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.30)' },
+    statusTxt: { fontSize: 11.5, fontWeight: '600' },
+
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: colors.sheetBg,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      borderWidth: 1,
+      borderColor: colors.glassLine2,
+      padding: 18,
+      paddingBottom: 34,
+    },
+    grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.glassLine2, marginBottom: 14 },
+    sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+    closeBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: colors.glass2,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    chip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+    },
+    chipOn: { backgroundColor: colors.crimsonDeep, borderColor: 'transparent' },
+    chipTxt: { color: colors.ink70, fontSize: 12.5, fontWeight: '500', textTransform: 'capitalize' },
+    modalBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   });

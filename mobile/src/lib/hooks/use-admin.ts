@@ -646,6 +646,64 @@ export function useCreateUser() {
 }
 
 /* ── RH : congés / paie / employés / évaluations ─────────────────────────── */
+export type EmployeeInput = {
+  id?: string;
+  matricule?: string;
+  prenom: string;
+  nom: string;
+  poste: string;
+  departement?: string;
+  telephone?: string;
+  email?: string;
+  salaireBase: number;
+  statut: string;
+};
+
+/** Crée ou met à jour un employé — miroir `HRManagement` (sous-ensemble de champs). */
+export function useUpsertEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: EmployeeInput) => {
+      const payload = {
+        matricule: input.matricule?.trim() || null,
+        prenom: input.prenom.trim(),
+        nom: input.nom.trim(),
+        poste: input.poste.trim(),
+        departement: input.departement?.trim() || null,
+        telephone: input.telephone?.trim() || null,
+        email: input.email?.trim() || null,
+        salaire_base: input.salaireBase,
+        statut: input.statut,
+      };
+      if (input.id) {
+        const { error } = await supabase.from('employees').update(payload).eq('id', input.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('employees')
+          .insert({ ...payload, date_embauche: new Date().toISOString().slice(0, 10) });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'employees'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'performance'] });
+    },
+  });
+}
+
+/** Change le statut d'un employé (actif / suspendu / inactif). */
+export function useSetEmployeeStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, statut }: { id: string; statut: string }) => {
+      const { error } = await supabase.from('employees').update({ statut }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'employees'] }),
+  });
+}
+
 export function useAdminEmployees() {
   return useQuery({
     queryKey: ['admin', 'employees'],
