@@ -15,6 +15,8 @@ import {
   useUpsertEmployee,
   useSetEmployeeStatus,
   useGeneratePayslips,
+  useCreateEvaluation,
+  type EvaluationNotes,
 } from '@/lib/hooks/use-admin';
 import { useStaffReports, useReviewReport, isPendingReport } from '@/lib/hooks/use-staff';
 import { Avatar, Button, Chip, GlassCard, ProgressBar, ScreenBackground, ScreenHeader, SegFilter, StatTile, useText, useToast } from '@/components/ui';
@@ -46,6 +48,29 @@ function Stars({ v }: { v: number }) {
 
 const EMP_STATUS: Record<string, 'done' | 'due' | 'ghost'> = { actif: 'done', suspendu: 'due', inactif: 'ghost' };
 
+const EVAL_LABELS: { key: keyof EvaluationNotes; label: string }[] = [
+  { key: 'qualite', label: 'Qualité' },
+  { key: 'productivite', label: 'Productivité' },
+  { key: 'ponctualite', label: 'Ponctualité' },
+  { key: 'equipe', label: 'Esprit d’équipe' },
+  { key: 'communication', label: 'Communication' },
+  { key: 'initiative', label: 'Initiative' },
+  { key: 'discipline', label: 'Discipline' },
+];
+const DEFAULT_NOTES: EvaluationNotes = { qualite: 3, productivite: 3, ponctualite: 3, equipe: 3, communication: 3, initiative: 3, discipline: 3 };
+
+function StarPick({ value, onChange, colors }: { value: number; onChange: (v: number) => void; colors: Palette }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 4 }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Pressable key={n} onPress={() => onChange(n)} hitSlop={4}>
+          <Star size={20} color={n <= value ? colors.amber : colors.track} fill={n <= value ? colors.amber : 'transparent'} />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export default function AdminRH() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -64,6 +89,7 @@ export default function AdminRH() {
   const upsertEmp = useUpsertEmployee();
   const setEmpStatus = useSetEmployeeStatus();
   const genPayslips = useGeneratePayslips();
+  const createEval = useCreateEvaluation(user ?? undefined);
 
   const canManage = user?.role === 'admin' || user?.role === 'super_admin';
   const canPayroll = ['supervisor', 'admin', 'super_admin'].includes(user?.role ?? '');
@@ -134,6 +160,31 @@ export default function AdminRH() {
       toast(next === 'actif' ? 'Employé réactivé' : 'Employé suspendu');
     } catch {
       toast('Échec');
+    }
+  }
+
+  const [evalModal, setEvalModal] = useState(false);
+  const [evalEmp, setEvalEmp] = useState('');
+  const [evalNotes, setEvalNotes] = useState<EvaluationNotes>(DEFAULT_NOTES);
+  const [evalComment, setEvalComment] = useState('');
+
+  function openCreateEval() {
+    setEvalEmp((employees ?? [])[0]?.id ?? '');
+    setEvalNotes(DEFAULT_NOTES);
+    setEvalComment('');
+    setEvalModal(true);
+  }
+  async function saveEval() {
+    if (!evalEmp) {
+      toast('Sélectionnez un employé');
+      return;
+    }
+    try {
+      await createEval.mutateAsync({ employeeId: evalEmp, notes: evalNotes, commentaire: evalComment });
+      setEvalModal(false);
+      toast('Évaluation enregistrée ✓');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec de l’enregistrement');
     }
   }
 
@@ -250,6 +301,9 @@ export default function AdminRH() {
                 ))
               : null}
 
+            {tab === 'evals' && canManage ? (
+              <Button label="Nouvelle évaluation" icon={<Star size={16} color="#fff" />} onPress={openCreateEval} />
+            ) : null}
             {tab === 'evals'
               ? (perf?.employees ?? []).map((e) => (
                   <GlassCard key={e.rank} style={{ gap: 9 }}>
@@ -329,6 +383,69 @@ export default function AdminRH() {
             <View style={styles.modalBtns}>
               <Button label="Annuler" variant="glass" onPress={() => setEmpModal(false)} style={{ flex: 1 }} />
               <Button label={empForm.id ? 'Enregistrer' : 'Créer'} loading={upsertEmp.isPending} onPress={saveEmp} style={{ flex: 1.4 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal évaluation — parité HRManagement (7 critères /5 + note globale) */}
+      <Modal visible={evalModal} transparent animationType="slide" onRequestClose={() => setEvalModal(false)}>
+        <Pressable style={styles.overlay} onPress={() => setEvalModal(false)}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.grab} />
+            <View style={styles.sheetHead}>
+              <Text style={[T.t1, { fontSize: 17 }]}>Nouvelle évaluation</Text>
+              <Pressable style={styles.closeBtn} onPress={() => setEvalModal(false)}>
+                <X size={18} color={colors.ink70} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={{ maxHeight: 440 }} showsVerticalScrollIndicator={false}>
+              <Text style={[T.t3, { marginBottom: 8 }]}>Employé</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingBottom: 4 }}>
+                {(employees ?? []).map((e: any) => {
+                  const name = `${e.prenom ?? ''} ${e.nom ?? ''}`.trim();
+                  return (
+                    <Pressable key={e.id} onPress={() => setEvalEmp(e.id)} style={[styles.chip, evalEmp === e.id && styles.chipOn]}>
+                      <Text style={[styles.chipTxt, { textTransform: 'none' }, evalEmp === e.id && { color: '#fff' }]}>{name || 'Employé'}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              <View style={{ height: 12 }} />
+              {EVAL_LABELS.map(({ key, label }) => (
+                <View key={key} style={styles.evalRow}>
+                  <Text style={[T.t2, { color: colors.text, flex: 1 }]}>{label}</Text>
+                  <StarPick value={evalNotes[key]} onChange={(v) => setEvalNotes((n) => ({ ...n, [key]: v }))} colors={colors} />
+                </View>
+              ))}
+
+              <Text style={[T.t3, { marginTop: 10, marginBottom: 6 }]}>Commentaire (optionnel)</Text>
+              <TextInput
+                value={evalComment}
+                onChangeText={setEvalComment}
+                placeholder="Remarques…"
+                placeholderTextColor={colors.ink35}
+                multiline
+                style={{
+                  backgroundColor: colors.glass2,
+                  borderWidth: 1,
+                  borderColor: colors.glassLine,
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  paddingVertical: 11,
+                  color: colors.text,
+                  fontSize: 14.5,
+                  height: 80,
+                  textAlignVertical: 'top',
+                }}
+              />
+            </ScrollView>
+
+            <View style={styles.modalBtns}>
+              <Button label="Annuler" variant="glass" onPress={() => setEvalModal(false)} style={{ flex: 1 }} />
+              <Button label="Enregistrer" loading={createEval.isPending} onPress={saveEval} style={{ flex: 1.4 }} />
             </View>
           </Pressable>
         </Pressable>
@@ -424,5 +541,6 @@ const makeStyles = (colors: Palette) =>
     },
     chipOn: { backgroundColor: colors.crimsonDeep, borderColor: 'transparent' },
     chipTxt: { color: colors.ink70, fontSize: 12.5, fontWeight: '500', textTransform: 'capitalize' },
+    evalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
     modalBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   });

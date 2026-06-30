@@ -908,6 +908,46 @@ function norm(value: number, max: number): number {
   return max > 0 ? Math.min(value / max, 1) : 0;
 }
 
+export type EvaluationNotes = {
+  qualite: number;
+  productivite: number;
+  ponctualite: number;
+  equipe: number;
+  communication: number;
+  initiative: number;
+  discipline: number;
+};
+
+/**
+ * Crée une évaluation employé — miroir `HRManagement` : 7 notes /5 + note
+ * globale (moyenne). Insère dans `hr_employee_evaluations`.
+ */
+export function useCreateEvaluation(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, notes, commentaire }: { employeeId: string; notes: EvaluationNotes; commentaire?: string }) => {
+      const vals = [notes.qualite, notes.productivite, notes.ponctualite, notes.equipe, notes.communication, notes.initiative, notes.discipline];
+      const globale = Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100;
+      const { error } = await supabase.from('hr_employee_evaluations').insert({
+        employee_id: employeeId,
+        date_evaluation: new Date().toISOString().slice(0, 10),
+        note_qualite: notes.qualite,
+        note_productivite: notes.productivite,
+        note_ponctualite: notes.ponctualite,
+        note_equipe: notes.equipe,
+        note_communication: notes.communication,
+        note_initiative: notes.initiative,
+        note_discipline: notes.discipline,
+        note_globale: globale,
+        commentaire: commentaire?.trim() || null,
+        created_by: actor?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'performance'] }),
+  });
+}
+
 export function useAdminPerformance(period: Period = 'month') {
   return useQuery({
     queryKey: ['admin', 'performance', period],
