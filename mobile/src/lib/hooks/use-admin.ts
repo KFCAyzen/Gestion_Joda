@@ -544,6 +544,21 @@ export function useSendNewsletter() {
   });
 }
 
+/**
+ * Envoie un SMS à un ou plusieurs étudiants — miroir `ComPage.handleSendSms`
+ * via `/api/send-sms` (le serveur résout les téléphones depuis `studentIds`).
+ */
+export function useSendSms() {
+  return useMutation({
+    mutationFn: async ({ studentIds, message }: { studentIds: string[]; message: string }) => {
+      const res = await apiFetch('/api/send-sms', { method: 'POST', body: JSON.stringify({ studentIds, message }) });
+      const data = (await res.json().catch(() => ({}))) as { sent?: number; error?: string };
+      if (!res.ok) throw new Error(data.error || `Échec de l'envoi SMS (HTTP ${res.status}).`);
+      return { sent: data.sent ?? 0 };
+    },
+  });
+}
+
 /* ── Utilisateurs ────────────────────────────────────────────────────────── */
 export type AppUser = {
   id: string;

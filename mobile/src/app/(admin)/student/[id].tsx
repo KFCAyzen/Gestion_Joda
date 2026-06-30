@@ -12,10 +12,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { ArrowRight, FileText, MessageSquare, Pencil, Plane, Trash2, Undo2, X } from 'lucide-react-native';
+import { ArrowRight, FileText, MessageSquare, Pencil, Plane, Smartphone, Trash2, Undo2, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import { useStaffStudentDetail, useChangeDossierStatus, useUpdateStudent, useDeleteStudent } from '@/lib/hooks/use-staff';
+import { useSendSms } from '@/lib/hooks/use-admin';
 import { DOSSIER_TRANSITIONS, DOSSIER_STATUS_LABEL } from '@/lib/dossier-milestones';
 import type { DossierStatus } from '@/lib/hooks/use-student-portal';
 import {
@@ -51,10 +52,29 @@ export default function AdminStudentDetail() {
   const change = useChangeDossierStatus(user ?? undefined);
   const update = useUpdateStudent(user ?? undefined);
   const remove = useDeleteStudent(user ?? undefined);
+  const sms = useSendSms();
   const toast = useToast();
 
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState({ prenom: '', nom: '', telephone: '', niveau: '' });
+  const [smsOpen, setSmsOpen] = useState(false);
+  const [smsText, setSmsText] = useState('');
+
+  async function sendSms() {
+    if (!s) return;
+    if (!smsText.trim()) {
+      toast('Message vide');
+      return;
+    }
+    try {
+      const r = await sms.mutateAsync({ studentIds: [s.id], message: smsText.trim() });
+      setSmsOpen(false);
+      setSmsText('');
+      toast(r.sent > 0 ? 'SMS envoyé ✓' : 'Aucun numéro valide');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec de l’envoi SMS');
+    }
+  }
 
   if (isLoading || !s) {
     return (
@@ -172,7 +192,18 @@ export default function AdminStudentDetail() {
             </View>
           </GlassCard>
 
-          <Button label="Message à l'étudiant" icon={<MessageSquare size={16} color="#fff" />} onPress={message} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Button label="Message" icon={<MessageSquare size={16} color="#fff" />} onPress={message} style={{ flex: 1 }} />
+            {s.phone ? (
+              <Button
+                label="SMS"
+                variant="glass"
+                icon={<Smartphone size={16} color={colors.ink70} />}
+                onPress={() => { setSmsText(''); setSmsOpen(true); }}
+                style={{ flex: 1 }}
+              />
+            ) : null}
+          </View>
 
           {/* Avancement du dossier */}
           {s.dossierId ? (
@@ -258,6 +289,46 @@ export default function AdminStudentDetail() {
               </Pressable>
               <Button label="Annuler" variant="glass" onPress={() => setEdit(false)} style={{ flex: 1 }} />
               <Button label="Enregistrer" loading={update.isPending} onPress={saveEdit} style={{ flex: 1.4 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Composer SMS — parité ComPage.handleSendSms via /api/send-sms */}
+      <Modal visible={smsOpen} transparent animationType="slide" onRequestClose={() => setSmsOpen(false)}>
+        <Pressable style={styles.overlay} onPress={() => setSmsOpen(false)}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.grab} />
+            <View style={styles.sheetHead}>
+              <Text style={[T.t1, { fontSize: 17 }]}>SMS à {s.firstName}</Text>
+              <Pressable style={styles.closeBtn} onPress={() => setSmsOpen(false)}>
+                <X size={18} color={colors.ink70} />
+              </Pressable>
+            </View>
+            <TextInput
+              value={smsText}
+              onChangeText={setSmsText}
+              placeholder="Votre message (160 car. recommandé)…"
+              placeholderTextColor={colors.ink35}
+              multiline
+              maxLength={500}
+              style={{
+                backgroundColor: colors.glass2,
+                borderWidth: 1,
+                borderColor: colors.glassLine,
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 11,
+                color: colors.text,
+                fontSize: 14.5,
+                height: 120,
+                textAlignVertical: 'top',
+              }}
+            />
+            <Text style={[T.t3, { textAlign: 'right', marginTop: 6 }]}>{smsText.length}/500</Text>
+            <View style={styles.modalBtns}>
+              <Button label="Annuler" variant="glass" onPress={() => setSmsOpen(false)} style={{ flex: 1 }} />
+              <Button label="Envoyer le SMS" loading={sms.isPending} icon={<Smartphone size={15} color="#fff" />} onPress={sendSms} style={{ flex: 1.4 }} />
             </View>
           </Pressable>
         </Pressable>
