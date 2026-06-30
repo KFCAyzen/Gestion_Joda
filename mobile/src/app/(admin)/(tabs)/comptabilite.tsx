@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowDownLeft, ArrowUpRight, TriangleAlert } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, Check, Plus, TriangleAlert, X } from 'lucide-react-native';
 
-import { useAccountingLedger } from '@/lib/hooks/use-admin';
+import { useAuth } from '@/lib/auth-context';
+import { useAccountingLedger, useValidateSortie, useAddAccountingEntry } from '@/lib/hooks/use-admin';
 import {
+  Button,
   GlassCard,
   IconBox,
   ScreenBackground,
@@ -12,10 +14,28 @@ import {
   SegFilter,
   useIconTint,
   useText,
+  useToast,
 } from '@/components/ui';
 import { spacing, type Palette } from '@/theme/tokens';
 import { useColors } from '@/theme/theme';
 import { fmtCompact, fmtFCFA, shortDate } from '@/lib/format';
+
+const SORTIE_CATS = ['loyer', 'salaires', 'fonctionnement', 'materiels', 'fournitures', 'transports', 'communication', 'partenaires', 'divers'];
+const ENTREE_TYPES = ['revenus_divers', 'paiement_procedure', 'paiement_cours'];
+const CAT_LABEL: Record<string, string> = {
+  revenus_divers: 'Revenus divers',
+  paiement_procedure: 'Procédure',
+  paiement_cours: 'Cours',
+  loyer: 'Loyer',
+  salaires: 'Salaires',
+  fonctionnement: 'Fonctionnement',
+  materiels: 'Matériels',
+  fournitures: 'Fournitures',
+  transports: 'Transports',
+  communication: 'Communication',
+  partenaires: 'Partenaires',
+  divers: 'Divers',
+};
 
 const VIEWS = [
   { id: 'jour', label: 'Jour' },
@@ -30,16 +50,79 @@ export default function AdminCompta() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const T = useText();
   const iconTint = useIconTint();
+  const { user } = useAuth();
   const { data, isLoading } = useAccountingLedger();
+  const validateSortie = useValidateSortie(user ?? undefined);
+  const addEntry = useAddAccountingEntry(user ?? undefined);
+  const toast = useToast();
+
+  const canWrite = user?.role === 'admin' || user?.role === 'super_admin';
+
   const [view, setView] = useState('mois');
   const [filter, setFilter] = useState('tout');
+  const [add, setAdd] = useState(false);
+  const [form, setForm] = useState<{ kind: 'entree' | 'sortie'; montant: string; description: string; cat: string }>({
+    kind: 'sortie',
+    montant: '',
+    description: '',
+    cat: 'divers',
+  });
 
   const rows = (data?.rows ?? []).filter((r) => filter === 'tout' || (filter === 'entrees' ? r.kind === 'in' : r.kind === 'out'));
+
+  function openAdd(kind: 'entree' | 'sortie') {
+    setForm({ kind, montant: '', description: '', cat: kind === 'entree' ? 'revenus_divers' : 'divers' });
+    setAdd(true);
+  }
+
+  function setKind(kind: 'entree' | 'sortie') {
+    setForm((f) => ({ ...f, kind, cat: kind === 'entree' ? 'revenus_divers' : 'divers' }));
+  }
+
+  async function saveAdd() {
+    const montant = Number(form.montant);
+    if (!montant || montant <= 0 || !form.description.trim()) {
+      toast('Montant et description requis');
+      return;
+    }
+    try {
+      await addEntry.mutateAsync({
+        kind: form.kind,
+        montant,
+        description: form.description.trim(),
+        type: form.kind === 'entree' ? form.cat : undefined,
+        categorie: form.kind === 'sortie' ? form.cat : undefined,
+      });
+      setAdd(false);
+      toast('Écriture enregistrée ✓');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec de l’enregistrement');
+    }
+  }
+
+  async function validate(id: string) {
+    try {
+      await validateSortie.mutateAsync(id);
+      toast('Sortie validée ✓');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec de la validation');
+    }
+  }
 
   return (
     <ScreenBackground>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <ScreenHeader eyebrow="Livre comptable" title="Comptabilité" />
+        <ScreenHeader
+          eyebrow="Livre comptable"
+          title="Comptabilité"
+          right={
+            canWrite ? (
+              <Pressable onPress={() => openAdd('sortie')} hitSlop={8} style={styles.addBtn}>
+                <Plus size={19} color={colors.text} />
+              </Pressable>
+            ) : undefined
+          }
+        />
 
         {isLoading || !data ? (
           <ActivityIndicator style={{ marginTop: 40 }} />
@@ -103,14 +186,25 @@ export default function AdminCompta() {
                   <View style={{ flex: 1 }}>
                     <Text style={[T.t1, { fontSize: 13.5 }]} numberOfLines={1}>{r.desc}</Text>
                     <Text style={T.t3}>
-                      {shortDate(r.date)} · {r.cat}
+                      {shortDate(r.date)} · {CAT_LABEL[r.cat] ?? r.cat}
                       {r.needsValidation ? ' · à valider' : ''}
                     </Text>
                   </View>
-                  <Text style={[styles.la, { color: r.kind === 'in' ? colors.mint : colors.crimsonVivid }]}>
-                    {r.kind === 'in' ? '+' : '−'}
-                    {fmtFCFA(r.montant)}
-                  </Text>
+                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                    <Text style={[styles.la, { color: r.kind === 'in' ? colors.mint : colors.crimsonVivid }]}>
+                      {r.kind === 'in' ? '+' : '−'}
+                      {fmtFCFA(r.montant)}
+                    </Text>
+                    {r.needsValidation && canWrite ? (
+                      <Pressable
+                        onPress={() => validate(r.id)}
+                        disabled={validateSortie.isPending}
+                        style={styles.validateBtn}>
+                        <Check size={12} color={colors.mint} strokeWidth={2.6} />
+                        <Text style={styles.validateTxt}>Valider</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
                 </View>
               ))}
               {!rows.length ? <Text style={styles.empty}>Aucune écriture.</Text> : null}
@@ -118,6 +212,71 @@ export default function AdminCompta() {
           </ScrollView>
         )}
       </SafeAreaView>
+
+      {/* Modal ajout écriture — parité LivreComptable.handleAdd */}
+      <Modal visible={add} transparent animationType="slide" onRequestClose={() => setAdd(false)}>
+        <Pressable style={styles.overlay} onPress={() => setAdd(false)}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.grab} />
+            <View style={styles.sheetHead}>
+              <Text style={[T.t1, { fontSize: 17 }]}>Nouvelle écriture</Text>
+              <Pressable style={styles.closeBtn} onPress={() => setAdd(false)}>
+                <X size={18} color={colors.ink70} />
+              </Pressable>
+            </View>
+
+            {/* Type d'écriture */}
+            <View style={styles.kindRow}>
+              {(['sortie', 'entree'] as const).map((k) => (
+                <Pressable
+                  key={k}
+                  onPress={() => setKind(k)}
+                  style={[styles.kindPill, form.kind === k && (k === 'entree' ? styles.kindOnIn : styles.kindOnOut)]}>
+                  {k === 'entree' ? (
+                    <ArrowDownLeft size={14} color={form.kind === k ? colors.mint : colors.ink50} />
+                  ) : (
+                    <ArrowUpRight size={14} color={form.kind === k ? colors.crimsonVivid : colors.ink50} />
+                  )}
+                  <Text style={[styles.kindTxt, form.kind === k && { color: colors.text }]}>{k === 'entree' ? 'Entrée' : 'Sortie'}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[T.t3, styles.fieldLabel]}>Montant (FCFA)</Text>
+            <TextInput
+              value={form.montant}
+              onChangeText={(v) => setForm((f) => ({ ...f, montant: v.replace(/[^0-9]/g, '') }))}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={colors.ink35}
+              style={styles.input}
+            />
+
+            <Text style={[T.t3, styles.fieldLabel]}>Description</Text>
+            <TextInput
+              value={form.description}
+              onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+              placeholder="Motif de l’écriture"
+              placeholderTextColor={colors.ink35}
+              style={styles.input}
+            />
+
+            <Text style={[T.t3, styles.fieldLabel]}>{form.kind === 'entree' ? 'Type' : 'Catégorie'}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }}>
+              {(form.kind === 'entree' ? ENTREE_TYPES : SORTIE_CATS).map((c) => (
+                <Pressable key={c} onPress={() => setForm((f) => ({ ...f, cat: c }))} style={[styles.catChip, form.cat === c && styles.catChipOn]}>
+                  <Text style={[styles.catChipTxt, form.cat === c && { color: '#fff' }]}>{CAT_LABEL[c] ?? c}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalBtns}>
+              <Button label="Annuler" variant="glass" onPress={() => setAdd(false)} style={{ flex: 1 }} />
+              <Button label="Enregistrer" loading={addEntry.isPending} onPress={saveAdd} style={{ flex: 1.4 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenBackground>
   );
 }
@@ -141,4 +300,88 @@ const makeStyles = (colors: Palette) =>
     lkOut: { backgroundColor: colors.redGlass },
     la: { fontSize: 14, fontWeight: '700' },
     empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
+
+    addBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      backgroundColor: colors.glass2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    validateBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: 'rgba(52,217,168,0.13)',
+      borderWidth: 1,
+      borderColor: 'rgba(52,217,168,0.32)',
+    },
+    validateTxt: { color: colors.mint, fontSize: 11.5, fontWeight: '600' },
+
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+    sheet: {
+      backgroundColor: colors.sheetBg,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      borderWidth: 1,
+      borderColor: colors.glassLine2,
+      padding: 18,
+      paddingBottom: 34,
+    },
+    grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.glassLine2, marginBottom: 14 },
+    sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+    closeBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: colors.glass2,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    kindRow: { flexDirection: 'row', gap: 9, marginBottom: 6 },
+    kindPill: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 7,
+      paddingVertical: 11,
+      borderRadius: 12,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+    },
+    kindOnIn: { backgroundColor: 'rgba(52,217,168,0.10)', borderColor: 'rgba(52,217,168,0.32)' },
+    kindOnOut: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
+    kindTxt: { color: colors.ink50, fontSize: 13.5, fontWeight: '600' },
+    fieldLabel: { marginTop: 12, marginBottom: 6 },
+    input: {
+      backgroundColor: colors.glass2,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 11,
+      color: colors.text,
+      fontSize: 14.5,
+    },
+    catChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 999,
+      backgroundColor: colors.glass,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+    },
+    catChipOn: { backgroundColor: colors.crimsonDeep, borderColor: 'transparent' },
+    catChipTxt: { color: colors.ink70, fontSize: 12.5, fontWeight: '500' },
+    modalBtns: { flexDirection: 'row', gap: 10, marginTop: 18 },
   });

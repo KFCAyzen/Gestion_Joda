@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { supabase } from '../supabase';
+import { logActivity } from '../activity-log';
 import type { DossierStatus } from './use-student-portal';
+
+type Actor = { id?: string | null; name?: string | null; role?: string | null };
 
 /* ============================================================
    Hooks de l'app Admin — branchés sur les vraies tables Supabase.
@@ -135,6 +138,80 @@ export function useAccountingLedger() {
       return { solde: entrees - sortiesValid, entrees, sorties: sortiesValid, toValidate, rows };
     },
     staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Valide une sortie comptable — miroir `LivreComptable.handleValidateSortie`.
+ * Pose `validated_by`/`validated_at` (parité web) ET `status='validated'` en
+ * best-effort : la lecture mobile (`isValidated`) privilégie `status`, donc on
+ * aligne les deux sans casser si la colonne `status` n'existe pas.
+ */
+export function useValidateSortie(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from('sorties_comptables')
+        .update({ validated_by: actor?.id ?? null, validated_at: nowIso })
+        .eq('id', id);
+      if (error) throw error;
+
+      // best-effort : flip du `status` si la colonne existe (cohérence d'affichage).
+      const { error: statusErr } = await supabase
+        .from('sorties_comptables')
+        .update({ status: 'validated' })
+        .eq('id', id);
+      if (statusErr) console.warn('[sortie status] non posé:', statusErr.message);
+
+      await logActivity(actor ?? {}, 'accounting_expense', 'sorties_comptables', id, 'Sortie comptable validée', {});
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ledger'] }),
+  });
+}
+
+/**
+ * Ajoute une écriture comptable manuelle — miroir `LivreComptable.handleAdd`.
+ * `entree` → `entrees_comptables` (avec `type`), `sortie` → `sorties_comptables`
+ * (avec `categorie`).
+ */
+export function useAddAccountingEntry(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      kind,
+      montant,
+      description,
+      type,
+      categorie,
+    }: {
+      kind: 'entree' | 'sortie';
+      montant: number;
+      description: string;
+      type?: string;
+      categorie?: string;
+    }) => {
+      const nowIso = new Date().toISOString();
+      if (kind === 'entree') {
+        const { data, error } = await supabase
+          .from('entrees_comptables')
+          .insert({ montant, description, type: type ?? 'revenus_divers', date: nowIso, created_by: actor?.id ?? null })
+          .select('id')
+          .single();
+        if (error) throw error;
+        await logActivity(actor ?? {}, 'accounting_entry', 'entrees_comptables', data?.id ?? null, `Entrée comptable — ${description}`, { montant });
+      } else {
+        const { data, error } = await supabase
+          .from('sorties_comptables')
+          .insert({ montant, description, categorie: categorie ?? 'divers', date: nowIso, created_by: actor?.id ?? null })
+          .select('id')
+          .single();
+        if (error) throw error;
+        await logActivity(actor ?? {}, 'accounting_expense', 'sorties_comptables', data?.id ?? null, `Sortie comptable — ${description}`, { montant });
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ledger'] }),
   });
 }
 

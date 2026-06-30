@@ -11,7 +11,10 @@ export type ActivityType =
   | 'dossier_status_change'
   | 'payment_validate'
   | 'document_validate'
-  | 'document_reject';
+  | 'document_reject'
+  | 'accounting_entry'
+  | 'accounting_expense'
+  | 'application_status_change';
 
 type Actor = { id?: string | null; name?: string | null; role?: string | null };
 
