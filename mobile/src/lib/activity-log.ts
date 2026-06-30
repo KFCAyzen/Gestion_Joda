@@ -14,7 +14,10 @@ export type ActivityType =
   | 'document_reject'
   | 'accounting_entry'
   | 'accounting_expense'
-  | 'application_status_change';
+  | 'application_status_change'
+  | 'university_create'
+  | 'university_update'
+  | 'university_delete';
 
 type Actor = { id?: string | null; name?: string | null; role?: string | null };
 

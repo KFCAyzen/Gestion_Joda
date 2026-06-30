@@ -314,6 +314,66 @@ export function useUniversities() {
   });
 }
 
+export type UniversityInput = {
+  id?: string;
+  nom: string;
+  pays: string;
+  ville: string;
+  programme: string;
+  active: boolean;
+};
+
+/** Crée ou met à jour une université — miroir `UniversityManagement.handleSubmit`. */
+export function useUpsertUniversity(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: UniversityInput) => {
+      const payload = {
+        nom: input.nom.trim(),
+        pays: input.pays.trim() || null,
+        ville: input.ville.trim() || null,
+        programme: input.programme.trim() || null,
+        active: input.active,
+      };
+      if (input.id) {
+        const { error } = await supabase.from('universities').update(payload).eq('id', input.id);
+        if (error) throw error;
+        await logActivity(actor ?? {}, 'university_update', 'universities', input.id, `Université modifiée — ${payload.nom}`, { nom: payload.nom });
+      } else {
+        const { data, error } = await supabase.from('universities').insert(payload).select('id').single();
+        if (error) throw error;
+        await logActivity(actor ?? {}, 'university_create', 'universities', data?.id ?? null, `Université créée — ${payload.nom}`, { nom: payload.nom, pays: payload.pays });
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'universities'] }),
+  });
+}
+
+/** Active/suspend une université — miroir `handleToggle`. */
+export function useToggleUniversity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from('universities').update({ active }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'universities'] }),
+  });
+}
+
+/** Supprime une université — miroir `handleDelete`. */
+export function useDeleteUniversity(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, nom }: { id: string; nom: string }) => {
+      const { error } = await supabase.from('universities').delete().eq('id', id);
+      if (error) throw error;
+      await logActivity(actor ?? {}, 'university_delete', 'universities', id, `Université supprimée — ${nom}`, {});
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'universities'] }),
+  });
+}
+
 /* ── Candidatures (dossier_bourses + étudiant) ───────────────────────────── */
 export type Candidature = {
   id: string;
