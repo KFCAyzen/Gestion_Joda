@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { Check } from 'lucide-react-native';
 
-import { useFrais } from '@/lib/hooks/use-admin';
-import { Avatar, Chip, GlassCard, ScreenBackground, ScreenHeader, useText } from '@/components/ui';
+import { useAuth } from '@/lib/auth-context';
+import { useFrais, useEncaisserTranche } from '@/lib/hooks/use-admin';
+import { Avatar, Chip, GlassCard, ScreenBackground, ScreenHeader, useText, useToast } from '@/components/ui';
 import { spacing, type Palette } from '@/theme/tokens';
 import { useColors } from '@/theme/theme';
 import { fmtFCFA, shortDate } from '@/lib/format';
@@ -21,9 +23,23 @@ export default function AdminFrais() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const T = useText();
+  const { user } = useAuth();
   const { data, isLoading } = useFrais();
+  const encaisser = useEncaisserTranche(user ?? undefined);
+  const toast = useToast();
   const totalCollected = (data ?? []).reduce((s, f) => s + f.collected, 0);
   const totalLate = (data ?? []).reduce((s, f) => s + f.late, 0);
+
+  const canEncaisser = ['agent', 'supervisor', 'admin', 'super_admin'].includes(user?.role ?? '');
+
+  async function onEncaisser(id: string) {
+    try {
+      await encaisser.mutateAsync(id);
+      toast('Tranche encaissée ✓');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec');
+    }
+  }
 
   return (
     <ScreenBackground>
@@ -55,6 +71,7 @@ export default function AdminFrais() {
                 </View>
                 {f.tranches.map((tr) => {
                   const st = STATUS[tr.status] ?? { label: tr.status, chip: 'ghost' as const };
+                  const encaissable = canEncaisser && (tr.status === 'attente' || tr.status === 'retard');
                   return (
                     <View key={tr.id} style={styles.tranche}>
                       <View style={{ flex: 1 }}>
@@ -62,7 +79,14 @@ export default function AdminFrais() {
                         <Text style={T.t3}>{tr.dateLimite ? `Échéance ${shortDate(tr.dateLimite)}` : '—'}</Text>
                       </View>
                       <Text style={styles.amount}>{fmtFCFA(tr.montant)}</Text>
-                      <Chip variant={st.chip} label={st.label} />
+                      {encaissable ? (
+                        <Pressable onPress={() => onEncaisser(tr.id)} disabled={encaisser.isPending} style={styles.encBtn}>
+                          <Check size={12} color={colors.mint} strokeWidth={2.6} />
+                          <Text style={styles.encTxt}>Encaisser</Text>
+                        </Pressable>
+                      ) : (
+                        <Chip variant={st.chip} label={st.label} />
+                      )}
                     </View>
                   );
                 })}
@@ -83,5 +107,17 @@ const makeStyles = (colors: Palette) =>
     row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     tranche: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.glassLine },
     amount: { color: colors.text, fontSize: 13.5, fontWeight: '600' },
+    encBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderRadius: 999,
+      backgroundColor: 'rgba(52,217,168,0.13)',
+      borderWidth: 1,
+      borderColor: 'rgba(52,217,168,0.32)',
+    },
+    encTxt: { color: colors.mint, fontSize: 11.5, fontWeight: '600' },
     empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 40 },
   });

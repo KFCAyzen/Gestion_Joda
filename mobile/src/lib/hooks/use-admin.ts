@@ -695,6 +695,27 @@ const FEE_TYPE_LABEL: Record<string, string> = {
   autre: 'Frais',
 };
 
+/** Encaisse une tranche de frais (marque payée) — mirror encaisser/markPaid. */
+export function useEncaisserTranche(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (paymentId: string) => {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from('payments')
+        .update({ status: 'paye', date_paiement: nowIso, validated_by: actor?.id ?? null, validated_at: nowIso })
+        .eq('id', paymentId);
+      if (error) throw error;
+      await logActivity(actor ?? {}, 'payment_validate', 'payments', paymentId, 'Tranche de frais encaissée', { payment_id: paymentId });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'frais'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'ledger'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+    },
+  });
+}
+
 export function useFrais() {
   return useQuery({
     queryKey: ['admin', 'frais'],
