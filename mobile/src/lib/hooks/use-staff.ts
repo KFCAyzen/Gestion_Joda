@@ -318,6 +318,36 @@ export function useUpdateStudent(actor?: Actor) {
   });
 }
 
+/**
+ * Supprime un étudiant — miroir `StudentManagement.handleDelete` : supprime la
+ * ligne `students` puis, si un compte auth est lié, le supprime via
+ * `/api/delete-user` (best-effort). Journalise.
+ */
+export function useDeleteStudent(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ studentId, name, userId }: { studentId: string; name: string; userId?: string | null }) => {
+      const { error } = await supabase.from('students').delete().eq('id', studentId);
+      if (error) throw error;
+
+      if (userId) {
+        try {
+          await apiFetch('/api/delete-user', { method: 'DELETE', body: JSON.stringify({ userId }) });
+        } catch (e) {
+          console.warn('[delete-user] best-effort échec', e);
+        }
+      }
+
+      await logActivity(actor ?? {}, 'student_delete', 'students', studentId, `Étudiant supprimé — ${name}`, { student_id: studentId });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'candidatures'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+    },
+  });
+}
+
 /* ── Paiements à valider (déclarations étudiantes) ───────────────────────── */
 export type StaffPayment = {
   id: string;

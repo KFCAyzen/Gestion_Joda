@@ -8,6 +8,7 @@ import { supabase } from './supabase';
 
 export type ActivityType =
   | 'student_update'
+  | 'student_delete'
   | 'dossier_status_change'
   | 'payment_validate'
   | 'document_validate'
