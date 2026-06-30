@@ -17,6 +17,19 @@ export function buildStudentAuthEmail(username: string): string {
   return `${slugifyPart(username)}@${STUDENT_AUTH_DOMAIN}`;
 }
 
+/** Identifiant étudiant `prenom.nom` (+ suffixe si homonyme) — miroir web. */
+export function buildStudentUsername(prenom: string, nom: string, suffix = 0): string {
+  const base = [slugifyPart(prenom), slugifyPart(nom)].filter(Boolean).join('.');
+  if (!base) return suffix > 0 ? `etudiant.${suffix + 1}` : 'etudiant';
+  return suffix > 0 ? `${base}.${suffix + 1}` : base;
+}
+
+/** Mot de passe temporaire `Joda@XXXX9` — miroir web. */
+export function generateTemporaryPassword(): string {
+  const randomBlock = Math.random().toString(36).slice(-4).toUpperCase();
+  return `Joda@${randomBlock}9`;
+}
+
 /** Même règle que `LoginPage.resolveEmail` côté web. */
 export function resolveLoginEmail(identifier: string): string {
   const v = identifier.trim();

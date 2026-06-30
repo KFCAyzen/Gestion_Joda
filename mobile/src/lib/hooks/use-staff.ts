@@ -5,6 +5,7 @@ import { apiFetch } from '../api';
 import { buildMilestones, DOSSIER_TRANSITIONS, type Milestone } from '../dossier-milestones';
 import { REQUIRED_DOCS, REQUIRED_KEYS } from '../required-docs';
 import { logActivity } from '../activity-log';
+import { buildStudentUsername, buildStudentAuthEmail, generateTemporaryPassword } from '../student-auth';
 import type { DossierStatus } from './use-student-portal';
 
 type Actor = { id?: string | null; name?: string | null; role?: string | null };
@@ -339,6 +340,106 @@ export function useDeleteStudent(actor?: Actor) {
       }
 
       await logActivity(actor ?? {}, 'student_delete', 'students', studentId, `Étudiant supprimé — ${name}`, { student_id: studentId });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'candidatures'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+    },
+  });
+}
+
+export type CreateStudentInput = {
+  prenom: string;
+  nom: string;
+  email: string;
+  telephone?: string;
+  age: number;
+  nationalite: string;
+  niveau?: string;
+  filiere?: string;
+  langue?: string;
+  choix: string;
+};
+
+/**
+ * Crée un étudiant — miroir `StudentManagement.handleSubmit` (nouvel étudiant) :
+ * 1) identifiant unique + mot de passe temporaire, 2) compte auth via
+ * `/api/create-user` (role student), 3) ligne `students` liée, 4) dossier bourse
+ * si une procédure est demandée. Retourne les identifiants à communiquer.
+ * NB : la génération des tranches de paiement (sync) reste à faire ailleurs.
+ */
+export function useCreateStudent(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateStudentInput) => {
+      const prenom = input.prenom.trim();
+      const nom = input.nom.trim();
+      const { count } = await supabase
+        .from('students')
+        .select('id', { count: 'exact', head: true })
+        .ilike('prenom', prenom)
+        .ilike('nom', nom);
+
+      const username = buildStudentUsername(prenom, nom, count ?? 0);
+      const password = generateTemporaryPassword();
+      const name = `${prenom} ${nom}`.trim();
+
+      const res = await apiFetch('/api/create-user', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          email: input.email.trim(),
+          username,
+          password,
+          role: 'student',
+          authEmail: buildStudentAuthEmail(username),
+          telephone: input.telephone?.trim() || null,
+        }),
+      });
+      const result = (await res.json().catch(() => ({}))) as { userId?: string; error?: string };
+      if (!res.ok || !result.userId) {
+        throw new Error(result.error || `Échec de la création du compte (HTTP ${res.status}).`);
+      }
+      const userId = result.userId;
+
+      const { data, error } = await supabase
+        .from('students')
+        .insert({
+          prenom,
+          nom,
+          email: input.email.trim(),
+          telephone: input.telephone?.trim() || null,
+          age: input.age,
+          nationalite: input.nationalite.trim() || null,
+          niveau: input.niveau?.trim() || null,
+          filiere: input.filiere?.trim() || null,
+          langue: input.langue || null,
+          choix: input.choix,
+          created_by: userId,
+          user_id: userId,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+
+      if (input.choix !== 'cours_seuls') {
+        const { error: dossierErr } = await supabase.from('dossier_bourses').insert({
+          student_id: data.id,
+          status: 'document_manquant',
+          desired_program: input.filiere?.trim() || '',
+          study_level: input.niveau?.trim() || '',
+          notes_internes: 'Dossier créé automatiquement à l’inscription (mobile)',
+        });
+        if (dossierErr) console.warn('[dossier_bourses] insert error:', dossierErr.message);
+      }
+
+      await logActivity(actor ?? {}, 'student_create', 'students', data.id, `Étudiant créé — ${name}`, {
+        student_id: data.id,
+        choix: input.choix,
+      });
+
+      return { username, password };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });

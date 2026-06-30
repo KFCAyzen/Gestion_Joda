@@ -7,6 +7,7 @@
 import { supabase } from './supabase';
 
 export type ActivityType =
+  | 'student_create'
   | 'student_update'
   | 'student_delete'
   | 'dossier_status_change'
