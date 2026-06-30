@@ -528,6 +528,22 @@ export function useMarkCoursePaid(actor?: Actor) {
   });
 }
 
+/**
+ * Envoie une newsletter — miroir `NewsletterPage.handleSend` via
+ * `/api/newsletter/send` (sujet, message, audience ciblée).
+ */
+export type NewsletterFilter = 'all' | 'dossier_attente' | 'dossier_cours' | 'payment_late' | 'langue_mandarin' | 'langue_anglais';
+export function useSendNewsletter() {
+  return useMutation({
+    mutationFn: async ({ subject, message, filter }: { subject: string; message: string; filter: NewsletterFilter }) => {
+      const res = await apiFetch('/api/newsletter/send', { method: 'POST', body: JSON.stringify({ subject, message, filter }) });
+      const data = (await res.json().catch(() => ({}))) as { sent?: number; errors?: number; total?: number; error?: string };
+      if (!res.ok) throw new Error(data.error || `Échec de l'envoi (HTTP ${res.status}).`);
+      return { sent: data.sent ?? 0, errors: data.errors ?? 0, total: data.total ?? 0 };
+    },
+  });
+}
+
 /* ── Utilisateurs ────────────────────────────────────────────────────────── */
 export type AppUser = {
   id: string;
