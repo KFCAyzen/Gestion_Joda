@@ -6,6 +6,7 @@ import { buildMilestones, DOSSIER_TRANSITIONS, type Milestone } from '../dossier
 import { REQUIRED_DOCS, REQUIRED_KEYS } from '../required-docs';
 import { logActivity } from '../activity-log';
 import { buildStudentUsername, buildStudentAuthEmail, generateTemporaryPassword } from '../student-auth';
+import { DEFAULT_PAYMENT_CONFIGS, getBourseServiceType, isInternational } from '../payment-config';
 import type { DossierStatus } from './use-student-portal';
 
 type Actor = { id?: string | null; name?: string | null; role?: string | null };
@@ -434,6 +435,38 @@ export function useCreateStudent(actor?: Actor) {
         if (dossierErr) console.warn('[dossier_bourses] insert error:', dossierErr.message);
       }
 
+      // Génère les tranches de paiement selon le service — miroir de
+      // `syncPaymentsForStudent` (cas nouvel étudiant : aucun paiement existant).
+      const tranches: { student_id: string; type: string; tranche: number; montant: number; status: string; penalites: number; date_limite: string }[] = [];
+      const deadlineFrom = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+      if (input.choix === 'procedure_seule' || input.choix === 'procedure_cours') {
+        const cfg = DEFAULT_PAYMENT_CONFIGS[getBourseServiceType(input.niveau, input.nationalite)];
+        const dl = deadlineFrom(cfg.deadline_offset_days);
+        for (const tr of cfg.tranches) {
+          tranches.push({ student_id: data.id, type: 'bourse', tranche: tr.tranche, montant: tr.montant, status: 'attente', penalites: 0, date_limite: dl });
+        }
+      }
+
+      const langueKey = input.langue?.toLowerCase().includes('mandarin')
+        ? 'mandarin'
+        : input.langue?.toLowerCase().includes('anglais')
+          ? 'anglais'
+          : null;
+      // Les cours de langue ne sont pas générés pour les étudiants internationaux.
+      if (langueKey && !isInternational(input.nationalite) && (input.choix === 'cours_seuls' || input.choix === 'procedure_cours')) {
+        const cfg = DEFAULT_PAYMENT_CONFIGS[langueKey];
+        const dl = deadlineFrom(cfg.deadline_offset_days);
+        for (const tr of cfg.tranches) {
+          tranches.push({ student_id: data.id, type: langueKey, tranche: tr.tranche, montant: tr.montant, status: 'attente', penalites: 0, date_limite: dl });
+        }
+      }
+
+      if (tranches.length) {
+        const { error: payErr } = await supabase.from('payments').insert(tranches);
+        if (payErr) console.warn('[payments] génération des tranches échouée:', payErr.message);
+      }
+
       await logActivity(actor ?? {}, 'student_create', 'students', data.id, `Étudiant créé — ${name}`, {
         student_id: data.id,
         choix: input.choix,
@@ -445,6 +478,7 @@ export function useCreateStudent(actor?: Actor) {
       qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });
       qc.invalidateQueries({ queryKey: ['admin', 'candidatures'] });
       qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'frais'] });
     },
   });
 }

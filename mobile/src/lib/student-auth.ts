@@ -24,10 +24,26 @@ export function buildStudentUsername(prenom: string, nom: string, suffix = 0): s
   return suffix > 0 ? `${base}.${suffix + 1}` : base;
 }
 
-/** Mot de passe temporaire `Joda@XXXX9` — miroir web. */
+/**
+ * Mot de passe temporaire `Joda@XXXXXXXX9`.
+ * Sécurité : utilise un CSPRNG (`crypto.getRandomValues`, polyfillé en RN par
+ * supabase-js) plutôt que `Math.random()` (non cryptographique, ~20 bits). Repli
+ * best-effort sur `Math.random` uniquement si aucun CSPRNG n'est disponible.
+ * Alphabet sans caractères ambigus (0/O, 1/I/L).
+ */
 export function generateTemporaryPassword(): string {
-  const randomBlock = Math.random().toString(36).slice(-4).toUpperCase();
-  return `Joda@${randomBlock}9`;
+  const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 symboles
+  const LEN = 8;
+  const g = globalThis as { crypto?: { getRandomValues?: (a: Uint8Array) => Uint8Array } };
+  const bytes = new Uint8Array(LEN);
+  if (g.crypto?.getRandomValues) {
+    g.crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < LEN; i++) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  let block = '';
+  for (let i = 0; i < LEN; i++) block += ALPHABET[bytes[i] % ALPHABET.length];
+  return `Joda@${block}9`;
 }
 
 /** Même règle que `LoginPage.resolveEmail` côté web. */
