@@ -1,4 +1,4 @@
-import { sanitizeForHtml } from "./security";
+import jsPDF from "jspdf";
 import { isInternational } from "../types/payment-config";
 
 export interface ReceiptPayment {
@@ -83,226 +83,149 @@ async function fetchLogoBase64(): Promise<string | null> {
     } catch { return null; }
 }
 
+/**
+ * Génère la quittance et la TÉLÉCHARGE (vrai fichier PDF via doc.save()).
+ *
+ * On dessine le PDF directement avec les primitives jsPDF (texte, rectangles,
+ * image du logo) : AUCUN html2canvas. C'est pour ça que ça marche de façon
+ * fiable — html2canvas plante au parsing des couleurs modernes de Tailwind v4
+ * (oklch/lab), alors que le dessin vectoriel jsPDF n'y touche jamais.
+ */
 export async function downloadReceipt(
     payment: ReceiptPayment,
     student: ReceiptStudent,
     options: { includeDuplicata?: boolean } = {},
 ) {
     const includeDuplicata = options.includeDuplicata ?? false;
-    const lang  = getLang(student.langue);
-    const isEn  = lang === 'en';
-    const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString(isEn ? "en-GB" : "fr-FR") : new Date().toLocaleDateString(isEn ? "en-GB" : "fr-FR");
+    const lang = getLang(student.langue);
+    const isEn = lang === 'en';
+    const fmtDate = (d: string | null) =>
+        (d ? new Date(d) : new Date()).toLocaleDateString(isEn ? "en-GB" : "fr-FR");
 
-    const dateStr  = fmtDate(payment.date_paiement ?? payment.validated_at ?? null);
-    const today    = fmtDate(new Date().toISOString());
-    const logoSrc  = await fetchLogoBase64();
-    const logoTag  = logoSrc
-        ? `<img src="${logoSrc}" alt="Joda Company" style="height:40px;width:auto;display:block;">`
-        : `<span style="font-size:18px;font-weight:900;color:#dc2626;">JC</span>`;
+    const dateStr = fmtDate(payment.date_paiement ?? payment.validated_at ?? null);
+    const today = fmtDate(null);
+    const logoSrc = await fetchLogoBase64();
 
-    const typeLabel   = getTypeLabel(payment, lang);
     const typeLabelFr = getTypeLabel(payment, 'fr');
-    const typeLabelEn = getTypeLabel(payment, 'en');
-    const isIntl      = isInternational(student.nationalite);
-    const amountFmt   = isIntl
+    const isIntl = isInternational(student.nationalite);
+    const amountFmt = isIntl
         ? '$' + Math.round(payment.montant).toLocaleString('fr-FR')
         : Math.round(payment.montant).toLocaleString('fr-FR') + ' FCFA';
     // Montant en lettres uniquement pour FCFA (numberToWords est en français).
     const amountWords = isIntl ? '' : `${numberToWords(payment.montant)} francs CFA`;
-    const receiptNo   = payment.id.slice(-8).toUpperCase();
-    const studentName = `${sanitizeForHtml(student.nom)} ${sanitizeForHtml(student.prenom)}`;
-    const companyBlock = isIntl
-        ? `<div class="company-name">JODA COMPANY SARL</div>
-            <div class="company-sub">Travel consulting and assistance company — Study scholarships in China</div>
-            <div class="company-info">
-              220 Handan Road, Yangpu District, Shanghai 200433 — People's Republic of China<br>
-              Email : contact@joda-company.com &nbsp;|&nbsp; Tel : +86 180 5289 2460 / +86 183 0187 0211<br>
-              NIU : M022517611037A
-            </div>`
-        : `<div class="company-name">JODA COMPANY</div>
-            <div class="company-sub">Entreprise de conseil et assistance voyage — Bourse d'étude en Chine</div>
-            <div class="company-info">BP 2525 Douala Makepe entrée Marie Lumière &nbsp;|&nbsp; contact@joda-company.com &nbsp;|&nbsp; NIU : M022517611037A</div>`;
+    const receiptNo = payment.id.slice(-8).toUpperCase();
+    const studentName = `${student.nom} ${student.prenom}`.trim();
 
-    const quittance = (copy: 'ORIGINAL' | 'DUPLICATA') => `
-    <div class="quittance">
-      <!-- EN-TÊTE -->
-      <table class="header-table">
-        <tr>
-          <td class="logo-cell">${logoTag}</td>
-          <td class="company-cell">
-            ${companyBlock}
-          </td>
-          <td class="copy-cell">
-            <div class="copy-badge">${copy}</div>
-            <div class="receipt-no">N° ${receiptNo}</div>
-            <div class="receipt-date">${today}</div>
-          </td>
-        </tr>
-      </table>
+    const company = isIntl
+        ? {
+            name: 'JODA COMPANY SARL',
+            tag: 'Travel consulting & assistance — Study scholarships in China',
+            info: '220 Handan Road, Yangpu District, Shanghai — China  |  contact@joda-company.com  |  NIU : M022517611037A',
+        }
+        : {
+            name: 'JODA COMPANY',
+            tag: "Entreprise de conseil et assistance voyage — Bourse d'étude en Chine",
+            info: 'BP 2525 Douala Makepe  |  contact@joda-company.com  |  NIU : M022517611037A',
+        };
 
-      <!-- TITRE -->
-      <div class="title-bar">
-        QUITTANCE DE PAIEMENT &nbsp;/&nbsp; PAYMENT RECEIPT
-      </div>
+    const doc = new jsPDF({ unit: 'mm', format: 'a5', orientation: 'portrait' });
+    const L = 10, R = 138, W = R - L; // 128 mm de contenu
 
-      <!-- CORPS -->
-      <table class="body-table">
-        <tr>
-          <!-- Colonne gauche : infos étudiant -->
-          <td class="col-left">
-            <div class="section-label">BÉNÉFICIAIRE / RECIPIENT</div>
-            <div class="field"><span class="lbl">Nom / Name :</span> <span class="val">${studentName}</span></div>
-            <div class="field"><span class="lbl">Tél :</span> <span class="val">${sanitizeForHtml(student.telephone)}</span></div>
-            <div class="field"><span class="lbl">Niveau / Level :</span> <span class="val">${sanitizeForHtml(student.niveau)}</span></div>
-          </td>
-          <!-- Colonne droite : infos paiement -->
-          <td class="col-right">
-            <div class="section-label">PAIEMENT / PAYMENT</div>
-            <div class="field"><span class="lbl">Objet :</span> <span class="val">Assistance visa</span></div>
-            <div class="field"><span class="lbl">Prestation :</span> <span class="val">${typeLabelFr}</span></div>
-            <div class="field"><span class="lbl">Date :</span> <span class="val">${dateStr}</span></div>
-            <div class="field"><span class="lbl">Mode :</span> <span class="val">Droit Bancaire / Cash</span></div>
-            <div class="field"><span class="lbl">Avance :</span> <span class="val">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
-            <div class="field"><span class="lbl">Reste :</span> <span class="val">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
-          </td>
-        </tr>
-      </table>
+    const RED: [number, number, number] = [220, 38, 38];
+    const INK: [number, number, number] = [17, 17, 17];
+    const GRAY: [number, number, number] = [90, 90, 90];
 
-      <!-- MONTANT -->
-      <div class="amount-bar">
-        <span class="amount-label">MONTANT REÇU / AMOUNT RECEIVED :</span>
-        <span class="amount-value">${amountFmt}</span>
-      </div>
-      ${amountWords ? `<div class="amount-words">Arrêté à : <em>${amountWords}</em></div>` : ''}
+    const drawCopy = (copy: 'ORIGINAL' | 'DUPLICATA') => {
+        // ── En-tête : logo + société (gauche), N°/date/copie (droite) ──
+        let textX = L;
+        if (logoSrc) {
+            try {
+                const p = doc.getImageProperties(logoSrc);
+                const h = 13;
+                const w = Math.min(30, h * (p.width / p.height));
+                doc.addImage(logoSrc, 'PNG', L, 8, w, h);
+                textX = L + w + 4;
+            } catch { /* logo indisponible : on continue sans */ }
+        }
+        doc.setTextColor(...RED); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+        doc.text(company.name, textX, 13);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
+        doc.text(doc.splitTextToSize(company.tag, R - 30 - textX), textX, 17);
+        doc.text(doc.splitTextToSize(company.info, R - 30 - textX), textX, 20.5);
 
-      <!-- SIGNATURES -->
-      <table class="sig-table">
-        <tr>
-          <td class="sig-box">
-            <div class="sig-title">L'Étudiant / The Student</div>
-            <div class="sig-line"></div>
-            <div class="sig-name">${studentName}</div>
-          </td>
-          <td class="sig-box">
-            <div class="sig-title">Joda Company</div>
-            <div class="sig-line"></div>
-            <div class="sig-name">Agent Responsable / Responsible Agent</div>
-          </td>
-        </tr>
-      </table>
-    </div>`;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...INK);
+        doc.text(`N° ${receiptNo}`, R, 10, { align: 'right' });
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...GRAY);
+        doc.text(today, R, 14, { align: 'right' });
+        doc.setFillColor(...RED); doc.roundedRect(R - 22, 16.5, 22, 5, 1, 1, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+        doc.text(copy, R - 11, 20, { align: 'center' });
 
-    const styleBlock = `<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; font-size: 9pt; color: #111; background: #fff; }
+        // ── Barre titre ──
+        doc.setFillColor(...RED); doc.rect(L, 30, W, 7, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text('QUITTANCE DE PAIEMENT  /  PAYMENT RECEIPT', 74, 34.7, { align: 'center' });
 
-  .quittance { width: 100%; padding: 6px 0; }
+        // ── Deux colonnes ──
+        const section = (x: number, y: number, label: string) => {
+            doc.setTextColor(...RED); doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+            doc.text(label, x, y);
+            doc.setDrawColor(252, 165, 165); doc.setLineWidth(0.3);
+            doc.line(x, y + 1.5, x + 58, y + 1.5);
+        };
+        const field = (x: number, y: number, label: string, value: string) => {
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(...GRAY); doc.setFontSize(7.5);
+            doc.text(label, x, y);
+            const lw = doc.getTextWidth(label + ' ');
+            doc.setFont('helvetica', 'normal'); doc.setTextColor(...INK);
+            doc.text(value || '—', x + lw, y);
+        };
 
-  /* Séparateur de découpe */
-  .cut-line {
-    border: none;
-    border-top: 1.5px dashed #aaa;
-    margin: 10px 0;
-    position: relative;
-    text-align: center;
-  }
-  .cut-line::after {
-    content: "✂  Découper ici / Cut here  ✂";
-    position: absolute;
-    top: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #fff;
-    padding: 0 8px;
-    font-size: 7pt;
-    color: #999;
-  }
+        const colY = 44;
+        section(L, colY, 'BÉNÉFICIAIRE / RECIPIENT');
+        field(L, colY + 6, 'Nom :', studentName);
+        field(L, colY + 11, 'Tél :', (student.telephone || '').replace(/^undefined\s*/i, ''));
+        field(L, colY + 16, 'Niveau :', student.niveau);
 
-  /* En-tête */
-  .header-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-  .logo-cell    { width: 48px; vertical-align: middle; padding-right: 8px; }
-  .company-cell { vertical-align: middle; }
-  .company-name { font-size: 13pt; font-weight: 900; color: #dc2626; line-height: 1.1; }
-  .company-sub  { font-size: 7pt; color: #555; margin-top: 2px; line-height: 1.4; }
-  .company-info { font-size: 6.5pt; color: #777; margin-top: 3px; }
-  .copy-cell    { width: 90px; text-align: right; vertical-align: top; }
-  .copy-badge   { display: inline-block; background: #dc2626; color: #fff; font-size: 7pt; font-weight: bold; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.08em; }
-  .receipt-no   { font-size: 8pt; font-weight: bold; color: #111; margin-top: 4px; }
-  .receipt-date { font-size: 7.5pt; color: #555; margin-top: 2px; }
+        const rc = 76;
+        section(rc, colY, 'PAIEMENT / PAYMENT');
+        field(rc, colY + 6, 'Prestation :', typeLabelFr);
+        field(rc, colY + 11, 'Date :', dateStr);
+        field(rc, colY + 16, 'Mode :', 'Banque / Cash');
 
-  /* Titre */
-  .title-bar {
-    background: #dc2626;
-    color: #fff;
-    text-align: center;
-    font-size: 9.5pt;
-    font-weight: bold;
-    letter-spacing: 0.06em;
-    padding: 4px 0;
-    margin-bottom: 6px;
-  }
+        // ── Montant ──
+        const ay = 70;
+        doc.setFillColor(254, 242, 242); doc.setDrawColor(...RED); doc.setLineWidth(0.5);
+        doc.roundedRect(L, ay, W, 13, 2, 2, 'FD');
+        doc.setTextColor(...RED); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+        doc.text('MONTANT REÇU / AMOUNT RECEIVED', L + 4, ay + 8);
+        doc.setFontSize(13);
+        doc.text(amountFmt, R - 4, ay + 8.5, { align: 'right' });
+        if (amountWords) {
+            doc.setFont('helvetica', 'italic'); doc.setTextColor(...GRAY); doc.setFontSize(7);
+            doc.text(doc.splitTextToSize(`Arrêté à : ${amountWords}`, W - 4), L + 2, ay + 18);
+        }
 
-  /* Corps */
-  .body-table   { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-  .col-left     { width: 50%; vertical-align: top; padding-right: 8px; border-right: 1px solid #e5e7eb; }
-  .col-right    { width: 50%; vertical-align: top; padding-left: 8px; }
-  .section-label { font-size: 7pt; font-weight: bold; color: #dc2626; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid #fca5a5; padding-bottom: 2px; margin-bottom: 4px; }
-  .field        { margin-bottom: 3px; line-height: 1.4; }
-  .lbl          { font-weight: bold; color: #444; font-size: 8pt; }
-  .val          { color: #111; font-size: 8pt; }
+        // ── Signatures ──
+        const sy = 108;
+        doc.setDrawColor(120, 120, 120); doc.setLineWidth(0.3);
+        doc.line(L + 6, sy, L + 52, sy);
+        doc.line(R - 52, sy, R - 6, sy);
+        doc.setTextColor(...GRAY); doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+        doc.text("L'Étudiant / The Student", L + 29, sy + 4, { align: 'center' });
+        doc.text('Joda Company', R - 29, sy + 4, { align: 'center' });
 
-  /* Montant */
-  .amount-bar {
-    background: #fff7f7;
-    border: 1.5px solid #dc2626;
-    border-radius: 4px;
-    padding: 5px 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 3px;
-  }
-  .amount-label { font-size: 8pt; font-weight: bold; color: #dc2626; }
-  .amount-value { font-size: 13pt; font-weight: 900; color: #dc2626; }
-  .amount-words { font-size: 7.5pt; color: #555; margin-bottom: 6px; padding-left: 4px; }
+        // ── Note de bas de page ──
+        doc.setFont('helvetica', 'italic'); doc.setTextColor(150, 150, 150); doc.setFontSize(6.5);
+        doc.text(
+            isEn ? 'This receipt is proof of payment. Please keep it safe.'
+                 : 'Ce reçu fait foi de paiement. Merci de le conserver.',
+            74, 125, { align: 'center' },
+        );
+    };
 
-  /* Signatures */
-  .sig-table  { width: 100%; border-collapse: collapse; margin-top: 4px; }
-  .sig-box    { width: 50%; text-align: center; padding: 0 10px; }
-  .sig-title  { font-size: 8pt; font-weight: bold; color: #444; margin-bottom: 18px; }
-  .sig-line   { border-bottom: 1px solid #333; margin-bottom: 4px; }
-  .sig-name   { font-size: 7.5pt; color: #555; }
+    drawCopy('ORIGINAL');
+    if (includeDuplicata) { doc.addPage(); drawCopy('DUPLICATA'); }
 
-  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-</style>`;
-
-    const bodyContent = includeDuplicata
-        ? `${quittance('ORIGINAL')}<hr class="cut-line">${quittance('DUPLICATA')}`
-        : quittance('ORIGINAL');
-
-    // Impression native (fenêtre dédiée + auto-print). On N'UTILISE PLUS
-    // html2canvas/jsPDF : sur Tailwind v4 il plante au parsing des couleurs
-    // modernes (« unsupported color function "lab"/"oklch" ») même en iframe
-    // isolée, car jsPDF.html() re-héberge le contenu dans le document principal.
-    // Le moteur d'impression du navigateur rend nativement (couleurs modernes
-    // gérées) et « Enregistrer au format PDF » y est proposé par défaut.
-    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">` +
-        `<title>Quittance ${receiptNo}</title>${styleBlock}` +
-        `<style>@page { size: A5 portrait; margin: 6mm; } @media print { html, body { margin: 0; } }</style>` +
-        `</head><body style="margin:0;background:#ffffff;">` +
-        `<div>${bodyContent}</div>` +
-        `<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};</script>` +
-        `</body></html>`;
-
-    const win = window.open('', '_blank', 'width=900,height=1000');
-    if (!win) {
-        alert(isEn
-            ? 'Please allow pop-ups to print/save the receipt.'
-            : 'Autorisez les fenêtres pop-up pour imprimer/enregistrer le reçu.');
-        return;
-    }
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
+    doc.save(`Quittance_${receiptNo}.pdf`);
 }
-
