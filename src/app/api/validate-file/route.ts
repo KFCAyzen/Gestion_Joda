@@ -3,8 +3,12 @@ import { FILE_LIMITS, validateFile } from '@/app/utils/fileValidation';
 
 export async function POST(request: NextRequest) {
   try {
+    // NextRequest.formData() renvoie un FormData Web valide à l'exécution ; le
+    // type global entre en conflit avec celui de @types/node (undici), d'où
+    // l'accès via un type structurel minimal plutôt qu'un cast global cassé.
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = (formData as unknown as { get(name: string): File | string | null })
+        .get('file') as File;
     
     // Validation du fichier
     const validation = validateFile(file);

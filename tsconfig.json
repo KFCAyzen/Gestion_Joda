@@ -41,6 +41,7 @@
     "electron",
     "dist-electron",
     "release",
+    "mobile",
     "playwright.config.ts"
   ]
 }
