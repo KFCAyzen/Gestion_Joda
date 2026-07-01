@@ -1199,7 +1199,9 @@
       "paymentDeclared": "Paiement déclaré - en attente de validation",
       "paymentError": "Erreur lors de la déclaration",
       "networkError": "Erreur réseau",
-      "uploadError": "Erreur lors de l'envoi de la preuve"
+      "uploadError": "Erreur lors de l'envoi de la preuve",
+      "declarationCancelled": "Déclaration annulée",
+      "declarationCancelError": "Erreur lors de l'annulation"
     },
     "paymentTypes": {
       "scholarship": "Bourse",
@@ -2726,6 +2728,8 @@
     "latePaymentPenalty": "Pénalité de retard",
     "downloadReceipt": "Télécharger le reçu",
     "waitingValidation": "En attente de validation",
+    "cancelDeclaration": "Annuler la déclaration",
+    "cancelDeclarationConfirm": "Annuler cette déclaration de paiement ? Vous pourrez la soumettre à nouveau.",
     "statuses": {
       "unplanned": "Non planifiée",
       "paid": "Payé",

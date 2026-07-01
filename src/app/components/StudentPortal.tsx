@@ -38,6 +38,7 @@ import {
     useStudentUniversity,
     useStudentLastMessage,
     useDeclarePayment,
+    useCancelPaymentDeclaration,
     STUDENT_DOSSIER_KEY,
 } from "../lib/hooks/use-student-portal";
 import { useDocuments } from "../lib/hooks/use-documents";
@@ -135,6 +136,7 @@ type View = StudentView;
 
 export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
     const t = useTranslations("student");
+    const tPaymentOverview = useTranslations("paymentOverview");
     const locale = useLocale();
     const supabase = createClient();
     const queryClient = useQueryClient();
@@ -170,9 +172,11 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
 
     // ── Mutations ──────────────────────────────────────────────────────────────
     const declarePaymentMutation = useDeclarePayment();
+    const cancelDeclarationMutation = useCancelPaymentDeclaration();
 
     // ── État UI local (éphémère, non partagé) ─────────────────────────────────
     const [showPasswordChange, setShowPasswordChange] = useState(false);
+    const [cancelPaymentId, setCancelPaymentId] = useState<string | null>(null);
     const proofInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -266,6 +270,19 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : t("messages.paymentError");
             showNotification(msg, "error");
+        }
+    };
+
+    const handleConfirmCancelDeclaration = async () => {
+        if (!cancelPaymentId) return;
+        try {
+            await cancelDeclarationMutation.mutateAsync(cancelPaymentId);
+            showNotification(t("messages.declarationCancelled"), "success");
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : t("messages.declarationCancelError");
+            showNotification(msg, "error");
+        } finally {
+            setCancelPaymentId(null);
         }
     };
 
@@ -512,6 +529,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 onDeclarePayment={(p, info) =>
                                     handleOpenDeclareModal(p, { ...info, label: info.label })
                                 }
+                                onCancelDeclaration={(p) => setCancelPaymentId(p.id)}
                             />
                         </CardContent>
                     </Card>
@@ -832,6 +850,37 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                             {declarePaymentMutation.isPending
                                 ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("payments.sending")}</>
                                 : t("payments.confirm")}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* ── Modal confirmation annulation de déclaration ── */}
+        {cancelPaymentId && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
+                <div className="student-pay-modal-panel w-full max-w-sm rounded-t-3xl p-6 sm:rounded-3xl">
+                    <h3 className="mb-2 text-lg font-semibold text-[var(--student-fg)]">{tPaymentOverview("cancelDeclaration")}</h3>
+                    <p className="mb-5 text-sm text-[var(--student-fg-muted)]">
+                        {tPaymentOverview("cancelDeclarationConfirm")}
+                    </p>
+                    <div className="flex gap-3">
+                        <Button
+                            variant="outline"
+                            className="student-chip flex-1 rounded-2xl border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.05)] text-[var(--student-fg)] hover:bg-[rgba(220,38,38,0.10)]"
+                            onClick={() => setCancelPaymentId(null)}
+                            disabled={cancelDeclarationMutation.isPending}
+                        >
+                            {t("payments.cancel")}
+                        </Button>
+                        <Button
+                            className="flex-1 rounded-2xl bg-[var(--student-ring-move)] font-semibold text-white hover:brightness-110 disabled:opacity-60"
+                            onClick={handleConfirmCancelDeclaration}
+                            disabled={cancelDeclarationMutation.isPending}
+                        >
+                            {cancelDeclarationMutation.isPending
+                                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("payments.sending")}</>
+                                : tPaymentOverview("cancelDeclaration")}
                         </Button>
                     </div>
                 </div>

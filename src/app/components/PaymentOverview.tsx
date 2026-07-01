@@ -225,6 +225,7 @@ export default function PaymentOverview({
     payments,
     onDownloadReceipt,
     onDeclarePayment,
+    onCancelDeclaration,
 }: {
     choix: string;
     langue: string;
@@ -233,6 +234,7 @@ export default function PaymentOverview({
     payments: Payment[];
     onDownloadReceipt?: (payment: Payment) => void;
     onDeclarePayment?: (payment: Payment | null, info: TrancheDeclareInfo) => void;
+    onCancelDeclaration?: (payment: Payment) => void;
 }) {
     const { getConfig, getBourseConfig } = usePaymentConfig();
     const t = useTranslations("paymentOverview");
@@ -523,10 +525,21 @@ export default function PaymentOverview({
                                                 </button>
                                             ) : null}
                                             {payment?.status === "en_validation" ? (
-                                                <div className="student-pay-pill flex flex-1 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--student-ring-exercise)] sm:flex-none">
-                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                                                    {t("waitingValidation")}
-                                                </div>
+                                                <>
+                                                    <div className="student-pay-pill flex flex-1 items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--student-ring-exercise)] sm:flex-none">
+                                                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                                                        {t("waitingValidation")}
+                                                    </div>
+                                                    {onCancelDeclaration ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onCancelDeclaration(payment)}
+                                                            className="student-focus-ring student-pay-pill flex-1 px-3 py-2 text-center text-xs font-semibold text-[var(--student-ring-move)] transition-colors hover:bg-[rgba(255,65,85,0.08)] sm:flex-none"
+                                                        >
+                                                            {t("cancelDeclaration")}
+                                                        </button>
+                                                    ) : null}
+                                                </>
                                             ) : null}
                                         </div>
                                     </div>

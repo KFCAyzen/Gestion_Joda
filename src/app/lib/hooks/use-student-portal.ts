@@ -197,3 +197,24 @@ export function useDeclarePayment() {
     },
   });
 }
+
+export function useCancelPaymentDeclaration() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payment_id: string) => {
+      const res = await fetch('/api/cancel-payment-declaration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Erreur serveur');
+      return data;
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: STUDENT_PAYMENTS_KEY });
+    },
+  });
+}

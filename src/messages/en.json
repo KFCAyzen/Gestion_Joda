@@ -1199,7 +1199,9 @@
       "paymentDeclared": "Payment declared - awaiting validation",
       "paymentError": "Error during declaration",
       "networkError": "Network error",
-      "uploadError": "Error uploading proof"
+      "uploadError": "Error uploading proof",
+      "declarationCancelled": "Declaration cancelled",
+      "declarationCancelError": "Error while cancelling"
     },
     "paymentTypes": {
       "scholarship": "Scholarship",
@@ -2726,6 +2728,8 @@
     "latePaymentPenalty": "Late penalty",
     "downloadReceipt": "Download receipt",
     "waitingValidation": "Waiting for validation",
+    "cancelDeclaration": "Cancel declaration",
+    "cancelDeclarationConfirm": "Cancel this payment declaration? You will be able to submit it again.",
     "statuses": {
       "unplanned": "Not scheduled",
       "paid": "Paid",

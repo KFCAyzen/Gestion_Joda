@@ -388,6 +388,32 @@ export default function PaymentsPage() {
         notifyPaymentResult(payment, false, 0, reason || null);
     };
 
+    // Annulation (retrait neutre d'une déclaration en attente) — via l'API
+    // partagée qui gère l'autorisation et la notification étudiant.
+    const handleCancelDeclaration = async (paymentId: string) => {
+        if (!user || !canValidatePayment) return;
+        try {
+            const res = await fetch("/api/cancel-payment-declaration", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ payment_id: paymentId }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "Erreur serveur");
+            await logActivity(
+                user.id, user.name, user.role,
+                "payment_validate", "payment", paymentId,
+                "Déclaration de paiement annulée",
+                { payment_id: paymentId, cancelled: true }
+            );
+            showNotification("Déclaration annulée", "success");
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Erreur lors de l'annulation";
+            showNotification(msg, "error");
+        }
+    };
+
     const handleValidateAll = async () => {
         const toValidate = filtered;
         for (const p of toValidate) {
@@ -783,12 +809,30 @@ export default function PaymentsPage() {
                                                         ) : canValidatePayment ? (
                                                             <>
                                                                 {payment.status === "en_validation" && (
-                                                                    <button
-                                                                        onClick={() => setRejectModal({ open: true, paymentId: payment.id, reason: "" })}
-                                                                        className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                                    >
-                                                                        Rejeter
-                                                                    </button>
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                setConfirmDialog({
+                                                                                    isOpen: true,
+                                                                                    title: "Annuler cette déclaration ?",
+                                                                                    description: `La déclaration de ${name} sera retirée et le paiement remis en attente. L'étudiant pourra la soumettre à nouveau.`,
+                                                                                    onConfirm: async () => {
+                                                                                        closeConfirm();
+                                                                                        await handleCancelDeclaration(payment.id);
+                                                                                    },
+                                                                                })
+                                                                            }
+                                                                            className="rounded-full border border-gray-300 dark:border-gray-600 px-3.5 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                                                        >
+                                                                            Annuler
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setRejectModal({ open: true, paymentId: payment.id, reason: "" })}
+                                                                            className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                        >
+                                                                            Rejeter
+                                                                        </button>
+                                                                    </>
                                                                 )}
                                                                 <button
                                                                     onClick={() =>
