@@ -1,6 +1,8 @@
 // Port de `src/app/lib/student-auth.ts` (web).
 // Les étudiants se connectent avec un identifiant (username) converti en email
 // d'auth synthétique ; le staff se connecte avec son email réel.
+import * as Crypto from 'expo-crypto';
+
 const STUDENT_AUTH_DOMAIN = 'students.joda.app';
 
 function slugifyPart(value: string): string {
@@ -34,11 +36,13 @@ export function buildStudentUsername(prenom: string, nom: string, suffix = 0): s
 export function generateTemporaryPassword(): string {
   const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 symboles
   const LEN = 8;
-  const g = globalThis as { crypto?: { getRandomValues?: (a: Uint8Array) => Uint8Array } };
-  const bytes = new Uint8Array(LEN);
-  if (g.crypto?.getRandomValues) {
-    g.crypto.getRandomValues(bytes);
-  } else {
+  // `expo-crypto` fournit un CSPRNG garanti en Expo (Uint8Array synchrone).
+  // Repli best-effort si l'appel échoue (ne doit pas arriver en runtime Expo).
+  let bytes: Uint8Array;
+  try {
+    bytes = Crypto.getRandomBytes(LEN);
+  } catch {
+    bytes = new Uint8Array(LEN);
     for (let i = 0; i < LEN; i++) bytes[i] = Math.floor(Math.random() * 256);
   }
   let block = '';
