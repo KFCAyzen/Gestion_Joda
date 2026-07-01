@@ -963,3 +963,22 @@ body {
   --student-surface: rgba(220, 38, 38, 0.07);
   --student-surface-2: rgba(220, 38, 38, 0.03);
 }
+/* Dark mode : les cartes de paiement avaient un fond blanc codé en dur alors
+   que le texte passe en quasi-blanc → texte illisible. On repasse les surfaces
+   en slate foncé, cohérent avec la modal (dark:bg-slate-900). */
+.dark .admin-payment-wrapper .student-pay-surface-soft,
+.dark .admin-payment-wrapper .student-pay-surface {
+  border: 1px solid #334155;
+  background: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.dark .admin-payment-wrapper .student-pay-pill {
+  border: 1px solid #334155;
+  background: #0f172a;
+  box-shadow: none;
+}
+.dark .admin-payment-wrapper .bg-black\/25,
+.dark .admin-payment-wrapper .bg-black\/45,
+.dark .admin-payment-wrapper .bg-black\/50 {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
