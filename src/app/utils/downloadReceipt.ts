@@ -108,9 +108,14 @@ export async function downloadReceipt(
 
     const typeLabelFr = getTypeLabel(payment, 'fr');
     const isIntl = isInternational(student.nationalite);
+    // Regroupement des milliers en ASCII : toLocaleString('fr-FR') utilise une
+    // espace fine insécable (U+202F) que la police jsPDF ne sait pas rendre
+    // (glyphe parasite type « / »).
+    const groupNum = (n: number, sep: string) =>
+        Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, sep);
     const amountFmt = isIntl
-        ? '$' + Math.round(payment.montant).toLocaleString('fr-FR')
-        : Math.round(payment.montant).toLocaleString('fr-FR') + ' FCFA';
+        ? '$' + groupNum(payment.montant, ',')
+        : groupNum(payment.montant, ' ') + ' FCFA';
     // Montant en lettres uniquement pour FCFA (numberToWords est en français).
     const amountWords = isIntl ? '' : `${numberToWords(payment.montant)} francs CFA`;
     const receiptNo = payment.id.slice(-8).toUpperCase();
@@ -182,16 +187,21 @@ export async function downloadReceipt(
         };
 
         const colY = 44;
+        const rc = 76;
+        // Séparateur vertical entre les deux colonnes (comme la version imprimée).
+        doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
+        doc.line(rc - 5, colY - 3, rc - 5, colY + 24);
+
         section(L, colY, 'BÉNÉFICIAIRE / RECIPIENT');
         field(L, colY + 6, 'Nom :', studentName);
         field(L, colY + 11, 'Tél :', (student.telephone || '').replace(/^undefined\s*/i, ''));
         field(L, colY + 16, 'Niveau :', student.niveau);
 
-        const rc = 76;
         section(rc, colY, 'PAIEMENT / PAYMENT');
-        field(rc, colY + 6, 'Prestation :', typeLabelFr);
-        field(rc, colY + 11, 'Date :', dateStr);
-        field(rc, colY + 16, 'Mode :', 'Banque / Cash');
+        field(rc, colY + 6, 'Objet :', 'Assistance visa');
+        field(rc, colY + 11, 'Prestation :', typeLabelFr);
+        field(rc, colY + 16, 'Date :', dateStr);
+        field(rc, colY + 21, 'Mode :', 'Banque / Cash');
 
         // ── Montant ──
         const ay = 70;
@@ -225,7 +235,8 @@ export async function downloadReceipt(
     };
 
     drawCopy('ORIGINAL');
-    if (includeDuplicata) { doc.addPage(); drawCopy('DUPLICATA'); }
+    // addPage() sans argument retombe sur A4 → on force A5 pour le duplicata.
+    if (includeDuplicata) { doc.addPage('a5', 'portrait'); drawCopy('DUPLICATA'); }
 
     doc.save(`Quittance_${receiptNo}.pdf`);
 }
