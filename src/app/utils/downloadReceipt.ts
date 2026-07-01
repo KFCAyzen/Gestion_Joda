@@ -281,23 +281,45 @@ export async function downloadReceipt(
         ? `${quittance('ORIGINAL')}<hr class="cut-line">${quittance('DUPLICATA')}`
         : quittance('ORIGINAL');
 
-    // Conteneur off-screen pour le rendu html2canvas via jsPDF.html()
+    // Rendu isolé dans une iframe dédiée. IMPÉRATIF : le conteneur ne doit PAS
+    // hériter des styles globaux de l'app (Tailwind v4 utilise oklch(), que
+    // html2canvas 1.4.1 — moteur de jsPDF.html() — ne sait pas parser et qui
+    // faisait planter toute génération de reçu). L'iframe n'embarque que les
+    // styles de la quittance.
     const A5_WIDTH_MM = 148;
     const RENDER_WIDTH_PX = 560; // ≈ 148 mm @ 96 dpi
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.left = '-10000px';
-    container.style.top = '0';
-    container.style.width = `${RENDER_WIDTH_PX}px`;
-    container.style.background = '#ffffff';
-    container.innerHTML = `${styleBlock}<div style="padding:8mm;width:100%;">${bodyContent}</div>`;
-    document.body.appendChild(container);
+
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.left = '-10000px';
+    iframe.style.top = '0';
+    iframe.style.width = `${RENDER_WIDTH_PX}px`;
+    iframe.style.height = '10px';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const idoc = iframe.contentDocument;
+    if (!idoc) {
+        iframe.remove();
+        alert(isEn ? 'Could not download the receipt. Please retry.' : 'Téléchargement du reçu impossible. Réessayez.');
+        return;
+    }
+    idoc.open();
+    idoc.write(
+        `<!DOCTYPE html><html><head><meta charset="utf-8">${styleBlock}</head>` +
+        `<body style="margin:0;background:#ffffff;color:#111;">` +
+        `<div style="padding:8mm;width:100%;">${bodyContent}</div></body></html>`
+    );
+    idoc.close();
 
     const filename = `Quittance_${receiptNo}.pdf`;
 
     try {
+        // Laisse le logo (data URL) se décoder avant la capture.
+        await new Promise((r) => setTimeout(r, 60));
         const doc = new jsPDF({ unit: 'mm', format: 'a5', orientation: 'portrait' });
-        await doc.html(container, {
+        await doc.html(idoc.body, {
             x: 0,
             y: 0,
             width: A5_WIDTH_MM,
@@ -313,12 +335,11 @@ export async function downloadReceipt(
         doc.save(filename);
     } catch (err) {
         console.error('Erreur génération PDF reçu', err);
-        const isFr = !isEn;
-        alert(isFr
-            ? 'Téléchargement du reçu impossible. Réessayez.'
-            : 'Could not download the receipt. Please retry.');
+        alert(isEn
+            ? 'Could not download the receipt. Please retry.'
+            : 'Téléchargement du reçu impossible. Réessayez.');
     } finally {
-        container.remove();
+        iframe.remove();
     }
 }
 
