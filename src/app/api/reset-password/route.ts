@@ -21,9 +21,13 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
 function generateTempPassword(): string {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    // CSPRNG (Web Crypto, global en Node 18+) plutôt que Math.random.
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 32 symboles, sans ambigus
+    const LEN = 8;
+    const bytes = new Uint8Array(LEN);
+    crypto.getRandomValues(bytes);
     let suffix = "";
-    for (let i = 0; i < 5; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < LEN; i++) suffix += chars[bytes[i] % chars.length];
     return `Joda@${suffix}`;
 }
 

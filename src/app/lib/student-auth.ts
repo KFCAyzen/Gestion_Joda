@@ -26,7 +26,23 @@ export function buildStudentAuthEmail(username: string) {
     return `${slugifyPart(username)}@${STUDENT_AUTH_DOMAIN}`;
 }
 
+/**
+ * Mot de passe temporaire `Joda@XXXXXXXX9`.
+ * Sécurité : CSPRNG via `crypto.getRandomValues` — disponible nativement dans le
+ * navigateur et dans Node 18+ (Web Crypto global). Repli sur `Math.random`
+ * seulement si aucun CSPRNG n'est présent. Alphabet sans caractères ambigus.
+ */
 export function generateTemporaryPassword() {
-    const randomBlock = Math.random().toString(36).slice(-4).toUpperCase();
-    return `Joda@${randomBlock}9`;
+    const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 32 symboles
+    const LEN = 8;
+    const g = globalThis as { crypto?: { getRandomValues?: (a: Uint8Array) => Uint8Array } };
+    const bytes = new Uint8Array(LEN);
+    if (g.crypto?.getRandomValues) {
+        g.crypto.getRandomValues(bytes);
+    } else {
+        for (let i = 0; i < LEN; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
+    let block = "";
+    for (let i = 0; i < LEN; i++) block += ALPHABET[bytes[i] % ALPHABET.length];
+    return `Joda@${block}9`;
 }
