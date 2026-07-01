@@ -50,36 +50,19 @@ function waitForImages(idoc: Document): Promise<void> {
   });
 }
 
-export interface HtmlDocPdfOptions {
-  /** Format de page jsPDF (défaut : "a4"). */
-  format?: "a4" | "a5";
-  /** Largeur de rendu en px (défaut : dérivée du format @96 dpi). */
-  renderWidthPx?: number;
-  /** Largeur de page en mm (défaut : dérivée du format). */
-  pageWidthMm?: number;
-}
-
-const mmToPx = (mm: number) => Math.round((mm / 25.4) * 96);
-
-export async function downloadHtmlDocAsPdf(
-  html: string,
-  filename: string,
-  opts: HtmlDocPdfOptions = {},
-): Promise<void> {
+export async function downloadHtmlDocAsPdf(html: string, filename: string): Promise<void> {
   if (typeof window === "undefined") return;
 
   // Version sans le script d'auto-impression pour le rendu hors-écran.
   const cleaned = html.replace(/<script[\s\S]*?<\/script>/gi, "");
 
-  const format = opts.format ?? "a4";
-  const PAGE_WIDTH_MM = opts.pageWidthMm ?? (format === "a5" ? 148 : 210);
-  const PAGE_HEIGHT_MM = format === "a5" ? 210 : 297;
-  const RENDER_WIDTH_PX = opts.renderWidthPx ?? mmToPx(PAGE_WIDTH_MM);
-  const MIN_HEIGHT_PX = mmToPx(PAGE_HEIGHT_MM);
+  const RENDER_WIDTH_PX = 794; // ≈ 210 mm (A4) @ 96 dpi
+  const A4_WIDTH_MM = 210;
 
   const iframe = document.createElement("iframe");
   iframe.setAttribute("aria-hidden", "true");
-  iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${RENDER_WIDTH_PX}px;height:${MIN_HEIGHT_PX}px;border:0;background:#ffffff;`;
+  iframe.style.cssText =
+    "position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;background:#ffffff;";
   document.body.appendChild(iframe);
 
   try {
@@ -91,13 +74,13 @@ export async function downloadHtmlDocAsPdf(
 
     await waitForImages(idoc);
     // Laisse l'iframe s'étendre à la hauteur réelle du contenu pour ne rien tronquer.
-    iframe.style.height = `${Math.max(idoc.body.scrollHeight, MIN_HEIGHT_PX)}px`;
+    iframe.style.height = `${Math.max(idoc.body.scrollHeight, 1123)}px`;
 
-    const doc = new jsPDF({ unit: "mm", format, orientation: "portrait" });
+    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     await doc.html(idoc.body, {
       x: 0,
       y: 0,
-      width: PAGE_WIDTH_MM,
+      width: A4_WIDTH_MM,
       windowWidth: RENDER_WIDTH_PX,
       autoPaging: "text",
       margin: 0,

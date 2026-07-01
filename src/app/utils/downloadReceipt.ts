@@ -1,6 +1,5 @@
 import { sanitizeForHtml } from "./security";
 import { isInternational } from "../types/payment-config";
-import { downloadHtmlDocAsPdf } from "../lib/htmlDocToPdf";
 
 export interface ReceiptPayment {
     id: string;
@@ -281,18 +280,29 @@ export async function downloadReceipt(
         ? `${quittance('ORIGINAL')}<hr class="cut-line">${quittance('DUPLICATA')}`
         : quittance('ORIGINAL');
 
-    // Document HTML complet + rendu via la même stratégie que l'impression
-    // (downloadHtmlDocAsPdf : iframe isolée, attente des images, repli
-    // impression). Le fragment injecté dans le document principal produisait
-    // un PDF vide multi-pages (styles globaux + rendu html2canvas hors-écran) ;
-    // un document autonome dans une iframe règle le problème et évite les
-    // couleurs oklch/lab de l'app.
+    // Impression native (fenêtre dédiée + auto-print). On N'UTILISE PLUS
+    // html2canvas/jsPDF : sur Tailwind v4 il plante au parsing des couleurs
+    // modernes (« unsupported color function "lab"/"oklch" ») même en iframe
+    // isolée, car jsPDF.html() re-héberge le contenu dans le document principal.
+    // Le moteur d'impression du navigateur rend nativement (couleurs modernes
+    // gérées) et « Enregistrer au format PDF » y est proposé par défaut.
     const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">` +
-        `<title>Quittance ${receiptNo}</title>${styleBlock}</head>` +
-        `<body style="margin:0;background:#ffffff;">` +
-        `<div style="padding:6mm;">${bodyContent}</div></body></html>`;
+        `<title>Quittance ${receiptNo}</title>${styleBlock}` +
+        `<style>@page { size: A5 portrait; margin: 6mm; } @media print { html, body { margin: 0; } }</style>` +
+        `</head><body style="margin:0;background:#ffffff;">` +
+        `<div>${bodyContent}</div>` +
+        `<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};</script>` +
+        `</body></html>`;
 
-    const filename = `Quittance_${receiptNo}.pdf`;
-    await downloadHtmlDocAsPdf(html, filename, { format: 'a5' });
+    const win = window.open('', '_blank', 'width=900,height=1000');
+    if (!win) {
+        alert(isEn
+            ? 'Please allow pop-ups to print/save the receipt.'
+            : 'Autorisez les fenêtres pop-up pour imprimer/enregistrer le reçu.');
+        return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
 }
 
