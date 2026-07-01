@@ -5,8 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Search, AlertTriangle, FileText, CheckCircle, User, DollarSign, CreditCard, Clock, RefreshCw } from "lucide-react";
 import { Bar, BarChart, Cell, ResponsiveContainer } from "recharts";
 import { useApplications, APPLICATIONS_KEY } from "../lib/hooks/use-applications";
-import { usePayments, PAYMENTS_KEY } from "../lib/hooks/use-payments";
 import { useUniversities, UNIVERSITIES_KEY } from "../lib/hooks/use-universities";
+import { useEntreesComptables, ENTREES_KEY } from "../lib/hooks/use-accounting";
 import { getActivityLogs, ActivityType, ACTIVITY_LABELS } from "../utils/activityLogger";
 import { useTheme } from "../context/ThemeContext";
 import ProtectedRoute from "./ProtectedRoute";
@@ -237,10 +237,10 @@ export default function AdminOperationalDashboard() {
     const [showSearch, setShowSearch] = useState(false);
 
     const { data: _applicationsData = [], isLoading: appsLoading } = useApplications();
-    const { data: _paymentsData = [], isLoading: paymentsLoading } = usePayments();
     const { data: _universitiesData = [] } = useUniversities(false);
+    const { data: _entreesData = [], isLoading: entreesLoading } = useEntreesComptables();
 
-    const isLoading = isLogsLoading || appsLoading || paymentsLoading;
+    const isLoading = isLogsLoading || appsLoading || entreesLoading;
 
     useEffect(() => {
         setIsLogsLoading(true);
@@ -260,11 +260,11 @@ export default function AdminOperationalDashboard() {
 
     const stats = useMemo<DashboardStats>(() => {
         type DossierRow = { id: string; status: string | null; created_at: string; university_id: string | null };
-        type PaymentRow = { id: string; montant: number; status: string; created_at: string; date_paiement: string | null; type: string };
+        type EntreeRow = { id: string; montant: number; date: string; created_at: string };
         type UniversityRow = { id: string; nom: string };
 
         const dossiers = _applicationsData as unknown as DossierRow[];
-        const payments = _paymentsData as unknown as PaymentRow[];
+        const entrees = _entreesData as unknown as EntreeRow[];
         const universities = _universitiesData as unknown as UniversityRow[];
 
         const aTraiterStatuses = ["document_manquant", "en_attente", "en_attente_universite"];
@@ -278,19 +278,24 @@ export default function AdminOperationalDashboard() {
         const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const lastMonthEnd = thisMonthStart;
 
-        const thisMonthPayments = payments
-            .filter((p) => {
-                const date = new Date(p.date_paiement || p.created_at || "");
-                return p.status === "paye" && date >= thisMonthStart;
+        // « Encaissé » = argent réellement entré en caisse, càd les entrées
+        // comptables du mois (chaque validation de paiement — partielle ou
+        // totale — y insère le montant validé). On ne peut pas se baser sur
+        // payments.status === "paye" : un règlement partiel garde le statut
+        // "attente" alors que l'argent est bien encaissé.
+        const thisMonthPayments = entrees
+            .filter((e) => {
+                const date = new Date(e.date || e.created_at || "");
+                return date >= thisMonthStart;
             })
-            .reduce((sum, p) => sum + (p.montant || 0), 0);
+            .reduce((sum, e) => sum + (Number(e.montant) || 0), 0);
 
-        const lastMonthPayments = payments
-            .filter((p) => {
-                const date = new Date(p.date_paiement || p.created_at || "");
-                return p.status === "paye" && date >= lastMonthStart && date < lastMonthEnd;
+        const lastMonthPayments = entrees
+            .filter((e) => {
+                const date = new Date(e.date || e.created_at || "");
+                return date >= lastMonthStart && date < lastMonthEnd;
             })
-            .reduce((sum, p) => sum + (p.montant || 0), 0);
+            .reduce((sum, e) => sum + (Number(e.montant) || 0), 0);
 
         const encaisseGrowth =
             lastMonthPayments === 0
@@ -345,7 +350,7 @@ export default function AdminOperationalDashboard() {
             weeklyFlux,
             topUniversities,
         };
-    }, [_applicationsData, _paymentsData, _universitiesData]);
+    }, [_applicationsData, _entreesData, _universitiesData]);
 
     const { title, subtitle } = formatHeaderDate(view);
 
@@ -404,8 +409,8 @@ export default function AdminOperationalDashboard() {
                     <button
                         onClick={() => {
                             queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY });
-                            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
                             queryClient.invalidateQueries({ queryKey: UNIVERSITIES_KEY });
+                            queryClient.invalidateQueries({ queryKey: ENTREES_KEY });
                             setRefreshTick((t) => t + 1);
                         }}
                         className="ml-1 text-gray-400 hover:text-gray-600 dark:text-gray-400">
