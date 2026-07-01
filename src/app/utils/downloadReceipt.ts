@@ -281,45 +281,25 @@ export async function downloadReceipt(
         ? `${quittance('ORIGINAL')}<hr class="cut-line">${quittance('DUPLICATA')}`
         : quittance('ORIGINAL');
 
-    // Rendu isolé dans une iframe dédiée. IMPÉRATIF : le conteneur ne doit PAS
-    // hériter des styles globaux de l'app (Tailwind v4 utilise oklch(), que
-    // html2canvas 1.4.1 — moteur de jsPDF.html() — ne sait pas parser et qui
-    // faisait planter toute génération de reçu). L'iframe n'embarque que les
-    // styles de la quittance.
+    // Conteneur off-screen pour le rendu html2canvas via jsPDF.html()
     const A5_WIDTH_MM = 148;
     const RENDER_WIDTH_PX = 560; // ≈ 148 mm @ 96 dpi
-
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.position = 'fixed';
-    iframe.style.left = '-10000px';
-    iframe.style.top = '0';
-    iframe.style.width = `${RENDER_WIDTH_PX}px`;
-    iframe.style.height = '10px';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-
-    const idoc = iframe.contentDocument;
-    if (!idoc) {
-        iframe.remove();
-        alert(isEn ? 'Could not download the receipt. Please retry.' : 'Téléchargement du reçu impossible. Réessayez.');
-        return;
-    }
-    idoc.open();
-    idoc.write(
-        `<!DOCTYPE html><html><head><meta charset="utf-8">${styleBlock}</head>` +
-        `<body style="margin:0;background:#ffffff;color:#111;">` +
-        `<div style="padding:8mm;width:100%;">${bodyContent}</div></body></html>`
-    );
-    idoc.close();
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-10000px';
+    container.style.top = '0';
+    container.style.width = `${RENDER_WIDTH_PX}px`;
+    container.style.background = '#ffffff';
+    container.style.color = '#111111';
+    container.style.colorScheme = 'light';
+    container.innerHTML = `${styleBlock}<div style="padding:8mm;width:100%;">${bodyContent}</div>`;
+    document.body.appendChild(container);
 
     const filename = `Quittance_${receiptNo}.pdf`;
 
     try {
-        // Laisse le logo (data URL) se décoder avant la capture.
-        await new Promise((r) => setTimeout(r, 60));
         const doc = new jsPDF({ unit: 'mm', format: 'a5', orientation: 'portrait' });
-        await doc.html(idoc.body, {
+        await doc.html(container, {
             x: 0,
             y: 0,
             width: A5_WIDTH_MM,
@@ -330,6 +310,29 @@ export async function downloadReceipt(
                 scale: 2,
                 useCORS: true,
                 backgroundColor: '#ffffff',
+                // Tailwind v4 emploie des fonctions couleur modernes (oklch/lab/
+                // color-mix) que html2canvas 1.4.1 ne sait pas parser : elles
+                // fuient dans le conteneur via les styles globaux et font planter
+                // la génération. On neutralise toute couleur non supportée dans le
+                // clone (parsé APRÈS onclone) en la remplaçant par une valeur sûre.
+                onclone: (clonedDoc: Document) => {
+                    const win = clonedDoc.defaultView;
+                    if (!win) return;
+                    const BAD = /\b(oklch|oklab|lab|lch|color-mix|color)\s*\(/i;
+                    const safe = (v: string) => BAD.test(v);
+                    clonedDoc.querySelectorAll<HTMLElement>('*').forEach((el) => {
+                        const cs = win.getComputedStyle(el);
+                        if (safe(cs.color)) el.style.color = '#111111';
+                        if (safe(cs.backgroundColor)) el.style.backgroundColor = 'transparent';
+                        if (safe(cs.borderTopColor)) el.style.borderTopColor = '#e5e7eb';
+                        if (safe(cs.borderRightColor)) el.style.borderRightColor = '#e5e7eb';
+                        if (safe(cs.borderBottomColor)) el.style.borderBottomColor = '#e5e7eb';
+                        if (safe(cs.borderLeftColor)) el.style.borderLeftColor = '#e5e7eb';
+                        if (safe(cs.outlineColor)) el.style.outlineColor = '#e5e7eb';
+                        if (safe(cs.boxShadow)) el.style.boxShadow = 'none';
+                        if (safe(cs.backgroundImage)) el.style.backgroundImage = 'none';
+                    });
+                },
             },
         });
         doc.save(filename);
@@ -339,7 +342,7 @@ export async function downloadReceipt(
             ? 'Could not download the receipt. Please retry.'
             : 'Téléchargement du reçu impossible. Réessayez.');
     } finally {
-        iframe.remove();
+        container.remove();
     }
 }
 
