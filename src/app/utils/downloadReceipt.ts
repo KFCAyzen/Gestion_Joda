@@ -228,7 +228,7 @@ export async function downloadReceipt(
   .company-sub  { font-size: 7pt; color: #555; margin-top: 2px; line-height: 1.4; white-space: nowrap; }
   .company-info { font-size: 6.5pt; color: #777; margin-top: 3px; }
   .copy-cell    { width: 90px; text-align: right; vertical-align: top; }
-  .copy-badge   { display: inline-block; background: #dc2626; color: #fff; font-size: 7pt; font-weight: bold; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.08em; }
+  .copy-badge   { display: inline-block; background: #dc2626; color: #fff; font-size: 7pt; font-weight: bold; padding: 0 7px; line-height: 16px; height: 16px; border-radius: 3px; letter-spacing: 0.08em; }
   .receipt-no   { font-size: 8pt; font-weight: bold; color: #111; margin-top: 4px; }
   .receipt-date { font-size: 7.5pt; color: #555; margin-top: 2px; }
 
@@ -240,7 +240,9 @@ export async function downloadReceipt(
     font-size: 9.5pt;
     font-weight: bold;
     letter-spacing: 0.06em;
-    padding: 4px 0;
+    line-height: 22px;
+    height: 22px;
+    padding: 0;
     margin-bottom: 6px;
   }
 
@@ -248,7 +250,7 @@ export async function downloadReceipt(
   .body-table   { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
   .col-left     { width: 50%; vertical-align: top; padding-right: 8px; border-right: 1px solid #e5e7eb; }
   .col-right    { width: 50%; vertical-align: top; padding-left: 8px; }
-  .section-label { font-size: 7pt; font-weight: bold; color: #dc2626; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid #fca5a5; padding-bottom: 2px; margin-bottom: 4px; }
+  .section-label { font-size: 7pt; font-weight: bold; color: #dc2626; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.3; border-bottom: 1px solid #fca5a5; padding-bottom: 5px; margin-bottom: 5px; }
   .field        { margin-bottom: 3px; line-height: 1.4; }
   .lbl          { font-weight: bold; color: #444; font-size: 8pt; }
   .val          { color: #111; font-size: 8pt; }
