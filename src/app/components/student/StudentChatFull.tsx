@@ -40,6 +40,10 @@ interface Props {
     onUnreadChange?: (n: number) => void;
 }
 
+// Tableau vide partagé : sert de valeur par défaut stable à `messages` (évite
+// une nouvelle référence à chaque rendu, qui relancerait l'effet [messages]).
+const NO_MESSAGES: ChatMessage[] = [];
+
 function fmtTime(iso: string): string {
     return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
@@ -95,7 +99,9 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
     const bottomRef = useRef<HTMLDivElement>(null);
 
     // ── TanStack Query ────────────────────────────────────────────────────────
-    const { data: messages = [], isLoading: loading } = useStudentChat(userId);
+    // Référence stable pour l'état vide : `= []` créerait un nouveau tableau à
+    // chaque rendu et ferait tourner l'effet [messages] en boucle.
+    const { data: messages = NO_MESSAGES, isLoading: loading } = useStudentChat(userId);
     const sendChatMessage = useSendChatMessage(userId);
     const markMessagesRead = useMarkMessagesRead();
 
@@ -108,7 +114,8 @@ export function StudentChatFull({ userId, agentName, onBack, dossier, nextPaymen
             .filter((m) => m.to_user_id === userId && !m.read)
             .map((m) => m.id);
         if (unreadIds.length > 0) markMessagesRead.mutate(unreadIds);
-        onUnreadChange?.(unreadIds.length > 0 ? 0 : 0);
+        // La conversation est ouverte → aucun non-lu résiduel côté badge.
+        onUnreadChange?.(0);
     }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Scroll automatique vers le bas

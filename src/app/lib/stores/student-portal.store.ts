@@ -83,5 +83,10 @@ export const useStudentPortalStore = create<StudentPortalState>((set) => ({
 
   // Messagerie
   unreadMessages: 0,
-  setUnreadMessages: (unreadMessages) => set({ unreadMessages }),
+  // Bail si la valeur est inchangée : renvoyer le même état évite à zustand de
+  // notifier ses abonnés (dont StudentPortal, abonné au store entier). Sans ce
+  // garde, un setUnreadMessages(0) répété recrée un état → re-render → l'effet
+  // enfant rappelle setUnreadMessages(0) → boucle infinie (React #185).
+  setUnreadMessages: (unreadMessages) =>
+    set((s) => (s.unreadMessages === unreadMessages ? s : { unreadMessages })),
 }));
