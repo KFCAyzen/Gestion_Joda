@@ -45,6 +45,30 @@ const VIEWS = [
   { id: 'annee', label: 'Année' },
 ];
 
+// Début (ms) de la période en cours pour la vue choisie. Sert à filtrer la
+// liste et les flux affichés — le solde courant reste global (cf. carte).
+function periodStartMs(view: string): number {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  switch (view) {
+    case 'jour':
+      return d.getTime();
+    case 'semaine': {
+      const s = new Date(d);
+      s.setDate(d.getDate() - d.getDay());
+      return s.getTime();
+    }
+    case 'mois':
+      return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+    case 'trimestre':
+      return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1).getTime();
+    case 'annee':
+      return new Date(d.getFullYear(), 0, 1).getTime();
+    default:
+      return 0;
+  }
+}
+
 export default function AdminCompta() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -68,7 +92,17 @@ export default function AdminCompta() {
     cat: 'divers',
   });
 
-  const rows = (data?.rows ?? []).filter((r) => filter === 'tout' || (filter === 'entrees' ? r.kind === 'in' : r.kind === 'out'));
+  // Filtrage par période (le solde courant, lui, reste global).
+  const periodRows = useMemo(() => {
+    const start = periodStartMs(view);
+    return (data?.rows ?? []).filter((r) => new Date(r.date).getTime() >= start);
+  }, [data, view]);
+  const periodEntrees = periodRows.filter((r) => r.kind === 'in').reduce((s, r) => s + r.montant, 0);
+  const periodSorties = periodRows
+    .filter((r) => r.kind === 'out' && !r.needsValidation)
+    .reduce((s, r) => s + r.montant, 0);
+
+  const rows = periodRows.filter((r) => filter === 'tout' || (filter === 'entrees' ? r.kind === 'in' : r.kind === 'out'));
 
   function openAdd(kind: 'entree' | 'sortie') {
     setForm({ kind, montant: '', description: '', cat: kind === 'entree' ? 'revenus_divers' : 'divers' });
@@ -130,9 +164,12 @@ export default function AdminCompta() {
           <ScrollView contentContainerStyle={{ paddingBottom: 130, gap: spacing.cardGap }} showsVerticalScrollIndicator={false}>
             <SegFilter options={VIEWS} value={view} onChange={setView} />
 
-            {/* Solde */}
+            {/* Solde courant — trésorerie globale, stable quelle que soit la période */}
             <GlassCard variant="strong">
-              <Text style={T.eyebrow}>Solde</Text>
+              <View style={styles.soldeHead}>
+                <Text style={T.eyebrow}>Solde courant</Text>
+                <Text style={styles.soldeHint}>Trésorerie globale</Text>
+              </View>
               <Text style={[styles.solde, { color: data.solde >= 0 ? colors.mint : colors.crimsonVivid }]}>
                 {data.solde >= 0 ? '+' : '−'}
                 {fmtFCFA(Math.abs(data.solde))} <Text style={styles.cur}>FCFA</Text>
@@ -141,16 +178,16 @@ export default function AdminCompta() {
                 <View style={[styles.flowBox, styles.flowIn]}>
                   <View style={styles.flowHead}>
                     <ArrowDownLeft size={12} color={colors.mint} />
-                    <Text style={[T.t3, { color: colors.mint }]}>Entrées</Text>
+                    <Text style={[T.t3, { color: colors.mint }]}>Entrées {view === 'jour' ? 'jour' : 'période'}</Text>
                   </View>
-                  <Text style={[styles.flowAmt, { color: colors.mint }]}>{fmtCompact(data.entrees)}</Text>
+                  <Text style={[styles.flowAmt, { color: colors.mint }]}>{fmtCompact(periodEntrees)}</Text>
                 </View>
                 <View style={[styles.flowBox, styles.flowOut]}>
                   <View style={styles.flowHead}>
                     <ArrowUpRight size={12} color={colors.crimsonVivid} />
-                    <Text style={[T.t3, { color: colors.crimsonVivid }]}>Sorties</Text>
+                    <Text style={[T.t3, { color: colors.crimsonVivid }]}>Sorties {view === 'jour' ? 'jour' : 'période'}</Text>
                   </View>
-                  <Text style={[styles.flowAmt, { color: colors.crimsonVivid }]}>{fmtCompact(data.sorties)}</Text>
+                  <Text style={[styles.flowAmt, { color: colors.crimsonVivid }]}>{fmtCompact(periodSorties)}</Text>
                 </View>
               </View>
             </GlassCard>
@@ -284,6 +321,8 @@ export default function AdminCompta() {
 const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     container: { flex: 1, paddingHorizontal: spacing.screenX },
+    soldeHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    soldeHint: { fontSize: 10.5, color: colors.ink50, fontWeight: '500' },
     solde: { fontSize: 32, fontWeight: '700', letterSpacing: -1, marginTop: 8 },
     cur: { fontSize: 13, color: colors.ink50, fontWeight: '400' },
     flowRow: { flexDirection: 'row', gap: 10, marginTop: 12 },

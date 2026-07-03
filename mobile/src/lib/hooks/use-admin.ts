@@ -107,8 +107,8 @@ export function useAccountingLedger() {
     queryKey: ['admin', 'ledger'],
     queryFn: async (): Promise<Ledger> => {
       const [entRes, sorRes] = await Promise.all([
-        supabase.from('entrees_comptables').select('*').order('date', { ascending: false }).limit(100),
-        supabase.from('sorties_comptables').select('*').order('date', { ascending: false }).limit(100),
+        supabase.from('entrees_comptables').select('*').order('date', { ascending: false }).limit(1000),
+        supabase.from('sorties_comptables').select('*').order('date', { ascending: false }).limit(1000),
       ]);
       const ent = (entRes.data as any[]) ?? [];
       const sor = (sorRes.data as any[]) ?? [];

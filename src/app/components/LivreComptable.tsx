@@ -669,13 +669,6 @@ export default function LivreComptable() {
                             {soldeCourant >= 0 ? "+" : ""}
                             {fmt(soldeCourant)} F
                         </p>
-                        <p className="mt-1 text-[11px] text-gray-400">
-                            Net {viewMode === "jour" ? "du jour" : "de la période"} :{" "}
-                            <span className={solde >= 0 ? "text-green-400" : "text-red-400"}>
-                                {solde >= 0 ? "+" : "−"}
-                                {fmt(solde)} F
-                            </span>
-                        </p>
                     </div>
                 </div>
 
