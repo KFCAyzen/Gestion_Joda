@@ -129,8 +129,8 @@ async function buildReceiptHtml(
     const received    = isPartial ? paid : payment.montant;
     const reste       = Math.max(0, payment.montant - received);
     const amountFmt   = money(received);
-    const avanceFmt   = isPartial ? money(received) : '';
-    const resteFmt    = isPartial ? money(reste)    : '';
+    const totalFmt    = money(payment.montant);
+    const resteFmt    = reste > 0 ? money(reste) : (isEn ? 'Paid in full' : 'Soldé');
     // Montant en lettres uniquement pour FCFA (numberToWords est en français).
     const amountWords = isIntl ? '' : `${numberToWords(received)} francs CFA`;
     const receiptNo   = payment.id.slice(-8).toUpperCase();
@@ -186,8 +186,9 @@ async function buildReceiptHtml(
             <div class="field"><span class="lbl">Prestation :</span> <span class="val">${typeLabelFr}</span></div>
             <div class="field"><span class="lbl">Date :</span> <span class="val">${dateStr}</span></div>
             <div class="field"><span class="lbl">Mode :</span> <span class="val">Droit Bancaire / Cash</span></div>
-            <div class="field"><span class="lbl">Avance :</span> <span class="val">${avanceFmt || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</span></div>
-            <div class="field"><span class="lbl">Reste :</span> <span class="val">${resteFmt || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</span></div>
+            <div class="field"><span class="lbl">Total dû / Total :</span> <span class="val">${totalFmt}</span></div>
+            <div class="field"><span class="lbl">Payé / Paid :</span> <span class="val">${amountFmt}</span></div>
+            <div class="field"><span class="lbl">Reste dû / Balance :</span> <span class="val">${resteFmt}</span></div>
           </td>
         </tr>
       </table>
