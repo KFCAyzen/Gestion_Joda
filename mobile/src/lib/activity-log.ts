@@ -11,6 +11,8 @@ export type ActivityType =
   | 'student_update'
   | 'student_delete'
   | 'dossier_status_change'
+  | 'payment_update'
+  | 'payment_delete'
   | 'payment_validate'
   | 'document_validate'
   | 'document_reject'

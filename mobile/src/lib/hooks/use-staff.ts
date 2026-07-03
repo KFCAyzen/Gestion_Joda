@@ -154,6 +154,9 @@ export type StaffStudentDetail = {
   due: number;
   peerUserId: string | null;
   phone: string | null;
+  nationalite: string | null;
+  /** Lignes de frais (tranches) individuelles, pour édition/suppression admin. */
+  installments: { id: string; type: string; tranche: number | null; montant: number; status: string; date_limite: string | null }[];
 };
 
 export function useStaffStudentDetail(studentId?: string) {
@@ -161,10 +164,10 @@ export function useStaffStudentDetail(studentId?: string) {
     queryKey: ['staff', 'student', studentId],
     queryFn: async (): Promise<StaffStudentDetail | null> => {
       const [stuRes, dosRes, docRes, payRes] = await Promise.all([
-        supabase.from('students').select('id, nom, prenom, filiere, niveau, choix, telephone, user_id, created_by').eq('id', studentId!).single(),
+        supabase.from('students').select('id, nom, prenom, filiere, niveau, choix, telephone, user_id, created_by, nationalite').eq('id', studentId!).single(),
         supabase.from('dossier_bourses').select('id, status, desired_program, study_level, created_at').eq('student_id', studentId!).order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('documents').select('type').eq('student_id', studentId!),
-        supabase.from('payments').select('montant, montant_paye, status').eq('student_id', studentId!),
+        supabase.from('payments').select('id, type, tranche, montant, montant_paye, status, date_limite').eq('student_id', studentId!).order('type').order('tranche'),
       ]);
       if (stuRes.error || !stuRes.data) throw stuRes.error ?? new Error('Étudiant introuvable');
       const s = stuRes.data as any;
@@ -181,11 +184,15 @@ export function useStaffStudentDetail(studentId?: string) {
 
       let paid = 0;
       let due = 0;
-      for (const p of (payRes.data as { montant: number; montant_paye?: number | null; status: string }[]) ?? []) {
+      const payRows = (payRes.data as { id: string; type: string; tranche: number | null; montant: number; montant_paye?: number | null; status: string; date_limite: string | null }[]) ?? [];
+      for (const p of payRows) {
         const mp = Number(p.montant_paye ?? 0);
         paid += mp || (p.status === 'paye' ? p.montant : 0);
         if (p.status !== 'paye' && p.status !== 'annule') due += Math.max(0, p.montant - mp);
       }
+      const installments = payRows.map((p) => ({
+        id: p.id, type: p.type, tranche: p.tranche, montant: p.montant, status: p.status, date_limite: p.date_limite,
+      }));
 
       return {
         id: s.id,
@@ -209,10 +216,61 @@ export function useStaffStudentDetail(studentId?: string) {
         due,
         peerUserId: s.user_id ?? s.created_by ?? null,
         phone: s.telephone ?? null,
+        nationalite: s.nationalite ?? null,
+        installments,
       };
     },
     enabled: !!studentId,
     staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Modifie un frais (montant + échéance) d'une tranche — parité web
+ * StudentManagement.handleSaveFee. Réservé côté UI aux admin/super_admin.
+ */
+export function useUpdatePaymentFee(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ studentId, paymentId, montant, dateLimite }: {
+      studentId: string; paymentId: string; montant: number; dateLimite: string | null;
+    }) => {
+      const { error } = await supabase
+        .from('payments')
+        .update({ montant, date_limite: dateLimite })
+        .eq('id', paymentId);
+      if (error) throw error;
+      await logActivity(actor ?? {}, 'payment_update', 'payments', paymentId,
+        `Frais modifié (montant ${montant})`, { student_id: studentId, payment_id: paymentId, montant });
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ['staff', 'student', v.studentId] });
+      qc.invalidateQueries({ queryKey: ['staff', 'payments'] });
+      qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });
+    },
+  });
+}
+
+/**
+ * Supprime un frais (tranche) — parité web StudentManagement.handleDeleteFee.
+ * Réservé côté UI aux admin/super_admin.
+ */
+export function useDeletePaymentFee(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ studentId, paymentId, meta }: {
+      studentId: string; paymentId: string; meta?: Record<string, unknown>;
+    }) => {
+      const { error } = await supabase.from('payments').delete().eq('id', paymentId);
+      if (error) throw error;
+      await logActivity(actor ?? {}, 'payment_delete', 'payments', paymentId,
+        'Frais supprimé', { student_id: studentId, payment_id: paymentId, ...(meta ?? {}) });
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ['staff', 'student', v.studentId] });
+      qc.invalidateQueries({ queryKey: ['staff', 'payments'] });
+      qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });
+    },
   });
 }
 

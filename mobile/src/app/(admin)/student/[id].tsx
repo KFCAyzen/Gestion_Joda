@@ -15,8 +15,9 @@ import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { ArrowRight, FileText, MessageSquare, Pencil, Plane, Smartphone, Trash2, Undo2, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
-import { useStaffStudentDetail, useChangeDossierStatus, useUpdateStudent, useDeleteStudent } from '@/lib/hooks/use-staff';
+import { useStaffStudentDetail, useChangeDossierStatus, useUpdateStudent, useDeleteStudent, useUpdatePaymentFee, useDeletePaymentFee } from '@/lib/hooks/use-staff';
 import { useSendSms } from '@/lib/hooks/use-admin';
+import { isInternational } from '@/lib/payment-config';
 import { DOSSIER_TRANSITIONS, DOSSIER_STATUS_LABEL } from '@/lib/dossier-milestones';
 import type { DossierStatus } from '@/lib/hooks/use-student-portal';
 import {
@@ -41,6 +42,18 @@ import { fmtFCFA } from '@/lib/format';
 
 const REGRESS: DossierStatus[] = ['document_manquant', 'admission_rejetee', 'en_attente'];
 
+// Libellés lisibles des types de frais (lignes payments) — parité web.
+const FEE_LABELS: Record<string, string> = {
+  bourse: 'Procédure bourse',
+  mandarin: 'Cours de mandarin',
+  anglais: "Cours d'anglais",
+  inscription: 'Inscription',
+  autre: 'Autre',
+  language_program_intl: 'Language Program',
+  partial_scholarship_intl: 'Partial Scholarship',
+  full_scholarship_intl: 'Full Scholarship',
+};
+
 export default function AdminStudentDetail() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -52,13 +65,18 @@ export default function AdminStudentDetail() {
   const change = useChangeDossierStatus(user ?? undefined);
   const update = useUpdateStudent(user ?? undefined);
   const remove = useDeleteStudent(user ?? undefined);
+  const updateFee = useUpdatePaymentFee(user ?? undefined);
+  const deleteFee = useDeletePaymentFee(user ?? undefined);
   const sms = useSendSms();
   const toast = useToast();
+
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState({ prenom: '', nom: '', telephone: '', niveau: '' });
   const [smsOpen, setSmsOpen] = useState(false);
   const [smsText, setSmsText] = useState('');
+  const [feeEdit, setFeeEdit] = useState<{ id: string; montant: string; dateLimite: string; label: string } | null>(null);
 
   async function sendSms() {
     if (!s) return;
@@ -90,6 +108,49 @@ export default function AdminStudentDetail() {
   const totalPay = s.paid + s.due;
   const payPct = totalPay > 0 ? Math.round((s.paid / totalPay) * 100) : 100;
   const nextStatuses: DossierStatus[] = s.status ? DOSSIER_TRANSITIONS[s.status] ?? [] : [];
+
+  const isIntl = isInternational(s.nationalite);
+  const money = (n: number) => (isIntl ? `$${Number(n).toLocaleString('fr-FR')}` : `${fmtFCFA(n)} FCFA`);
+
+  async function saveFee() {
+    if (!s || !feeEdit) return;
+    const montant = Math.round(Number(feeEdit.montant));
+    if (!Number.isFinite(montant) || montant < 0) {
+      toast('Montant invalide');
+      return;
+    }
+    try {
+      await updateFee.mutateAsync({ studentId: s.id, paymentId: feeEdit.id, montant, dateLimite: feeEdit.dateLimite.trim() || null });
+      setFeeEdit(null);
+      toast('Frais mis à jour ✓');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec de la mise à jour');
+    }
+  }
+
+  function confirmDeleteFee(inst: { id: string; type: string; tranche: number | null; montant: number; status: string; date_limite: string | null }) {
+    if (!s) return;
+    const label = `${FEE_LABELS[inst.type] ?? inst.type}${inst.tranche ? ` — T${inst.tranche}` : ''}`;
+    Alert.alert(
+      'Supprimer ce frais',
+      `${label} · ${money(inst.montant)}. Cette action est définitive.${inst.status === 'paye' ? ' ⚠️ Frais déjà payé : l’écriture comptable liée n’est pas annulée automatiquement.' : ''}`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteFee.mutateAsync({ studentId: s.id, paymentId: inst.id, meta: { type: inst.type, montant: inst.montant } });
+              toast('Frais supprimé');
+            } catch (e) {
+              toast(e instanceof Error ? e.message : 'Échec de la suppression');
+            }
+          },
+        },
+      ],
+    );
+  }
 
   function message() {
     if (!s?.peerUserId) {
@@ -263,6 +324,43 @@ export default function AdminStudentDetail() {
             </View>
             <ProgressBar pct={payPct} style={{ marginTop: 12 }} />
           </GlassCard>
+
+          {/* Gestion des frais — édition montant + échéance, suppression (admin/super_admin) */}
+          {isAdmin && s.installments.length > 0 ? (
+            <>
+              <SectionLabel title="Gestion des frais" />
+              <ListCard>
+                {s.installments.map((inst, i, arr) => (
+                  <ListRow key={inst.id} last={i === arr.length - 1}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[T.t1, { fontSize: 13.5 }]}>
+                        {FEE_LABELS[inst.type] ?? inst.type}{inst.tranche ? ` · T${inst.tranche}` : ''}
+                      </Text>
+                      <Text style={T.t3}>
+                        {money(inst.montant)}
+                        {inst.date_limite ? ` · ${new Date(inst.date_limite).toLocaleDateString('fr-FR')}` : ''} · {inst.status}
+                      </Text>
+                    </View>
+                    <Pressable
+                      hitSlop={8}
+                      style={styles.feeIconBtn}
+                      onPress={() => setFeeEdit({
+                        id: inst.id,
+                        montant: String(inst.montant ?? 0),
+                        dateLimite: inst.date_limite ? String(inst.date_limite).slice(0, 10) : '',
+                        label: `${FEE_LABELS[inst.type] ?? inst.type}${inst.tranche ? ` · T${inst.tranche}` : ''}`,
+                      })}
+                    >
+                      <Pencil size={15} color={colors.ink70} />
+                    </Pressable>
+                    <Pressable hitSlop={8} style={[styles.feeIconBtn, { marginLeft: 8 }]} onPress={() => confirmDeleteFee(inst)}>
+                      <Trash2 size={15} color={colors.crimsonVivid} />
+                    </Pressable>
+                  </ListRow>
+                ))}
+              </ListCard>
+            </>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
 
@@ -333,6 +431,41 @@ export default function AdminStudentDetail() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Édition d'un frais — montant + échéance (admin/super_admin) */}
+      <Modal visible={!!feeEdit} transparent animationType="slide" onRequestClose={() => setFeeEdit(null)}>
+        <Pressable style={styles.overlay} onPress={() => setFeeEdit(null)}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.grab} />
+            <View style={styles.sheetHead}>
+              <Text style={[T.t1, { fontSize: 17 }]}>Modifier le frais</Text>
+              <Pressable style={styles.closeBtn} onPress={() => setFeeEdit(null)}>
+                <X size={18} color={colors.ink70} />
+              </Pressable>
+            </View>
+            {feeEdit ? <Text style={[T.t3, { marginBottom: 12 }]}>{feeEdit.label}</Text> : null}
+            <SField
+              label={`Montant (${isIntl ? '$' : 'FCFA'})`}
+              value={feeEdit?.montant ?? ''}
+              onChange={(v) => setFeeEdit((f) => f && ({ ...f, montant: v }))}
+              colors={colors}
+              T={T}
+              keyboardType="phone-pad"
+            />
+            <SField
+              label="Échéance (AAAA-MM-JJ)"
+              value={feeEdit?.dateLimite ?? ''}
+              onChange={(v) => setFeeEdit((f) => f && ({ ...f, dateLimite: v }))}
+              colors={colors}
+              T={T}
+            />
+            <View style={styles.modalBtns}>
+              <Button label="Annuler" variant="glass" onPress={() => setFeeEdit(null)} style={{ flex: 1 }} />
+              <Button label="Enregistrer" loading={updateFee.isPending} onPress={saveFee} style={{ flex: 1.4 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenBackground>
   );
 }
@@ -394,6 +527,16 @@ const makeStyles = (colors: Palette) =>
       width: 38,
       height: 38,
       borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.glassLine,
+      backgroundColor: colors.glass2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    feeIconBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
       borderWidth: 1,
       borderColor: colors.glassLine,
       backgroundColor: colors.glass2,
