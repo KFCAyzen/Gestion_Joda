@@ -251,41 +251,61 @@ export default function PaymentOverview({
         const list: Service[] = [];
         const lc = langue.toLowerCase();
 
+        // Procédure bourse — un seul service, résolu selon niveau + nationalité
+        // (local Bachelor/Master en FCFA, ou Opening Fee intl en $).
         if (choix === "procedure_seule" || choix === "procedure_cours") {
             const cfg = getBourseConfig(niveau, nationalite);
             list.push(configToService(cfg, "bourse"));
         }
 
-        if (choix === "cours_seuls" || choix === "procedure_cours") {
-            if (lc.includes("mandarin")) list.push(configToService(getConfig("mandarin"), "mandarin"));
-            else if (lc.includes("anglais")) list.push(configToService(getConfig("anglais"), "anglais"));
-        }
+        // Les catégories de services sont strictement cloisonnées par nationalité :
+        // un étudiant international ne voit JAMAIS les cours de langue locaux, et un
+        // étudiant local ne voit JAMAIS les programmes internationaux ($), même si
+        // des lignes de paiement résiduelles d'une autre catégorie existent.
+        if (isIntl) {
+            // Programmes internationaux assignés (une seule à la fois côté admin),
+            // matérialisés par des lignes de paiement dédiées.
+            for (const type of INTL_PROGRAM_TYPES) {
+                if (payments.some(p => p.type === type) && !list.some(s => s.type === type))
+                    list.push(configToService(getConfig(type), type));
+            }
+        } else {
+            // Cours de langue locaux selon le choix + la langue, complétés par
+            // d'éventuelles lignes de paiement de cours déjà générées.
+            if (choix === "cours_seuls" || choix === "procedure_cours") {
+                if (lc.includes("mandarin")) list.push(configToService(getConfig("mandarin"), "mandarin"));
+                else if (lc.includes("anglais")) list.push(configToService(getConfig("anglais"), "anglais"));
+            }
 
-        if (payments.some(p => p.type === "mandarin") && !list.some(s => s.type === "mandarin"))
-            list.push(configToService(getConfig("mandarin"), "mandarin"));
-        if (payments.some(p => p.type === "anglais") && !list.some(s => s.type === "anglais"))
-            list.push(configToService(getConfig("anglais"), "anglais"));
-
-        for (const type of INTL_PROGRAM_TYPES) {
-            if (payments.some(p => p.type === type) && !list.some(s => s.type === type))
-                list.push(configToService(getConfig(type), type));
+            if (payments.some(p => p.type === "mandarin") && !list.some(s => s.type === "mandarin"))
+                list.push(configToService(getConfig("mandarin"), "mandarin"));
+            if (payments.some(p => p.type === "anglais") && !list.some(s => s.type === "anglais"))
+                list.push(configToService(getConfig("anglais"), "anglais"));
         }
 
         return list;
-    }, [choix, langue, niveau, nationalite, payments, getConfig, getBourseConfig]);
+    }, [choix, langue, niveau, nationalite, isIntl, payments, getConfig, getBourseConfig]);
 
     const totalDu = services.reduce((sum, s) => sum + s.total, 0);
 
+    // Ne comptabiliser que les paiements des services réellement affichés, pour
+    // que les totaux (payé, pénalités, reste) restent cohérents avec les cartes.
+    const visibleTypes = useMemo(() => new Set(services.map((s) => s.type)), [services]);
+    const scopedPayments = useMemo(
+        () => payments.filter((p) => visibleTypes.has(p.type)),
+        [payments, visibleTypes],
+    );
+
     const totalPenalties = useMemo(() => {
-        return payments.filter((p) => p.status !== "paye").reduce((sum, p) => {
+        return scopedPayments.filter((p) => p.status !== "paye").reduce((sum, p) => {
             const isKnownType = ["mandarin", "anglais", ...INTL_PROGRAM_TYPES].includes(p.type);
             const cfg = isKnownType
                 ? getConfig(p.type as ServiceType)
                 : getBourseConfig(niveau, nationalite);
             return sum + calculatePenalty(p, { grace_days: cfg.grace_days, daily_penalty: cfg.daily_penalty });
         }, 0);
-    }, [payments, getConfig, getBourseConfig, niveau, nationalite]);
-    const totalPaye = payments
+    }, [scopedPayments, getConfig, getBourseConfig, niveau, nationalite]);
+    const totalPaye = scopedPayments
         .filter((p) => p.status === "paye")
         .reduce((sum, p) => sum + p.montant, 0);
     const reste = Math.max(0, totalDu - totalPaye + totalPenalties);
