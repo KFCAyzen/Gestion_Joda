@@ -292,14 +292,15 @@ export default function LivreComptable() {
 
     const totalEntrees = dayEntrees.reduce((s, e) => s + e.montant, 0);
     const totalSorties = daySorties.reduce((s, e) => s + e.montant, 0);
+    // Net de la période affichée (mouvements de la période uniquement)
     const solde = totalEntrees - totalSorties;
 
-    // Who validated the balance (last validated sortie or the last entry creator)
-    const lastValidated = daySorties
-        .filter((s) => s.validated_by)
-        .sort((a, b) => new Date(b.validated_at || "").getTime() - new Date(a.validated_at || "").getTime())[0];
-    const soldeBy = lastValidated ? getUserName(lastValidated.validated_by) : null;
-    const soldeAt = lastValidated?.validated_at ? fmtTime(lastValidated.validated_at) : null;
+    // Solde courant = trésorerie réelle : cumul de TOUTES les entrées − TOUTES
+    // les sorties, indépendamment de la période affichée. Ce chiffre ne doit
+    // pas varier quand on change de vue (jour/mois/année).
+    const soldeCourant =
+        entrees.reduce((s, e) => s + e.montant, 0) -
+        sorties.reduce((s, e) => s + e.montant, 0);
 
     const periodLabel = () => {
         const d = viewDate;
@@ -652,25 +653,28 @@ export default function LivreComptable() {
                             −{fmt(totalSorties)} F
                         </p>
                     </div>
-                    {/* Solde */}
+                    {/* Solde courant — trésorerie globale, stable quelle que soit la période */}
                     <div className="rounded-xl bg-gray-900 p-4">
                         <div className="flex items-start justify-between">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                                Solde {viewMode === "jour" ? "jour" : "période"}
+                                Solde courant
                             </p>
-                            {soldeBy && soldeAt && (
-                                <span className="text-[10px] text-gray-400">
-                                    Soldé par {soldeBy} {soldeAt}
-                                </span>
-                            )}
+                            <span className="text-[10px] text-gray-500">Trésorerie globale</span>
                         </div>
                         <p
                             className={`mt-2 text-2xl font-bold ${
-                                solde >= 0 ? "text-green-400" : "text-red-400"
+                                soldeCourant >= 0 ? "text-green-400" : "text-red-400"
                             }`}
                         >
-                            {solde >= 0 ? "+" : ""}
-                            {fmt(solde)} F
+                            {soldeCourant >= 0 ? "+" : ""}
+                            {fmt(soldeCourant)} F
+                        </p>
+                        <p className="mt-1 text-[11px] text-gray-400">
+                            Net {viewMode === "jour" ? "du jour" : "de la période"} :{" "}
+                            <span className={solde >= 0 ? "text-green-400" : "text-red-400"}>
+                                {solde >= 0 ? "+" : "−"}
+                                {fmt(solde)} F
+                            </span>
                         </p>
                     </div>
                 </div>
