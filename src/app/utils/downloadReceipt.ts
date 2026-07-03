@@ -403,6 +403,28 @@ export async function downloadReceipt(
     }
 }
 
+// Imprime le reçu via la fenêtre d'impression native du navigateur, SANS
+// télécharger de fichier. Réutilise `printHtml` (styles hex only, @page A5),
+// qui déclenche window.print() au chargement. L'utilisateur peut imprimer sur
+// papier ou « Enregistrer en PDF » depuis la boîte de dialogue système.
+export async function printReceipt(
+    payment: ReceiptPayment,
+    student: ReceiptStudent,
+    options: { includeDuplicata?: boolean } = {},
+) {
+    const { printHtml, lang } = await buildReceiptHtml(payment, student, options);
+    const win = window.open('', '_blank', 'width=900,height=1000');
+    if (win) {
+        win.document.open();
+        win.document.write(printHtml);
+        win.document.close();
+    } else {
+        alert(lang === 'en'
+            ? 'Could not open the print window. Please allow pop-ups and retry.'
+            : "Impossible d'ouvrir la fenêtre d'impression. Autorisez les pop-ups et réessayez.");
+    }
+}
+
 export interface ReceiptPdfResult {
     pdfBase64: string;      // PDF encodé base64, SANS le préfixe `data:...,`
     receiptNo: string;

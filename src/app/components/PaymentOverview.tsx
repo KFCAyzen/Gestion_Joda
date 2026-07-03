@@ -224,6 +224,7 @@ export default function PaymentOverview({
     nationalite,
     payments,
     onDownloadReceipt,
+    onPrintReceipt,
     onDeclarePayment,
     onCancelDeclaration,
 }: {
@@ -233,6 +234,7 @@ export default function PaymentOverview({
     nationalite?: string | null;
     payments: Payment[];
     onDownloadReceipt?: (payment: Payment) => void;
+    onPrintReceipt?: (payment: Payment) => void;
     onDeclarePayment?: (payment: Payment | null, info: TrancheDeclareInfo) => void;
     onCancelDeclaration?: (payment: Payment) => void;
 }) {
@@ -542,6 +544,15 @@ export default function PaymentOverview({
                                                     className="student-focus-ring student-pay-pill flex-1 px-3 py-2 text-center text-xs font-semibold text-[var(--student-ring-exercise)] transition-colors hover:bg-[rgba(220,38,38,0.06)] sm:flex-none"
                                                 >
                                                     {t("downloadReceipt")}
+                                                </button>
+                                            ) : null}
+                                            {payment?.status === "paye" && onPrintReceipt ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onPrintReceipt(payment)}
+                                                    className="student-focus-ring student-pay-pill flex-1 px-3 py-2 text-center text-xs font-semibold text-[var(--student-ring-exercise)] transition-colors hover:bg-[rgba(220,38,38,0.06)] sm:flex-none"
+                                                >
+                                                    {t("printReceipt")}
                                                 </button>
                                             ) : null}
                                             {payment?.status === "en_validation" ? (

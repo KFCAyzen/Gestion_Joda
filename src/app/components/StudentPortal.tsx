@@ -9,7 +9,7 @@ import StudentNotifications from "./StudentNotifications";
 import { StudentMessaging } from "./student/StudentMessaging";
 import DocumentUpload from "./DocumentUpload";
 import PaymentOverview from "./PaymentOverview";
-import { downloadReceipt, type ReceiptStudent } from "../utils/downloadReceipt";
+import { downloadReceipt, printReceipt, type ReceiptStudent } from "../utils/downloadReceipt";
 import { isInternational } from "../types/payment-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -526,6 +526,9 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 onDownloadReceipt={studentInfo
                                     ? (p) => downloadReceipt(p, studentInfo)
                                     : undefined}
+                                onPrintReceipt={studentInfo
+                                    ? (p) => printReceipt(p, studentInfo)
+                                    : undefined}
                                 onDeclarePayment={(p, info) =>
                                     handleOpenDeclareModal(p, { ...info, label: info.label })
                                 }
@@ -926,6 +929,14 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.28)] bg-[rgba(220,38,38,0.06)] px-3 py-2 text-xs font-semibold text-[var(--student-neon-lime)] hover:bg-[rgba(220,38,38,0.12)]"
                             >
                                 {t("payments.downloadReceipt")}
+                            </button>
+                        )}
+                        {detailPayment.status === "paye" && studentInfo && (
+                            <button
+                                onClick={() => printReceipt(detailPayment as any, studentInfo)}
+                                className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.28)] bg-[rgba(220,38,38,0.06)] px-3 py-2 text-xs font-semibold text-[var(--student-neon-lime)] hover:bg-[rgba(220,38,38,0.12)]"
+                            >
+                                {t("payments.printReceipt")}
                             </button>
                         )}
                         <button

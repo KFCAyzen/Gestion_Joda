@@ -45,7 +45,7 @@ import SearchBar from "./SearchBar";
 import FilterSelect from "./FilterSelect";
 import PaymentOverview from "./PaymentOverview";
 import DocumentManagement from "./DocumentManagement";
-import { downloadReceipt } from "../utils/downloadReceipt";
+import { downloadReceipt, printReceipt } from "../utils/downloadReceipt";
 import { confirmDuplicata } from "../utils/confirmDuplicata";
 import { DropdownMenu } from "./shared";
 import PhoneInput from "./shared/PhoneInput";
@@ -1095,6 +1095,22 @@ export default function StudentManagement() {
                                                         const withDup = await confirmDuplicata();
                                                         if (withDup === null) return;
                                                         void downloadReceipt(p, {
+                                                            nom: selectedStudent.nom,
+                                                            prenom: selectedStudent.prenom,
+                                                            email: selectedStudent.email,
+                                                            telephone: selectedStudent.telephone,
+                                                            niveau: selectedStudent.niveau,
+                                                            filiere: selectedStudent.filiere,
+                                                            nationalite: selectedStudent.nationalite ?? null,
+                                                        }, { includeDuplicata: withDup });
+                                                    })();
+                                                }}
+                                                onPrintReceipt={(p) => {
+                                                    // Côté admin : même choix duplicata au moment de l'impression.
+                                                    void (async () => {
+                                                        const withDup = await confirmDuplicata();
+                                                        if (withDup === null) return;
+                                                        void printReceipt(p, {
                                                             nom: selectedStudent.nom,
                                                             prenom: selectedStudent.prenom,
                                                             email: selectedStudent.email,
