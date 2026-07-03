@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowDownLeft, ArrowUpRight, Check, Plus, TriangleAlert, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
-import { useAccountingLedger, useValidateSortie, useAddAccountingEntry, useTreasuryBalance, useTreasuryBalanceFallback } from '@/lib/hooks/use-admin';
+import { useAccountingLedger, useValidateSortie, useRejectSortie, useAddAccountingEntry, useTreasuryBalance, useTreasuryBalanceFallback } from '@/lib/hooks/use-admin';
 import {
   Button,
   GlassCard,
@@ -60,6 +60,7 @@ export default function AdminCompta() {
   const { data: soldeCache, isFetched: soldeFetched } = useTreasuryBalance();
   const { data: soldeFallback } = useTreasuryBalanceFallback(soldeFetched && soldeCache === null);
   const validateSortie = useValidateSortie(user ?? undefined);
+  const rejectSortie = useRejectSortie(user ?? undefined);
   const addEntry = useAddAccountingEntry(user ?? undefined);
   const toast = useToast();
 
@@ -67,6 +68,7 @@ export default function AdminCompta() {
 
   const [filter, setFilter] = useState('tout');
   const [add, setAdd] = useState(false);
+  const [reject, setReject] = useState<{ open: boolean; id: string; reason: string }>({ open: false, id: '', reason: '' });
   const [form, setForm] = useState<{ kind: 'entree' | 'sortie'; montant: string; description: string; cat: string }>({
     kind: 'sortie',
     montant: '',
@@ -121,6 +123,17 @@ export default function AdminCompta() {
       toast('Sortie validée ✓');
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Échec de la validation');
+    }
+  }
+
+  async function confirmReject() {
+    if (!reject.id) return;
+    try {
+      await rejectSortie.mutateAsync({ id: reject.id, reason: reject.reason.trim() });
+      setReject({ open: false, id: '', reason: '' });
+      toast('Sortie rejetée ✓');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Échec du rejet');
     }
   }
 
@@ -208,7 +221,7 @@ export default function AdminCompta() {
                     <Text style={[T.t1, { fontSize: 13.5 }]} numberOfLines={1}>{r.desc}</Text>
                     <Text style={T.t3}>
                       {shortDate(r.date)} · {CAT_LABEL[r.cat] ?? r.cat}
-                      {r.needsValidation ? ' · à valider' : ''}
+                      {r.needsValidation ? ' · à valider' : r.rejected ? ' · rejetée' : ''}
                     </Text>
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 6 }}>
@@ -217,13 +230,21 @@ export default function AdminCompta() {
                       {fmtFCFA(r.montant)}
                     </Text>
                     {r.needsValidation && canWrite ? (
-                      <Pressable
-                        onPress={() => validate(r.id)}
-                        disabled={validateSortie.isPending}
-                        style={styles.validateBtn}>
-                        <Check size={12} color={colors.mint} strokeWidth={2.6} />
-                        <Text style={styles.validateTxt}>Valider</Text>
-                      </Pressable>
+                      <View style={styles.rowActions}>
+                        <Pressable
+                          onPress={() => validate(r.id)}
+                          disabled={validateSortie.isPending}
+                          style={styles.validateBtn}>
+                          <Check size={12} color={colors.mint} strokeWidth={2.6} />
+                          <Text style={styles.validateTxt}>Valider</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => setReject({ open: true, id: r.id, reason: '' })}
+                          style={styles.rejectBtn}>
+                          <X size={12} color={colors.crimsonVivid} strokeWidth={2.6} />
+                          <Text style={styles.rejectTxt}>Rejeter</Text>
+                        </Pressable>
+                      </View>
                     ) : null}
                   </View>
                 </View>
@@ -298,6 +319,40 @@ export default function AdminCompta() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Modal rejet sortie — parité LivreComptable.handleRejectSortie */}
+      <Modal visible={reject.open} transparent animationType="slide" onRequestClose={() => setReject({ open: false, id: '', reason: '' })}>
+        <Pressable style={styles.overlay} onPress={() => setReject({ open: false, id: '', reason: '' })}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.grab} />
+            <View style={styles.sheetHead}>
+              <Text style={[T.t1, { fontSize: 17, color: colors.crimsonVivid }]}>Rejeter la sortie</Text>
+              <Pressable style={styles.closeBtn} onPress={() => setReject({ open: false, id: '', reason: '' })}>
+                <X size={18} color={colors.ink70} />
+              </Pressable>
+            </View>
+
+            <Text style={[T.t3, { marginBottom: 10 }]}>
+              Indiquez le motif du rejet. La sortie ne sera pas comptabilisée dans la trésorerie.
+            </Text>
+
+            <Text style={[T.t3, styles.fieldLabel]}>Motif</Text>
+            <TextInput
+              value={reject.reason}
+              onChangeText={(v) => setReject((r) => ({ ...r, reason: v }))}
+              placeholder="Ex : justificatif manquant, dépense non autorisée…"
+              placeholderTextColor={colors.ink35}
+              multiline
+              style={[styles.input, { minHeight: 84, textAlignVertical: 'top' }]}
+            />
+
+            <View style={styles.modalBtns}>
+              <Button label="Annuler" variant="glass" onPress={() => setReject({ open: false, id: '', reason: '' })} style={{ flex: 1 }} />
+              <Button label="Confirmer le rejet" loading={rejectSortie.isPending} onPress={confirmReject} style={{ flex: 1.4 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScreenBackground>
   );
 }
@@ -347,6 +402,19 @@ const makeStyles = (colors: Palette) =>
       borderColor: 'rgba(52,217,168,0.32)',
     },
     validateTxt: { color: colors.mint, fontSize: 11.5, fontWeight: '600' },
+    rowActions: { flexDirection: 'row', gap: 6 },
+    rejectBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: colors.redGlass,
+      borderWidth: 1,
+      borderColor: colors.redLine,
+    },
+    rejectTxt: { color: colors.crimsonVivid, fontSize: 11.5, fontWeight: '600' },
 
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
     sheet: {

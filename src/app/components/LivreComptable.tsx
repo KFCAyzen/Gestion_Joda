@@ -60,6 +60,7 @@ interface SortieComptable {
     created_at: string;
     payslip_id: string | null;
     status?: string | null;
+    rejection_reason?: string | null;
 }
 
 interface LedgerRow {
@@ -73,6 +74,7 @@ interface LedgerRow {
     validatedBy: string | null;
     validatedAt: string | null;
     needsValidation: boolean;
+    rejected: boolean;
     linkedToPayslip: boolean;
     raw: EntreeComptable | SortieComptable;
 }
@@ -233,6 +235,9 @@ export default function LivreComptable() {
     });
     const [savingEdit, setSavingEdit] = useState(false);
 
+    const [rejectModal, setRejectModal] = useState<{ open: boolean; id: string; reason: string }>({ open: false, id: "", reason: "" });
+    const [rejecting, setRejecting] = useState(false);
+
     const getUserName = useCallback(
         (id: string | null): string => {
             if (!id) return "Auto";
@@ -267,23 +272,30 @@ export default function LivreComptable() {
             validatedBy: e.created_by,
             validatedAt: null,
             needsValidation: false,
+            rejected: false,
             linkedToPayslip: false,
             raw: e,
         })),
-        ...daySorties.map((s): LedgerRow => ({
-            id: s.id,
-            kind: "sortie",
-            time: s.date,
-            description: s.description,
-            student_id: null,
-            categorie: s.categorie,
-            montant: s.montant,
-            validatedBy: s.validated_by,
-            validatedAt: s.validated_at,
-            needsValidation: !s.validated_by,
-            linkedToPayslip: !!s.payslip_id,
-            raw: s,
-        })),
+        ...daySorties.map((s): LedgerRow => {
+            // Statut effectif : la colonne `status` fait foi ; repli sur
+            // validated_by pour d'éventuelles lignes antérieures à la migration.
+            const status = s.status ?? (s.validated_by ? "validated" : "pending");
+            return {
+                id: s.id,
+                kind: "sortie",
+                time: s.date,
+                description: s.description,
+                student_id: null,
+                categorie: s.categorie,
+                montant: s.montant,
+                validatedBy: s.validated_by,
+                validatedAt: s.validated_at,
+                needsValidation: status === "pending",
+                rejected: status === "rejected",
+                linkedToPayslip: !!s.payslip_id,
+                raw: s,
+            };
+        }),
     ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
     const filtered =
@@ -356,9 +368,18 @@ export default function LivreComptable() {
 
     const handleValidateSortie = async (id: string) => {
         if (!user || !canValidateEntry) return;
+        // status='validated' est indispensable : le trigger de trésorerie ne
+        // déduit une sortie que si son status vaut 'validated'.
         await supabase
             .from("sorties_comptables")
-            .update({ validated_by: user.id, validated_at: new Date().toISOString() })
+            .update({
+                status: "validated",
+                validated_by: user.id,
+                validated_at: new Date().toISOString(),
+                rejected_by: null,
+                rejected_at: null,
+                rejection_reason: null,
+            })
             .eq("id", id);
         await logActivity(
             user.id, user.name, user.role,
@@ -367,6 +388,28 @@ export default function LivreComptable() {
             {}
         );
         showNotification("Sortie validée", "success");
+        queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
+        queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
+    };
+
+    const handleRejectSortie = async (id: string, reason: string) => {
+        if (!user || !canValidateEntry) return;
+        await supabase
+            .from("sorties_comptables")
+            .update({
+                status: "rejected",
+                rejected_by: user.id,
+                rejected_at: new Date().toISOString(),
+                rejection_reason: reason || null,
+            })
+            .eq("id", id);
+        await logActivity(
+            user.id, user.name, user.role,
+            "accounting_expense", "sorties_comptables", id,
+            `Sortie comptable rejetée${reason ? ` — ${reason}` : ""}`,
+            {}
+        );
+        showNotification("Sortie rejetée", "success");
         queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
         queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
     };
@@ -764,22 +807,30 @@ export default function LivreComptable() {
                                         </td>
                                         <td className="px-3 py-3">
                                             {row.needsValidation && canValidateEntry && (
-                                                <button
-                                                    onClick={() =>
-                                                        setConfirmDialog({
-                                                            isOpen: true,
-                                                            title: "Valider cette sortie ?",
-                                                            description: `Confirmer la sortie de ${fmt(row.montant)} F — ${row.description}`,
-                                                            onConfirm: async () => {
-                                                                closeConfirm();
-                                                                await handleValidateSortie(row.id);
-                                                            },
-                                                        })
-                                                    }
-                                                    className="rounded-full border border-amber-300 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100"
-                                                >
-                                                    Valider
-                                                </button>
+                                                <div className="flex items-center gap-1.5">
+                                                    <button
+                                                        onClick={() =>
+                                                            setConfirmDialog({
+                                                                isOpen: true,
+                                                                title: "Valider cette sortie ?",
+                                                                description: `Confirmer la sortie de ${fmt(row.montant)} F — ${row.description}`,
+                                                                onConfirm: async () => {
+                                                                    closeConfirm();
+                                                                    await handleValidateSortie(row.id);
+                                                                },
+                                                            })
+                                                        }
+                                                        className="rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100"
+                                                    >
+                                                        Valider
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setRejectModal({ open: true, id: row.id, reason: "" })}
+                                                        className="rounded-full border border-rose-300 bg-rose-50 dark:bg-rose-900/20 px-2.5 py-0.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-100"
+                                                    >
+                                                        Rejeter
+                                                    </button>
+                                                </div>
                                             )}
                                         </td>
                                         <td className="px-3 py-3 text-right font-semibold">
@@ -792,6 +843,13 @@ export default function LivreComptable() {
                                             {row.needsValidation ? (
                                                 <span className="rounded-full border border-amber-300 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
                                                     À valider
+                                                </span>
+                                            ) : row.rejected ? (
+                                                <span
+                                                    title={(row.raw as SortieComptable).rejection_reason || "Sortie rejetée"}
+                                                    className="rounded-full border border-rose-300 px-2.5 py-0.5 text-[11px] font-semibold text-rose-600"
+                                                >
+                                                    Rejetée
                                                 </span>
                                             ) : (
                                                 getUserName(row.validatedBy)
@@ -1123,6 +1181,58 @@ export default function LivreComptable() {
                                 className="flex-1 rounded-xl bg-gray-900 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
                             >
                                 {savingEdit ? "Enregistrement…" : "Enregistrer"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reject sortie modal */}
+            {rejectModal.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-rose-600">Rejeter la sortie</h2>
+                            <button
+                                onClick={() => setRejectModal({ open: false, id: "", reason: "" })}
+                                className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                            Indiquez le motif du rejet. La sortie ne sera pas comptabilisée dans la trésorerie.
+                        </p>
+                        <textarea
+                            rows={4}
+                            placeholder="Ex : justificatif manquant, dépense non autorisée…"
+                            value={rejectModal.reason}
+                            onChange={(e) => setRejectModal((s) => ({ ...s, reason: e.target.value }))}
+                            className="w-full resize-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400"
+                        />
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                onClick={() => setRejectModal({ open: false, id: "", reason: "" })}
+                                disabled={rejecting}
+                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const { id, reason } = rejectModal;
+                                    setRejecting(true);
+                                    try {
+                                        await handleRejectSortie(id, reason.trim());
+                                    } finally {
+                                        setRejecting(false);
+                                        setRejectModal({ open: false, id: "", reason: "" });
+                                    }
+                                }}
+                                disabled={rejecting}
+                                className="flex-1 rounded-xl bg-rose-600 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                            >
+                                {rejecting ? "Rejet…" : "Confirmer le rejet"}
                             </button>
                         </div>
                     </div>

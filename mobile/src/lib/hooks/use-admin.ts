@@ -88,6 +88,7 @@ export type LedgerRow = {
   cat: string;
   montant: number;
   needsValidation: boolean;
+  rejected: boolean;
 };
 export type Ledger = {
   solde: number;
@@ -160,6 +161,7 @@ export function useAccountingLedger(view: string = 'mois') {
           cat: e.type ?? 'Divers',
           montant: Number(e.montant || 0),
           needsValidation: false,
+          rejected: false,
         })),
         ...sor.map((s) => ({
           id: s.id,
@@ -168,7 +170,9 @@ export function useAccountingLedger(view: string = 'mois') {
           desc: s.description ?? 'Sortie',
           cat: s.categorie ?? 'Divers',
           montant: Number(s.montant || 0),
-          needsValidation: !isValidated(s),
+          // Seules les sorties 'pending' sont à valider (les rejetées ne le sont plus).
+          needsValidation: !isValidated(s) && s.status !== 'rejected',
+          rejected: s.status === 'rejected',
         })),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -249,6 +253,41 @@ export function useValidateSortie(actor?: Actor) {
       if (statusErr) console.warn('[sortie status] non posé:', statusErr.message);
 
       await logActivity(actor ?? {}, 'accounting_expense', 'sorties_comptables', id, 'Sortie comptable validée', {});
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'ledger'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'treasury'] });
+    },
+  });
+}
+
+/**
+ * Rejette une sortie comptable — miroir `LivreComptable.handleRejectSortie`.
+ * Pose `status='rejected'` + colonnes de rejet ; la sortie n'impacte pas la
+ * trésorerie (le trigger ne déduit que les sorties 'validated').
+ */
+export function useRejectSortie(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const { error } = await supabase
+        .from('sorties_comptables')
+        .update({
+          status: 'rejected',
+          rejected_by: actor?.id ?? null,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: reason || null,
+        })
+        .eq('id', id);
+      if (error) throw error;
+      await logActivity(
+        actor ?? {},
+        'accounting_expense',
+        'sorties_comptables',
+        id,
+        `Sortie comptable rejetée${reason ? ` — ${reason}` : ''}`,
+        {},
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'ledger'] });
