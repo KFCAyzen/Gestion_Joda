@@ -295,8 +295,16 @@ export default function LivreComptable() {
     const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     const totalEntrees = dayEntrees.reduce((s, e) => s + e.montant, 0);
-    const totalSorties = daySorties.reduce((s, e) => s + e.montant, 0);
-    // Net de la période affichée (mouvements de la période uniquement)
+    // Cohérence avec la trésorerie : seules les sorties VALIDÉES impactent le
+    // solde (cf. add_sortie_validation_status.sql + cache trigger). Les sorties
+    // 'pending'/'rejected' ne sont pas comptées dans le total « sorties ».
+    const validatedSorties = daySorties.filter((s) => s.status === "validated");
+    const totalSorties = validatedSorties.reduce((s, e) => s + e.montant, 0);
+    // Sorties en attente de validation (affichées à part, non déduites du solde).
+    const totalSortiesPending = daySorties
+        .filter((s) => s.status !== "validated" && s.status !== "rejected")
+        .reduce((s, e) => s + e.montant, 0);
+    // Net de la période affichée (mouvements validés de la période uniquement)
     const solde = totalEntrees - totalSorties;
 
     // Solde courant = trésorerie réelle, indépendant de la période affichée.
@@ -654,10 +662,16 @@ export default function LivreComptable() {
                     <div className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
                             Sorties {viewMode === "jour" ? "jour" : "période"}
+                            <span className="ml-1 normal-case tracking-normal text-gray-400">(validées)</span>
                         </p>
                         <p className="mt-2 text-2xl font-bold text-red-500">
                             −{fmt(totalSorties)} F
                         </p>
+                        {totalSortiesPending > 0 && (
+                            <p className="mt-1 text-[11px] font-medium text-amber-600">
+                                dont {fmt(totalSortiesPending)} F en attente de validation
+                            </p>
+                        )}
                     </div>
                     {/* Solde courant — trésorerie globale, stable quelle que soit la période */}
                     <div className="rounded-xl bg-gray-900 p-4">
@@ -674,6 +688,9 @@ export default function LivreComptable() {
                         >
                             {soldeCourant >= 0 ? "+" : ""}
                             {fmt(soldeCourant)} F
+                        </p>
+                        <p className="mt-1 text-[11px] font-medium text-gray-400">
+                            Net période&nbsp;: {solde >= 0 ? "+" : "−"}{fmt(solde)} F
                         </p>
                     </div>
                 </div>
