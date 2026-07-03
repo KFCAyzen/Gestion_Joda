@@ -20,6 +20,7 @@ export type ActivityType =
   | "university_delete"
   | "payment_create"
   | "payment_update"
+  | "payment_delete"
   | "payment_validate"
   | "accounting_entry"
   | "accounting_expense"
@@ -251,6 +252,7 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   university_delete: "Suppression université",
   payment_create: "Création paiement",
   payment_update: "Modification paiement",
+  payment_delete: "Suppression paiement",
   payment_validate: "Validation paiement",
   accounting_entry: "Entrée comptable",
   accounting_expense: "Sortie comptable",

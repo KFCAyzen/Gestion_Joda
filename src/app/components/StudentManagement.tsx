@@ -87,6 +87,18 @@ const emptyFormData = {
     profil: "local" as "local" | "international",
 };
 
+// Libellés lisibles des types de frais (lignes de la table payments)
+const FEE_TYPE_LABELS: Record<string, string> = {
+    bourse: "Procédure bourse",
+    mandarin: "Cours de mandarin",
+    anglais: "Cours d'anglais",
+    inscription: "Inscription",
+    autre: "Autre",
+    language_program_intl: "Language Program",
+    partial_scholarship_intl: "Partial Scholarship",
+    full_scholarship_intl: "Full Scholarship",
+};
+
 export default function StudentManagement() {
     const { user } = useAuth();
     const { hasPermission } = usePermissions();
@@ -109,6 +121,11 @@ export default function StudentManagement() {
     const [selectedStudentPayments, setSelectedStudentPayments] = useState<any[]>([]);
     const [programForm, setProgramForm] = useState<{ type: "language_program_intl" | "partial_scholarship_intl" | "full_scholarship_intl"; date_limite: string }>({ type: "language_program_intl", date_limite: "" });
     const [isAssigningProgram, setIsAssigningProgram] = useState(false);
+    // Édition / suppression manuelle des frais d'un étudiant (admin / super_admin)
+    const [editingFee, setEditingFee] = useState<{ id: string; montant: string; date_limite: string } | null>(null);
+    const [feeToDelete, setFeeToDelete] = useState<any | null>(null);
+    const [isSavingFee, setIsSavingFee] = useState(false);
+    const [isDeletingFee, setIsDeletingFee] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [operationMessage, setOperationMessage] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
@@ -445,6 +462,77 @@ export default function StudentManagement() {
         }
     };
 
+    const refreshSelectedStudentPayments = async () => {
+        if (!selectedStudent) return;
+        const { data } = await supabase
+            .from("payments")
+            .select("*")
+            .eq("student_id", selectedStudent.id);
+        setSelectedStudentPayments(data || []);
+    };
+
+    // Modifier un frais (montant + échéance) — réservé aux comptes ayant payments.edit
+    const handleSaveFee = async () => {
+        if (!editingFee || !selectedStudent || isSavingFee) return;
+        if (!hasPermission("payments.edit")) return;
+        const montant = Math.round(Number(editingFee.montant));
+        if (!Number.isFinite(montant) || montant < 0) {
+            showNotification("Montant invalide.", "error");
+            return;
+        }
+        setIsSavingFee(true);
+        try {
+            const { error } = await supabase
+                .from("payments")
+                .update({ montant, date_limite: editingFee.date_limite || null })
+                .eq("id", editingFee.id);
+            if (error) throw error;
+            await refreshSelectedStudentPayments();
+            queryClient.invalidateQueries({ queryKey: ["payments"] });
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, (currentUser as any).name || currentUser.id, currentUser.role,
+                    "payment_update", "payments", editingFee.id,
+                    `Frais modifié — ${selectedStudent.prenom} ${selectedStudent.nom} (montant ${montant})`,
+                    { student_id: selectedStudent.id, payment_id: editingFee.id, montant }
+                );
+            }
+            setEditingFee(null);
+            showNotification("Frais mis à jour.", "success");
+        } catch (err) {
+            showNotification(getFriendlyErrorMessage(err), "error");
+        } finally {
+            setIsSavingFee(false);
+        }
+    };
+
+    // Supprimer un frais — réservé aux comptes ayant payments.delete
+    const handleDeleteFee = async () => {
+        if (!feeToDelete || !selectedStudent || isDeletingFee) return;
+        if (!hasPermission("payments.delete")) return;
+        setIsDeletingFee(true);
+        try {
+            const { error } = await supabase.from("payments").delete().eq("id", feeToDelete.id);
+            if (error) throw error;
+            await refreshSelectedStudentPayments();
+            queryClient.invalidateQueries({ queryKey: ["payments"] });
+            if (currentUser) {
+                await logActivity(
+                    currentUser.id, (currentUser as any).name || currentUser.id, currentUser.role,
+                    "payment_delete", "payments", feeToDelete.id,
+                    `Frais supprimé — ${selectedStudent.prenom} ${selectedStudent.nom}`,
+                    { student_id: selectedStudent.id, payment_id: feeToDelete.id, type: feeToDelete.type, montant: feeToDelete.montant }
+                );
+            }
+            setFeeToDelete(null);
+            showNotification("Frais supprimé.", "success");
+        } catch (err) {
+            showNotification(getFriendlyErrorMessage(err), "error");
+        } finally {
+            setIsDeletingFee(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // Défense en profondeur : interdit la soumission sans la permission requise.
@@ -670,6 +758,8 @@ export default function StudentManagement() {
     const canCreate = hasPermission("students.create");
     const canEdit = hasPermission("students.edit");
     const canDelete = hasPermission("students.delete");
+    const canEditFees = hasPermission("payments.edit");
+    const canDeleteFees = hasPermission("payments.delete");
 
     return (
         <>
@@ -1019,6 +1109,87 @@ export default function StudentManagement() {
                                         </div>
                                     </div>
 
+                                    {/* Gestion des frais (admin / super_admin) */}
+                                    {(canEditFees || canDeleteFees) && selectedStudentPayments.length > 0 && (
+                                        <div>
+                                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                                                Gestion des frais
+                                            </p>
+                                            <div className="space-y-2">
+                                                {[...selectedStudentPayments]
+                                                    .sort((a, b) => (a.type || "").localeCompare(b.type || "") || (a.tranche ?? 0) - (b.tranche ?? 0))
+                                                    .map((p) => {
+                                                        const cur = isInternational(selectedStudent.nationalite) ? "$" : "FCFA";
+                                                        const typeLabel = FEE_TYPE_LABELS[p.type] ?? p.type;
+                                                        const isEditing = editingFee?.id === p.id;
+                                                        return (
+                                                            <div key={p.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                                                                {isEditing ? (
+                                                                    <div className="space-y-2">
+                                                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                                                            {typeLabel}{p.tranche ? ` — Tranche ${p.tranche}` : ""}
+                                                                        </p>
+                                                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                                                            <div className="flex-1">
+                                                                                <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Montant ({cur})</label>
+                                                                                <Input type="number" min={0} value={editingFee?.montant ?? ""}
+                                                                                    onChange={(e) => setEditingFee((f) => f && ({ ...f, montant: e.target.value }))}
+                                                                                    className="h-9" />
+                                                                            </div>
+                                                                            <div className="flex-1">
+                                                                                <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">Échéance</label>
+                                                                                <Input type="date" value={editingFee?.date_limite ?? ""}
+                                                                                    onChange={(e) => setEditingFee((f) => f && ({ ...f, date_limite: e.target.value }))}
+                                                                                    className="h-9" />
+                                                                            </div>
+                                                                            <div className="flex gap-2">
+                                                                                <Button size="sm" className="h-9" onClick={handleSaveFee} disabled={isSavingFee}>
+                                                                                    {isSavingFee && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Enregistrer
+                                                                                </Button>
+                                                                                <Button size="sm" variant="outline" className="h-9" onClick={() => setEditingFee(null)} disabled={isSavingFee}>Annuler</Button>
+                                                                            </div>
+                                                                        </div>
+                                                                        {p.status === "paye" && (
+                                                                            <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                                                                                ⚠️ Ce frais est déjà payé : la modification n&apos;ajuste pas automatiquement l&apos;écriture comptable liée.
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                                        <div className="min-w-0">
+                                                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                                                                {typeLabel}{p.tranche ? ` — Tranche ${p.tranche}` : ""}
+                                                                            </p>
+                                                                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                                                {Number(p.montant).toLocaleString("fr-FR")} {cur}
+                                                                                {p.date_limite ? ` · Échéance ${new Date(p.date_limite).toLocaleDateString(dateLocale)}` : ""}
+                                                                                {" · "}<span className="capitalize">{p.status}</span>
+                                                                            </p>
+                                                                        </div>
+                                                                        <div className="flex shrink-0 gap-2">
+                                                                            {canEditFees && (
+                                                                                <Button size="sm" variant="outline" className="h-8"
+                                                                                    onClick={() => setEditingFee({ id: p.id, montant: String(p.montant ?? 0), date_limite: p.date_limite ? String(p.date_limite).slice(0, 10) : "" })}>
+                                                                                    <Edit className="h-3.5 w-3.5" />
+                                                                                </Button>
+                                                                            )}
+                                                                            {canDeleteFees && (
+                                                                                <Button size="sm" variant="outline" className="h-8 text-red-600 hover:text-red-700"
+                                                                                    onClick={() => setFeeToDelete(p)}>
+                                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Documents */}
                                     <div>
                                         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
@@ -1297,6 +1468,42 @@ export default function StudentManagement() {
                                 <Button variant="destructive" disabled={isDeleting} onClick={handleDelete}>
                                     {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     {t("delete.confirm")}
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {feeToDelete && (
+                    <motion.div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl"
+                            initial={{ scale: 0.94, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.94, opacity: 0 }}
+                        >
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Supprimer ce frais ?</h3>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                {(FEE_TYPE_LABELS[feeToDelete.type] ?? feeToDelete.type)}
+                                {feeToDelete.tranche ? ` — Tranche ${feeToDelete.tranche}` : ""}
+                                {" · "}{Number(feeToDelete.montant).toLocaleString("fr-FR")} {isInternational(selectedStudent?.nationalite) ? "$" : "FCFA"}.
+                                {" "}Cette action est définitive.
+                                {feeToDelete.status === "paye" && " ⚠️ Ce frais est déjà payé : l'écriture comptable liée n'est pas annulée automatiquement."}
+                            </p>
+                            <div className="mt-6 flex justify-end gap-2">
+                                <Button variant="outline" disabled={isDeletingFee} onClick={() => setFeeToDelete(null)}>
+                                    Annuler
+                                </Button>
+                                <Button variant="destructive" disabled={isDeletingFee} onClick={handleDeleteFee}>
+                                    {isDeletingFee && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Supprimer
                                 </Button>
                             </div>
                         </motion.div>
