@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joda Créatif — App complète</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="staff.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="creative.css">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0a0204; font-family: 'Inter', sans-serif; }
+  #root { height: 100vh; }
+  .stage {
+    width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    background: radial-gradient(70% 50% at 50% 0%, rgba(127,29,29,.32), transparent 60%), linear-gradient(180deg, #170409, #0a0204);
+    padding: 22px 0;
+  }
+  /* app chrome (role + theme) sits above the device */
+  .appbar { display: flex; align-items: center; gap: 12px; }
+  .appbar .seg { display: inline-flex; padding: 4px; gap: 4px; border-radius: 13px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); }
+  .appbar .seg button { border: none; background: transparent; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.55); padding: 8px 20px; border-radius: 9px; transition: all .2s; }
+  .appbar .seg button.on { color: #fff; background: linear-gradient(135deg,#ff5a5f,#d11a2a); box-shadow: 0 6px 16px -6px rgba(226,59,64,.6); }
+  .appbar .themebtn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.07); color: rgba(255,255,255,.8); cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600; padding: 9px 14px; border-radius: 12px; }
+  .appbar .themebtn:hover { background: rgba(255,255,255,.12); }
+
+  .device { width: 390px; height: 800px; border-radius: 46px; overflow: hidden; position: relative; box-shadow: 0 50px 100px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.07); }
+  .device .scr { position: absolute; inset: 0; overflow: hidden; background: var(--bg-base); }
+  .scr-body { padding: 16px 16px 0; }
+  .detailback { position: absolute; top: 50px; left: 14px; z-index: 40; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--crimson-vivid); cursor: pointer; padding: 6px 10px 6px 6px; border-radius: 10px; background: var(--glass); border: 1px solid var(--glass-line); }
+  .detailback + .screen-anim { top: 84px !important; }
+  .screen-anim { animation: scrIn .4s cubic-bezier(.2,.7,.3,1) both; }
+  @media (prefers-reduced-motion: reduce) { .screen-anim { animation: none; } }
+  @keyframes scrIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (max-height: 860px) { .device { height: 92vh; } }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"><div class="stage"><div style="color:rgba(255,255,255,.5);font-size:14px">Chargement…</div></div></div>
+<script type="text/babel" src="staff-ds.jsx"></script>
+<script type="text/babel" src="creative-viz.jsx"></script>
+<script type="text/babel" src="creative-dash.jsx"></script>
+<script type="text/babel" src="creative-screens.jsx"></script>
+<script type="text/babel" src="creative-screens-c.jsx"></script>
+<script type="text/babel" src="creative-screens-d.jsx"></script>
+<script type="text/babel" src="creative-screens-e.jsx"></script>
+<script type="text/babel" src="creative-data.jsx"></script>
+<script type="text/babel">
+// host wrapper: render App into a centered stage with device chrome
+const _root = ReactDOM.createRoot(document.getElementById('root'));
+window.__mountApp = (AppComp) => _root.render(<div className="stage"><AppComp /></div>);
+</script>
+<script type="text/babel" src="creative-app.jsx"></script>
+</body>
+</html>

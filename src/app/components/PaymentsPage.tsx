@@ -13,6 +13,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { logActivity } from "../utils/activityLogger";
 import { downloadReceipt } from "../utils/downloadReceipt";
+import { confirmDuplicata } from "../utils/confirmDuplicata";
 import ConfirmDialog from "./ConfirmDialog";
 import ProtectedRoute from "./ProtectedRoute";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
@@ -482,11 +483,15 @@ export default function PaymentsPage() {
                     `Encaissement enregistré — ${typeLabel(encaisserForm.type, parseInt(encaisserForm.tranche))} — ${student.nom} ${student.prenom}`,
                     { montant: encaisserForm.montant }
                 );
-                void downloadReceipt(
-                    { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: null, validated_at: null },
-                    { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "", nationalite: student.nationalite ?? null },
-                    { includeDuplicata: true }
-                );
+                // Côté admin : choix avec / sans duplicata au moment du téléchargement.
+                const withDup = await confirmDuplicata();
+                if (withDup !== null) {
+                    void downloadReceipt(
+                        { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: null, validated_at: null },
+                        { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "", nationalite: student.nationalite ?? null },
+                        { includeDuplicata: withDup }
+                    );
+                }
             }
             showNotification("Encaissement enregistré — en attente de validation", "success");
             setEncaisserForm({ student_id: "", type: "bourse", tranche: "1", montant: "", date_paiement: new Date().toISOString().slice(0, 10) });
@@ -498,13 +503,16 @@ export default function PaymentsPage() {
         }
     };
 
-    const handlePrint = (payment: Payment) => {
+    const handlePrint = async (payment: Payment) => {
         const student = getStudent(payment.student_id);
         if (!student) return;
+        // Côté admin : choix avec / sans duplicata au moment du téléchargement.
+        const withDup = await confirmDuplicata();
+        if (withDup === null) return;
         void downloadReceipt(
             { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: payment.validated_by, validated_at: payment.validated_at },
             { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "", nationalite: student.nationalite ?? null },
-            { includeDuplicata: true }
+            { includeDuplicata: withDup }
         );
     };
 
@@ -793,7 +801,7 @@ export default function PaymentsPage() {
                                                     <div className="flex items-center justify-end gap-2">
                                                         {payment.status === "paye" ? (
                                                             <button
-                                                                onClick={() => handlePrint(payment)}
+                                                                onClick={() => { void handlePrint(payment); }}
                                                                 className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                                             >
                                                                 <Download className="h-3 w-3" />

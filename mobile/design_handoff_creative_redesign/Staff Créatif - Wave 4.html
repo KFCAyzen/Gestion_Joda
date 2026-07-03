@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joda — Staff créatif (Wave 4)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="staff.css">
+<link rel="stylesheet" href="creative.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #0c0205; font-family: 'Inter', sans-serif; }
+  .gal { min-height: 100vh; background: radial-gradient(70% 50% at 50% 0%, rgba(127,29,29,.35), transparent 60%), linear-gradient(180deg, #18060b, #0a0204); padding: 44px 0 80px; }
+  .gal-head { text-align: center; color: #fff; padding: 0 24px; }
+  .gal-head .kick { font-family: 'Space Grotesk'; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .26em; color: rgba(255,255,255,.5); }
+  .gal-head h1 { font-family: 'Space Grotesk'; font-weight: 600; letter-spacing: -.025em; font-size: 32px; margin: 10px 0 8px; }
+  .gal-head p { max-width: 640px; margin: 0 auto; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,.6); }
+  .gal-rail { display: flex; gap: 40px; align-items: flex-start; padding: 40px 56px 0; overflow-x: auto; }
+  .gal-rail::-webkit-scrollbar { height: 10px; }
+  .gal-rail::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 999px; }
+  .gal-item { flex-shrink: 0; }
+  .gal-cap { text-align: center; color: rgba(255,255,255,.6); margin-top: 16px; font-size: 12.5px; font-weight: 500; }
+  .gal-cap b { color: #fff; font-weight: 650; display: block; font-size: 14px; margin-bottom: 2px; }
+  .frame { width: 390px; height: 844px; border-radius: 46px; overflow: hidden; position: relative; box-shadow: 0 50px 100px -30px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06); }
+  .frame .scr { position: absolute; inset: 0; overflow-y: auto; background: var(--bg-base); }
+  .scr-body { padding: 16px 16px 0; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="staff-ds.jsx"></script>
+<script type="text/babel" src="creative-viz.jsx"></script>
+<script type="text/babel" src="creative-screens-d.jsx"></script>
+<script type="text/babel">
+const PAYMENTS = [
+  { id: "p1", student: "Awa Diabaté", type: "Procédure visa", tranche: 2, amount: 400000, ago: "il y a 12 min", method: "Wave", proof: "recu-wave-0412.jpg", state: "pending" },
+  { id: "p2", student: "Yao Kouassi", type: "Frais de dossier", amount: 150000, ago: "il y a 1 h", method: "Orange Money", proof: "capture-om.png", state: "pending" },
+  { id: "p3", student: "Mariam Koné", type: "Cours mandarin", tranche: 1, amount: 250000, ago: "ce matin", method: "Virement", proof: "virement-bcea.pdf", state: "pending" },
+  { id: "p4", student: "Fatou Bamba", type: "Solde scolarité", amount: 500000, ago: "hier", method: "Wave", proof: "recu-final.jpg", state: "approved" },
+];
+const THREADS = [
+  { id: "t1", name: "Awa Diabaté", online: true, time: "09:32", last: "Merci ! J'envoie le certificat médical aujourd'hui.", unread: 2,
+    messages: [
+      { from: "in", text: "Bonjour, j'ai une question sur mon dossier de visa 🙏", time: "09:20" },
+      { from: "out", text: "Bonjour Awa ! Bien sûr, je vous écoute.", time: "09:24" },
+      { from: "in", text: "Il me manque quel document exactement ?", time: "09:27" },
+      { from: "out", text: "Le certificat médical et la photo d'identité.", time: "09:30" },
+      { from: "in", text: "Merci ! J'envoie le certificat médical aujourd'hui.", time: "09:32" },
+    ] },
+  { id: "t2", name: "Yao Kouassi", online: false, time: "hier", last: "D'accord, je prépare la lettre de motivation.", unread: 0,
+    messages: [
+      { from: "out", text: "Bonjour Yao, pensez à finaliser votre lettre de motivation.", time: "hier 16:10" },
+      { from: "in", text: "D'accord, je prépare la lettre de motivation.", time: "hier 16:40" },
+    ] },
+  { id: "t3", name: "Mariam Koné", online: true, time: "08:15", last: "Le paiement du mandarin est parti par virement.", unread: 1,
+    messages: [{ from: "in", text: "Le paiement du mandarin est parti par virement.", time: "08:15" }] },
+  { id: "t4", name: "Ibrahim Cissé", online: false, time: "lun.", last: "Super, merci pour les infos !", unread: 0,
+    messages: [
+      { from: "in", text: "Comment je commence mon inscription ?", time: "lun. 11:00" },
+      { from: "out", text: "Je vous ai envoyé le lien et la liste des pièces.", time: "lun. 11:20" },
+      { from: "in", text: "Super, merci pour les infos !", time: "lun. 11:25" },
+    ] },
+];
+const REPORTS = [
+  { id: "r1", employee: "Aïcha Koné", poste: "Conseillère étudiante", date: "Aujourd'hui", hours: 8, activities: "Suivi de 4 dossiers de visa, relance de l'agence partenaire à Pékin, mise à jour du tableau d'admissions.", state: "pending" },
+  { id: "r2", employee: "Moussa Diallo", poste: "Agent administratif", date: "Aujourd'hui", hours: 7, activities: "Traitement de 6 paiements, archivage des justificatifs, préparation des fiches de paie.", state: "pending" },
+  { id: "r3", employee: "Sandra Mensah", poste: "Accueil & relation", date: "Hier", hours: 6, activities: "Accueil de 8 candidats, présentation des offres Chine et Canada, prise de rendez-vous.", state: "approved" },
+];
+const DATA = { payments: PAYMENTS, threads: THREADS, unread: 3, reports: REPORTS };
+const STAFF = { name: "Karim Touré", role: "Responsable des admissions", agency: "Agence Abidjan", stats: { dossiers: 38, rate: 87, team: 6 } };
+
+const Frame = ({ light, children }) => (<div className="frame"><div className={"scr" + (light ? " theme-light" : "")}>{children}</div></div>);
+const Item = ({ light, title, children }) => (<div className="gal-item"><Frame light={light}>{children}</Frame><div className="gal-cap"><b>{title}</b>{light ? "clair" : "sombre"}</div></div>);
+
+const App = () => (
+  <div className="gal">
+    <div className="gal-head">
+      <div className="kick">Joda · Wave 4 — Staff</div>
+      <h1>Espace équipe</h1>
+      <p>Le reste de l'app staff dans le langage créatif : validation des paiements avec feuille justificatif, messagerie + chat fil, rapports d'activité, profil. Tape « Valider » ou ouvre un justificatif — tout est interactif.</p>
+    </div>
+    <div className="gal-rail">
+      <Item title="Paiements + justificatif"><StaffPaiementsV2 data={DATA} /></Item>
+      <Item light title="Paiements + justificatif"><StaffPaiementsV2 data={DATA} /></Item>
+      <Item title="Messages"><StaffMessagesV2 data={DATA} /></Item>
+      <Item title="Chat"><StaffChatV2 thread={THREADS[0]} /></Item>
+      <Item light title="Chat"><StaffChatV2 thread={THREADS[0]} /></Item>
+      <Item title="Rapports"><StaffRapportsV2 data={DATA} /></Item>
+      <Item light title="Rapports"><StaffRapportsV2 data={DATA} /></Item>
+      <Item title="Profil"><StaffProfilV2 staff={STAFF} /></Item>
+      <Item light title="Profil"><StaffProfilV2 staff={STAFF} /></Item>
+    </div>
+  </div>
+);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

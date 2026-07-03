@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joda — Parité & modules (Wave 5)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="staff.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="creative.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #0c0205; font-family: 'Inter', sans-serif; }
+  .gal { min-height: 100vh; background: radial-gradient(70% 50% at 50% 0%, rgba(127,29,29,.35), transparent 60%), linear-gradient(180deg, #18060b, #0a0204); padding: 44px 0 80px; }
+  .gal-head { text-align: center; color: #fff; padding: 0 24px; }
+  .gal-head .kick { font-family: 'Space Grotesk'; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .26em; color: rgba(255,255,255,.5); }
+  .gal-head h1 { font-family: 'Space Grotesk'; font-weight: 600; letter-spacing: -.025em; font-size: 32px; margin: 10px 0 8px; }
+  .gal-head p { max-width: 660px; margin: 0 auto; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,.6); }
+  .gal-rail { display: flex; gap: 40px; align-items: flex-start; padding: 40px 56px 0; overflow-x: auto; }
+  .gal-rail::-webkit-scrollbar { height: 10px; }
+  .gal-rail::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 999px; }
+  .gal-item { flex-shrink: 0; }
+  .gal-cap { text-align: center; color: rgba(255,255,255,.6); margin-top: 16px; font-size: 12.5px; font-weight: 500; }
+  .gal-cap b { color: #fff; font-weight: 650; display: block; font-size: 14px; margin-bottom: 2px; }
+  .frame { width: 390px; height: 844px; border-radius: 46px; overflow: hidden; position: relative; box-shadow: 0 50px 100px -30px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06); }
+  .frame .scr { position: absolute; inset: 0; overflow-y: auto; background: var(--bg-base); }
+  .scr-body { padding: 16px 16px 0; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="staff-ds.jsx"></script>
+<script type="text/babel" src="creative-viz.jsx"></script>
+<script type="text/babel" src="creative-screens-e.jsx"></script>
+<script type="text/babel">
+const DATA = {
+  notifications: [
+    { day: "AUJOURD'HUI", type: "payment", title: "Paiement à valider", body: "Awa Diabaté · procédure visa · 400 000 F (Wave)", time: "08:14", read: false },
+    { day: "AUJOURD'HUI", type: "alert", title: "Document manquant", body: "Le dossier de Yao Kouassi nécessite une lettre de motivation.", time: "09:05", read: false },
+    { day: "AUJOURD'HUI", type: "dossier", title: "Admission validée", body: "Fatou Bamba — Paris-Dauphine.", time: "09:48", read: false },
+    { day: "AUJOURD'HUI", type: "doc", title: "Nouveau document", body: "Awa Diabaté a déposé son certificat médical.", time: "08:32", read: true },
+    { day: "HIER", type: "system", title: "Sauvegarde effectuée", body: "Base de données sauvegardée avec succès.", time: "23:00", read: true },
+    { day: "HIER", type: "payment", title: "Paiement validé", body: "Solde de scolarité de Fatou Bamba (500 000 F).", time: "15:25", read: true },
+  ],
+  universities: [
+    { id: "v1", name: "Université de Pékin", city: "Pékin", country: "Chine", flag: "🇨🇳", programs: 12, students: 24, active: true },
+    { id: "v2", name: "Université de Montréal", city: "Montréal", country: "Canada", flag: "🇨🇦", programs: 9, students: 18, active: true },
+    { id: "v3", name: "Université Fudan", city: "Shanghai", country: "Chine", flag: "🇨🇳", programs: 7, students: 11, active: true },
+    { id: "v4", name: "Paris-Dauphine", city: "Paris", country: "France", flag: "🇫🇷", programs: 5, students: 8, active: false },
+  ],
+  cours: {
+    mandarin: { active: 18, revenue: 3200000, students: [
+      { name: "Mariam Koné", level: "Niveau 2 · HSK", start: "il y a 1 mois", paid: true },
+      { name: "Awa Diabaté", level: "Niveau 1 · débutant", start: "il y a 2 sem.", paid: true },
+      { name: "Ibrahim Cissé", level: "Niveau 1 · débutant", start: "cette semaine", paid: false },
+    ] },
+    anglais: { active: 11, revenue: 1600000, students: [
+      { name: "Yao Kouassi", level: "Intermédiaire · IELTS", start: "il y a 3 sem.", paid: true },
+      { name: "Sandra Mensah", level: "Avancé · TOEFL", start: "il y a 1 mois", paid: true },
+    ] },
+  },
+  storage: {
+    used: 6.4, total: 10, dbRows: 48230, dbSize: 312,
+    buckets: [
+      { label: "Documents étudiants", size: 3.1, color: "#ef4444", icon: ICONS.doc },
+      { label: "Justificatifs paiement", size: 1.8, color: "#fbbf24", icon: ICONS.card },
+      { label: "Fiches de paie", size: 0.9, color: "#34d9a8", icon: ICONS.receipt },
+      { label: "Autres", size: 0.6, color: "#60a5fa", icon: ICONS.database },
+    ],
+  },
+  logs: [
+    { day: "AUJOURD'HUI", actor: "Karim T.", desc: "a validé un paiement de 400 000 F (Awa Diabaté · Wave)", time: "il y a 8 min", type: "payment" },
+    { day: "AUJOURD'HUI", actor: "Fatou B.", desc: "a créé une entrée comptable « Procédure »", time: "il y a 25 min", type: "accounting" },
+    { day: "AUJOURD'HUI", actor: "Aïcha K.", desc: "a validé le rapport journalier de Moussa D.", time: "il y a 1 h", type: "validate" },
+    { day: "AUJOURD'HUI", actor: "Nadia S.", desc: "a rejeté un paiement (justificatif illisible)", time: "il y a 3 h", type: "reject" },
+    { day: "HIER", actor: "Nadia S.", desc: "a créé le compte agent « Kévin Ouattara »", time: "hier 17:40", type: "create" },
+    { day: "HIER", actor: "Moussa D.", desc: "a supprimé un document en doublon", time: "hier 15:10", type: "delete" },
+    { day: "HIER", actor: "Aïcha K.", desc: "a téléversé un justificatif de paiement", time: "hier 11:22", type: "upload" },
+  ],
+};
+
+const Frame = ({ light, children }) => (<div className="frame"><div className={"scr" + (light ? " theme-light" : "")}>{children}</div></div>);
+const Item = ({ light, title, children }) => (<div className="gal-item"><Frame light={light}>{children}</Frame><div className="gal-cap"><b>{title}</b>{light ? "clair" : "sombre"}</div></div>);
+
+const App = () => (
+  <div className="gal">
+    <div className="gal-head">
+      <div className="kick">Joda · Wave 5 — Parité & modules</div>
+      <h1>Notifications & gestion</h1>
+      <p>Les écrans manquants pour la parité web complète : notifications (timeline lue/non-lue, « tout lire »), réseau d'universités partenaires, cours de langues avec revenus, stockage avec donut, et journal d'audit horodaté.</p>
+    </div>
+    <div className="gal-rail">
+      <Item title="Notifications"><NotificationsV2 data={DATA} role="Admin" /></Item>
+      <Item light title="Notifications"><NotificationsV2 data={DATA} role="Admin" /></Item>
+      <Item title="Universités"><AdminUniversitesV2 data={DATA} /></Item>
+      <Item light title="Universités"><AdminUniversitesV2 data={DATA} /></Item>
+      <Item title="Cours"><AdminCoursV2 data={DATA} /></Item>
+      <Item light title="Cours"><AdminCoursV2 data={DATA} /></Item>
+      <Item title="Stockage"><AdminStockageV2 data={DATA} /></Item>
+      <Item light title="Stockage"><AdminStockageV2 data={DATA} /></Item>
+      <Item title="Journal d'audit"><AdminLogsV2 data={DATA} /></Item>
+      <Item light title="Journal d'audit"><AdminLogsV2 data={DATA} /></Item>
+    </div>
+  </div>
+);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

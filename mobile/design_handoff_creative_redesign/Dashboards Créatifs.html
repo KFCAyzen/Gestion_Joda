@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joda — Dashboards créatifs (Wave 1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="staff.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="creative.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #0c0205; font-family: 'Inter', sans-serif; }
+  .gal {
+    min-height: 100vh;
+    background: radial-gradient(70% 50% at 50% 0%, rgba(127,29,29,.35), transparent 60%), linear-gradient(180deg, #18060b, #0a0204);
+    padding: 44px 0 80px;
+  }
+  .gal-head { text-align: center; color: #fff; padding: 0 24px; }
+  .gal-head .kick { font-family: 'Space Grotesk'; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .26em; color: rgba(255,255,255,.5); }
+  .gal-head h1 { font-family: 'Space Grotesk'; font-weight: 600; letter-spacing: -.025em; font-size: 32px; margin: 10px 0 8px; }
+  .gal-head p { max-width: 640px; margin: 0 auto; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,.6); }
+  .gal-rail { display: flex; gap: 40px; align-items: flex-start; padding: 48px 56px; overflow-x: auto; }
+  .gal-rail::-webkit-scrollbar { height: 10px; }
+  .gal-rail::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 999px; }
+  .gal-item { flex-shrink: 0; }
+  .gal-cap { text-align: center; color: rgba(255,255,255,.65); margin-top: 18px; font-size: 13px; font-weight: 500; }
+  .gal-cap b { color: #fff; font-weight: 650; display: block; font-size: 14.5px; margin-bottom: 2px; }
+  .frame {
+    width: 390px; height: 844px; border-radius: 46px; overflow: hidden; position: relative;
+    box-shadow: 0 50px 100px -30px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06);
+  }
+  .frame .stage { position: absolute; inset: 0; }
+  .frame .scr { position: absolute; inset: 0; overflow-y: auto; }
+  .scr-body { padding: 16px 16px 0; }
+  .divlbl { color: rgba(255,255,255,.4); font-family: 'Space Grotesk'; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; text-align: center; padding: 14px 0 0; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="staff-ds.jsx"></script>
+<script type="text/babel" src="creative-viz.jsx"></script>
+<script type="text/babel" src="creative-dash.jsx"></script>
+
+<script type="text/babel">
+const STAFF_DATA = {
+  staff: { name: "Awa Traoré", first: "Awa" },
+  kpis: { dayPct: 72, handledToday: 18, targetToday: 25, pending: 7, activeDossiers: 42, dossiersTrend: 5,
+    collectedMonth: 4200000, collectTrend: 12, paymentsToValidate: 4, reportsToValidate: 3, team: 5 },
+  staffSpark: { label: "4,2M", points: [12, 18, 14, 22, 19, 27, 24, 31] },
+  todoPayments: [
+    { id: "p1", student: "Awa Diabaté", type: "Procédure visa", ago: "il y a 2 h", amount: 400000 },
+    { id: "p2", student: "Mariam Koné", type: "Cours mandarin", ago: "ce matin", amount: 250000 },
+    { id: "p3", student: "Ibrahim Cissé", type: "Inscription", ago: "hier", amount: 100000 },
+  ],
+};
+
+const ADMIN_DATA = {
+  admin: { name: "Nadia Sangaré" },
+  dash: {
+    aTraiter: 9, dossiersOuverts: 86, dossiersGrowth: 12, encaisseMois: 12400000, encaisseGrowth: 18, fluxTotal: 47,
+    flux: [{ l: "L", v: 5 }, { l: "M", v: 8 }, { l: "M", v: 6 }, { l: "J", v: 9 }, { l: "V", v: 7 }, { l: "S", v: 4 }, { l: "D", v: 8 }],
+    topUniv: [{ name: "Université de Pékin", count: 24 }, { name: "Paris-Dauphine", count: 19 }, { name: "Université Fudan", count: 14 }],
+  },
+  adminSpark: [6.2, 7.1, 6.8, 8.4, 9.1, 8.7, 10.2, 11.0, 10.6, 12.4],
+  donut: [
+    { label: "Chine", v: 38, color: "#ff5a5f" },
+    { label: "Canada", v: 18, color: "#fbbf24" },
+    { label: "France", v: 22, color: "#34d9a8" },
+    { label: "Maroc", v: 8, color: "#a78bfa" },
+  ],
+};
+
+const Frame = ({ light, children }) => (
+  <div className="frame">
+    <div className={"stage" + (light ? " theme-light" : "")}>
+      <div className="scr" style={{ background: light ? "var(--bg-base)" : "var(--bg-base)" }}>
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
+const App = () => (
+  <div className="gal">
+    <div className="gal-head">
+      <div className="kick">Joda · Wave 1 — Tableaux de bord</div>
+      <h1>Dashboards créatifs</h1>
+      <p>L'ADN verre-crimson poussé plus loin : hero animé avec aurores en mouvement, grille bento à profondeur, data-viz animée (anneaux, sparklines, donut, barres), typographie display affirmée. Staff &amp; Admin, en sombre et clair.</p>
+    </div>
+    <div className="gal-rail">
+      <div className="gal-item">
+        <Frame><StaffHomeV2 data={STAFF_DATA} /></Frame>
+        <div className="gal-cap"><b>Staff · Accueil</b>sombre</div>
+      </div>
+      <div className="gal-item">
+        <Frame light><StaffHomeV2 data={STAFF_DATA} /></Frame>
+        <div className="gal-cap"><b>Staff · Accueil</b>clair</div>
+      </div>
+      <div className="gal-item">
+        <Frame><AdminHomeV2 data={ADMIN_DATA} /></Frame>
+        <div className="gal-cap"><b>Admin · Tableau de bord</b>sombre</div>
+      </div>
+      <div className="gal-item">
+        <Frame light><AdminHomeV2 data={ADMIN_DATA} /></Frame>
+        <div className="gal-cap"><b>Admin · Tableau de bord</b>clair</div>
+      </div>
+    </div>
+  </div>
+);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

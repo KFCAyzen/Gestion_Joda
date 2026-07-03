@@ -46,6 +46,7 @@ import FilterSelect from "./FilterSelect";
 import PaymentOverview from "./PaymentOverview";
 import DocumentManagement from "./DocumentManagement";
 import { downloadReceipt } from "../utils/downloadReceipt";
+import { confirmDuplicata } from "../utils/confirmDuplicata";
 import { DropdownMenu } from "./shared";
 import PhoneInput from "./shared/PhoneInput";
 import { Eye, Edit, Printer, Download, Trash2, Loader2 } from "lucide-react";
@@ -998,17 +999,22 @@ export default function StudentManagement() {
                                                 niveau={selectedStudent.niveau || ""}
                                                 nationalite={selectedStudent.nationalite}
                                                 payments={selectedStudentPayments}
-                                                onDownloadReceipt={(p) =>
-                                                    downloadReceipt(p, {
-                                                        nom: selectedStudent.nom,
-                                                        prenom: selectedStudent.prenom,
-                                                        email: selectedStudent.email,
-                                                        telephone: selectedStudent.telephone,
-                                                        niveau: selectedStudent.niveau,
-                                                        filiere: selectedStudent.filiere,
-                                                        nationalite: selectedStudent.nationalite ?? null,
-                                                    }, { includeDuplicata: true })
-                                                }
+                                                onDownloadReceipt={(p) => {
+                                                    // Côté admin : choix avec / sans duplicata au moment du téléchargement.
+                                                    void (async () => {
+                                                        const withDup = await confirmDuplicata();
+                                                        if (withDup === null) return;
+                                                        void downloadReceipt(p, {
+                                                            nom: selectedStudent.nom,
+                                                            prenom: selectedStudent.prenom,
+                                                            email: selectedStudent.email,
+                                                            telephone: selectedStudent.telephone,
+                                                            niveau: selectedStudent.niveau,
+                                                            filiere: selectedStudent.filiere,
+                                                            nationalite: selectedStudent.nationalite ?? null,
+                                                        }, { includeDuplicata: withDup });
+                                                    })();
+                                                }}
                                             />
                                         </div>
                                     </div>

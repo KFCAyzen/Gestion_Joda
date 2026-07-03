@@ -24,6 +24,7 @@ import {
 import { SearchBar, FilterSelect, PageHeader, LoadingState, ErrorMessage, StatusBadge, DropdownMenu } from "./shared";
 import { Eye, Edit, Printer, Download } from "lucide-react";
 import { downloadReceipt } from "../utils/downloadReceipt";
+import { confirmDuplicata } from "../utils/confirmDuplicata";
 import { logActivity } from "../utils/activityLogger";
 
 interface ApplicationFee {
@@ -188,12 +189,15 @@ export default function ApplicationFeeManagement() {
         setSavingFee(false);
     };
 
-    const handlePrintFeeThermal = (fee: ApplicationFee, student: Student | undefined) => {
+    const handlePrintFeeThermal = async (fee: ApplicationFee, student: Student | undefined) => {
         if (!student) return;
+        // Côté admin : choix avec / sans duplicata au moment du téléchargement.
+        const withDup = await confirmDuplicata();
+        if (withDup === null) return;
         void downloadReceipt(
             { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
             { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere, nationalite: student.nationalite ?? null },
-            { includeDuplicata: true }
+            { includeDuplicata: withDup }
         );
     };
 
@@ -374,11 +378,7 @@ export default function ApplicationFeeManagement() {
                                                 { label: t("actions.details"), icon: <Eye className="h-4 w-4" />, onClick: () => setDetailFee(fee) },
                                                 ...((user?.role === "admin" || user?.role === "super_admin") ? [{ label: t("actions.edit"), icon: <Edit className="h-4 w-4" />, onClick: () => openEditFee(fee) }] : []),
                                                 ...(fee.status === "paye" && student ? [
-                                                    { label: t("actions.downloadReceipt"), icon: <Download className="h-4 w-4" />, onClick: () => downloadReceipt(
-                                                        { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
-                                                        { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere, nationalite: student.nationalite ?? null },
-                                                        { includeDuplicata: true }
-                                                    )},
+                                                    { label: t("actions.downloadReceipt"), icon: <Download className="h-4 w-4" />, onClick: () => { void handlePrintFeeThermal(fee, student); } },
                                                 ] : []),
                                             ]} />
                                         </div>
@@ -410,7 +410,7 @@ export default function ApplicationFeeManagement() {
                         </div>
                         <div className="mt-5 flex gap-2">
                             {detailFee.status === "paye" && (
-                                <button onClick={() => handlePrintFeeThermal(detailFee, student)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
+                                <button onClick={() => { void handlePrintFeeThermal(detailFee, student); }} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
                                     {t("actions.printReceipt")}
                                 </button>
                             )}

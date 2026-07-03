@@ -1,0 +1,20 @@
+env: load .env.local
+env: export EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_API_BASE_URL
+Starting project at C:\Users\KEPSEU Franck\Documents\Gestion_Joda\mobile
+Using src/app as the root directory for Expo Router.
+React Compiler enabled
+Starting Metro Bundler
+[metro-file-map] Cache write error
+: Error: ENOSPC: no space left on device, write
+    at write (node:internal/fs/promises:741:8)
+    at writeFileHandle (node:internal/fs/promises:498:7)
+    at C:\Users\KEPSEU Franck\Documents\Gestion_Joda\mobile\node_modules\@expo\metro\node_modules\metro-file-map\src\cache\DiskCacheManager.js:80:11
+    at DiskCacheManager.write (C:\Users\KEPSEU Franck\Documents\Gestion_Joda\mobile\node_modules\@expo\metro\node_modules\metro-file-map\src\cache\DiskCacheManager.js:106:7)
+    at FileMap._takeSnapshotAndPersist (C:\Users\KEPSEU Franck\Documents\Gestion_Joda\mobile\node_modules\@expo\metro\node_modules\metro-file-map\src\index.js:459:5)
+    at C:\Users\KEPSEU Franck\Documents\Gestion_Joda\mobile\node_modules\@expo\metro\node_modules\metro-file-map\src\index.js:255:9
+    at DependencyGraph.ready (C:\Users\KEPSEU Franck\Documents\Gestion_Joda\mobile\node_modules\@expo\metro\node_modules\metro\src\node-haste\DependencyGraph.js:88:5) {
+  errno: -4055,
+  code: 'ENOSPC',
+  syscall: 'write'
+}
+CommandError: ngrok tunnel took too long to connect.

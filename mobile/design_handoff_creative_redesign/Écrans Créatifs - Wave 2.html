@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joda — Écrans créatifs (Wave 2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="staff.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="creative.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #0c0205; font-family: 'Inter', sans-serif; }
+  .gal { min-height: 100vh; background: radial-gradient(70% 50% at 50% 0%, rgba(127,29,29,.35), transparent 60%), linear-gradient(180deg, #18060b, #0a0204); padding: 44px 0 80px; }
+  .gal-head { text-align: center; color: #fff; padding: 0 24px; }
+  .gal-head .kick { font-family: 'Space Grotesk'; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .26em; color: rgba(255,255,255,.5); }
+  .gal-head h1 { font-family: 'Space Grotesk'; font-weight: 600; letter-spacing: -.025em; font-size: 32px; margin: 10px 0 8px; }
+  .gal-head p { max-width: 640px; margin: 0 auto; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,.6); }
+  .gal-group { color: #fff; padding: 30px 56px 0; }
+  .gal-group h2 { font-family: 'Space Grotesk'; font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -.02em; }
+  .gal-group h2 span { color: rgba(255,255,255,.4); font-weight: 500; }
+  .gal-rail { display: flex; gap: 40px; align-items: flex-start; padding: 22px 56px 0; overflow-x: auto; }
+  .gal-rail::-webkit-scrollbar { height: 10px; }
+  .gal-rail::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 999px; }
+  .gal-item { flex-shrink: 0; }
+  .gal-cap { text-align: center; color: rgba(255,255,255,.6); margin-top: 16px; font-size: 12.5px; font-weight: 500; }
+  .gal-cap b { color: #fff; font-weight: 650; display: block; font-size: 14px; margin-bottom: 2px; }
+  .frame { width: 390px; height: 844px; border-radius: 46px; overflow: hidden; position: relative; box-shadow: 0 50px 100px -30px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06); }
+  .frame .scr { position: absolute; inset: 0; overflow-y: auto; background: var(--bg-base); }
+  .scr-body { padding: 16px 16px 0; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="staff-ds.jsx"></script>
+<script type="text/babel" src="creative-viz.jsx"></script>
+<script type="text/babel" src="creative-screens.jsx"></script>
+<script type="text/babel">
+const DOSSIERS = [
+  { id: "s1", name: "Awa Diabaté", program: "Master Informatique — Chine", chip: "live", bucket: "now", pct: 62, step: 4, docs: "4/6", pay: "1.2M", dest: "Pékin" },
+  { id: "s2", name: "Yao Kouassi", program: "Licence Commerce — Canada", chip: "due", bucket: "review", pct: 38, step: 2, docs: "3/6", pay: "600K", dest: "Montréal" },
+  { id: "s3", name: "Fatou Bamba", program: "Master Finance — France", chip: "done", bucket: "done", pct: 100, step: 6, docs: "6/6", pay: "Soldé", dest: "Paris" },
+  { id: "s4", name: "Ibrahim Cissé", program: "Licence Ingénierie — Maroc", chip: "live", bucket: "now", pct: 22, step: 1, docs: "1/6", pay: "Aucun", dest: "Rabat" },
+  { id: "s5", name: "Mariam Koné", program: "Master Marketing — Chine", chip: "due", bucket: "review", pct: 50, step: 3, docs: "5/6", pay: "900K", dest: "Shanghai" },
+];
+const STAFF_DATA = { dossiers: DOSSIERS };
+
+const FICHE = {
+  id: "s1", name: "Awa Diabaté", ref: "JD-2041", program: "Master Informatique — Chine",
+  dest: "Université de Pékin", pct: 62, step: 4,
+  docs: [
+    { name: "Passeport", ok: true }, { name: "Diplôme licence", ok: true },
+    { name: "Relevés de notes", ok: true }, { name: "Lettre de motivation", ok: true },
+    { name: "Certificat médical", ok: false }, { name: "Photo d'identité", ok: false },
+  ],
+};
+
+const AGENTS = [
+  { id: "a1", name: "Karim Touré", roleLabel: "Superviseur", rank: 1, students: 31, dossiers: 28, score: 88, b: { revenue: 100, activity: 82, speed: 91, dossier: 74 } },
+  { id: "a2", name: "Aïcha Koné", roleLabel: "Agent", rank: 2, students: 27, dossiers: 22, score: 79, b: { revenue: 74, activity: 88, speed: 80, dossier: 71 } },
+  { id: "a3", name: "Moussa Diallo", roleLabel: "Agent", rank: 3, students: 22, dossiers: 18, score: 64, b: { revenue: 58, activity: 70, speed: 65, dossier: 68 } },
+  { id: "a4", name: "Sandra Mensah", roleLabel: "Utilisateur", rank: 4, students: 16, dossiers: 11, score: 47, b: { revenue: 42, activity: 55, speed: 48, dossier: 44 } },
+  { id: "a5", name: "Kévin Ouattara", roleLabel: "Agent", rank: 5, students: 12, dossiers: 8, score: 33, b: { revenue: 30, activity: 38, speed: 35, dossier: 28 } },
+];
+const ADMIN_PERF = { agents: AGENTS, perf: { revenue: 12400000, enValidation: 6 } };
+
+const CANDIDATURES = [
+  { id: "c1", name: "Ibrahim Cissé", program: "Licence Ingénierie — Maroc", status: "document_manquant", bucket: "todo", ago: "il y a 2 h" },
+  { id: "c2", name: "Awa Diabaté", program: "Master Informatique — Chine", status: "document_recu", bucket: "todo", ago: "ce matin" },
+  { id: "c3", name: "Yao Kouassi", program: "Licence Commerce — Canada", status: "en_attente", bucket: "todo", ago: "hier" },
+  { id: "c4", name: "Mariam Koné", program: "Master Marketing — Chine", status: "en_cours", bucket: "all", ago: "il y a 3 j" },
+  { id: "c5", name: "Fatou Bamba", program: "Master Finance — France", status: "en_cours", bucket: "all", ago: "il y a 5 j" },
+];
+const ADMIN_CAND = { candidatures: CANDIDATURES };
+
+const Frame = ({ light, children }) => (
+  <div className="frame"><div className={"scr" + (light ? " theme-light" : "")}>{children}</div></div>
+);
+const Item = ({ light, title, children }) => (
+  <div className="gal-item"><Frame light={light}>{children}</Frame><div className="gal-cap"><b>{title}</b>{light ? "clair" : "sombre"}</div></div>
+);
+
+const App = () => (
+  <div className="gal">
+    <div className="gal-head">
+      <div className="kick">Joda · Wave 2 — Drill-downs</div>
+      <h1>Écrans créatifs</h1>
+      <p>Les écrans de détail dans le même langage : anneaux de progression animés, parcours en timeline, classements à barres animées, cartes bento. Staff &amp; Admin, sombre et clair.</p>
+    </div>
+
+    <div className="gal-group"><h2>Staff · Dossiers <span>— liste + fiche étudiant</span></h2></div>
+    <div className="gal-rail">
+      <Item title="Dossiers"><StaffDossiersV2 data={STAFF_DATA} /></Item>
+      <Item light title="Dossiers"><StaffDossiersV2 data={STAFF_DATA} /></Item>
+      <Item title="Fiche étudiant"><StaffFicheV2 student={FICHE} /></Item>
+      <Item light title="Fiche étudiant"><StaffFicheV2 student={FICHE} /></Item>
+    </div>
+
+    <div className="gal-group"><h2>Admin · Pilotage <span>— performances + candidatures</span></h2></div>
+    <div className="gal-rail">
+      <Item title="Performances"><AdminPerfV2 data={ADMIN_PERF} /></Item>
+      <Item light title="Performances"><AdminPerfV2 data={ADMIN_PERF} /></Item>
+      <Item title="Candidatures"><AdminCandidaturesV2 data={ADMIN_CAND} /></Item>
+      <Item light title="Candidatures"><AdminCandidaturesV2 data={ADMIN_CAND} /></Item>
+    </div>
+  </div>
+);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
