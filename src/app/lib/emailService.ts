@@ -1195,6 +1195,99 @@ ${emailFooter(year, lang)}
   }
 }
 
+// ── Reçu de paiement (quittance) → étudiant ────────────────────────────────────
+
+interface ReceiptEmailData {
+  studentName: string;
+  studentEmail: string;
+  receiptNo: string;
+  amountLabel: string;      // déjà formaté : "150 000 FCFA" ou "$1,200"
+  prestationLabel: string;  // ex. « Procédure Bourse — Visa »
+  dateStr: string;          // date du paiement, déjà localisée
+  pdfBase64: string;        // PDF du reçu, base64 sans préfixe data:
+  lang?: Lang;
+}
+
+export async function sendReceiptEmail(data: ReceiptEmailData): Promise<{ ok: boolean; error?: string }> {
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[Email] RESEND_API_KEY manquant');
+    return { ok: false, error: 'RESEND_API_KEY missing' };
+  }
+
+  const lang = data.lang ?? 'fr';
+  const isEn = lang === 'en';
+  const year = new Date().getFullYear();
+  const filename = `Quittance_${data.receiptNo}.pdf`;
+
+  try {
+    const result = await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: [data.studentEmail],
+      subject: isEn
+        ? `Your payment receipt — N° ${data.receiptNo}`
+        : `Votre reçu de paiement — N° ${data.receiptNo}`,
+      attachments: [{ filename, content: data.pdfBase64 }],
+      html: `<!DOCTYPE html>
+<html lang="${lang}"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+${emailHeader(lang)}
+<tr><td style="padding:36px 40px;">
+  <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? 'Hello' : 'Bonjour'} <strong>${data.studentName}</strong>,</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
+    ${isEn
+      ? 'We confirm your payment has been received. Please find your receipt attached to this email.'
+      : 'Nous confirmons la bonne réception de votre paiement. Vous trouverez votre reçu en pièce jointe de cet email.'}
+  </p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
+    <tr><td style="padding:20px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;width:150px;">${isEn ? 'Receipt no.' : 'N° de reçu'}</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;font-family:monospace;">${data.receiptNo}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? 'Service' : 'Prestation'}</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.prestationLabel}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? 'Date' : 'Date'}</td>
+          <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${data.dateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? 'Amount received' : 'Montant reçu'}</td>
+          <td style="padding:6px 0;font-size:15px;color:#16a34a;font-weight:700;">${data.amountLabel}</td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+    ${isEn
+      ? 'Please keep this receipt for your records. For any question, simply reply to this email.'
+      : 'Merci de conserver ce reçu. Pour toute question, répondez simplement à cet email.'}
+  </p>
+</td></tr>
+${emailFooter(year, lang)}
+</table>
+</td></tr>
+</table>
+</body></html>`,
+    });
+    if (result.error) {
+      const msg = `${result.error.name ?? 'Error'}: ${result.error.message ?? ''}`;
+      console.error('[Email] Resend a renvoyé une erreur (reçu):', result.error);
+      return { ok: false, error: msg };
+    }
+    console.log(`[Email] Reçu envoyé à ${data.studentEmail} (N° ${data.receiptNo}, id=${result.data?.id})`);
+    return { ok: true };
+  } catch (err: any) {
+    console.error('[Email] Exception sendReceiptEmail:', err);
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
 // ── PIN de rapport → employé ──────────────────────────────────────────────────
 
 interface ReportPinEmailData {

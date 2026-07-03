@@ -8,6 +8,10 @@ export interface ReceiptPayment {
     type: string;
     tranche: number | null;
     montant: number;
+    /** Cumul réellement encaissé/validé. Si < montant → reçu d'acompte
+     *  (le montant reçu affiché = ce cumul, avec Avance/Reste renseignés).
+     *  Absent ou ≥ montant → reçu de solde (montant total de la tranche). */
+    montant_paye?: number | null;
     status: string;
     date_paiement: string | null;
     validated_by?: string | null;
@@ -85,11 +89,19 @@ async function fetchLogoBase64(): Promise<string | null> {
     } catch { return null; }
 }
 
-export async function downloadReceipt(
+async function buildReceiptHtml(
     payment: ReceiptPayment,
     student: ReceiptStudent,
     options: { includeDuplicata?: boolean } = {},
-) {
+): Promise<{
+    docHtml: string;
+    printHtml: string;
+    receiptNo: string;
+    lang: Lang;
+    amountLabel: string;
+    prestationLabel: string;
+    dateStr: string;
+}> {
     const includeDuplicata = options.includeDuplicata ?? false;
     const lang  = getLang(student.langue);
     const isEn  = lang === 'en';
@@ -108,9 +120,19 @@ export async function downloadReceipt(
     // insère une espace fine insécable U+202F, gérée en HTML mais qui produit
     // un glyphe parasite si jamais on repasse par une police PDF.
     const groupNum = (n: number, sep: string) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, sep);
-    const amountFmt   = isIntl ? '$' + groupNum(payment.montant, ',') : groupNum(payment.montant, ' ') + ' FCFA';
+    const money = (n: number) => isIntl ? '$' + groupNum(n, ',') : groupNum(n, ' ') + ' FCFA';
+    // Reçu d'acompte : montant encaissé < total de la tranche → le reçu porte
+    // sur le montant réellement reçu, et détaille Avance/Reste. Sinon (solde),
+    // il porte sur le montant total.
+    const paid        = payment.montant_paye != null ? Number(payment.montant_paye) : payment.montant;
+    const isPartial   = paid > 0 && paid < payment.montant;
+    const received    = isPartial ? paid : payment.montant;
+    const reste       = Math.max(0, payment.montant - received);
+    const amountFmt   = money(received);
+    const avanceFmt   = isPartial ? money(received) : '';
+    const resteFmt    = isPartial ? money(reste)    : '';
     // Montant en lettres uniquement pour FCFA (numberToWords est en français).
-    const amountWords = isIntl ? '' : `${numberToWords(payment.montant)} francs CFA`;
+    const amountWords = isIntl ? '' : `${numberToWords(received)} francs CFA`;
     const receiptNo   = payment.id.slice(-8).toUpperCase();
     const studentName = `${sanitizeForHtml(student.nom)} ${sanitizeForHtml(student.prenom)}`;
     const companyBlock = isIntl
@@ -164,8 +186,8 @@ export async function downloadReceipt(
             <div class="field"><span class="lbl">Prestation :</span> <span class="val">${typeLabelFr}</span></div>
             <div class="field"><span class="lbl">Date :</span> <span class="val">${dateStr}</span></div>
             <div class="field"><span class="lbl">Mode :</span> <span class="val">Droit Bancaire / Cash</span></div>
-            <div class="field"><span class="lbl">Avance :</span> <span class="val">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
-            <div class="field"><span class="lbl">Reste :</span> <span class="val">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+            <div class="field"><span class="lbl">Avance :</span> <span class="val">${avanceFmt || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</span></div>
+            <div class="field"><span class="lbl">Reste :</span> <span class="val">${resteFmt || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</span></div>
           </td>
         </tr>
       </table>
@@ -284,19 +306,34 @@ export async function downloadReceipt(
         ? `${quittance('ORIGINAL')}<hr class="cut-line">${quittance('DUPLICATA')}`
         : quittance('ORIGINAL');
 
-    // Le reçu EST le HTML imprimé (styles hex only). On le rend dans une iframe
-    // totalement isolée puis on capture avec html2canvas DIRECTEMENT (pas via
-    // jsPDF.html(), qui re-héberge dans le document principal et laissait fuiter
-    // les couleurs oklch/lab de Tailwind v4). L'image est ensuite posée dans un
-    // PDF A5 et téléchargée -> rendu identique à l'impression, vrai fichier.
-    const A5_W = 148, A5_H = 210;
-    const RENDER_WIDTH_PX = 559; // ≈ 148 mm (A5) @ 96 dpi
-
+    // Le reçu EST le HTML imprimé (styles hex only), rendu identique en PDF
+    // (via html2canvas dans une iframe isolée, cf. renderReceiptPdf) et en
+    // impression native (repli). On construit les deux HTML ici et on laisse
+    // l'appelant choisir le rendu.
     const docHtml =
         `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">` +
         `<title>Quittance ${receiptNo}</title>${styleBlock}</head>` +
         `<body style="margin:0;background:#ffffff;">` +
         `<div style="padding:6mm;">${bodyContent}</div></body></html>`;
+
+    const printHtml =
+        `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">` +
+        `<title>Quittance ${receiptNo}</title>${styleBlock}` +
+        `<style>@page { size: A5 portrait; margin: 6mm; } @media print { html, body { margin: 0; } }</style>` +
+        `</head><body style="margin:0;background:#ffffff;"><div>${bodyContent}</div>` +
+        `<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};</script>` +
+        `</body></html>`;
+
+    return { docHtml, printHtml, receiptNo, lang, amountLabel: amountFmt, prestationLabel: typeLabelFr, dateStr };
+}
+
+// Rend le HTML du reçu en PDF A5. On capture html2canvas DIRECTEMENT dans une
+// iframe totalement isolée (pas via jsPDF.html(), qui re-héberge dans le document
+// principal et laissait fuiter les couleurs oklch/lab de Tailwind v4). Renvoie le
+// document jsPDF ; lève en cas d'échec (l'appelant décide du repli).
+async function renderReceiptPdf(docHtml: string): Promise<jsPDF> {
+    const A5_W = 148, A5_H = 210;
+    const RENDER_WIDTH_PX = 559; // ≈ 148 mm (A5) @ 96 dpi
 
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
@@ -340,21 +377,57 @@ export async function downloadReceipt(
             doc.addImage(imgData, 'PNG', 0, position, A5_W, imgHmm, undefined, 'FAST');
             heightLeft -= A5_H;
         }
+        return doc;
+    } finally {
+        iframe.remove();
+    }
+}
+
+// Génère + télécharge le reçu (usage interactif). Repli sur l'impression native.
+export async function downloadReceipt(
+    payment: ReceiptPayment,
+    student: ReceiptStudent,
+    options: { includeDuplicata?: boolean } = {},
+) {
+    const { docHtml, printHtml, receiptNo, lang } = await buildReceiptHtml(payment, student, options);
+    try {
+        const doc = await renderReceiptPdf(docHtml);
         doc.save(`Quittance_${receiptNo}.pdf`);
     } catch (err) {
         // Filet de sécurité : impression native (le navigateur gère les couleurs).
         console.error('Génération PDF reçu impossible, repli sur l’impression', err);
-        const printHtml =
-            `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">` +
-            `<title>Quittance ${receiptNo}</title>${styleBlock}` +
-            `<style>@page { size: A5 portrait; margin: 6mm; } @media print { html, body { margin: 0; } }</style>` +
-            `</head><body style="margin:0;background:#ffffff;"><div>${bodyContent}</div>` +
-            `<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};</script>` +
-            `</body></html>`;
         const win = window.open('', '_blank', 'width=900,height=1000');
         if (win) { win.document.open(); win.document.write(printHtml); win.document.close(); }
-        else alert(isEn ? 'Could not generate the receipt. Please retry.' : 'Génération du reçu impossible. Réessayez.');
-    } finally {
-        iframe.remove();
+        else alert(lang === 'en' ? 'Could not generate the receipt. Please retry.' : 'Génération du reçu impossible. Réessayez.');
+    }
+}
+
+export interface ReceiptPdfResult {
+    pdfBase64: string;      // PDF encodé base64, SANS le préfixe `data:...,`
+    receiptNo: string;
+    amountLabel: string;    // « 150 000 FCFA » / « $1,200 »
+    prestationLabel: string;
+    dateStr: string;
+}
+
+// Génère le reçu et renvoie le PDF base64 + les libellés d'affichage, prêts à
+// être joints/affichés dans un email côté serveur (attachments[].content de
+// Resend). Renvoie null si la génération échoue — usage non bloquant, aucun
+// repli interactif (pas de fenêtre d'impression).
+export async function getReceiptPdfBase64(
+    payment: ReceiptPayment,
+    student: ReceiptStudent,
+    options: { includeDuplicata?: boolean } = {},
+): Promise<ReceiptPdfResult | null> {
+    try {
+        const { docHtml, receiptNo, amountLabel, prestationLabel, dateStr } = await buildReceiptHtml(payment, student, options);
+        const doc = await renderReceiptPdf(docHtml);
+        const uri = doc.output('datauristring'); // data:application/pdf;...;base64,XXXX
+        const comma = uri.indexOf(',');
+        if (comma < 0) return null;
+        return { pdfBase64: uri.slice(comma + 1), receiptNo, amountLabel, prestationLabel, dateStr };
+    } catch (err) {
+        console.error('Génération base64 du reçu impossible', err);
+        return null;
     }
 }

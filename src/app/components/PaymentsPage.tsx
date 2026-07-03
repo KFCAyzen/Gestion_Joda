@@ -12,7 +12,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useNotificationContext } from "../context/NotificationContext";
 import { calculatePenalty } from "../utils/penaltyCalculator";
 import { logActivity } from "../utils/activityLogger";
-import { downloadReceipt } from "../utils/downloadReceipt";
+import { downloadReceipt, getReceiptPdfBase64 } from "../utils/downloadReceipt";
 import { confirmDuplicata } from "../utils/confirmDuplicata";
 import ConfirmDialog from "./ConfirmDialog";
 import ProtectedRoute from "./ProtectedRoute";
@@ -27,6 +27,7 @@ interface Student {
     telephone: string;
     niveau?: string;
     nationalite?: string | null;
+    langue?: string | null;
 }
 
 interface Payment {
@@ -254,6 +255,48 @@ export default function PaymentsPage() {
         }).catch(console.error);
     };
 
+    // Envoie le reçu (quittance PDF, généré côté client à l'identique du
+    // téléchargement) par email à l'étudiant après règlement complet d'un
+    // paiement. Non bloquant : un échec n'interrompt pas la validation.
+    // Le destinataire est ré-résolu côté serveur depuis studentId.
+    const emailReceiptToStudent = async (
+        payment: { id: string; student_id: string; type: string; tranche: number | null; montant: number; date_paiement: string | null },
+        validatedAtIso: string,
+    ) => {
+        const student = getStudent(payment.student_id);
+        if (!student?.email) return;
+        const result = await getReceiptPdfBase64(
+            {
+                id: payment.id,
+                type: payment.type,
+                tranche: payment.tranche,
+                montant: payment.montant,
+                status: "paye",
+                date_paiement: payment.date_paiement ?? validatedAtIso,
+                validated_by: user?.id ?? null,
+                validated_at: validatedAtIso,
+            },
+            {
+                nom: student.nom, prenom: student.prenom, email: student.email,
+                telephone: student.telephone, niveau: student.niveau ?? "", filiere: "",
+                langue: student.langue ?? undefined, nationalite: student.nationalite ?? null,
+            },
+        );
+        if (!result) return;
+        fetch("/api/send-receipt", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                studentId: payment.student_id,
+                receiptNo: result.receiptNo,
+                amountLabel: result.amountLabel,
+                prestationLabel: result.prestationLabel,
+                dateStr: result.dateStr,
+                pdfBase64: result.pdfBase64,
+            }),
+        }).catch(console.error);
+    };
+
     const handleValidate = async (paymentId: string) => {
         if (!user || !canValidatePayment) return;
         const { data: payment } = await supabase
@@ -345,6 +388,10 @@ export default function PaymentsPage() {
         );
         queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
         notifyPaymentResult(payment, true, validatedAmount, null);
+        // Reçu par email seulement quand la tranche est soldée : la quittance
+        // affiche le montant total de la prestation (pas l'acompte), elle n'est
+        // exacte qu'au règlement complet.
+        if (fullySettled) void emailReceiptToStudent(payment, nowIso);
     };
 
     const handleReject = async (paymentId: string, reason: string) => {
@@ -510,7 +557,7 @@ export default function PaymentsPage() {
         const withDup = await confirmDuplicata();
         if (withDup === null) return;
         void downloadReceipt(
-            { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: payment.validated_by, validated_at: payment.validated_at },
+            { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, montant_paye: payment.montant_paye ?? null, status: payment.status, date_paiement: payment.date_paiement, validated_by: payment.validated_by, validated_at: payment.validated_at },
             { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "", nationalite: student.nationalite ?? null },
             { includeDuplicata: withDup }
         );
@@ -729,6 +776,10 @@ export default function PaymentsPage() {
                                         const days = payment.date_limite
                                             ? daysLate(payment.date_limite)
                                             : 0;
+                                        // Reçu téléchargeable dès qu'un montant a été validé : tranche
+                                        // soldée (paye) OU acompte encaissé (montant_paye > 0).
+                                        const canDownloadReceipt =
+                                            payment.status === "paye" || (payment.montant_paye ?? 0) > 0;
 
                                         return (
                                             <tr
@@ -799,7 +850,7 @@ export default function PaymentsPage() {
                                                 </td>
                                                 <td className="px-6 py-3.5">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        {payment.status === "paye" ? (
+                                                        {canDownloadReceipt && (
                                                             <button
                                                                 onClick={() => { void handlePrint(payment); }}
                                                                 className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -807,7 +858,8 @@ export default function PaymentsPage() {
                                                                 <Download className="h-3 w-3" />
                                                                 Reçu
                                                             </button>
-                                                        ) : isOverdue ? (
+                                                        )}
+                                                        {payment.status === "paye" ? null : isOverdue ? (
                                                             <button
                                                                 onClick={() => setPenaltyModal(payment)}
                                                                 className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:bg-red-900/20"
@@ -859,7 +911,7 @@ export default function PaymentsPage() {
                                                                     Valider
                                                                 </button>
                                                             </>
-                                                        ) : (
+                                                        ) : canDownloadReceipt ? null : (
                                                             <span className="text-xs text-gray-400">—</span>
                                                         )}
                                                     </div>
