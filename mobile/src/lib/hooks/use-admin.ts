@@ -145,6 +145,28 @@ export function useAccountingLedger() {
 }
 
 /**
+ * Solde de trésorerie global lu depuis le cache maintenu par triggers
+ * (migration add_treasury_balance_cache.sql). Lecture O(1), sans scanner
+ * l'historique. Retourne `null` si le cache est indisponible (migration pas
+ * encore appliquée) → l'écran retombe sur `useAccountingLedger().solde`.
+ */
+export function useTreasuryBalance() {
+  return useQuery({
+    queryKey: ['admin', 'treasury'],
+    queryFn: async (): Promise<number | null> => {
+      const { data, error } = await supabase
+        .from('comptabilite_solde')
+        .select('solde')
+        .limit(1)
+        .maybeSingle();
+      if (error || !data) return null;
+      return Number((data as { solde: number }).solde);
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+/**
  * Valide une sortie comptable — miroir `LivreComptable.handleValidateSortie`.
  * Pose `validated_by`/`validated_at` (parité web) ET `status='validated'` en
  * best-effort : la lecture mobile (`isValidated`) privilégie `status`, donc on
@@ -170,7 +192,10 @@ export function useValidateSortie(actor?: Actor) {
 
       await logActivity(actor ?? {}, 'accounting_expense', 'sorties_comptables', id, 'Sortie comptable validée', {});
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ledger'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'ledger'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'treasury'] });
+    },
   });
 }
 
@@ -214,7 +239,10 @@ export function useAddAccountingEntry(actor?: Actor) {
         await logActivity(actor ?? {}, 'accounting_expense', 'sorties_comptables', data?.id ?? null, `Sortie comptable — ${description}`, { montant });
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'ledger'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'ledger'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'treasury'] });
+    },
   });
 }
 

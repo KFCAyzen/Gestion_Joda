@@ -17,7 +17,7 @@ import {
     Lock,
 } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
-import { useEntreesComptables, useSortiesComptables, ENTREES_KEY, SORTIES_KEY } from "../lib/hooks/use-accounting";
+import { useEntreesComptables, useSortiesComptables, useSoldeCourant, ENTREES_KEY, SORTIES_KEY, SOLDE_KEY } from "../lib/hooks/use-accounting";
 import { useUsers } from "../lib/hooks/use-users";
 import { useStudents } from "../lib/hooks/use-students";
 import { useAuth } from "../context/AuthContext";
@@ -59,6 +59,7 @@ interface SortieComptable {
     created_by: string | null;
     created_at: string;
     payslip_id: string | null;
+    status?: string | null;
 }
 
 interface LedgerRow {
@@ -162,6 +163,7 @@ export default function LivreComptable() {
     const users = _usersData as unknown as AppUser[];
     const { data: _studentsData = [] } = useStudents();
     const students = _studentsData as unknown as Student[];
+    const { data: soldeCache } = useSoldeCourant();
 
     const [viewDate, setViewDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>("jour");
@@ -295,12 +297,16 @@ export default function LivreComptable() {
     // Net de la période affichée (mouvements de la période uniquement)
     const solde = totalEntrees - totalSorties;
 
-    // Solde courant = trésorerie réelle : cumul de TOUTES les entrées − TOUTES
-    // les sorties, indépendamment de la période affichée. Ce chiffre ne doit
-    // pas varier quand on change de vue (jour/mois/année).
-    const soldeCourant =
+    // Solde courant = trésorerie réelle, indépendant de la période affichée.
+    // Source de vérité : le cache maintenu par triggers (lecture O(1)). Tant que
+    // la migration n'est pas appliquée (soldeCache == null), on retombe sur le
+    // calcul client : Σ entrées − Σ sorties validées (status='validated').
+    const soldeCalcule =
         entrees.reduce((s, e) => s + e.montant, 0) -
-        sorties.reduce((s, e) => s + e.montant, 0);
+        sorties
+            .filter((s) => s.status === "validated")
+            .reduce((s, e) => s + e.montant, 0);
+    const soldeCourant = soldeCache ?? soldeCalcule;
 
     const periodLabel = () => {
         const d = viewDate;
@@ -358,6 +364,7 @@ export default function LivreComptable() {
         );
         showNotification("Sortie validée", "success");
         queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
+        queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
     };
 
     const handleAdd = async () => {
@@ -404,6 +411,7 @@ export default function LivreComptable() {
             setShowNewModal(false);
             setNewForm({ montant: "", description: "", type: "revenus_divers", categorie: "divers" });
             queryClient.invalidateQueries({ queryKey: newKind === "entree" ? ENTREES_KEY : SORTIES_KEY });
+            queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
         } catch (err) {
             showNotification("Erreur lors de l'enregistrement", "error");
         } finally {
@@ -452,6 +460,7 @@ export default function LivreComptable() {
             showNotification("Opération modifiée", "success");
             setEditingRow(null);
             queryClient.invalidateQueries({ queryKey: editingRow.kind === "entree" ? ENTREES_KEY : SORTIES_KEY });
+            queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
         } catch (err) {
             showNotification("Erreur lors de la modification", "error");
         } finally {
@@ -483,6 +492,7 @@ export default function LivreComptable() {
                     );
                     showNotification("Opération supprimée", "success");
                     queryClient.invalidateQueries({ queryKey: row.kind === "entree" ? ENTREES_KEY : SORTIES_KEY });
+                    queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
                 } catch (err) {
                     showNotification("Erreur lors de la suppression", "error");
                 }

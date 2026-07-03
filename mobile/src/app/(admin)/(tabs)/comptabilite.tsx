@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowDownLeft, ArrowUpRight, Check, Plus, TriangleAlert, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
-import { useAccountingLedger, useValidateSortie, useAddAccountingEntry } from '@/lib/hooks/use-admin';
+import { useAccountingLedger, useValidateSortie, useAddAccountingEntry, useTreasuryBalance } from '@/lib/hooks/use-admin';
 import {
   Button,
   GlassCard,
@@ -76,6 +76,7 @@ export default function AdminCompta() {
   const iconTint = useIconTint();
   const { user } = useAuth();
   const { data, isLoading } = useAccountingLedger();
+  const { data: soldeCache } = useTreasuryBalance();
   const validateSortie = useValidateSortie(user ?? undefined);
   const addEntry = useAddAccountingEntry(user ?? undefined);
   const toast = useToast();
@@ -101,6 +102,8 @@ export default function AdminCompta() {
   const periodSorties = periodRows
     .filter((r) => r.kind === 'out' && !r.needsValidation)
     .reduce((s, r) => s + r.montant, 0);
+  // Solde global : cache (O(1)) en priorité, repli sur le calcul du ledger.
+  const solde = soldeCache ?? data?.solde ?? 0;
 
   const rows = periodRows.filter((r) => filter === 'tout' || (filter === 'entrees' ? r.kind === 'in' : r.kind === 'out'));
 
@@ -170,9 +173,9 @@ export default function AdminCompta() {
                 <Text style={T.eyebrow}>Solde courant</Text>
                 <Text style={styles.soldeHint}>Trésorerie globale</Text>
               </View>
-              <Text style={[styles.solde, { color: data.solde >= 0 ? colors.mint : colors.crimsonVivid }]}>
-                {data.solde >= 0 ? '+' : '−'}
-                {fmtFCFA(Math.abs(data.solde))} <Text style={styles.cur}>FCFA</Text>
+              <Text style={[styles.solde, { color: solde >= 0 ? colors.mint : colors.crimsonVivid }]}>
+                {solde >= 0 ? '+' : '−'}
+                {fmtFCFA(Math.abs(solde))} <Text style={styles.cur}>FCFA</Text>
               </Text>
               <View style={styles.flowRow}>
                 <View style={[styles.flowBox, styles.flowIn]}>

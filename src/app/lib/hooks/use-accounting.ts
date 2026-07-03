@@ -17,8 +17,33 @@ const supabase = createClient();
 
 export const ENTREES_KEY = ['entrees_comptables'];
 export const SORTIES_KEY = ['sorties_comptables'];
+export const SOLDE_KEY = ['comptabilite_solde'];
 export const BUDGETS_KEY = ['budgets'];
 export const CUSTOM_CATEGORIES_KEY = ['custom_categories'];
+
+/**
+ * Solde de trésorerie global, lu depuis le cache maintenu par triggers
+ * (migration add_treasury_balance_cache.sql). Lecture O(1) : une seule ligne,
+ * aucun scan de l'historique.
+ *
+ * Retourne `null` si le cache est indisponible (table pas encore migrée) :
+ * l'appelant retombe alors sur le calcul client à partir des lignes chargées.
+ */
+export function useSoldeCourant() {
+  return useQuery({
+    queryKey: SOLDE_KEY,
+    queryFn: async (): Promise<number | null> => {
+      const { data, error } = await supabase
+        .from('comptabilite_solde')
+        .select('solde')
+        .limit(1)
+        .maybeSingle();
+      if (error || !data) return null;
+      return Number(data.solde);
+    },
+    staleTime: 30 * 1000,
+  });
+}
 
 export function useEntreesComptables() {
   return useQuery({
