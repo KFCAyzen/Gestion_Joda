@@ -128,8 +128,26 @@ export function isInternational(nationalite?: string | null): boolean {
   return n !== 'camerounais' && n !== 'camerounaise';
 }
 
+// Marqueurs de niveau « master / postgraduate ». Le champ niveau est en texte
+// libre : on normalise (minuscules + suppression des accents) puis on cherche
+// ces marqueurs. Tout niveau non reconnu retombe sur la grille Bachelor.
+// ⚠️ Miroir de `src/app/types/payment-config.ts` (web) — garder identique.
+const MASTER_LEVEL_MARKERS = [
+  'master', 'mastere', 'maitrise', 'msc', 'mba',
+  'm1', 'm2', 'dea', 'dess', 'doctorat', 'doctorate', 'phd',
+];
+
+export function isMasterLevel(niveau?: string): boolean {
+  if (!niveau) return false;
+  const n = niveau
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, ''); // retire les accents (mastère → mastere)
+  return MASTER_LEVEL_MARKERS.some((m) => n.includes(m)) || /bac\s*\+\s*[45]/.test(n);
+}
+
 export function getBourseServiceType(niveau?: string, nationalite?: string | null): ServiceType {
-  const isMaster = niveau?.toLowerCase().includes('master');
+  const isMaster = isMasterLevel(niveau);
   if (isInternational(nationalite)) {
     return isMaster ? 'bourse_master_intl' : 'bourse_bachelor_intl';
   }
