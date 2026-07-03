@@ -17,7 +17,7 @@ import {
     Lock,
 } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
-import { useEntreesComptables, useSortiesComptables, useSoldeCourant, ENTREES_KEY, SORTIES_KEY, SOLDE_KEY } from "../lib/hooks/use-accounting";
+import { useEntreesComptables, useSortiesComptables, useSoldeCourant, useSoldeCourantFallback, ENTREES_KEY, SORTIES_KEY, SOLDE_KEY } from "../lib/hooks/use-accounting";
 import { useUsers } from "../lib/hooks/use-users";
 import { useStudents } from "../lib/hooks/use-students";
 import { useAuth } from "../context/AuthContext";
@@ -148,6 +148,34 @@ type ViewMode = "jour" | "semaine" | "mois" | "trimestre" | "semestre" | "annee"
 
 const PAGE_SIZE = 10;
 
+// Bornes [start, end) de la période affichée. Pure (dépend uniquement de ses
+// arguments) pour pouvoir être calculée avant l'appel des hooks de données.
+function getPeriodBounds(viewDate: Date, viewMode: ViewMode): { start: Date; end: Date } {
+    const d = viewDate;
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+    switch (viewMode) {
+        case "semaine": {
+            const dow = d.getDay();
+            const start = new Date(y, m, day - dow);
+            return { start, end: new Date(start.getTime() + 7 * 86400000) };
+        }
+        case "mois":
+            return { start: new Date(y, m, 1), end: new Date(y, m + 1, 1) };
+        case "trimestre": {
+            const q = Math.floor(m / 3);
+            return { start: new Date(y, q * 3, 1), end: new Date(y, q * 3 + 3, 1) };
+        }
+        case "semestre": {
+            const s = m < 6 ? 0 : 1;
+            return { start: new Date(y, s * 6, 1), end: new Date(y, s * 6 + 6, 1) };
+        }
+        case "annee":
+            return { start: new Date(y, 0, 1), end: new Date(y + 1, 0, 1) };
+        default:
+            return { start: new Date(y, m, day), end: new Date(y, m, day + 1) };
+    }
+}
+
 export default function LivreComptable() {
     const supabase = createClient();
     const { user } = useAuth();
@@ -155,18 +183,25 @@ export default function LivreComptable() {
     const { showNotification } = useNotificationContext();
     const queryClient = useQueryClient();
 
-    const { data: _entreesData = [], isLoading: loading } = useEntreesComptables();
+    const [viewDate, setViewDate] = useState<Date>(new Date());
+    const [viewMode, setViewMode] = useState<ViewMode>("jour");
+    // Bornes de la période : le chargement des opérations est borné côté serveur.
+    const { start: dayStart, end: dayEnd } = getPeriodBounds(viewDate, viewMode);
+    const bounds = { start: dayStart.toISOString(), end: dayEnd.toISOString() };
+
+    const { data: _entreesData = [], isLoading: loading } = useEntreesComptables(bounds);
     const entrees = _entreesData as unknown as EntreeComptable[];
-    const { data: _sortiesData = [] } = useSortiesComptables();
+    const { data: _sortiesData = [] } = useSortiesComptables(bounds);
     const sorties = _sortiesData as unknown as SortieComptable[];
     const { data: _usersData = [] } = useUsers();
     const users = _usersData as unknown as AppUser[];
     const { data: _studentsData = [] } = useStudents();
     const students = _studentsData as unknown as Student[];
-    const { data: soldeCache } = useSoldeCourant();
+    // Solde global : cache O(1) en priorité ; repli léger tant que la migration
+    // du cache n'est pas appliquée (soldeCache === null après chargement).
+    const { data: soldeCache, isFetched: soldeFetched } = useSoldeCourant();
+    const { data: soldeFallback } = useSoldeCourantFallback(soldeFetched && soldeCache === null);
 
-    const [viewDate, setViewDate] = useState<Date>(new Date());
-    const [viewMode, setViewMode] = useState<ViewMode>("jour");
     const [catFilter, setCatFilter] = useState<string>("tout");
     const [page, setPage] = useState(1);
     const [showNewModal, setShowNewModal] = useState(false);
@@ -216,42 +251,9 @@ export default function LivreComptable() {
         [students]
     );
 
-    // Build unified ledger for the current period
-    const getPeriodBounds = () => {
-        const d = viewDate;
-        const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
-        switch (viewMode) {
-            case "semaine": {
-                const dow = d.getDay();
-                const start = new Date(y, m, day - dow);
-                return { start, end: new Date(start.getTime() + 7 * 86400000) };
-            }
-            case "mois":
-                return { start: new Date(y, m, 1), end: new Date(y, m + 1, 1) };
-            case "trimestre": {
-                const q = Math.floor(m / 3);
-                return { start: new Date(y, q * 3, 1), end: new Date(y, q * 3 + 3, 1) };
-            }
-            case "semestre": {
-                const s = m < 6 ? 0 : 1;
-                return { start: new Date(y, s * 6, 1), end: new Date(y, s * 6 + 6, 1) };
-            }
-            case "annee":
-                return { start: new Date(y, 0, 1), end: new Date(y + 1, 0, 1) };
-            default:
-                return { start: new Date(y, m, day), end: new Date(y, m, day + 1) };
-        }
-    };
-    const { start: dayStart, end: dayEnd } = getPeriodBounds();
-
-    const dayEntrees = entrees.filter((e) => {
-        const d = new Date(e.date);
-        return d >= dayStart && d < dayEnd;
-    });
-    const daySorties = sorties.filter((s) => {
-        const d = new Date(s.date);
-        return d >= dayStart && d < dayEnd;
-    });
+    // Les opérations sont déjà bornées à la période côté serveur (cf. bounds).
+    const dayEntrees = entrees;
+    const daySorties = sorties;
 
     const rows: LedgerRow[] = [
         ...dayEntrees.map((e): LedgerRow => ({
@@ -299,14 +301,8 @@ export default function LivreComptable() {
 
     // Solde courant = trésorerie réelle, indépendant de la période affichée.
     // Source de vérité : le cache maintenu par triggers (lecture O(1)). Tant que
-    // la migration n'est pas appliquée (soldeCache == null), on retombe sur le
-    // calcul client : Σ entrées − Σ sorties validées (status='validated').
-    const soldeCalcule =
-        entrees.reduce((s, e) => s + e.montant, 0) -
-        sorties
-            .filter((s) => s.status === "validated")
-            .reduce((s, e) => s + e.montant, 0);
-    const soldeCourant = soldeCache ?? soldeCalcule;
+    // la migration n'est pas appliquée, on retombe sur le repli global léger.
+    const soldeCourant = soldeCache ?? soldeFallback ?? 0;
 
     const periodLabel = () => {
         const d = viewDate;
@@ -318,7 +314,7 @@ export default function LivreComptable() {
             : viewMode === "semestre" ? { month: "short", year: "numeric" }
             : { year: "numeric" };
         if (viewMode === "semaine") {
-            const { start, end } = getPeriodBounds();
+            const { start, end } = getPeriodBounds(viewDate, viewMode);
             return `${fmtShortDate(start)} – ${fmtShortDate(new Date(end.getTime() - 86400000))}`;
         }
         if (viewMode === "trimestre") {
@@ -346,7 +342,7 @@ export default function LivreComptable() {
 
     const isCurrentPeriod = () => {
         const now = new Date();
-        const { start, end } = getPeriodBounds();
+        const { start, end } = getPeriodBounds(viewDate, viewMode);
         return now >= start && now < end;
     };
 

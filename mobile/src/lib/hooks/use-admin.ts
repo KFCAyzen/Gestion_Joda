@@ -102,20 +102,48 @@ function isValidated(s: { status?: string | null; validated_at?: string | null }
   return !!s.validated_at;
 }
 
-export function useAccountingLedger() {
+/** Début (ISO) de la période courante pour la vue choisie (borne serveur). */
+function ledgerPeriodStartIso(view: string): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  switch (view) {
+    case 'jour':
+      return d.toISOString();
+    case 'semaine': {
+      const s = new Date(d);
+      s.setDate(d.getDate() - d.getDay());
+      return s.toISOString();
+    }
+    case 'mois':
+      return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+    case 'trimestre':
+      return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1).toISOString();
+    case 'annee':
+      return new Date(d.getFullYear(), 0, 1).toISOString();
+    default:
+      return new Date(0).toISOString();
+  }
+}
+
+export function useAccountingLedger(view: string = 'mois') {
   return useQuery({
-    queryKey: ['admin', 'ledger'],
+    queryKey: ['admin', 'ledger', view],
     queryFn: async (): Promise<Ledger> => {
-      const [entRes, sorRes] = await Promise.all([
-        supabase.from('entrees_comptables').select('*').order('date', { ascending: false }).limit(1000),
-        supabase.from('sorties_comptables').select('*').order('date', { ascending: false }).limit(1000),
+      const startIso = ledgerPeriodStartIso(view);
+      const [entRes, sorRes, pendRes] = await Promise.all([
+        supabase.from('entrees_comptables').select('*').gte('date', startIso).order('date', { ascending: false }).limit(1000),
+        supabase.from('sorties_comptables').select('*').gte('date', startIso).order('date', { ascending: false }).limit(1000),
+        // Sorties à valider : comptage GLOBAL (indépendant de la période) pour
+        // ne jamais masquer une dépense en attente d'action. head=true → aucune
+        // ligne transférée, juste le count.
+        supabase.from('sorties_comptables').select('id', { count: 'exact', head: true }).neq('status', 'validated'),
       ]);
       const ent = (entRes.data as any[]) ?? [];
       const sor = (sorRes.data as any[]) ?? [];
 
       const entrees = ent.reduce((s, e) => s + Number(e.montant || 0), 0);
       const sortiesValid = sor.filter(isValidated).reduce((s, x) => s + Number(x.montant || 0), 0);
-      const toValidate = sor.filter((s) => !isValidated(s)).length;
+      const toValidate = pendRes.count ?? sor.filter((s) => !isValidated(s)).length;
 
       const rows: LedgerRow[] = [
         ...ent.map((e) => ({
@@ -161,6 +189,30 @@ export function useTreasuryBalance() {
         .maybeSingle();
       if (error || !data) return null;
       return Number((data as { solde: number }).solde);
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+/**
+ * Repli du solde global si le cache est indisponible (migration pas encore
+ * appliquée). Ne charge que `montant` (+ `status` pour les sorties) et ne tourne
+ * que si `enabled`. Une fois la migration en place, ce repli ne s'exécute jamais.
+ */
+export function useTreasuryBalanceFallback(enabled: boolean) {
+  return useQuery({
+    queryKey: ['admin', 'treasury', 'fallback'],
+    enabled,
+    queryFn: async (): Promise<number> => {
+      const [entRes, sorRes] = await Promise.all([
+        supabase.from('entrees_comptables').select('montant'),
+        supabase.from('sorties_comptables').select('montant, status'),
+      ]);
+      const e = ((entRes.data as any[]) ?? []).reduce((s, r) => s + Number(r.montant || 0), 0);
+      const so = ((sorRes.data as any[]) ?? [])
+        .filter((r) => r.status === 'validated')
+        .reduce((s, r) => s + Number(r.montant || 0), 0);
+      return e - so;
     },
     staleTime: 30 * 1000,
   });

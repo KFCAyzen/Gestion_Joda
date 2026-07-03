@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowDownLeft, ArrowUpRight, Check, Plus, TriangleAlert, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
-import { useAccountingLedger, useValidateSortie, useAddAccountingEntry, useTreasuryBalance } from '@/lib/hooks/use-admin';
+import { useAccountingLedger, useValidateSortie, useAddAccountingEntry, useTreasuryBalance, useTreasuryBalanceFallback } from '@/lib/hooks/use-admin';
 import {
   Button,
   GlassCard,
@@ -45,45 +45,26 @@ const VIEWS = [
   { id: 'annee', label: 'Année' },
 ];
 
-// Début (ms) de la période en cours pour la vue choisie. Sert à filtrer la
-// liste et les flux affichés — le solde courant reste global (cf. carte).
-function periodStartMs(view: string): number {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  switch (view) {
-    case 'jour':
-      return d.getTime();
-    case 'semaine': {
-      const s = new Date(d);
-      s.setDate(d.getDate() - d.getDay());
-      return s.getTime();
-    }
-    case 'mois':
-      return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
-    case 'trimestre':
-      return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1).getTime();
-    case 'annee':
-      return new Date(d.getFullYear(), 0, 1).getTime();
-    default:
-      return 0;
-  }
-}
-
 export default function AdminCompta() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const T = useText();
   const iconTint = useIconTint();
   const { user } = useAuth();
-  const { data, isLoading } = useAccountingLedger();
-  const { data: soldeCache } = useTreasuryBalance();
+
+  const [view, setView] = useState('mois');
+  // Le ledger est borné à la période côté serveur (cf. useAccountingLedger).
+  const { data, isLoading } = useAccountingLedger(view);
+  // Solde global : cache O(1) en priorité ; repli léger tant que la migration
+  // du cache n'est pas appliquée (soldeCache === null après chargement).
+  const { data: soldeCache, isFetched: soldeFetched } = useTreasuryBalance();
+  const { data: soldeFallback } = useTreasuryBalanceFallback(soldeFetched && soldeCache === null);
   const validateSortie = useValidateSortie(user ?? undefined);
   const addEntry = useAddAccountingEntry(user ?? undefined);
   const toast = useToast();
 
   const canWrite = user?.role === 'admin' || user?.role === 'super_admin';
 
-  const [view, setView] = useState('mois');
   const [filter, setFilter] = useState('tout');
   const [add, setAdd] = useState(false);
   const [form, setForm] = useState<{ kind: 'entree' | 'sortie'; montant: string; description: string; cat: string }>({
@@ -93,19 +74,15 @@ export default function AdminCompta() {
     cat: 'divers',
   });
 
-  // Filtrage par période (le solde courant, lui, reste global).
-  const periodRows = useMemo(() => {
-    const start = periodStartMs(view);
-    return (data?.rows ?? []).filter((r) => new Date(r.date).getTime() >= start);
-  }, [data, view]);
-  const periodEntrees = periodRows.filter((r) => r.kind === 'in').reduce((s, r) => s + r.montant, 0);
-  const periodSorties = periodRows
+  // data.rows est déjà borné à la période (serveur) ; on en dérive les flux.
+  const pRows = data?.rows ?? [];
+  const periodEntrees = pRows.filter((r) => r.kind === 'in').reduce((s, r) => s + r.montant, 0);
+  const periodSorties = pRows
     .filter((r) => r.kind === 'out' && !r.needsValidation)
     .reduce((s, r) => s + r.montant, 0);
-  // Solde global : cache (O(1)) en priorité, repli sur le calcul du ledger.
-  const solde = soldeCache ?? data?.solde ?? 0;
+  const solde = soldeCache ?? soldeFallback ?? 0;
 
-  const rows = periodRows.filter((r) => filter === 'tout' || (filter === 'entrees' ? r.kind === 'in' : r.kind === 'out'));
+  const rows = pRows.filter((r) => filter === 'tout' || (filter === 'entrees' ? r.kind === 'in' : r.kind === 'out'));
 
   function openAdd(kind: 'entree' | 'sortie') {
     setForm({ kind, montant: '', description: '', cat: kind === 'entree' ? 'revenus_divers' : 'divers' });

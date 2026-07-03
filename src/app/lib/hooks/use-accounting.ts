@@ -45,28 +45,64 @@ export function useSoldeCourant() {
   });
 }
 
-export function useEntreesComptables() {
+/**
+ * Repli du solde global lorsque le cache est indisponible (migration
+ * add_treasury_balance_cache.sql pas encore appliquée). Ne charge QUE la colonne
+ * `montant` (+ `status` pour les sorties), pas les lignes complètes, et ne
+ * s'exécute que si `enabled` est vrai. Une fois la migration en place, ce repli
+ * ne tourne jamais.
+ */
+export function useSoldeCourantFallback(enabled: boolean) {
   return useQuery({
-    queryKey: ENTREES_KEY,
+    queryKey: [...SOLDE_KEY, 'fallback'],
+    enabled,
+    queryFn: async (): Promise<number> => {
+      const [entRes, sorRes] = await Promise.all([
+        supabase.from('entrees_comptables').select('montant'),
+        supabase.from('sorties_comptables').select('montant, status'),
+      ]);
+      const e = (entRes.data ?? []).reduce(
+        (s, r) => s + Number((r as { montant: number }).montant || 0),
+        0,
+      );
+      const so = (sorRes.data ?? [])
+        .filter((r) => (r as { status?: string }).status === 'validated')
+        .reduce((s, r) => s + Number((r as { montant: number }).montant || 0), 0);
+      return e - so;
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+/** Bornes ISO [start, end) pour ne charger que les opérations d'une période. */
+export type DateBounds = { start: string; end: string };
+
+export function useEntreesComptables(bounds?: DateBounds) {
+  return useQuery({
+    queryKey: [...ENTREES_KEY, bounds?.start ?? 'all', bounds?.end ?? 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('entrees_comptables')
         .select('*')
         .order('date', { ascending: false });
+      if (bounds) q = q.gte('date', bounds.start).lt('date', bounds.end);
+      const { data, error } = await q;
       if (error) throw error;
       return data as EntreeComptable[];
     },
   });
 }
 
-export function useSortiesComptables() {
+export function useSortiesComptables(bounds?: DateBounds) {
   return useQuery({
-    queryKey: SORTIES_KEY,
+    queryKey: [...SORTIES_KEY, bounds?.start ?? 'all', bounds?.end ?? 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('sorties_comptables')
         .select('*')
         .order('date', { ascending: false });
+      if (bounds) q = q.gte('date', bounds.start).lt('date', bounds.end);
+      const { data, error } = await q;
       if (error) throw error;
       return data as SortieComptable[];
     },
