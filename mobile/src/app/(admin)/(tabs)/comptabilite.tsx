@@ -80,6 +80,7 @@ export default function AdminCompta() {
   const periodSorties = pRows
     .filter((r) => r.kind === 'out' && !r.needsValidation)
     .reduce((s, r) => s + r.montant, 0);
+  const periodSortiesPending = data?.sortiesPending ?? 0;
   const solde = soldeCache ?? soldeFallback ?? 0;
 
   const rows = pRows.filter((r) => filter === 'tout' || (filter === 'entrees' ? r.kind === 'in' : r.kind === 'out'));
@@ -165,9 +166,12 @@ export default function AdminCompta() {
                 <View style={[styles.flowBox, styles.flowOut]}>
                   <View style={styles.flowHead}>
                     <ArrowUpRight size={12} color={colors.crimsonVivid} />
-                    <Text style={[T.t3, { color: colors.crimsonVivid }]}>Sorties {view === 'jour' ? 'jour' : 'période'}</Text>
+                    <Text style={[T.t3, { color: colors.crimsonVivid }]}>Sorties {view === 'jour' ? 'jour' : 'période'} (validées)</Text>
                   </View>
                   <Text style={[styles.flowAmt, { color: colors.crimsonVivid }]}>{fmtCompact(periodSorties)}</Text>
+                  {periodSortiesPending > 0 ? (
+                    <Text style={styles.pendingNote}>dont {fmtCompact(periodSortiesPending)} en attente</Text>
+                  ) : null}
                 </View>
               </View>
             </GlassCard>
@@ -311,6 +315,7 @@ const makeStyles = (colors: Palette) =>
     flowOut: { backgroundColor: colors.redGlass, borderColor: colors.redLine },
     flowHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     flowAmt: { fontSize: 15, fontWeight: '700', marginTop: 4 },
+    pendingNote: { fontSize: 10.5, fontWeight: '600', color: colors.amber, marginTop: 3 },
     alertCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: 'rgba(251,191,36,0.32)' },
     lrow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
     lrowBorder: { borderBottomWidth: 1, borderBottomColor: colors.glassLine },

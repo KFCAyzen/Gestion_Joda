@@ -93,6 +93,8 @@ export type Ledger = {
   solde: number;
   entrees: number;
   sorties: number;
+  /** Sorties de la période en attente de validation (pending, hors rejetées). */
+  sortiesPending: number;
   toValidate: number;
   rows: LedgerRow[];
 };
@@ -143,6 +145,10 @@ export function useAccountingLedger(view: string = 'mois') {
 
       const entrees = ent.reduce((s, e) => s + Number(e.montant || 0), 0);
       const sortiesValid = sor.filter(isValidated).reduce((s, x) => s + Number(x.montant || 0), 0);
+      // Sorties de la période en attente (pending) — exclut les rejetées, comme le web.
+      const sortiesPending = sor
+        .filter((s) => !isValidated(s) && s.status !== 'rejected')
+        .reduce((acc, x) => acc + Number(x.montant || 0), 0);
       const toValidate = pendRes.count ?? sor.filter((s) => !isValidated(s)).length;
 
       const rows: LedgerRow[] = [
@@ -166,7 +172,7 @@ export function useAccountingLedger(view: string = 'mois') {
         })),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      return { solde: entrees - sortiesValid, entrees, sorties: sortiesValid, toValidate, rows };
+      return { solde: entrees - sortiesValid, entrees, sorties: sortiesValid, sortiesPending, toValidate, rows };
     },
     staleTime: 60 * 1000,
   });
