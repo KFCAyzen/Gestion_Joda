@@ -277,8 +277,10 @@ export default function LivreComptable() {
     const rows: LedgerRow[] = [
         ...dayEntrees.map((e): LedgerRow => ({
             id: e.id,
+            // `date` est de type DATE (jour seul → l'heure est perdue) : on prend
+            // `created_at` (timestamptz réel) pour afficher l'heure exacte.
             kind: "entree",
-            time: e.date,
+            time: e.created_at ?? e.date,
             description: e.description,
             student_id: e.student_id,
             categorie: e.type,
@@ -297,7 +299,7 @@ export default function LivreComptable() {
             return {
                 id: s.id,
                 kind: "sortie",
-                time: s.date,
+                time: s.created_at ?? s.date,
                 description: s.description,
                 student_id: null,
                 categorie: s.categorie,
