@@ -203,7 +203,12 @@ export default function PaymentsPage() {
             updates.map(({ p, penalty }) =>
                 supabase
                     .from("payments")
-                    .update({ penalites: penalty, status: penalty > 0 ? "retard" : p.status })
+                    // On met à jour la pénalité, mais on ne bascule en "retard" QUE les
+                    // paiements en "attente". Une déclaration ("en_validation") doit
+                    // rester actionnable (valider / rejeter) même si elle est en retard —
+                    // sinon elle n'affiche plus que "Pénalité". Miroir du cron
+                    // check-late-payments qui ne touche que attente/retard.
+                    .update({ penalites: penalty, status: penalty > 0 && p.status === "attente" ? "retard" : p.status })
                     .eq("id", p.id)
             )
         );
@@ -223,6 +228,13 @@ export default function PaymentsPage() {
             });
         }
     }, [payments, students]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Une déclaration en attente de décision : statut en_validation, ou un montant
+    // déclaré non réglé (cas d'une déclaration basculée en "retard" par les pénalités).
+    // Elle doit rester dans « À valider » et proposer Valider / Rejeter.
+    const isPendingDeclaration = (p: { status: string; montant_declare?: number }) =>
+        p.status === "en_validation" ||
+        ((p.montant_declare ?? 0) > 0 && p.status !== "paye");
 
     const canCreatePayment = hasPermission("payments.create");
     const canValidatePayment = hasPermission("payments.validate");
@@ -567,8 +579,10 @@ export default function PaymentsPage() {
         );
     };
 
-    const aValiderList = payments.filter((p) => p.status === "attente" || p.status === "en_validation");
-    const enRetardList = payments.filter((p) => p.status === "retard");
+    const aValiderList = payments.filter((p) => p.status === "attente" || p.status === "en_validation" || isPendingDeclaration(p));
+    // Une déclaration en attente (montant_declare) basculée en "retard" reste dans
+    // « À valider », pas dans « En retard » (l'action prioritaire = valider/rejeter).
+    const enRetardList = payments.filter((p) => p.status === "retard" && !isPendingDeclaration(p));
     const validesList = payments.filter((p) => p.status === "paye");
 
     const filtered =
@@ -776,6 +790,9 @@ export default function PaymentsPage() {
                                             : "?";
                                         const color = avatarColor(name);
                                         const isOverdue = payment.status === "retard";
+                                        // Une déclaration en attente de décision doit rester validable /
+                                        // rejetable — même si un cycle de pénalités l'a basculée en "retard".
+                                        const hasPendingDeclaration = isPendingDeclaration(payment);
                                         const penalty = calculatePenalty(payment, resolvePenaltyConfig(payment, studentMap));
                                         const days = payment.date_limite
                                             ? daysLate(payment.date_limite)
@@ -863,7 +880,7 @@ export default function PaymentsPage() {
                                                                 Reçu
                                                             </button>
                                                         )}
-                                                        {payment.status === "paye" ? null : isOverdue ? (
+                                                        {payment.status === "paye" ? null : (isOverdue && !hasPendingDeclaration) ? (
                                                             <button
                                                                 onClick={() => setPenaltyModal(payment)}
                                                                 className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:bg-red-900/20"
@@ -872,7 +889,7 @@ export default function PaymentsPage() {
                                                             </button>
                                                         ) : canValidatePayment ? (
                                                             <>
-                                                                {payment.status === "en_validation" && (
+                                                                {hasPendingDeclaration && (
                                                                     <>
                                                                         <button
                                                                             onClick={() =>
