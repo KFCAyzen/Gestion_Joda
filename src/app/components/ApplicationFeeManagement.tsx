@@ -198,7 +198,7 @@ export default function ApplicationFeeManagement() {
         const withDup = await confirmDuplicata();
         if (withDup === null) return;
         void downloadReceipt(
-            { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null },
+            { id: fee.id, type: fee.type, tranche: fee.tranche ?? null, montant: fee.montant, status: fee.status, date_paiement: fee.date ?? null, created_at: fee.created_at },
             { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau, filiere: student.filiere, nationalite: student.nationalite ?? null },
             { includeDuplicata: withDup }
         );

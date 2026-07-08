@@ -538,7 +538,7 @@ export default function PaymentsPage() {
                 const withDup = await confirmDuplicata();
                 if (withDup !== null) {
                     void downloadReceipt(
-                        { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: null, validated_at: null },
+                        { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, status: payment.status, date_paiement: payment.date_paiement, validated_by: null, validated_at: null, created_at: payment.created_at },
                         { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "", nationalite: student.nationalite ?? null },
                         { includeDuplicata: withDup }
                     );
@@ -561,7 +561,7 @@ export default function PaymentsPage() {
         const withDup = await confirmDuplicata();
         if (withDup === null) return;
         void downloadReceipt(
-            { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, montant_paye: payment.montant_paye ?? null, status: payment.status, date_paiement: payment.date_paiement, validated_by: payment.validated_by, validated_at: payment.validated_at },
+            { id: payment.id, type: payment.type, tranche: payment.tranche, montant: payment.montant, montant_paye: payment.montant_paye ?? null, status: payment.status, date_paiement: payment.date_paiement, validated_by: payment.validated_by, validated_at: payment.validated_at, created_at: payment.created_at },
             { nom: student.nom, prenom: student.prenom, email: student.email, telephone: student.telephone, niveau: student.niveau ?? "", filiere: "", nationalite: student.nationalite ?? null },
             { includeDuplicata: withDup }
         );

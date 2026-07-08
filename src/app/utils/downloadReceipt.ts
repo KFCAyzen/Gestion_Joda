@@ -16,6 +16,9 @@ export interface ReceiptPayment {
     date_paiement: string | null;
     validated_by?: string | null;
     validated_at?: string | null;
+    /** Horodatage de création de la ligne (timestamptz). Repli pour l'heure du
+     *  reçu quand `validated_at` est absent (ex : encaissement pas encore validé). */
+    created_at?: string | null;
 }
 
 export interface ReceiptStudent {
@@ -105,9 +108,20 @@ async function buildReceiptHtml(
     const includeDuplicata = options.includeDuplicata ?? false;
     const lang  = getLang(student.langue);
     const isEn  = lang === 'en';
-    const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString(isEn ? "en-GB" : "fr-FR") : new Date().toLocaleDateString(isEn ? "en-GB" : "fr-FR");
+    const loc = isEn ? "en-GB" : "fr-FR";
+    const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString(loc) : new Date().toLocaleDateString(loc);
+    // Date + heure de l'opération. On privilégie `validated_at` (timestamptz posé
+    // au même instant que le `created_at` de l'écriture comptable) → l'heure du
+    // reçu correspond à celle du Livre comptable. `date_paiement` est une colonne
+    // DATE (jour seul, heure perdue) : on ne l'utilise qu'en repli.
+    const fmtDateTime = (d: string | null) => {
+        const dt = d ? new Date(d) : new Date();
+        return `${dt.toLocaleDateString(loc)} ${isEn ? "at" : "à"} ${dt.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}`;
+    };
 
-    const dateStr  = fmtDate(payment.date_paiement ?? payment.validated_at ?? null);
+    // Ordre : validated_at (= heure de l'écriture comptable) > created_at (timestamptz)
+    // > date_paiement (DATE, jour seul → repli sans heure fiable).
+    const dateStr  = fmtDateTime(payment.validated_at ?? payment.created_at ?? payment.date_paiement ?? null);
     const today    = fmtDate(new Date().toISOString());
     const logoSrc  = await fetchLogoBase64();
     const logoTag  = logoSrc
