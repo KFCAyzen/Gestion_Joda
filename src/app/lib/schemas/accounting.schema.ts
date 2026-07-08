@@ -1,11 +1,15 @@
 import { z } from 'zod';
 
+export const deviseSchema = z.enum(['FCFA', 'USD']);
+export type Devise = z.infer<typeof deviseSchema>;
+
 export const entreeComptableSchema = z.object({
   id: z.string().uuid(),
   montant: z.number(),
   date: z.string(),
   type: z.string(),
   description: z.string(),
+  devise: deviseSchema.default('FCFA'),
   student_id: z.string().uuid().nullable().optional(),
   payment_id: z.string().uuid().nullable().optional(),
   created_by: z.string().uuid().nullable().optional(),
@@ -18,6 +22,7 @@ export const sortieComptableSchema = z.object({
   date: z.string(),
   categorie: z.string(),
   description: z.string(),
+  devise: deviseSchema.default('FCFA'),
   justificatif_url: z.string().nullable().optional(),
   validated_by: z.string().uuid().nullable().optional(),
   validated_at: z.string().nullable().optional(),

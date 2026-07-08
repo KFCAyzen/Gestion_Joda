@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useEntreesComptables, useSortiesComptables, useSoldeCourant, useSoldeCourantFallback, ENTREES_KEY, SORTIES_KEY, SOLDE_KEY } from "../lib/hooks/use-accounting";
+import type { Devise } from "../lib/schemas/accounting.schema";
 import { useUsers } from "../lib/hooks/use-users";
 import { useStudents } from "../lib/hooks/use-students";
 import { useAuth } from "../context/AuthContext";
@@ -187,22 +188,35 @@ export default function LivreComptable() {
 
     const [viewDate, setViewDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>("jour");
+    // Devise active : deux livres indépendants (aucune conversion FCFA↔USD).
+    const [devise, setDevise] = useState<Devise>("FCFA");
+    const isUsd = devise === "USD";
+    // Formate un montant avec le symbole de la devise active (± optionnel).
+    const money = useCallback(
+        (n: number, signed = false): string => {
+            const abs = new Intl.NumberFormat(isUsd ? "en-US" : "fr-FR").format(Math.abs(n));
+            const body = isUsd ? `$${abs}` : `${abs} F`;
+            if (!signed) return body;
+            return n >= 0 ? `+${body}` : `−${body}`;
+        },
+        [isUsd]
+    );
     // Bornes de la période : le chargement des opérations est borné côté serveur.
     const { start: dayStart, end: dayEnd } = getPeriodBounds(viewDate, viewMode);
     const bounds = { start: dayStart.toISOString(), end: dayEnd.toISOString() };
 
-    const { data: _entreesData = [], isLoading: loading } = useEntreesComptables(bounds);
+    const { data: _entreesData = [], isLoading: loading } = useEntreesComptables(bounds, devise);
     const entrees = _entreesData as unknown as EntreeComptable[];
-    const { data: _sortiesData = [] } = useSortiesComptables(bounds);
+    const { data: _sortiesData = [] } = useSortiesComptables(bounds, devise);
     const sorties = _sortiesData as unknown as SortieComptable[];
     const { data: _usersData = [] } = useUsers();
     const users = _usersData as unknown as AppUser[];
     const { data: _studentsData = [] } = useStudents();
     const students = _studentsData as unknown as Student[];
-    // Solde global : cache O(1) en priorité ; repli léger tant que la migration
-    // du cache n'est pas appliquée (soldeCache === null après chargement).
-    const { data: soldeCache, isFetched: soldeFetched } = useSoldeCourant();
-    const { data: soldeFallback } = useSoldeCourantFallback(soldeFetched && soldeCache === null);
+    // Solde global de la devise active : cache O(1) en priorité ; repli léger tant
+    // que la migration du cache n'est pas appliquée (soldeCache === null après chargement).
+    const { data: soldeCache, isFetched: soldeFetched } = useSoldeCourant(devise);
+    const { data: soldeFallback } = useSoldeCourantFallback(soldeFetched && soldeCache === null, devise);
 
     const [catFilter, setCatFilter] = useState<string>("tout");
     const [page, setPage] = useState(1);
@@ -428,6 +442,7 @@ export default function LivreComptable() {
                     montant: Number(newForm.montant),
                     description: newForm.description,
                     type: newForm.type,
+                    devise,
                     date: new Date().toISOString(),
                     created_by: user.id,
                 }).select();
@@ -443,6 +458,7 @@ export default function LivreComptable() {
                     montant: Number(newForm.montant),
                     description: newForm.description,
                     categorie: newForm.categorie,
+                    devise,
                     date: new Date().toISOString(),
                     created_by: user.id,
                 }).select();
@@ -524,7 +540,7 @@ export default function LivreComptable() {
         setConfirmDialog({
             isOpen: true,
             title: `Supprimer cette ${row.kind === "entree" ? "entrée" : "sortie"} ?`,
-            description: `Cette opération de ${fmt(row.montant)} F (${row.description}) sera définitivement supprimée.`,
+            description: `Cette opération de ${money(row.montant)} (${row.description}) sera définitivement supprimée.`,
             onConfirm: async () => {
                 closeConfirm();
                 const table = row.kind === "entree" ? "entrees_comptables" : "sorties_comptables";
@@ -556,12 +572,13 @@ export default function LivreComptable() {
             type: r.kind,
         }));
         await printAccountingHtmlReport({
-            title: `Rapport comptable — ${periodLabel()}`,
+            title: `Rapport comptable ${isUsd ? "USD" : "FCFA"} — ${periodLabel()}`,
             period: { start: dayStart.toISOString(), end: dayEnd.toISOString() },
             entries: ops,
             summary: { totalEntrees, totalSorties, balance: solde },
             scope: "all",
             locale: "fr-FR",
+            currency: devise,
         });
     };
 
@@ -576,11 +593,11 @@ export default function LivreComptable() {
         try {
             const { generateAccountingReport } = await import("../lib/pdfGenerator");
             await generateAccountingReport({
-                title: `Rapport comptable — ${periodLabel()}`,
+                title: `Rapport comptable ${isUsd ? "USD" : "FCFA"} — ${periodLabel()}`,
                 period: { start: dayStart.toISOString(), end: dayEnd.toISOString() },
                 entries: ops,
                 summary: { totalEntrees, totalSorties, balance: solde },
-            });
+            }, { currency: devise });
         } catch (err) {
             console.error("Download report error:", err);
             showNotification("Erreur lors de la génération du PDF", "error");
@@ -602,7 +619,7 @@ export default function LivreComptable() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `livre-comptable-${viewMode}-${dayKey(viewDate)}.csv`;
+        a.download = `livre-comptable-${devise}-${viewMode}-${dayKey(viewDate)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -650,6 +667,22 @@ export default function LivreComptable() {
                                     <SelectItem value="annee">Année</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {/* Bascule devise : deux livres indépendants (FCFA / USD) */}
+                            <div className="inline-flex overflow-hidden rounded-full border border-gray-200 dark:border-gray-700">
+                                {(["FCFA", "USD"] as const).map((d) => (
+                                    <button
+                                        key={d}
+                                        onClick={() => { setDevise(d); setPage(1); }}
+                                        className={`px-3 py-1.5 text-sm font-semibold transition-colors ${
+                                            devise === d
+                                                ? "bg-gray-900 text-white"
+                                                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                        }`}
+                                    >
+                                        {d === "USD" ? "$ USD" : "F CFA"}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <Select value={catFilter} onValueChange={(v) => { setCatFilter(v ?? "tout"); setPage(1); }}>
@@ -698,7 +731,7 @@ export default function LivreComptable() {
                             Entrées {viewMode === "jour" ? "jour" : "période"}
                         </p>
                         <p className="mt-2 text-2xl font-bold text-green-600">
-                            +{fmt(totalEntrees)} F
+                            +{money(totalEntrees)}
                         </p>
                     </div>
                     {/* Sorties */}
@@ -708,11 +741,11 @@ export default function LivreComptable() {
                             <span className="ml-1 normal-case tracking-normal text-gray-400">(validées)</span>
                         </p>
                         <p className="mt-2 text-2xl font-bold text-red-500">
-                            −{fmt(totalSorties)} F
+                            −{money(totalSorties)}
                         </p>
                         {totalSortiesPending > 0 && (
                             <p className="mt-1 text-[11px] font-medium text-amber-600">
-                                dont {fmt(totalSortiesPending)} F en attente de validation
+                                dont {money(totalSortiesPending)} en attente de validation
                             </p>
                         )}
                     </div>
@@ -729,11 +762,10 @@ export default function LivreComptable() {
                                 soldeCourant >= 0 ? "text-green-400" : "text-red-400"
                             }`}
                         >
-                            {soldeCourant >= 0 ? "+" : ""}
-                            {fmt(soldeCourant)} F
+                            {money(soldeCourant, true)}
                         </p>
                         <p className="mt-1 text-[11px] font-medium text-gray-400">
-                            Net période&nbsp;: {solde >= 0 ? "+" : "−"}{fmt(solde)} F
+                            Net période&nbsp;: {money(solde, true)}
                         </p>
                     </div>
                 </div>
@@ -813,7 +845,7 @@ export default function LivreComptable() {
                                                             setConfirmDialog({
                                                                 isOpen: true,
                                                                 title: "Valider cette sortie ?",
-                                                                description: `Confirmer la sortie de ${fmt(row.montant)} F — ${row.description}`,
+                                                                description: `Confirmer la sortie de ${money(row.montant)} — ${row.description}`,
                                                                 onConfirm: async () => {
                                                                     closeConfirm();
                                                                     await handleValidateSortie(row.id);
@@ -836,7 +868,7 @@ export default function LivreComptable() {
                                         <td className="px-3 py-3 text-right font-semibold">
                                             <span className={row.kind === "entree" ? "text-green-600" : "text-red-500"}>
                                                 {row.kind === "entree" ? "+" : "−"}
-                                                {fmt(row.montant)}
+                                                {money(row.montant)}
                                             </span>
                                         </td>
                                         <td className="py-3 pl-3 pr-0 text-right text-gray-500 dark:text-gray-400">
@@ -905,14 +937,13 @@ export default function LivreComptable() {
                                     Sous-totaux du jour
                                 </p>
                                 <span className="font-medium text-green-600">
-                                    Entrées {fmt(totalEntrees)}
+                                    Entrées {money(totalEntrees)}
                                 </span>
                                 <span className="font-medium text-red-500">
-                                    Sorties {fmt(totalSorties)}
+                                    Sorties {money(totalSorties)}
                                 </span>
                                 <span className={`font-bold ${solde >= 0 ? "text-green-700" : "text-red-700 dark:text-red-300"}`}>
-                                    Net {solde >= 0 ? "+" : ""}
-                                    {fmt(solde)}
+                                    Net {money(solde, true)}
                                 </span>
                             </div>
 
@@ -1003,7 +1034,7 @@ export default function LivreComptable() {
                         <div className="space-y-4">
                             <div>
                                 <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Montant (FCFA)
+                                    Montant ({isUsd ? "USD" : "FCFA"})
                                 </label>
                                 <input
                                     type="number"
@@ -1099,7 +1130,7 @@ export default function LivreComptable() {
                         <div className="space-y-4">
                             <div>
                                 <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Montant (FCFA)
+                                    Montant ({isUsd ? "USD" : "FCFA"})
                                 </label>
                                 <input
                                     type="number"

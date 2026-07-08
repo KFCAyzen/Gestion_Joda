@@ -349,11 +349,15 @@ export default function PaymentsPage() {
             : "Étudiant";
 
         // On comptabilise le montant réellement validé (acompte ou solde).
+        // Devise : les services internationaux (service_type finissant par « _intl »)
+        // sont facturés en USD → écriture dans le livre USD, séparé du livre FCFA.
+        const deviseEntree = String(payment.type).endsWith("_intl") ? "USD" : "FCFA";
         const { error: accountingError } = await supabase.from("entrees_comptables").insert({
             montant: validatedAmount,
             date: new Date().toISOString(),
             type: typeEntree,
             description: `${typeLabel(payment.type, payment.tranche)} — ${studentName}`,
+            devise: deviseEntree,
             student_id: payment.student_id,
             payment_id: payment.id,
             created_by: user.id,

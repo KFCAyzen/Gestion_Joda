@@ -50,6 +50,7 @@ interface AccountingReport {
 interface AccountingReportOptions {
   includeEntrees?: boolean;
   includeSorties?: boolean;
+  currency?: 'FCFA' | 'USD';
 }
 
 interface StudentReport {
@@ -392,6 +393,13 @@ export const generateAccountingReport = async (
   const logo = await loadLogoWhiteBase64();
   const startY = addHeader(doc, report.title.toUpperCase(), logo);
 
+  // Formatage devise local (le formatCurrency module-level est FCFA-only).
+  const isUsd = options.currency === 'USD';
+  const fmtCur = (amount: number): string => {
+    const n = Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return isUsd ? `$${n}` : `${n} FCFA`;
+  };
+
   // Period
   doc.setFontSize(10);
   doc.setTextColor(100, 116, 139);
@@ -413,8 +421,8 @@ export const generateAccountingReport = async (
     formatDate(e.date),
     e.description,
     e.category,
-    e.type === 'entree' ? formatCurrency(e.amount) : '—',
-    e.type === 'sortie' ? formatCurrency(e.amount) : '—',
+    e.type === 'entree' ? fmtCur(e.amount) : '—',
+    e.type === 'sortie' ? fmtCur(e.amount) : '—',
   ]);
 
   autoTable(doc, {
@@ -470,15 +478,15 @@ export const generateAccountingReport = async (
   doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
   doc.text('Total Entrées :', 28, finalY + 20);
-  doc.text(formatCurrency(report.summary.totalEntrees), 185, finalY + 20, { align: 'right' });
+  doc.text(fmtCur(report.summary.totalEntrees), 185, finalY + 20, { align: 'right' });
   doc.text('Total Sorties :', 28, finalY + 27);
-  doc.text(formatCurrency(report.summary.totalSorties), 185, finalY + 27, { align: 'right' });
+  doc.text(fmtCur(report.summary.totalSorties), 185, finalY + 27, { align: 'right' });
 
   doc.setFont('helvetica', 'bold');
   const balanceColor: [number, number, number] = report.summary.balance >= 0 ? [16, 185, 129] : [220, 38, 38];
   doc.setTextColor(...balanceColor);
   doc.text('Solde net :', 28, finalY + 34);
-  doc.text(formatCurrency(report.summary.balance), 185, finalY + 34, { align: 'right' });
+  doc.text(fmtCur(report.summary.balance), 185, finalY + 34, { align: 'right' });
 
   addFooter(doc);
   const fileName = `Rapport_Comptable_${report.period.start}_${report.period.end}.pdf`.replace(/\//g, '-');

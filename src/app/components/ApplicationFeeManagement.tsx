@@ -8,6 +8,7 @@ import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
 import { useStudents } from '../lib/hooks/use-students';
 import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/formatPrice";
+import { isInternational } from "../types/payment-config";
 import { useNotificationContext } from "../context/NotificationContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,11 +118,13 @@ export default function ApplicationFeeManagement() {
             const studentName = student ? `${student.prenom} ${student.nom}` : t("fallback.student");
             const typeEntree = formData.motif === "Cours de langue" ? "paiement_cours" : "paiement_procedure";
 
+            // Devise : étudiant international ⇒ USD (livre séparé), sinon FCFA.
             await supabase.from("entrees_comptables").insert({
                 montant,
                 date: now,
                 type: typeEntree,
                 description: `${formData.motif} — ${studentName}`,
+                devise: isInternational(student?.nationalite) ? "USD" : "FCFA",
                 student_id: formData.studentId,
                 payment_id: payment?.id ?? null,
                 created_by: user?.id,

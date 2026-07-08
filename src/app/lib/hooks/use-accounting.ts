@@ -7,6 +7,7 @@ import type {
   CustomCategory,
   CreateEntreeComptable,
   CreateSortieComptable,
+  Devise,
 } from '../schemas/accounting.schema';
 import {
   createEntreeComptableSchema,
@@ -29,14 +30,14 @@ export const CUSTOM_CATEGORIES_KEY = ['custom_categories'];
  * Retourne `null` si le cache est indisponible (table pas encore migrée) :
  * l'appelant retombe alors sur le calcul client à partir des lignes chargées.
  */
-export function useSoldeCourant() {
+export function useSoldeCourant(devise: Devise = 'FCFA') {
   return useQuery({
-    queryKey: SOLDE_KEY,
+    queryKey: [...SOLDE_KEY, devise],
     queryFn: async (): Promise<number | null> => {
       const { data, error } = await supabase
         .from('comptabilite_solde')
         .select('solde')
-        .limit(1)
+        .eq('devise', devise)
         .maybeSingle();
       if (error || !data) return null;
       return Number(data.solde);
@@ -52,14 +53,14 @@ export function useSoldeCourant() {
  * s'exécute que si `enabled` est vrai. Une fois la migration en place, ce repli
  * ne tourne jamais.
  */
-export function useSoldeCourantFallback(enabled: boolean) {
+export function useSoldeCourantFallback(enabled: boolean, devise: Devise = 'FCFA') {
   return useQuery({
-    queryKey: [...SOLDE_KEY, 'fallback'],
+    queryKey: [...SOLDE_KEY, 'fallback', devise],
     enabled,
     queryFn: async (): Promise<number> => {
       const [entRes, sorRes] = await Promise.all([
-        supabase.from('entrees_comptables').select('montant'),
-        supabase.from('sorties_comptables').select('montant, status'),
+        supabase.from('entrees_comptables').select('montant').eq('devise', devise),
+        supabase.from('sorties_comptables').select('montant, status').eq('devise', devise),
       ]);
       const e = (entRes.data ?? []).reduce(
         (s, r) => s + Number((r as { montant: number }).montant || 0),
@@ -77,15 +78,16 @@ export function useSoldeCourantFallback(enabled: boolean) {
 /** Bornes ISO [start, end) pour ne charger que les opérations d'une période. */
 export type DateBounds = { start: string; end: string };
 
-export function useEntreesComptables(bounds?: DateBounds) {
+export function useEntreesComptables(bounds?: DateBounds, devise?: Devise) {
   return useQuery({
-    queryKey: [...ENTREES_KEY, bounds?.start ?? 'all', bounds?.end ?? 'all'],
+    queryKey: [...ENTREES_KEY, bounds?.start ?? 'all', bounds?.end ?? 'all', devise ?? 'all'],
     queryFn: async () => {
       let q = supabase
         .from('entrees_comptables')
         .select('*')
         .order('date', { ascending: false });
       if (bounds) q = q.gte('date', bounds.start).lt('date', bounds.end);
+      if (devise) q = q.eq('devise', devise);
       const { data, error } = await q;
       if (error) throw error;
       return data as EntreeComptable[];
@@ -93,15 +95,16 @@ export function useEntreesComptables(bounds?: DateBounds) {
   });
 }
 
-export function useSortiesComptables(bounds?: DateBounds) {
+export function useSortiesComptables(bounds?: DateBounds, devise?: Devise) {
   return useQuery({
-    queryKey: [...SORTIES_KEY, bounds?.start ?? 'all', bounds?.end ?? 'all'],
+    queryKey: [...SORTIES_KEY, bounds?.start ?? 'all', bounds?.end ?? 'all', devise ?? 'all'],
     queryFn: async () => {
       let q = supabase
         .from('sorties_comptables')
         .select('*')
         .order('date', { ascending: false });
       if (bounds) q = q.gte('date', bounds.start).lt('date', bounds.end);
+      if (devise) q = q.eq('devise', devise);
       const { data, error } = await q;
       if (error) throw error;
       return data as SortieComptable[];

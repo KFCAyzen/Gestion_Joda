@@ -38,7 +38,8 @@ export function useAdminDashboard() {
 
       const [dossiers, entrees, univs] = await Promise.all([
         supabase.from('dossier_bourses').select('status, university_id, created_at'),
-        supabase.from('entrees_comptables').select('montant, date').gte('date', startMonth),
+        // « Encaissé ce mois » = trésorerie FCFA uniquement (les $ ont leur propre livre).
+        supabase.from('entrees_comptables').select('montant, date').eq('devise', 'FCFA').gte('date', startMonth),
         supabase.from('universities').select('id, nom'),
       ]);
 
@@ -128,18 +129,18 @@ function ledgerPeriodStartIso(view: string): string {
   }
 }
 
-export function useAccountingLedger(view: string = 'mois') {
+export function useAccountingLedger(view: string = 'mois', devise: 'FCFA' | 'USD' = 'FCFA') {
   return useQuery({
-    queryKey: ['admin', 'ledger', view],
+    queryKey: ['admin', 'ledger', view, devise],
     queryFn: async (): Promise<Ledger> => {
       const startIso = ledgerPeriodStartIso(view);
       const [entRes, sorRes, pendRes] = await Promise.all([
-        supabase.from('entrees_comptables').select('*').gte('date', startIso).order('date', { ascending: false }).limit(1000),
-        supabase.from('sorties_comptables').select('*').gte('date', startIso).order('date', { ascending: false }).limit(1000),
+        supabase.from('entrees_comptables').select('*').eq('devise', devise).gte('date', startIso).order('date', { ascending: false }).limit(1000),
+        supabase.from('sorties_comptables').select('*').eq('devise', devise).gte('date', startIso).order('date', { ascending: false }).limit(1000),
         // Sorties à valider : comptage GLOBAL (indépendant de la période) pour
         // ne jamais masquer une dépense en attente d'action. head=true → aucune
         // ligne transférée, juste le count.
-        supabase.from('sorties_comptables').select('id', { count: 'exact', head: true }).neq('status', 'validated'),
+        supabase.from('sorties_comptables').select('id', { count: 'exact', head: true }).eq('devise', devise).neq('status', 'validated'),
       ]);
       const ent = (entRes.data as any[]) ?? [];
       const sor = (sorRes.data as any[]) ?? [];
@@ -188,14 +189,14 @@ export function useAccountingLedger(view: string = 'mois') {
  * l'historique. Retourne `null` si le cache est indisponible (migration pas
  * encore appliquée) → l'écran retombe sur `useAccountingLedger().solde`.
  */
-export function useTreasuryBalance() {
+export function useTreasuryBalance(devise: 'FCFA' | 'USD' = 'FCFA') {
   return useQuery({
-    queryKey: ['admin', 'treasury'],
+    queryKey: ['admin', 'treasury', devise],
     queryFn: async (): Promise<number | null> => {
       const { data, error } = await supabase
         .from('comptabilite_solde')
         .select('solde')
-        .limit(1)
+        .eq('devise', devise)
         .maybeSingle();
       if (error || !data) return null;
       return Number((data as { solde: number }).solde);
@@ -209,14 +210,14 @@ export function useTreasuryBalance() {
  * appliquée). Ne charge que `montant` (+ `status` pour les sorties) et ne tourne
  * que si `enabled`. Une fois la migration en place, ce repli ne s'exécute jamais.
  */
-export function useTreasuryBalanceFallback(enabled: boolean) {
+export function useTreasuryBalanceFallback(enabled: boolean, devise: 'FCFA' | 'USD' = 'FCFA') {
   return useQuery({
-    queryKey: ['admin', 'treasury', 'fallback'],
+    queryKey: ['admin', 'treasury', 'fallback', devise],
     enabled,
     queryFn: async (): Promise<number> => {
       const [entRes, sorRes] = await Promise.all([
-        supabase.from('entrees_comptables').select('montant'),
-        supabase.from('sorties_comptables').select('montant, status'),
+        supabase.from('entrees_comptables').select('montant').eq('devise', devise),
+        supabase.from('sorties_comptables').select('montant, status').eq('devise', devise),
       ]);
       const e = ((entRes.data as any[]) ?? []).reduce((s, r) => s + Number(r.montant || 0), 0);
       const so = ((sorRes.data as any[]) ?? [])
@@ -310,18 +311,20 @@ export function useAddAccountingEntry(actor?: Actor) {
       description,
       type,
       categorie,
+      devise = 'FCFA',
     }: {
       kind: 'entree' | 'sortie';
       montant: number;
       description: string;
       type?: string;
       categorie?: string;
+      devise?: 'FCFA' | 'USD';
     }) => {
       const nowIso = new Date().toISOString();
       if (kind === 'entree') {
         const { data, error } = await supabase
           .from('entrees_comptables')
-          .insert({ montant, description, type: type ?? 'revenus_divers', date: nowIso, created_by: actor?.id ?? null })
+          .insert({ montant, description, type: type ?? 'revenus_divers', devise, date: nowIso, created_by: actor?.id ?? null })
           .select('id')
           .single();
         if (error) throw error;
@@ -329,7 +332,7 @@ export function useAddAccountingEntry(actor?: Actor) {
       } else {
         const { data, error } = await supabase
           .from('sorties_comptables')
-          .insert({ montant, description, categorie: categorie ?? 'divers', date: nowIso, created_by: actor?.id ?? null })
+          .insert({ montant, description, categorie: categorie ?? 'divers', devise, date: nowIso, created_by: actor?.id ?? null })
           .select('id')
           .single();
         if (error) throw error;

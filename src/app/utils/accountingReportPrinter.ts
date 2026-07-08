@@ -19,15 +19,18 @@ function escapeHtml(input: string): string {
     .replace(/'/g, "&#039;");
 }
 
-function formatCurrency(amount: number, locale: string): string {
-  return `${Math.round(amount).toLocaleString(locale)} FCFA`;
+type ReportCurrency = "FCFA" | "USD";
+
+function formatCurrency(amount: number, locale: string, currency: ReportCurrency = "FCFA"): string {
+  const n = Math.round(amount).toLocaleString(currency === "USD" ? "en-US" : locale);
+  return currency === "USD" ? `$${n}` : `${n} FCFA`;
 }
 
 function formatDate(date: string, locale: string): string {
   return new Date(date).toLocaleDateString(locale);
 }
 
-function buildJournalRows(ops: AccountingOperation[], locale: string, scope: ReportScope): string {
+function buildJournalRows(ops: AccountingOperation[], locale: string, scope: ReportScope, currency: ReportCurrency): string {
   const filtered =
     scope === "entrees"
       ? ops.filter((o) => o.type === "entree")
@@ -50,8 +53,8 @@ function buildJournalRows(ops: AccountingOperation[], locale: string, scope: Rep
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map((op, idx) => {
       runningBalance += op.type === "entree" ? op.amount : -op.amount;
-      const credit = op.type === "entree" ? formatCurrency(op.amount, locale) : "—";
-      const debit = op.type === "sortie" ? formatCurrency(op.amount, locale) : "—";
+      const credit = op.type === "entree" ? formatCurrency(op.amount, locale, currency) : "—";
+      const debit = op.type === "sortie" ? formatCurrency(op.amount, locale, currency) : "—";
       return `
         <tr class="${op.type === "entree" ? "row-entree" : "row-sortie"}">
           <td class="mono">${String(idx + 1).padStart(3, "0")}</td>
@@ -60,7 +63,7 @@ function buildJournalRows(ops: AccountingOperation[], locale: string, scope: Rep
           <td class="mono">${escapeHtml(op.category)}</td>
           <td class="mono right amount-entree">${escapeHtml(credit)}</td>
           <td class="mono right amount-sortie">${escapeHtml(debit)}</td>
-          <td class="mono right">${escapeHtml(formatCurrency(runningBalance, locale))}</td>
+          <td class="mono right">${escapeHtml(formatCurrency(runningBalance, locale, currency))}</td>
         </tr>
       `.trim();
     })
@@ -74,15 +77,17 @@ export async function printAccountingHtmlReport(params: {
   summary: { totalEntrees: number; totalSorties: number; balance: number };
   scope: ReportScope;
   locale: string;
+  currency?: ReportCurrency;
 }) {
   const res = await fetch("/templates/rapport-comptable-template.html", { cache: "no-store" });
   if (!res.ok) throw new Error("Impossible de charger le template d'impression.");
 
   const template = await res.text();
   const { scope, locale } = params;
+  const currency: ReportCurrency = params.currency ?? "FCFA";
 
   const scopeLabel = scope === "entrees" ? "Entrées uniquement" : scope === "sorties" ? "Sorties uniquement" : "Entrées & Sorties";
-  const journalRows = buildJournalRows(params.entries, locale, scope);
+  const journalRows = buildJournalRows(params.entries, locale, scope, currency);
 
   const logoSrc = await fetchLogoBase64();
   const logoHtml = logoSrc
@@ -95,9 +100,9 @@ export async function printAccountingHtmlReport(params: {
     .replaceAll("{{PERIODE_DEBUT}}", escapeHtml(formatDate(params.period.start, locale)))
     .replaceAll("{{PERIODE_FIN}}", escapeHtml(formatDate(params.period.end, locale)))
     .replaceAll("{{STATUT}}", escapeHtml(scopeLabel))
-    .replaceAll("{{TOTAL_DEBITS}}", escapeHtml(formatCurrency(params.summary.totalSorties, locale)))
-    .replaceAll("{{TOTAL_CREDITS}}", escapeHtml(formatCurrency(params.summary.totalEntrees, locale)))
-    .replaceAll("{{SOLDE_FINAL}}", escapeHtml(formatCurrency(params.summary.balance, locale)))
+    .replaceAll("{{TOTAL_DEBITS}}", escapeHtml(formatCurrency(params.summary.totalSorties, locale, currency)))
+    .replaceAll("{{TOTAL_CREDITS}}", escapeHtml(formatCurrency(params.summary.totalEntrees, locale, currency)))
+    .replaceAll("{{SOLDE_FINAL}}", escapeHtml(formatCurrency(params.summary.balance, locale, currency)))
     .replaceAll("{{JOURNAL_ROWS}}", journalRows);
 
   const win = window.open("", "_blank");

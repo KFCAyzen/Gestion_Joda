@@ -238,7 +238,8 @@ export default function AdminOperationalDashboard() {
 
     const { data: _applicationsData = [], isLoading: appsLoading } = useApplications();
     const { data: _universitiesData = [] } = useUniversities(false);
-    const { data: _entreesData = [], isLoading: entreesLoading } = useEntreesComptables();
+    // « Encaissé ce mois » = trésorerie FCFA uniquement (les $ ont leur propre livre).
+    const { data: _entreesData = [], isLoading: entreesLoading } = useEntreesComptables(undefined, "FCFA");
 
     const isLoading = isLogsLoading || appsLoading || entreesLoading;
 

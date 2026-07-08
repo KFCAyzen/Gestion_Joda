@@ -638,11 +638,14 @@ export function useValidatePayment(userId?: string) {
       if (isValid) {
         const typeEntree = payment.type === 'mandarin' || payment.type === 'anglais' ? 'paiement_cours' : 'paiement_procedure';
         const studentName = payment.students ? `${payment.students.nom} ${payment.students.prenom}` : 'Étudiant';
+        // Devise : services internationaux (service_type finissant par « _intl ») en USD.
+        const deviseEntree = String(payment.type).endsWith('_intl') ? 'USD' : 'FCFA';
         await supabase.from('entrees_comptables').insert({
           montant: validatedAmount,
           date: nowIso,
           type: typeEntree,
           description: `Paiement ${payment.type} - Tranche ${payment.tranche || 'N/A'} - ${studentName}`,
+          devise: deviseEntree,
           student_id: payment.student_id,
           payment_id: payment.id,
           created_by: userId ?? null,

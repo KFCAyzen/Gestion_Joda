@@ -53,12 +53,15 @@ export default function AdminCompta() {
   const { user } = useAuth();
 
   const [view, setView] = useState('mois');
+  // Devise active : deux livres indépendants (aucune conversion FCFA↔USD).
+  const [devise, setDevise] = useState<'FCFA' | 'USD'>('FCFA');
+  const isUsd = devise === 'USD';
   // Le ledger est borné à la période côté serveur (cf. useAccountingLedger).
-  const { data, isLoading } = useAccountingLedger(view);
-  // Solde global : cache O(1) en priorité ; repli léger tant que la migration
-  // du cache n'est pas appliquée (soldeCache === null après chargement).
-  const { data: soldeCache, isFetched: soldeFetched } = useTreasuryBalance();
-  const { data: soldeFallback } = useTreasuryBalanceFallback(soldeFetched && soldeCache === null);
+  const { data, isLoading } = useAccountingLedger(view, devise);
+  // Solde global de la devise active : cache O(1) en priorité ; repli léger tant
+  // que la migration du cache n'est pas appliquée (soldeCache === null après chargement).
+  const { data: soldeCache, isFetched: soldeFetched } = useTreasuryBalance(devise);
+  const { data: soldeFallback } = useTreasuryBalanceFallback(soldeFetched && soldeCache === null, devise);
   const validateSortie = useValidateSortie(user ?? undefined);
   const rejectSortie = useRejectSortie(user ?? undefined);
   const addEntry = useAddAccountingEntry(user ?? undefined);
@@ -109,6 +112,7 @@ export default function AdminCompta() {
         description: form.description.trim(),
         type: form.kind === 'entree' ? form.cat : undefined,
         categorie: form.kind === 'sortie' ? form.cat : undefined,
+        devise,
       });
       setAdd(false);
       toast('Écriture enregistrée ✓');
@@ -158,6 +162,16 @@ export default function AdminCompta() {
           <ScrollView contentContainerStyle={{ paddingBottom: 130, gap: spacing.cardGap }} showsVerticalScrollIndicator={false}>
             <SegFilter options={VIEWS} value={view} onChange={setView} />
 
+            {/* Bascule devise : deux livres indépendants (FCFA / USD) */}
+            <SegFilter
+              options={[
+                { id: 'FCFA', label: 'F CFA' },
+                { id: 'USD', label: '$ USD' },
+              ]}
+              value={devise}
+              onChange={(v) => setDevise(v as 'FCFA' | 'USD')}
+            />
+
             {/* Solde courant — trésorerie globale, stable quelle que soit la période */}
             <GlassCard variant="strong">
               <View style={styles.soldeHead}>
@@ -166,7 +180,7 @@ export default function AdminCompta() {
               </View>
               <Text style={[styles.solde, { color: solde >= 0 ? colors.mint : colors.crimsonVivid }]}>
                 {solde >= 0 ? '+' : '−'}
-                {fmtFCFA(Math.abs(solde))} <Text style={styles.cur}>FCFA</Text>
+                {fmtFCFA(Math.abs(solde))} <Text style={styles.cur}>{isUsd ? 'USD' : 'FCFA'}</Text>
               </Text>
               <View style={styles.flowRow}>
                 <View style={[styles.flowBox, styles.flowIn]}>
@@ -284,7 +298,7 @@ export default function AdminCompta() {
               ))}
             </View>
 
-            <Text style={[T.t3, styles.fieldLabel]}>Montant (FCFA)</Text>
+            <Text style={[T.t3, styles.fieldLabel]}>Montant ({isUsd ? 'USD' : 'FCFA'})</Text>
             <TextInput
               value={form.montant}
               onChangeText={(v) => setForm((f) => ({ ...f, montant: v.replace(/[^0-9]/g, '') }))}
