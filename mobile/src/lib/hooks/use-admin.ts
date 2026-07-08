@@ -907,6 +907,27 @@ export function useAdminPayslips() {
   });
 }
 
+/**
+ * Supprime un bulletin de paie — miroir web `useDeletePayslip`. La sortie
+ * comptable « salaires » liée part en cascade (FK ON DELETE CASCADE) et le
+ * trigger de trésorerie retire son montant du solde → on rafraîchit compta.
+ */
+export function useDeleteAdminPayslip(actor?: Actor) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('payslips').delete().eq('id', id);
+      if (error) throw error;
+      await logActivity(actor ?? {}, 'accounting_expense', 'payslips', id, 'Bulletin de paie supprimé', {});
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'payslips'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'ledger'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'treasury'] });
+    },
+  });
+}
+
 export function useAdminEvaluations() {
   return useQuery({
     queryKey: ['admin', 'evaluations'],

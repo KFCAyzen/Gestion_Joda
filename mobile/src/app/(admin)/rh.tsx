@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Check, Plus, Star, UserPlus, X } from 'lucide-react-native';
+import { Check, Plus, Star, Trash2, UserPlus, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 
@@ -15,6 +15,7 @@ import {
   useUpsertEmployee,
   useSetEmployeeStatus,
   useGeneratePayslips,
+  useDeleteAdminPayslip,
   useCreateEvaluation,
   type EvaluationNotes,
 } from '@/lib/hooks/use-admin';
@@ -89,6 +90,7 @@ export default function AdminRH() {
   const upsertEmp = useUpsertEmployee();
   const setEmpStatus = useSetEmployeeStatus();
   const genPayslips = useGeneratePayslips();
+  const deletePayslip = useDeleteAdminPayslip(user ?? undefined);
   const createEval = useCreateEvaluation(user ?? undefined);
 
   const canManage = user?.role === 'admin' || user?.role === 'super_admin';
@@ -101,6 +103,28 @@ export default function AdminRH() {
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Échec de la génération');
     }
+  }
+
+  function confirmDeletePayslip(p: any) {
+    Alert.alert(
+      'Supprimer le bulletin',
+      `Supprimer le bulletin de ${p.employeeName} (${p.mois}/${p.annee}) ? Cette action est irréversible.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePayslip.mutateAsync(p.id);
+              toast('Bulletin supprimé ✓');
+            } catch (e) {
+              toast(e instanceof Error ? e.message : 'Échec de la suppression');
+            }
+          },
+        },
+      ],
+    );
   }
 
   const emptyEmp = { id: undefined as string | undefined, matricule: '', prenom: '', nom: '', poste: '', departement: '', telephone: '', email: '', salaireBase: '', statut: 'actif' };
@@ -275,6 +299,11 @@ export default function AdminRH() {
                       <Text style={T.amount}>{fmtFCFA(Number(p.net_a_payer ?? 0))}</Text>
                       <Text style={T.t3}>net · FCFA</Text>
                     </View>
+                    {canManage ? (
+                      <Pressable onPress={() => confirmDeletePayslip(p)} hitSlop={8} style={styles.delPayslipBtn}>
+                        <Trash2 size={16} color={colors.crimsonVivid} />
+                      </Pressable>
+                    ) : null}
                   </GlassCard>
                 ))
               : null}
@@ -504,6 +533,16 @@ const makeStyles = (colors: Palette) =>
     evalMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
 
+    delPayslipBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: colors.redGlass,
+      borderWidth: 1,
+      borderColor: colors.redLine,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
     statusOn: { backgroundColor: 'rgba(52,217,168,0.13)', borderColor: 'rgba(52,217,168,0.32)' },
     statusOff: { backgroundColor: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.30)' },
