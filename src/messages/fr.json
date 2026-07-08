@@ -112,6 +112,7 @@
       "leaveRejected": "Congé rejeté",
       "leaveDeleted": "Demande supprimée",
       "payslipCreated": "Fiche de paie créée",
+      "payslipUpdated": "Fiche de paie modifiée",
       "payslipDeleted": "Fiche de paie supprimée",
       "reportCreated": "Rapport enregistré",
       "reportDeleted": "Rapport supprimé"
@@ -309,6 +310,8 @@
       "description": "Génération mensuelle des salaires — crée automatiquement une sortie « salaires » dans la comptabilité",
       "add": "Nouvelle fiche",
       "addTitle": "Nouvelle fiche de paie",
+      "edit": "Modifier",
+      "editTitle": "Modifier la fiche de paie",
       "empty": "Aucune fiche de paie",
       "computedNet": "Net à payer calculé",
       "breakdown": { "brut": "Salaire brut" },

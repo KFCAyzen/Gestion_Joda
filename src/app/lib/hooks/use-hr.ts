@@ -296,7 +296,13 @@ export function useUpdatePayslip() {
       if (error) throw error;
       return row as Payslip;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: PAYSLIPS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PAYSLIPS_KEY });
+      // La sortie comptable liée (montant/description) est resynchronisée par
+      // trigger : on rafraîchit sorties + solde de trésorerie pour la cohérence.
+      qc.invalidateQueries({ queryKey: ['sorties_comptables'] });
+      qc.invalidateQueries({ queryKey: ['comptabilite_solde'] });
+    },
   });
 }
 

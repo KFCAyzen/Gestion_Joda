@@ -112,6 +112,7 @@
       "leaveRejected": "Leave rejected",
       "leaveDeleted": "Request deleted",
       "payslipCreated": "Payslip created",
+      "payslipUpdated": "Payslip updated",
       "payslipDeleted": "Payslip deleted",
       "reportCreated": "Report saved",
       "reportDeleted": "Report deleted"
@@ -309,6 +310,8 @@
       "description": "Monthly salary generation — automatically creates a \"salaries\" expense in accounting",
       "add": "New payslip",
       "addTitle": "New payslip",
+      "edit": "Edit",
+      "editTitle": "Edit payslip",
       "empty": "No payslip",
       "computedNet": "Computed net pay",
       "breakdown": { "brut": "Gross salary" },

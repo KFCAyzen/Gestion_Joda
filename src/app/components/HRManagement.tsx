@@ -80,6 +80,7 @@ import {
     useDeleteLeaveRequest,
     usePayslips,
     useCreatePayslip,
+    useUpdatePayslip,
     useDeletePayslip,
     useDailyReports,
     useCreateDailyReport,
@@ -2185,10 +2186,12 @@ function PayrollPanel({
 }) {
     const t = useTranslations("hrManagement");
     const create = useCreatePayslip();
+    const update = useUpdatePayslip();
     const del = useDeletePayslip();
     const generate = useGenerateDuePayslips();
     const now = new Date();
     const [modalOpen, setModalOpen] = useState(false);
+    const [editing, setEditing] = useState<Payslip | null>(null);
     const [generateOpen, setGenerateOpen] = useState(false);
     const [genMode, setGenMode] = useState<"auto" | "target">("auto");
     const [genYear, setGenYear] = useState<number>(now.getFullYear());
@@ -2236,6 +2239,7 @@ function PayrollPanel({
 
     const openCreate = () => {
         const first = employees[0];
+        setEditing(null);
         setForm({
             employee_id: first?.id ?? "",
             mois: now.getMonth() + 1,
@@ -2249,6 +2253,34 @@ function PayrollPanel({
         setModalOpen(true);
     };
 
+    const openEdit = (p: Payslip) => {
+        setEditing(p);
+        // Reconstitue les lignes de primes/retenues ; à défaut, les recrée depuis les totaux agrégés.
+        const adjustments: PayslipAdjustment[] =
+            p.adjustments && p.adjustments.length > 0
+                ? p.adjustments.map((a) => ({ ...a }))
+                : [
+                      ...(p.primes > 0 ? [{ type: "bonus" as const, motif: "", montant: p.primes }] : []),
+                      ...(p.deductions > 0 ? [{ type: "deduction" as const, motif: "", montant: p.deductions }] : []),
+                  ];
+        setForm({
+            employee_id: p.employee_id,
+            mois: p.mois,
+            annee: p.annee,
+            salaire_base: String(p.salaire_base),
+            adjustments,
+            jours_absences: String(p.jours_absences),
+            payment_date: p.payment_date ?? today,
+            notes: p.notes ?? "",
+        });
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+        setEditing(null);
+    };
+
     const handleEmployeeChange = (id: string) => {
         const emp = employeesById.get(id);
         setForm((f) => ({ ...f, employee_id: id, salaire_base: String(emp?.salaire_base ?? f.salaire_base) }));
@@ -2259,26 +2291,36 @@ function PayrollPanel({
             onError(new Error(t("leaves.selectEmployee")));
             return;
         }
+        const payload = {
+            employee_id: form.employee_id,
+            mois: form.mois,
+            annee: form.annee,
+            salaire_base: parseInt(form.salaire_base || "0", 10) || 0,
+            primes: primesTotal,
+            deductions: deductionsTotal,
+            adjustments: form.adjustments
+                .filter((a) => (a.montant || 0) > 0)
+                .map((a) => ({ type: a.type, motif: a.motif.trim(), montant: a.montant })),
+            jours_absences: parseInt(form.jours_absences || "0", 10) || 0,
+            net_a_payer: net,
+            payment_date: form.payment_date || null,
+            notes: form.notes.trim() || null,
+        };
         try {
+            if (editing) {
+                await update.mutateAsync({ id: editing.id, data: payload });
+                onSuccess(t("messages.payslipUpdated"));
+                closeModal();
+                return;
+            }
+
             const created = await create.mutateAsync({
-                employee_id: form.employee_id,
-                mois: form.mois,
-                annee: form.annee,
-                salaire_base: parseInt(form.salaire_base || "0", 10) || 0,
-                primes: primesTotal,
-                deductions: deductionsTotal,
-                adjustments: form.adjustments
-                    .filter((a) => (a.montant || 0) > 0)
-                    .map((a) => ({ type: a.type, motif: a.motif.trim(), montant: a.montant })),
-                jours_absences: parseInt(form.jours_absences || "0", 10) || 0,
-                net_a_payer: net,
-                payment_date: form.payment_date || null,
-                notes: form.notes.trim() || null,
+                ...payload,
                 created_by: creatorId || null,
                 auto_generated: false,
             });
             onSuccess(t("messages.payslipCreated"));
-            setModalOpen(false);
+            closeModal();
 
             // Envoi automatique du bulletin par e-mail à l'employé (best-effort).
             const r = await sendPayslipByEmail(created, employeesById.get(created.employee_id)).catch(
@@ -2433,6 +2475,11 @@ function PayrollPanel({
                                             <DropdownMenu
                                                 actions={[
                                                     {
+                                                        label: t("payroll.edit"),
+                                                        icon: <Pencil className="w-4 h-4" />,
+                                                        onClick: () => openEdit(p),
+                                                    },
+                                                    {
                                                         label: t("payroll.exportPdf"),
                                                         icon: <Receipt className="w-4 h-4" />,
                                                         onClick: () => handleExportPdf(p),
@@ -2459,7 +2506,7 @@ function PayrollPanel({
                 </Table>
             </CardContent>
 
-            <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={t("payroll.addTitle")} size="lg">
+            <Modal isOpen={modalOpen} onClose={closeModal} title={editing ? t("payroll.editTitle") : t("payroll.addTitle")} size="lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Field label={t("leaves.col.employee")} required>
                         <Select value={form.employee_id} onValueChange={(v) => v && handleEmployeeChange(v)}>
@@ -2632,12 +2679,12 @@ function PayrollPanel({
                     </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-6">
-                    <Button variant="outline" onClick={() => setModalOpen(false)}>
+                    <Button variant="outline" onClick={closeModal}>
                         {t("common.cancel")}
                     </Button>
-                    <Button onClick={handleSubmit} disabled={create.isPending}>
-                        {create.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {t("common.create")}
+                    <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
+                        {(create.isPending || update.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        {editing ? t("common.save") : t("common.create")}
                     </Button>
                 </div>
             </Modal>
