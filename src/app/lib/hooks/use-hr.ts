@@ -315,7 +315,10 @@ export function useDeletePayslip() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: PAYSLIPS_KEY });
+      // La sortie « salaires » liée est supprimée en cascade → rafraîchir
+      // sorties + solde de trésorerie pour la cohérence.
       qc.invalidateQueries({ queryKey: ['sorties_comptables'] });
+      qc.invalidateQueries({ queryKey: ['comptabilite_solde'] });
     },
   });
 }

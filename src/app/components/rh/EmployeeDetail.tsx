@@ -44,6 +44,7 @@ import {
     useDailyReports,
     useLeaveRequests,
     usePayslips,
+    useDeletePayslip,
     useDeductionRules,
     useDeductionOccurrences,
     useCreateDeductionOccurrence,
@@ -140,6 +141,19 @@ export default function EmployeeDetail({
     const rulesQ = useDeductionRules();
     const occQ = useDeductionOccurrences();
     const evalQ = useEmployeeEvaluations();
+    const deletePayslip = useDeletePayslip();
+    const [confirmDelPayslip, setConfirmDelPayslip] = useState<Payslip | null>(null);
+
+    const handleDeletePayslip = async () => {
+        if (!confirmDelPayslip) return;
+        try {
+            await deletePayslip.mutateAsync(confirmDelPayslip.id);
+            onSuccess(t("messages.payslipDeleted"));
+            setConfirmDelPayslip(null);
+        } catch (e) {
+            onError(e);
+        }
+    };
 
     const reports = useMemo(() => (reportsQ.data ?? []).filter((r) => r.employee_id === employee?.id), [reportsQ.data, employee]);
     const leaves = useMemo(() => (leavesQ.data ?? []).filter((l) => l.employee_id === employee?.id), [leavesQ.data, employee]);
@@ -803,11 +817,12 @@ export default function EmployeeDetail({
                                     <TableHead>{t("payroll.col.deductions")}</TableHead>
                                     <TableHead>{t("payroll.col.net")}</TableHead>
                                     <TableHead>{t("detail.paymentDate")}</TableHead>
+                                    <TableHead className="text-right">{t("employees.col.actions")}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {payslips.length === 0 ? (
-                                    <TableRow><TableCell colSpan={7} className="text-center py-6 text-slate-400">{t("payroll.empty")}</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={8} className="text-center py-6 text-slate-400">{t("payroll.empty")}</TableCell></TableRow>
                                 ) : (
                                     payslips.map((p) => (
                                         <TableRow key={p.id}>
@@ -822,6 +837,17 @@ export default function EmployeeDetail({
                                                 {p.auto_generated && (
                                                     <Badge className="ml-2 bg-blue-100 text-blue-700 text-xs">{t("detail.auto")}</Badge>
                                                 )}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => setConfirmDelPayslip(p)}
+                                                    title={t("payroll.confirmDeleteTitle")}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -930,6 +956,15 @@ export default function EmployeeDetail({
                         </div>
                     </div>
                 )}
+
+            <ConfirmDialog
+                isOpen={!!confirmDelPayslip}
+                onClose={() => setConfirmDelPayslip(null)}
+                onConfirm={handleDeletePayslip}
+                title={t("payroll.confirmDeleteTitle")}
+                description={t("payroll.confirmDeleteDesc")}
+                isLoading={deletePayslip.isPending}
+            />
         </div>
     );
 }
