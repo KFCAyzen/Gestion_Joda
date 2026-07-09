@@ -242,7 +242,9 @@ async function buildReceiptHtml(
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; font-size: 9pt; color: #111; background: #fff; }
 
-  .quittance { width: 100%; padding: 6px 0; }
+  /* break-inside: une copie ne doit jamais être coupée entre deux pages à
+     l'impression (le bloc montant/signatures se retrouvait orphelin en page 2). */
+  .quittance { width: 100%; padding: 6px 0; break-inside: avoid; page-break-inside: avoid; }
 
   /* Séparateur de découpe */
   .cut-line {
@@ -338,10 +340,16 @@ async function buildReceiptHtml(
         `<body style="margin:0;background:#ffffff;">` +
         `<div style="padding:6mm;">${bodyContent}</div></body></html>`;
 
+    // Impression sur papier A4 (imprimante du bureau). L'ancien @page A5 imprimait
+    // le reçu en petit dans le coin de la feuille et, avec duplicata, coupait le
+    // DUPLICATA en deux (montant + signatures orphelins sur une 2e page). En A4 +
+    // zoom 1.3, le reçu remplit la largeur de la feuille et ORIGINAL + ligne de
+    // découpe + DUPLICATA tiennent sur UNE seule page (vérifié : ~94 % de la
+    // hauteur utile dans le pire cas).
     const printHtml =
         `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">` +
         `<title>Quittance ${receiptNo}</title>${styleBlock}` +
-        `<style>@page { size: A5 portrait; margin: 6mm; } @media print { html, body { margin: 0; } }</style>` +
+        `<style>@page { size: A4 portrait; margin: 6mm; } body { zoom: 1.3; } @media print { html, body { margin: 0; } }</style>` +
         `</head><body style="margin:0;background:#ffffff;"><div>${bodyContent}</div>` +
         `<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};</script>` +
         `</body></html>`;
@@ -349,11 +357,13 @@ async function buildReceiptHtml(
     return { docHtml, printHtml, receiptNo, lang, amountLabel: amountFmt, prestationLabel: typeLabelLoc, dateStr };
 }
 
-// Rend le HTML du reçu en PDF A5. On capture html2canvas DIRECTEMENT dans une
-// iframe totalement isolée (pas via jsPDF.html(), qui re-héberge dans le document
-// principal et laissait fuiter les couleurs oklch/lab de Tailwind v4). Renvoie le
-// document jsPDF ; lève en cas d'échec (l'appelant décide du repli).
-async function renderReceiptPdf(docHtml: string): Promise<jsPDF> {
+// Rend le HTML du reçu en PDF (A5 pour une copie seule, A4 une page pour
+// ORIGINAL + DUPLICATA — sinon la pagination A5 tranchait le duplicata en deux).
+// On capture html2canvas DIRECTEMENT dans une iframe totalement isolée (pas via
+// jsPDF.html(), qui re-héberge dans le document principal et laissait fuiter les
+// couleurs oklch/lab de Tailwind v4). Renvoie le document jsPDF ; lève en cas
+// d'échec (l'appelant décide du repli).
+async function renderReceiptPdf(docHtml: string, pageFormat: 'a5' | 'a4' = 'a5'): Promise<jsPDF> {
     const A5_W = 148, A5_H = 210;
     const RENDER_WIDTH_PX = 559; // ≈ 148 mm (A5) @ 96 dpi
 
@@ -387,6 +397,19 @@ async function renderReceiptPdf(docHtml: string): Promise<jsPDF> {
         });
         const imgData = canvas.toDataURL('image/png');
 
+        if (pageFormat === 'a4') {
+            // ORIGINAL + DUPLICATA sur UNE page A4 : image mise à l'échelle pour
+            // tenir dans la page (marges 6 mm), centrée horizontalement.
+            const A4_W = 210, A4_H = 297, M = 6;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+            let imgW = A4_W - 2 * M;
+            let imgH = imgW * (canvas.height / canvas.width);
+            const maxH = A4_H - 2 * M;
+            if (imgH > maxH) { imgH = maxH; imgW = imgH * (canvas.width / canvas.height); }
+            doc.addImage(imgData, 'PNG', (A4_W - imgW) / 2, M, imgW, imgH, undefined, 'FAST');
+            return doc;
+        }
+
         const doc = new jsPDF({ unit: 'mm', format: 'a5', orientation: 'portrait' });
         const imgHmm = A5_W * (canvas.height / canvas.width);
         let heightLeft = imgHmm;
@@ -413,7 +436,7 @@ export async function downloadReceipt(
 ) {
     const { docHtml, printHtml, receiptNo, lang } = await buildReceiptHtml(payment, student, options);
     try {
-        const doc = await renderReceiptPdf(docHtml);
+        const doc = await renderReceiptPdf(docHtml, options.includeDuplicata ? 'a4' : 'a5');
         doc.save(`Quittance_${receiptNo}.pdf`);
     } catch (err) {
         // Filet de sécurité : impression native (le navigateur gère les couleurs).
@@ -465,7 +488,7 @@ export async function getReceiptPdfBase64(
 ): Promise<ReceiptPdfResult | null> {
     try {
         const { docHtml, receiptNo, amountLabel, prestationLabel, dateStr } = await buildReceiptHtml(payment, student, options);
-        const doc = await renderReceiptPdf(docHtml);
+        const doc = await renderReceiptPdf(docHtml, options.includeDuplicata ? 'a4' : 'a5');
         const uri = doc.output('datauristring'); // data:application/pdf;...;base64,XXXX
         const comma = uri.indexOf(',');
         if (comma < 0) return null;
