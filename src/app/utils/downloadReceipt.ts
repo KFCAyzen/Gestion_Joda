@@ -106,8 +106,15 @@ async function buildReceiptHtml(
     dateStr: string;
 }> {
     const includeDuplicata = options.includeDuplicata ?? false;
-    const lang  = getLang(student.langue);
+    const isIntl = isInternational(student.nationalite);
+    // Les étudiants internationaux reçoivent un reçu entièrement en anglais,
+    // quelle que soit leur langue préférée ; les locaux suivent leur langue
+    // (français par défaut) et conservent le reçu bilingue existant.
+    const lang: Lang = isIntl ? 'en' : getLang(student.langue);
     const isEn  = lang === 'en';
+    // Libellé : bilingue FR (« Nom / Name ») pour le reçu français, anglais
+    // seul pour le reçu international.
+    const T = (fr: string, en: string) => isEn ? en : fr;
     const loc = isEn ? "en-GB" : "fr-FR";
     const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString(loc) : new Date().toLocaleDateString(loc);
     // Date + heure de l'opération. On privilégie `validated_at` (timestamptz posé
@@ -128,8 +135,7 @@ async function buildReceiptHtml(
         ? `<img src="${logoSrc}" alt="Joda Company" style="height:40px;width:auto;display:block;">`
         : `<span style="font-size:18px;font-weight:900;color:#dc2626;">JC</span>`;
 
-    const typeLabelFr = getTypeLabel(payment, 'fr');
-    const isIntl      = isInternational(student.nationalite);
+    const typeLabelLoc = getTypeLabel(payment, lang);
     // Regroupement ASCII (espace normale / virgule) : toLocaleString('fr-FR')
     // insère une espace fine insécable U+202F, gérée en HTML mais qui produit
     // un glyphe parasite si jamais on repasse par une police PDF.
@@ -145,8 +151,9 @@ async function buildReceiptHtml(
     const amountFmt   = money(received);
     const totalFmt    = money(payment.montant);
     const resteFmt    = reste > 0 ? money(reste) : (isEn ? 'Paid in full' : 'Soldé');
-    // Montant en lettres uniquement pour FCFA (numberToWords est en français).
-    const amountWords = isIntl ? '' : `${numberToWords(received)} francs CFA`;
+    // Montant en lettres uniquement sur le reçu français FCFA (numberToWords
+    // est en français) — jamais sur un reçu anglais/international.
+    const amountWords = (isIntl || isEn) ? '' : `${numberToWords(received)} francs CFA`;
     const receiptNo   = payment.id.slice(-8).toUpperCase();
     const studentName = `${sanitizeForHtml(student.nom)} ${sanitizeForHtml(student.prenom)}`;
     const companyBlock = isIntl
@@ -180,7 +187,7 @@ async function buildReceiptHtml(
 
       <!-- TITRE -->
       <div class="title-bar">
-        QUITTANCE DE PAIEMENT &nbsp;/&nbsp; PAYMENT RECEIPT
+        ${T('QUITTANCE DE PAIEMENT &nbsp;/&nbsp; PAYMENT RECEIPT', 'PAYMENT RECEIPT')}
       </div>
 
       <!-- CORPS -->
@@ -188,28 +195,28 @@ async function buildReceiptHtml(
         <tr>
           <!-- Colonne gauche : infos étudiant -->
           <td class="col-left">
-            <div class="section-label">BÉNÉFICIAIRE / RECIPIENT</div>
-            <div class="field"><span class="lbl">Nom / Name :</span> <span class="val">${studentName}</span></div>
-            <div class="field"><span class="lbl">Tél :</span> <span class="val">${sanitizeForHtml(student.telephone)}</span></div>
-            <div class="field"><span class="lbl">Niveau / Level :</span> <span class="val">${sanitizeForHtml(student.niveau)}</span></div>
+            <div class="section-label">${T('BÉNÉFICIAIRE / RECIPIENT', 'RECIPIENT')}</div>
+            <div class="field"><span class="lbl">${T('Nom / Name', 'Name')} :</span> <span class="val">${studentName}</span></div>
+            <div class="field"><span class="lbl">${T('Tél', 'Tel')} :</span> <span class="val">${sanitizeForHtml(student.telephone)}</span></div>
+            <div class="field"><span class="lbl">${T('Niveau / Level', 'Level')} :</span> <span class="val">${sanitizeForHtml(student.niveau)}</span></div>
           </td>
           <!-- Colonne droite : infos paiement -->
           <td class="col-right">
-            <div class="section-label">PAIEMENT / PAYMENT</div>
-            <div class="field"><span class="lbl">Objet :</span> <span class="val">Assistance visa</span></div>
-            <div class="field"><span class="lbl">Prestation :</span> <span class="val">${typeLabelFr}</span></div>
+            <div class="section-label">${T('PAIEMENT / PAYMENT', 'PAYMENT')}</div>
+            <div class="field"><span class="lbl">${T('Objet', 'Purpose')} :</span> <span class="val">${T('Assistance visa', 'Visa assistance')}</span></div>
+            <div class="field"><span class="lbl">${T('Prestation', 'Service')} :</span> <span class="val">${typeLabelLoc}</span></div>
             <div class="field"><span class="lbl">Date :</span> <span class="val">${dateStr}</span></div>
-            <div class="field"><span class="lbl">Mode :</span> <span class="val">Droit Bancaire / Cash</span></div>
-            <div class="field"><span class="lbl">Total dû / Total :</span> <span class="val">${totalFmt}</span></div>
-            <div class="field"><span class="lbl">Payé / Paid :</span> <span class="val">${amountFmt}</span></div>
-            <div class="field"><span class="lbl">Reste dû / Balance :</span> <span class="val">${resteFmt}</span></div>
+            <div class="field"><span class="lbl">${T('Mode', 'Method')} :</span> <span class="val">${T('Droit Bancaire / Cash', 'Bank transfer / Cash')}</span></div>
+            <div class="field"><span class="lbl">${T('Total dû / Total', 'Total')} :</span> <span class="val">${totalFmt}</span></div>
+            <div class="field"><span class="lbl">${T('Payé / Paid', 'Paid')} :</span> <span class="val">${amountFmt}</span></div>
+            <div class="field"><span class="lbl">${T('Reste dû / Balance', 'Balance')} :</span> <span class="val">${resteFmt}</span></div>
           </td>
         </tr>
       </table>
 
       <!-- MONTANT -->
       <div class="amount-bar">
-        <span class="amount-label">MONTANT REÇU / AMOUNT RECEIVED :</span>
+        <span class="amount-label">${T('MONTANT REÇU / AMOUNT RECEIVED', 'AMOUNT RECEIVED')} :</span>
         <span class="amount-value">${amountFmt}</span>
       </div>
       ${amountWords ? `<div class="amount-words">Arrêté à : <em>${amountWords}</em></div>` : ''}
@@ -218,14 +225,14 @@ async function buildReceiptHtml(
       <table class="sig-table">
         <tr>
           <td class="sig-box">
-            <div class="sig-title">L'Étudiant / The Student</div>
+            <div class="sig-title">${T("L'Étudiant / The Student", 'The Student')}</div>
             <div class="sig-line"></div>
             <div class="sig-name">${studentName}</div>
           </td>
           <td class="sig-box">
             <div class="sig-title">Joda Company</div>
             <div class="sig-line"></div>
-            <div class="sig-name">Agent Responsable / Responsible Agent</div>
+            <div class="sig-name">${T('Agent Responsable / Responsible Agent', 'Responsible Agent')}</div>
           </td>
         </tr>
       </table>
@@ -246,7 +253,7 @@ async function buildReceiptHtml(
     text-align: center;
   }
   .cut-line::after {
-    content: "✂  Découper ici / Cut here  ✂";
+    content: "✂  ${T('Découper ici / Cut here', 'Cut here')}  ✂";
     position: absolute;
     top: -8px;
     left: 50%;
@@ -339,7 +346,7 @@ async function buildReceiptHtml(
         `<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},400);};</script>` +
         `</body></html>`;
 
-    return { docHtml, printHtml, receiptNo, lang, amountLabel: amountFmt, prestationLabel: typeLabelFr, dateStr };
+    return { docHtml, printHtml, receiptNo, lang, amountLabel: amountFmt, prestationLabel: typeLabelLoc, dateStr };
 }
 
 // Rend le HTML du reçu en PDF A5. On capture html2canvas DIRECTEMENT dans une
