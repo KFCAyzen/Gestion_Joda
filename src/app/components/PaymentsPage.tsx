@@ -17,7 +17,7 @@ import { confirmDuplicata } from "../utils/confirmDuplicata";
 import ConfirmDialog from "./ConfirmDialog";
 import ProtectedRoute from "./ProtectedRoute";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
-import { getBourseServiceType } from "../types/payment-config";
+import { getBourseServiceType, isInternational } from "../types/payment-config";
 
 interface Student {
     id: string;
@@ -371,9 +371,13 @@ export default function PaymentsPage() {
             : "Étudiant";
 
         // On comptabilise le montant réellement validé (acompte ou solde).
-        // Devise : les services internationaux (service_type finissant par « _intl »)
-        // sont facturés en USD → écriture dans le livre USD, séparé du livre FCFA.
-        const deviseEntree = isUsdPayment(payment.type) ? "USD" : "FCFA";
+        // Devise : les services internationaux (« _intl ») ou les étudiants
+        // internationaux sont facturés en USD → écriture dans le livre USD,
+        // séparé du livre FCFA.
+        const deviseEntree =
+            isUsdPayment(payment.type) || isInternational(getStudent(payment.student_id)?.nationalite)
+                ? "USD"
+                : "FCFA";
         const { error: accountingError } = await supabase.from("entrees_comptables").insert({
             montant: validatedAmount,
             date: new Date().toISOString(),
@@ -612,6 +616,11 @@ export default function PaymentsPage() {
         (p) => p.status === "retard" && p.penalites > 0
     );
 
+    // Devise des formulaires de saisie manuelle : USD si l'étudiant sélectionné
+    // est international, sinon FCFA.
+    const encaisserUsd = isInternational(getStudent(encaisserForm.student_id)?.nationalite);
+    const registerUsd = isInternational(getStudent(newPayment.student_id)?.nationalite);
+
     const TABS: { id: Tab; label: string; count?: number }[] = [
         { id: "a_valider", label: "À valider", count: aValiderList.length },
         { id: "en_retard", label: "En retard", count: enRetardList.length },
@@ -740,10 +749,10 @@ export default function PaymentsPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">Montant (FCFA)</label>
+                                        <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">Montant ({encaisserUsd ? "USD" : "FCFA"})</label>
                                         <input
                                             type="number"
-                                            placeholder="ex: 100000"
+                                            placeholder={encaisserUsd ? "ex: 1499" : "ex: 100000"}
                                             value={encaisserForm.montant}
                                             onChange={(e) => setEncaisserForm((f) => ({ ...f, montant: e.target.value }))}
                                             className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400 dark:placeholder-white"
@@ -812,7 +821,8 @@ export default function PaymentsPage() {
                                         const canDownloadReceipt =
                                             payment.status === "paye" || (payment.montant_paye ?? 0) > 0;
                                         // Opérations internationales facturées en USD ($), sinon FCFA (F).
-                                        const usd = isUsdPayment(payment.type);
+                                        // Un service « _intl » ou un étudiant international ⇒ dollars.
+                                        const usd = isUsdPayment(payment.type) || isInternational(student?.nationalite);
 
                                         return (
                                             <tr
@@ -1161,11 +1171,11 @@ export default function PaymentsPage() {
 
                             <div>
                                 <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Montant (FCFA)
+                                    Montant ({registerUsd ? "USD" : "FCFA"})
                                 </label>
                                 <input
                                     type="number"
-                                    placeholder="ex: 100000"
+                                    placeholder={registerUsd ? "ex: 1499" : "ex: 100000"}
                                     value={newPayment.montant}
                                     onChange={(e) =>
                                         setNewPayment((p) => ({ ...p, montant: e.target.value }))
