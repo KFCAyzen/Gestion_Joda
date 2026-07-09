@@ -84,6 +84,16 @@ function fmt(amount: number): string {
     return new Intl.NumberFormat("fr-FR").format(amount) + " F";
 }
 
+/** Services internationaux (type « ..._intl ») → facturés en USD. */
+function isUsdPayment(type: string): boolean {
+    return String(type).endsWith("_intl");
+}
+
+/** Montant avec devise : « $1,499 » (intl/USD) ou « 1 499 F » (local). */
+function fmtMoney(amount: number, usd: boolean): string {
+    return usd ? "$" + new Intl.NumberFormat("en-US").format(amount) : fmt(amount);
+}
+
 function fmtShort(amount: number): string {
     if (Math.abs(amount) >= 1_000_000)
         return (amount / 1_000_000).toFixed(1).replace(".", ",") + " M F";
@@ -363,7 +373,7 @@ export default function PaymentsPage() {
         // On comptabilise le montant réellement validé (acompte ou solde).
         // Devise : les services internationaux (service_type finissant par « _intl »)
         // sont facturés en USD → écriture dans le livre USD, séparé du livre FCFA.
-        const deviseEntree = String(payment.type).endsWith("_intl") ? "USD" : "FCFA";
+        const deviseEntree = isUsdPayment(payment.type) ? "USD" : "FCFA";
         const { error: accountingError } = await supabase.from("entrees_comptables").insert({
             montant: validatedAmount,
             date: new Date().toISOString(),
@@ -801,6 +811,8 @@ export default function PaymentsPage() {
                                         // soldée (paye) OU acompte encaissé (montant_paye > 0).
                                         const canDownloadReceipt =
                                             payment.status === "paye" || (payment.montant_paye ?? 0) > 0;
+                                        // Opérations internationales facturées en USD ($), sinon FCFA (F).
+                                        const usd = isUsdPayment(payment.type);
 
                                         return (
                                             <tr
@@ -839,15 +851,15 @@ export default function PaymentsPage() {
                                                     )}
                                                 </td>
                                                 <td className="px-3 py-3.5 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                    {fmt(payment.montant)}
+                                                    {fmtMoney(payment.montant, usd)}
                                                     {(payment.montant_declare ?? 0) > 0 && (
                                                         <div className="text-[11px] font-normal text-blue-600 dark:text-blue-400">
-                                                            {fmt(payment.montant_declare!)} déclaré
+                                                            {fmtMoney(payment.montant_declare!, usd)} déclaré
                                                         </div>
                                                     )}
                                                     {(payment.montant_paye ?? 0) > 0 && (payment.montant_paye ?? 0) < payment.montant && (
                                                         <div className="text-[11px] font-normal text-green-600 dark:text-green-400">
-                                                            {fmt(payment.montant_paye!)} déjà réglé
+                                                            {fmtMoney(payment.montant_paye!, usd)} déjà réglé
                                                         </div>
                                                     )}
                                                 </td>
@@ -890,31 +902,29 @@ export default function PaymentsPage() {
                                                         ) : canValidatePayment ? (
                                                             <>
                                                                 {hasPendingDeclaration && (
-                                                                    <>
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                setConfirmDialog({
-                                                                                    isOpen: true,
-                                                                                    title: "Annuler cette déclaration ?",
-                                                                                    description: `La déclaration de ${name} sera retirée et le paiement remis en attente. L'étudiant pourra la soumettre à nouveau.`,
-                                                                                    onConfirm: async () => {
-                                                                                        closeConfirm();
-                                                                                        await handleCancelDeclaration(payment.id);
-                                                                                    },
-                                                                                })
-                                                                            }
-                                                                            className="rounded-full border border-gray-300 dark:border-gray-600 px-3.5 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                                                                        >
-                                                                            Annuler
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => setRejectModal({ open: true, paymentId: payment.id, reason: "" })}
-                                                                            className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                                        >
-                                                                            Rejeter
-                                                                        </button>
-                                                                    </>
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setConfirmDialog({
+                                                                                isOpen: true,
+                                                                                title: "Annuler cette déclaration ?",
+                                                                                description: `La déclaration de ${name} sera retirée et le paiement remis en attente. L'étudiant pourra la soumettre à nouveau.`,
+                                                                                onConfirm: async () => {
+                                                                                    closeConfirm();
+                                                                                    await handleCancelDeclaration(payment.id);
+                                                                                },
+                                                                            })
+                                                                        }
+                                                                        className="rounded-full border border-gray-300 dark:border-gray-600 px-3.5 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                                                    >
+                                                                        Annuler
+                                                                    </button>
                                                                 )}
+                                                                <button
+                                                                    onClick={() => setRejectModal({ open: true, paymentId: payment.id, reason: "" })}
+                                                                    className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                >
+                                                                    Rejeter
+                                                                </button>
                                                                 <button
                                                                     onClick={() =>
                                                                         setConfirmDialog({
