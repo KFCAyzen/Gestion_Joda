@@ -17,6 +17,9 @@ import { Check, Clock, CreditCard, Hourglass, Lock, Paperclip, WalletCards, X } 
 
 import { usePayments, type Payment } from '@/lib/hooks/use-payments';
 import { useDeclarePayment, type ProofFile } from '@/lib/hooks/use-declare-payment';
+import { useAuth } from '@/lib/auth-context';
+import { useStudentProfile } from '@/lib/hooks/use-student-portal';
+import { isInternational } from '@/lib/payment-config';
 import {
   Button,
   Chip,
@@ -42,6 +45,11 @@ function fmt(n: number): string {
   return n.toLocaleString('fr-FR');
 }
 
+/** Montant avec devise : « $1,499 » (intl) ou « 1 499 F » / « 1 499 FCFA » (local). */
+function money(n: number, isIntl: boolean, long = false): string {
+  return isIntl ? `$${fmt(n)}` : `${fmt(n)} ${long ? 'FCFA' : 'F'}`;
+}
+
 function shortDate(d: string): string {
   return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
 }
@@ -65,6 +73,10 @@ export default function PaymentsScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { data, isLoading, error } = usePayments();
+  const { user } = useAuth();
+  const { data: profile } = useStudentProfile(user?.id);
+  // Étudiant international ⇒ montants en USD ($), sinon FCFA.
+  const isIntl = isInternational(profile?.nationalite);
   const [declareOpen, setDeclareOpen] = useState(false);
 
   const rows = (data ?? []).filter((p) => !CANCELLED.has(p.status));
@@ -102,16 +114,16 @@ export default function PaymentsScreen() {
               <Text style={styles.eyebrowMuted}>Reste à régler</Text>
               <View style={styles.amountRow}>
                 <Text style={styles.bigAmount}>{fmt(dueTotal)}</Text>
-                <Text style={styles.bigCurrency}>FCFA</Text>
+                <Text style={styles.bigCurrency}>{isIntl ? 'USD' : 'FCFA'}</Text>
               </View>
               <View style={styles.chips}>
                 {pendingRows.length > 0 ? (
-                  <Chip variant="due" label={`${pendingRows.length} en validation · ${fmt(pendingTotal)} F`} />
+                  <Chip variant="due" label={`${pendingRows.length} en validation · ${money(pendingTotal, isIntl)}`} />
                 ) : null}
-                <Chip variant="ghost" label={`${paidRows.length} payé${paidRows.length > 1 ? 's' : ''} · ${fmt(paidTotal)} F`} />
+                <Chip variant="ghost" label={`${paidRows.length} payé${paidRows.length > 1 ? 's' : ''} · ${money(paidTotal, isIntl)}`} />
               </View>
               <View style={styles.progressHead}>
-                <Text style={styles.metaText}>Réglé {fmt(paidTotal)} F</Text>
+                <Text style={styles.metaText}>Réglé {money(paidTotal, isIntl)}</Text>
                 <Text style={styles.metaText}>{pct}%</Text>
               </View>
               <View style={styles.progressTrack}>
@@ -124,7 +136,7 @@ export default function PaymentsScreen() {
               {ordered.length === 0 ? (
                 <Text style={styles.subtitle}>Aucune échéance.</Text>
               ) : (
-                ordered.map((p) => <PaymentCard key={p.id} payment={p} />)
+                ordered.map((p) => <PaymentCard key={p.id} payment={p} isIntl={isIntl} />)
               )}
             </View>
 
@@ -142,7 +154,7 @@ export default function PaymentsScreen() {
           </ScrollView>
         )}
 
-        <DeclareModal visible={declareOpen} payments={declarable} onClose={() => setDeclareOpen(false)} />
+        <DeclareModal visible={declareOpen} payments={declarable} isIntl={isIntl} onClose={() => setDeclareOpen(false)} />
       </SafeAreaView>
     </ScreenBackground>
   );
@@ -151,10 +163,12 @@ export default function PaymentsScreen() {
 function DeclareModal({
   visible,
   payments,
+  isIntl,
   onClose,
 }: {
   visible: boolean;
   payments: Payment[];
+  isIntl: boolean;
   onClose: () => void;
 }) {
   const colors = useColors();
@@ -231,7 +245,7 @@ function DeclareModal({
       mode === 'complet' ? remaining : Math.max(1, parseInt(avance.replace(/\D/g, ''), 10) || 0);
 
     if (montantDeclare < 1 || montantDeclare > remaining) {
-      Alert.alert('Montant invalide', `Saisis un montant entre 1 et ${fmt(remaining)} FCFA.`);
+      Alert.alert('Montant invalide', `Saisis un montant entre 1 et ${money(remaining, isIntl, true)}.`);
       return;
     }
 
@@ -290,7 +304,7 @@ function DeclareModal({
           <Text style={styles.expectedLabel}>
             {selected && settledOf(selected) > 0 ? 'Reste sur la tranche' : 'Montant attendu'}
           </Text>
-          <Text style={styles.expectedAmount}>{selected ? `${fmt(remainingOf(selected))} FCFA` : '—'}</Text>
+          <Text style={styles.expectedAmount}>{selected ? money(remainingOf(selected), isIntl, true) : '—'}</Text>
         </View>
 
         {/* Mode complet / acompte */}
@@ -306,7 +320,7 @@ function DeclareModal({
         {mode === 'avance' ? (
           <TextInput
             style={styles.avanceInput}
-            placeholder="Montant versé (FCFA)"
+            placeholder={`Montant versé (${isIntl ? 'USD' : 'FCFA'})`}
             placeholderTextColor={colors.ink35}
             keyboardType="number-pad"
             value={avance}
@@ -344,7 +358,7 @@ function DeclareModal({
  * Carte d'une échéance avec SA propre barre de progression :
  *   vert (réglé / montant_paye) · ambre (en validation / montant_declare) · reste.
  */
-function PaymentCard({ payment }: { payment: Payment }) {
+function PaymentCard({ payment, isIntl }: { payment: Payment; isIntl: boolean }) {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const iconTint = useIconTint();
@@ -367,7 +381,7 @@ function PaymentCard({ payment }: { payment: Payment }) {
       ? `Réglé · ${shortDate(payment.date_paiement)}`
       : 'Réglé'
     : isPending
-      ? `${fmt(pending)} F en attente de validation`
+      ? `${money(pending, isIntl)} en attente de validation`
       : payment.date_limite
         ? `Dû le ${shortDate(payment.date_limite)} · ${Math.max(0, daysUntil(payment.date_limite))}j`
         : 'À venir';
@@ -391,7 +405,7 @@ function PaymentCard({ payment }: { payment: Payment }) {
           ) : isPending ? (
             <Chip variant="due" label="En validation" />
           ) : null}
-          <Text style={[styles.pcardAmount, !fullyPaid && { marginTop: 4 }]}>{fmt(total)} F</Text>
+          <Text style={[styles.pcardAmount, !fullyPaid && { marginTop: 4 }]}>{money(total, isIntl)}</Text>
         </View>
       </View>
 
@@ -401,9 +415,9 @@ function PaymentCard({ payment }: { payment: Payment }) {
         {pendingPct > 0 ? <View style={[styles.segPending, { width: `${pendingPct}%` }]} /> : null}
       </View>
       <View style={styles.pLegend}>
-        <Text style={styles.legendText}>{settled > 0 ? `Réglé ${fmt(settled)} F` : 'Rien réglé'}</Text>
+        <Text style={styles.legendText}>{settled > 0 ? `Réglé ${money(settled, isIntl)}` : 'Rien réglé'}</Text>
         <Text style={[styles.legendText, !fullyPaid && remaining > 0 ? { color: colors.amber } : null]}>
-          {fullyPaid ? '100 %' : `Reste ${fmt(remaining)} F`}
+          {fullyPaid ? '100 %' : `Reste ${money(remaining, isIntl)}`}
         </Text>
       </View>
     </GlassCard>
