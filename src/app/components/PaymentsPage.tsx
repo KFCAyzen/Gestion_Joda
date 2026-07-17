@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Filter, Plus, CheckCircle2, X, Download, RotateCcw } from "lucide-react";
+import { AlertTriangle, Filter, Plus, CheckCircle2, X, Download, RotateCcw, Ban } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
 import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
@@ -1051,9 +1051,9 @@ export default function PaymentsPage() {
                                                                         },
                                                                     })
                                                                 }
-                                                                className="flex items-center gap-1 rounded-full border border-amber-300 dark:border-amber-700 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                                                className="flex items-center gap-1 rounded-full border border-yellow-400 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1 text-xs font-semibold text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
                                                             >
-                                                                <RotateCcw className="h-3 w-3" />
+                                                                <Ban className="h-3 w-3" />
                                                                 Annuler pénalités
                                                             </button>
                                                         )}
