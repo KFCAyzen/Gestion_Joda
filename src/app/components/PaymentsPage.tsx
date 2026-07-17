@@ -1057,7 +1057,7 @@ export default function PaymentsPage() {
                                                                 Annuler pénalités
                                                             </button>
                                                         )}
-                                                        {payment.status === "paye" ? null : (isOverdue && !hasPendingDeclaration) ? (
+                                                        {payment.status === "paye" ? null : (isOverdue && !hasPendingDeclaration && penalty > 0) ? (
                                                             <button
                                                                 onClick={() => setPenaltyModal(payment)}
                                                                 className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:bg-red-900/20"
