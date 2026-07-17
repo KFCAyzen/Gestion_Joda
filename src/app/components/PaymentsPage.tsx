@@ -1035,14 +1035,16 @@ export default function PaymentsPage() {
                                                             </button>
                                                         )}
                                                         {/* Annuler la pénalité de retard directement sur la tranche
-                                                            (le principal reste dû). Visible dès qu'une pénalité s'applique. */}
-                                                        {canValidatePayment && penalty > 0 && (
+                                                            (le principal reste dû). Visible dès qu'une pénalité s'applique
+                                                            — calculée en direct OU déjà enregistrée (onglet En retard) —
+                                                            et tant qu'elle n'a pas déjà été annulée. */}
+                                                        {canValidatePayment && !payment.penalites_annulee && (penalty > 0 || (payment.penalites ?? 0) > 0) && (
                                                             <button
                                                                 onClick={() =>
                                                                     setConfirmDialog({
                                                                         isOpen: true,
                                                                         title: "Annuler les pénalités ?",
-                                                                        description: `La pénalité de retard de ${fmtMoney(penalty, usd)} sur le paiement de ${name} sera annulée. Le montant principal reste dû.`,
+                                                                        description: `La pénalité de retard de ${fmtMoney(Math.max(penalty, payment.penalites ?? 0), usd)} sur le paiement de ${name} sera annulée. Le montant principal reste dû.`,
                                                                         onConfirm: async () => {
                                                                             closeConfirm();
                                                                             await handleWaivePenalty(payment);
