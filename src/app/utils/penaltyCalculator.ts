@@ -10,6 +10,8 @@ export interface PenaltyPayment {
     status: string;
     type: string;
     date_limite: string | null;
+    // Pénalité annulée par le staff : force le résultat à 0 (le principal reste dû).
+    penalites_annulee?: boolean;
 }
 
 export interface PenaltyConfig {
@@ -18,6 +20,7 @@ export interface PenaltyConfig {
 }
 
 export function calculatePenalty(payment: PenaltyPayment, config?: PenaltyConfig): number {
+    if (payment.penalites_annulee) return 0;
     if (payment.status === "paye" || !payment.date_limite) return 0;
 
     let graceDays: number;

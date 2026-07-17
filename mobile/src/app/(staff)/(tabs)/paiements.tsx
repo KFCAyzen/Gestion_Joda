@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Check, CheckCheck, ChevronRight, Clock, FileText, X } from 'lucide-react-native';
+import { Check, CheckCheck, ChevronRight, Clock, FileText, RotateCcw, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
-import { useStaffPayments, useValidatePayment, type StaffPayment } from '@/lib/hooks/use-staff';
+import { useStaffPayments, useValidatePayment, useCancelValidation, type StaffPayment } from '@/lib/hooks/use-staff';
 import {
   Avatar,
   Button,
@@ -28,6 +28,7 @@ export default function StaffPaiements() {
   const { user } = useAuth();
   const { data: payments, isLoading } = useStaffPayments();
   const validate = useValidatePayment(user?.id);
+  const cancelValidation = useCancelValidation();
   const toast = useToast();
 
   const [tab, setTab] = useState('pending');
@@ -47,6 +48,30 @@ export default function StaffPaiements() {
     } catch {
       toast('Échec de l’opération');
     }
+  }
+
+  // Annuler une validation : supprime l'écriture comptable liée et remet la
+  // tranche « en attente ». Confirmation obligatoire (opération irréversible).
+  function confirmCancelValidation(p: StaffPayment) {
+    Alert.alert(
+      'Annuler la validation ?',
+      `La validation du paiement de ${p.student} sera annulée : l'écriture comptable liée sera supprimée et le paiement repassera « en attente ».`,
+      [
+        { text: 'Retour', style: 'cancel' },
+        {
+          text: 'Annuler la validation',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const r = await cancelValidation.mutateAsync(p.id);
+              toast((r?.deletedEntries ?? 0) > 0 ? 'Validation annulée ✓' : 'Validation annulée');
+            } catch (e) {
+              toast((e as Error).message || 'Échec de l’annulation');
+            }
+          },
+        },
+      ],
+    );
   }
 
   // Parité web `handleValidateAll` : valide en série toutes les déclarations en
@@ -161,8 +186,18 @@ export default function StaffPaiements() {
                     </View>
                   </>
                 ) : (
-                  <View style={{ marginTop: 11 }}>
+                  <View style={{ marginTop: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                     <Chip variant={p.status === 'paye' ? 'done' : 'ghost'} label={p.status === 'paye' ? 'Validé' : p.status === 'retard' ? 'Rejeté' : p.status} />
+                    {p.status === 'paye' ? (
+                      <Button
+                        label="Annuler la validation"
+                        size="sm"
+                        variant="glass"
+                        icon={<RotateCcw size={15} color={colors.amberIcon} />}
+                        onPress={() => confirmCancelValidation(p)}
+                        disabled={cancelValidation.isPending}
+                      />
+                    ) : null}
                   </View>
                 )}
               </GlassCard>

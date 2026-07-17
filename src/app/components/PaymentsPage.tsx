@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Filter, Plus, CheckCircle2, X, Download } from "lucide-react";
+import { AlertTriangle, Filter, Plus, CheckCircle2, X, Download, RotateCcw } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
 import { usePayments, PAYMENTS_KEY } from '../lib/hooks/use-payments';
 import { useStudents } from '../lib/hooks/use-students';
-import { useEntreesComptables, useSortiesComptables } from '../lib/hooks/use-accounting';
+import { useEntreesComptables, useSortiesComptables, ENTREES_KEY, SOLDE_KEY } from '../lib/hooks/use-accounting';
 import { useAuth } from "../context/AuthContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { useNotificationContext } from "../context/NotificationContext";
@@ -14,6 +14,7 @@ import { calculatePenalty } from "../utils/penaltyCalculator";
 import { logActivity } from "../utils/activityLogger";
 import { downloadReceipt, getReceiptPdfBase64 } from "../utils/downloadReceipt";
 import { confirmDuplicata } from "../utils/confirmDuplicata";
+import { getFriendlyErrorMessage } from "../lib/feedback";
 import ConfirmDialog from "./ConfirmDialog";
 import ProtectedRoute from "./ProtectedRoute";
 import { usePaymentConfig } from "../context/PaymentConfigContext";
@@ -42,6 +43,7 @@ interface Payment {
     date_limite: string;
     date_paiement: string | null;
     penalites: number;
+    penalites_annulee?: boolean;
     validated_by: string | null;
     validated_at: string | null;
     created_at: string;
@@ -205,7 +207,9 @@ export default function PaymentsPage() {
     const syncPenalties = async (list: Payment[], studentList: Student[]) => {
         const studentMap = new Map(studentList.map((s) => [s.id, s]));
         const updates = list
-            .filter((p) => p.status !== "paye" && p.date_limite)
+            // On ne recalcule jamais la pénalité d'un paiement dont la pénalité a
+            // été annulée par le staff (sinon elle réapparaîtrait au chargement).
+            .filter((p) => p.status !== "paye" && p.date_limite && !p.penalites_annulee)
             .map((p) => ({ p, penalty: calculatePenalty(p, resolvePenaltyConfig(p, studentMap)) }))
             .filter(({ p, penalty }) => penalty !== (p.penalites ?? 0) || (penalty > 0 && p.status === "attente"));
         if (updates.length === 0) return;
@@ -362,6 +366,25 @@ export default function PaymentsPage() {
             return;
         }
 
+        // Mise à jour OPTIMISTE du cache : la ligne quitte immédiatement l'onglet
+        // « À valider » (statut « paye » quand la tranche est soldée) sans attendre
+        // le refetch réseau. L'invalidation en fin de fonction reconcilie ensuite.
+        queryClient.setQueriesData<Payment[]>({ queryKey: PAYMENTS_KEY }, (old) =>
+            old?.map((p) =>
+                p.id === paymentId
+                    ? {
+                          ...p,
+                          status: fullySettled ? "paye" : "attente",
+                          montant_paye: newMontantPaye,
+                          montant_declare: 0,
+                          validated_by: user.id,
+                          validated_at: nowIso,
+                          date_paiement: fullySettled ? nowIso : p.date_paiement,
+                      }
+                    : p,
+            ),
+        );
+
         const typeEntree =
             payment.type === "mandarin" || payment.type === "anglais"
                 ? "paiement_cours"
@@ -452,6 +475,15 @@ export default function PaymentsPage() {
             return;
         }
 
+        // Optimiste : la ligne rejetée quitte tout de suite « À valider » (→ retard).
+        queryClient.setQueriesData<Payment[]>({ queryKey: PAYMENTS_KEY }, (old) =>
+            old?.map((p) =>
+                p.id === paymentId
+                    ? { ...p, status: "retard", montant_declare: 0, validated_by: user.id, validated_at: nowIso, rejection_reason: reason || null, rejected_at: nowIso }
+                    : p,
+            ),
+        );
+
         const studentName = payment.students
             ? `${payment.students.nom} ${payment.students.prenom}`
             : "Étudiant";
@@ -489,6 +521,86 @@ export default function PaymentsPage() {
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "Erreur lors de l'annulation";
             showNotification(msg, "error");
+        }
+    };
+
+    // Annuler une validation déjà effectuée : supprime l'écriture (les écritures)
+    // comptable(s) liée(s) au paiement et remet la tranche à l'état « en attente ».
+    // Passe par une route serveur (service role) car la suppression d'écritures et
+    // la réinitialisation du paiement sont des opérations privilégiées ; le trigger
+    // DELETE sur entrees_comptables réajuste automatiquement le solde de trésorerie.
+    const handleCancelValidation = async (payment: Payment) => {
+        if (!user || !canValidatePayment) return;
+        try {
+            const res = await fetch("/api/cancel-payment-validation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ payment_id: payment.id }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "Erreur serveur");
+
+            // Optimiste : la ligne repasse « en attente » (montant_paye remis à 0).
+            queryClient.setQueriesData<Payment[]>({ queryKey: PAYMENTS_KEY }, (old) =>
+                old?.map((p) =>
+                    p.id === payment.id
+                        ? { ...p, status: "attente", montant_paye: 0, montant_declare: 0, penalites: 0, validated_by: null, validated_at: null, date_paiement: null, rejection_reason: null, rejected_at: null }
+                        : p,
+                ),
+            );
+
+            const student = getStudent(payment.student_id);
+            const name = student ? `${student.nom} ${student.prenom}` : "Étudiant";
+            const deletedEntries: number = data.deletedEntries ?? 0;
+            await logActivity(
+                user.id, user.name, user.role,
+                "payment_validate", "payment", payment.id,
+                `Validation annulée — ${typeLabel(payment.type, payment.tranche)} — ${name}`,
+                { payment_id: payment.id, cancelled_validation: true, deleted_entries: deletedEntries }
+            );
+            showNotification(
+                deletedEntries > 0
+                    ? `Validation annulée — ${deletedEntries} écriture(s) comptable(s) supprimée(s)`
+                    : "Validation annulée",
+                "success"
+            );
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+            queryClient.invalidateQueries({ queryKey: ENTREES_KEY });
+            queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Erreur lors de l'annulation";
+            showNotification(msg, "error");
+        }
+    };
+
+    // Annuler les pénalités d'un paiement : met penalites à 0 et pose le drapeau
+    // penalites_annulee pour bloquer tout recalcul ultérieur (client + cron). Le
+    // principal reste dû ; seule la pénalité de retard est levée.
+    const handleWaivePenalty = async (payment: Payment) => {
+        if (!user || !canValidatePayment) return;
+        try {
+            const { error } = await supabase
+                .from("payments")
+                .update({ penalites: 0, penalites_annulee: true })
+                .eq("id", payment.id);
+            if (error) throw error;
+
+            queryClient.setQueriesData<Payment[]>({ queryKey: PAYMENTS_KEY }, (old) =>
+                old?.map((p) => (p.id === payment.id ? { ...p, penalites: 0, penalites_annulee: true } : p)),
+            );
+
+            const student = getStudent(payment.student_id);
+            const name = student ? `${student.nom} ${student.prenom}` : "Étudiant";
+            await logActivity(
+                user.id, user.name, user.role,
+                "payment_update", "payment", payment.id,
+                `Pénalités annulées — ${typeLabel(payment.type, payment.tranche)} — ${name}`,
+                { payment_id: payment.id, penalites_annulee: true, montant_penalite: payment.penalites ?? 0 }
+            );
+            showNotification("Pénalités annulées", "success");
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEY });
+        } catch (err) {
+            showNotification(getFriendlyErrorMessage(err), "error");
         }
     };
 
@@ -900,6 +1012,47 @@ export default function PaymentsPage() {
                                                             >
                                                                 <Download className="h-3 w-3" />
                                                                 Reçu
+                                                            </button>
+                                                        )}
+                                                        {/* Annuler une validation déjà effectuée (tranche soldée ou acompte encaissé). */}
+                                                        {canValidatePayment && (payment.status === "paye" || (payment.montant_paye ?? 0) > 0) && (
+                                                            <button
+                                                                onClick={() =>
+                                                                    setConfirmDialog({
+                                                                        isOpen: true,
+                                                                        title: "Annuler la validation ?",
+                                                                        description: `La validation du paiement de ${name} sera annulée : l'écriture comptable liée sera supprimée et le paiement repassera « en attente ». Cette action est irréversible.`,
+                                                                        onConfirm: async () => {
+                                                                            closeConfirm();
+                                                                            await handleCancelValidation(payment);
+                                                                        },
+                                                                    })
+                                                                }
+                                                                className="flex items-center gap-1 rounded-full border border-amber-300 dark:border-amber-700 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                                            >
+                                                                <RotateCcw className="h-3 w-3" />
+                                                                Annuler la validation
+                                                            </button>
+                                                        )}
+                                                        {/* Annuler la pénalité de retard directement sur la tranche
+                                                            (le principal reste dû). Visible dès qu'une pénalité s'applique. */}
+                                                        {canValidatePayment && penalty > 0 && (
+                                                            <button
+                                                                onClick={() =>
+                                                                    setConfirmDialog({
+                                                                        isOpen: true,
+                                                                        title: "Annuler les pénalités ?",
+                                                                        description: `La pénalité de retard de ${fmtMoney(penalty, usd)} sur le paiement de ${name} sera annulée. Le montant principal reste dû.`,
+                                                                        onConfirm: async () => {
+                                                                            closeConfirm();
+                                                                            await handleWaivePenalty(payment);
+                                                                        },
+                                                                    })
+                                                                }
+                                                                className="flex items-center gap-1 rounded-full border border-amber-300 dark:border-amber-700 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                                            >
+                                                                <RotateCcw className="h-3 w-3" />
+                                                                Annuler pénalités
                                                             </button>
                                                         )}
                                                         {payment.status === "paye" ? null : (isOverdue && !hasPendingDeclaration) ? (
@@ -1321,23 +1474,45 @@ export default function PaymentsPage() {
                                         </div>
                                     </div>
                                     {canValidatePayment && (
-                                        <button
-                                            onClick={() => {
-                                                setPenaltyModal(null);
-                                                setConfirmDialog({
-                                                    isOpen: true,
-                                                    title: "Valider malgré le retard ?",
-                                                    description: `Validation du paiement de ${name} avec pénalité de ${fmt(penaltyModal.penalites || 0)}.`,
-                                                    onConfirm: async () => {
-                                                        closeConfirm();
-                                                        await handleValidate(penaltyModal.id);
-                                                    },
-                                                });
-                                            }}
-                                            className="mt-2 w-full rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
-                                        >
-                                            Valider avec pénalité
-                                        </button>
+                                        <div className="mt-2 space-y-2">
+                                            <button
+                                                onClick={() => {
+                                                    setPenaltyModal(null);
+                                                    setConfirmDialog({
+                                                        isOpen: true,
+                                                        title: "Valider malgré le retard ?",
+                                                        description: `Validation du paiement de ${name} avec pénalité de ${fmt(penaltyModal.penalites || 0)}.`,
+                                                        onConfirm: async () => {
+                                                            closeConfirm();
+                                                            await handleValidate(penaltyModal.id);
+                                                        },
+                                                    });
+                                                }}
+                                                className="w-full rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
+                                            >
+                                                Valider avec pénalité
+                                            </button>
+                                            {(penaltyModal.penalites || 0) > 0 && !penaltyModal.penalites_annulee && (
+                                                <button
+                                                    onClick={() => {
+                                                        const p = penaltyModal;
+                                                        setPenaltyModal(null);
+                                                        setConfirmDialog({
+                                                            isOpen: true,
+                                                            title: "Annuler les pénalités ?",
+                                                            description: `La pénalité de retard de ${fmt(p.penalites || 0)} sur le paiement de ${name} sera annulée. Le montant principal reste dû.`,
+                                                            onConfirm: async () => {
+                                                                closeConfirm();
+                                                                await handleWaivePenalty(p);
+                                                            },
+                                                        });
+                                                    }}
+                                                    className="w-full rounded-xl border border-amber-300 dark:border-amber-700 py-2.5 text-sm font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                                >
+                                                    Annuler les pénalités
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             );

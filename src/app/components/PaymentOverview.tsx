@@ -168,12 +168,20 @@ function computeTrancheState(
     };
 }
 
-function configToService(cfg: PaymentConfig, type: string): Service {
+function configToService(cfg: PaymentConfig, type: string, payments: Payment[]): Service {
+    // Le montant réellement dû par tranche provient de la ligne `payments`
+    // correspondante lorsqu'elle existe (un admin a pu l'ajuster manuellement) ;
+    // la config ne sert que de repli pour les tranches pas encore matérialisées.
+    const rows = payments.filter((p) => p.type === type);
+    const tranches = cfg.tranches.map((tr) => {
+        const row = rows.find((p) => p.tranche === tr.tranche);
+        return row ? { ...tr, montant: row.montant } : tr;
+    });
     return {
         type,
         label: cfg.label,
-        total: cfg.tranches.reduce((s, t) => s + t.montant, 0),
-        tranches: cfg.tranches,
+        total: tranches.reduce((s, t) => s + t.montant, 0),
+        tranches,
     };
 }
 
@@ -257,7 +265,7 @@ export default function PaymentOverview({
         // (local Bachelor/Master en FCFA, ou Opening Fee intl en $).
         if (choix === "procedure_seule" || choix === "procedure_cours") {
             const cfg = getBourseConfig(niveau, nationalite);
-            list.push(configToService(cfg, "bourse"));
+            list.push(configToService(cfg, "bourse", payments));
         }
 
         // Les catégories de services sont strictement cloisonnées par nationalité :
@@ -269,20 +277,20 @@ export default function PaymentOverview({
             // matérialisés par des lignes de paiement dédiées.
             for (const type of INTL_PROGRAM_TYPES) {
                 if (payments.some(p => p.type === type) && !list.some(s => s.type === type))
-                    list.push(configToService(getConfig(type), type));
+                    list.push(configToService(getConfig(type), type, payments));
             }
         } else {
             // Cours de langue locaux selon le choix + la langue, complétés par
             // d'éventuelles lignes de paiement de cours déjà générées.
             if (choix === "cours_seuls" || choix === "procedure_cours") {
-                if (lc.includes("mandarin")) list.push(configToService(getConfig("mandarin"), "mandarin"));
-                else if (lc.includes("anglais")) list.push(configToService(getConfig("anglais"), "anglais"));
+                if (lc.includes("mandarin")) list.push(configToService(getConfig("mandarin"), "mandarin", payments));
+                else if (lc.includes("anglais")) list.push(configToService(getConfig("anglais"), "anglais", payments));
             }
 
             if (payments.some(p => p.type === "mandarin") && !list.some(s => s.type === "mandarin"))
-                list.push(configToService(getConfig("mandarin"), "mandarin"));
+                list.push(configToService(getConfig("mandarin"), "mandarin", payments));
             if (payments.some(p => p.type === "anglais") && !list.some(s => s.type === "anglais"))
-                list.push(configToService(getConfig("anglais"), "anglais"));
+                list.push(configToService(getConfig("anglais"), "anglais", payments));
         }
 
         return list;

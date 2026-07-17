@@ -10,6 +10,7 @@ export const paymentSchema = z.object({
   date_limite: z.string().nullable().optional(),
   date_paiement: z.string().nullable().optional(),
   penalites: z.number().default(0),
+  penalites_annulee: z.boolean().nullable().optional(),
   validated_by: z.string().uuid().nullable().optional(),
   validated_at: z.string().nullable().optional(),
   facture_url: z.string().nullable().optional(),

@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
         status,
         date_limite,
         penalites,
+        penalites_annulee,
         students (
           nom,
           prenom,
@@ -96,8 +97,9 @@ export async function GET(req: NextRequest) {
       if (daysLate > 0) {
         results.late++;
 
-        // Mettre à jour le statut et les pénalités
-        const penalties = daysLate * (cfg?.daily_penalty ?? 10000);
+        // Mettre à jour le statut et les pénalités. Une pénalité annulée par le
+        // staff reste à 0 et n'est jamais recalculée (le principal reste dû).
+        const penalties = payment.penalites_annulee ? 0 : daysLate * (cfg?.daily_penalty ?? 10000);
         if (payment.status !== 'retard') {
           await supabaseAdmin
             .from('payments')

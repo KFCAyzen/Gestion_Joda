@@ -672,6 +672,30 @@ export function useValidatePayment(userId?: string) {
   });
 }
 
+/**
+ * Annule une validation de paiement déjà effectuée — miroir web : la route
+ * serveur supprime la (les) écriture(s) comptable(s) liée(s) au paiement et
+ * remet la tranche « en attente » (le trigger DELETE réajuste le solde).
+ */
+export function useCancelValidation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (paymentId: string) => {
+      const res = await apiFetch('/api/cancel-payment-validation', {
+        method: 'POST',
+        body: JSON.stringify({ payment_id: paymentId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error ?? 'Échec de l’annulation');
+      return data as { deletedEntries?: number };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['staff', 'payments'] });
+      qc.invalidateQueries({ queryKey: ['staff', 'dossiers'] });
+    },
+  });
+}
+
 /* ── Rapports journaliers de l'équipe ────────────────────────────────────── */
 export type StaffReport = {
   id: string;
