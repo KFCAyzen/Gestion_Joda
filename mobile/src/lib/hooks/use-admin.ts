@@ -957,17 +957,59 @@ export function useEncaisserTranche(actor?: Actor) {
   return useMutation({
     mutationFn: async (paymentId: string) => {
       const nowIso = new Date().toISOString();
-      const { error } = await supabase
+      // Relecture fraîche : idempotence (ne jamais ré-encaisser un paiement déjà
+      // soldé → sinon double écriture comptable) + montants réels.
+      const { data: payment, error: fErr } = await supabase
         .from('payments')
-        .update({ status: 'paye', date_paiement: nowIso, validated_by: actor?.id ?? null, validated_at: nowIso })
+        .select('*, students(nom, prenom)')
+        .eq('id', paymentId)
+        .single();
+      if (fErr || !payment) throw fErr ?? new Error('Paiement introuvable');
+      if (payment.status === 'paye') return; // déjà encaissé — no-op
+
+      const montantPaye = Number(payment.montant_paye ?? 0);
+      const validatedAmount = Math.max(0, Number(payment.montant) - montantPaye);
+      if (validatedAmount <= 0) return; // rien à encaisser
+      const newMontantPaye = montantPaye + validatedAmount;
+
+      const { error: uErr } = await supabase
+        .from('payments')
+        .update({
+          status: 'paye',
+          montant_paye: newMontantPaye,
+          montant_declare: 0,
+          date_paiement: nowIso,
+          validated_by: actor?.id ?? null,
+          validated_at: nowIso,
+        })
         .eq('id', paymentId);
-      if (error) throw error;
-      await logActivity(actor ?? {}, 'payment_validate', 'payments', paymentId, 'Tranche de frais encaissée', { payment_id: paymentId });
+      if (uErr) throw uErr;
+
+      // Écriture comptable (miroir web `PaymentsPage.handleValidate` et staff
+      // `useValidatePayment`) — sans elle, l'argent encaissé n'apparaît jamais
+      // dans le livre comptable.
+      const typeEntree = payment.type === 'mandarin' || payment.type === 'anglais' ? 'paiement_cours' : 'paiement_procedure';
+      const studentName = payment.students ? `${payment.students.nom} ${payment.students.prenom}` : 'Étudiant';
+      const deviseEntree = String(payment.type).endsWith('_intl') ? 'USD' : 'FCFA';
+      const { error: eErr } = await supabase.from('entrees_comptables').insert({
+        montant: validatedAmount,
+        date: nowIso,
+        type: typeEntree,
+        description: `Paiement ${payment.type} - Tranche ${payment.tranche || 'N/A'} - ${studentName}`,
+        devise: deviseEntree,
+        student_id: payment.student_id,
+        payment_id: payment.id,
+        created_by: actor?.id ?? null,
+      });
+      if (eErr) throw eErr;
+
+      await logActivity(actor ?? {}, 'payment_validate', 'payments', paymentId, 'Tranche de frais encaissée', { payment_id: paymentId, montant: validatedAmount });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'frais'] });
       qc.invalidateQueries({ queryKey: ['admin', 'ledger'] });
       qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'treasury'] });
     },
   });
 }
