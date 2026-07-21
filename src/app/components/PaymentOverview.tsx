@@ -12,6 +12,7 @@ interface Payment {
     type: string;
     tranche: number | null;
     montant: number;
+    montant_paye?: number | null;
     status: string;
     date_limite: string | null;
     date_paiement: string | null;
@@ -434,6 +435,11 @@ export default function PaymentOverview({
                                     (p) => p.tranche === tranche.tranche
                                 );
                                 const state = computeTrancheState(payment, service.type, serviceCfg.grace_days, penaltyConfig);
+                                // Reçu disponible dès qu'un montant a été validé : tranche
+                                // soldée (paye) OU acompte encaissé (montant_paye > 0). Parité
+                                // avec le module de gestion des paiements (agent).
+                                const hasReceipt =
+                                    payment?.status === "paye" || (payment?.montant_paye ?? 0) > 0;
                                 const canDeclare =
                                     payment?.status !== "paye" &&
                                     payment?.status !== "en_validation" &&
@@ -545,19 +551,19 @@ export default function PaymentOverview({
                                         ) : null}
 
                                         <div className="flex flex-wrap gap-2">
-                                            {payment?.status === "paye" && onDownloadReceipt ? (
+                                            {hasReceipt && onDownloadReceipt ? (
                                                 <button
                                                     type="button"
-                                                    onClick={() => onDownloadReceipt(payment)}
+                                                    onClick={() => onDownloadReceipt(payment!)}
                                                     className="student-focus-ring student-pay-pill flex-1 px-3 py-2 text-center text-xs font-semibold text-[var(--student-ring-exercise)] transition-colors hover:bg-[rgba(220,38,38,0.06)] sm:flex-none"
                                                 >
                                                     {t("downloadReceipt")}
                                                 </button>
                                             ) : null}
-                                            {payment?.status === "paye" && onPrintReceipt ? (
+                                            {hasReceipt && onPrintReceipt ? (
                                                 <button
                                                     type="button"
-                                                    onClick={() => onPrintReceipt(payment)}
+                                                    onClick={() => onPrintReceipt(payment!)}
                                                     className="student-focus-ring student-pay-pill flex-1 px-3 py-2 text-center text-xs font-semibold text-[var(--student-ring-exercise)] transition-colors hover:bg-[rgba(220,38,38,0.06)] sm:flex-none"
                                                 >
                                                     {t("printReceipt")}

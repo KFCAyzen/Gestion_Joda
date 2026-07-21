@@ -4,6 +4,8 @@ export const paymentSchema = z.object({
   id: z.string().uuid(),
   student_id: z.string().uuid(),
   montant: z.number(),
+  montant_paye: z.number().nullable().optional(),
+  montant_declare: z.number().nullable().optional(),
   type: z.enum(['bourse', 'mandarin', 'anglais', 'inscription', 'autre']),
   tranche: z.number().nullable().optional(),
   status: z.enum(['attente', 'en_validation', 'paye', 'retard', 'annule']),

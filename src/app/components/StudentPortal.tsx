@@ -923,7 +923,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                         </div>
                     </div>
                     <div className="mt-5 flex gap-2">
-                        {detailPayment.status === "paye" && studentInfo && (
+                        {(detailPayment.status === "paye" || (detailPayment.montant_paye ?? 0) > 0) && studentInfo && (
                             <button
                                 onClick={() => downloadReceipt(detailPayment as any, studentInfo)}
                                 className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.28)] bg-[rgba(220,38,38,0.06)] px-3 py-2 text-xs font-semibold text-[var(--student-neon-lime)] hover:bg-[rgba(220,38,38,0.12)]"
@@ -931,7 +931,7 @@ export default function StudentPortal({ user, onLogout }: StudentPortalProps) {
                                 {t("payments.downloadReceipt")}
                             </button>
                         )}
-                        {detailPayment.status === "paye" && studentInfo && (
+                        {(detailPayment.status === "paye" || (detailPayment.montant_paye ?? 0) > 0) && studentInfo && (
                             <button
                                 onClick={() => printReceipt(detailPayment as any, studentInfo)}
                                 className="student-focus-ring rounded-2xl border border-[rgba(220,38,38,0.28)] bg-[rgba(220,38,38,0.06)] px-3 py-2 text-xs font-semibold text-[var(--student-neon-lime)] hover:bg-[rgba(220,38,38,0.12)]"
