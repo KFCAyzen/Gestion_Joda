@@ -148,6 +148,10 @@ export default function PaymentsPage() {
     const { data: _entreesData = [] } = useEntreesComptables();
     const { data: _sortiesData = [] } = useSortiesComptables();
     const syncedRef = useRef(false);
+    // Verrou anti double-validation : un paiement en cours de validation ne peut
+    // pas être re-soumis (double-clic, ou clic sur une ligne pas encore rafraîchie).
+    const validatingRef = useRef<Set<string>>(new Set());
+    const [, forceRerender] = useState(0);
 
     const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
     const entrées = useMemo(() =>
@@ -325,12 +329,28 @@ export default function PaymentsPage() {
 
     const handleValidate = async (paymentId: string) => {
         if (!user || !canValidatePayment) return;
+        // Verrou : si une validation de ce paiement est déjà en cours, on ignore
+        // le second appel (double-clic / clic répété avant rafraîchissement).
+        if (validatingRef.current.has(paymentId)) return;
+        validatingRef.current.add(paymentId);
+        try {
         const { data: payment } = await supabase
             .from("payments")
             .select("*, students(nom, prenom)")
             .eq("id", paymentId)
             .single();
         if (!payment) return;
+
+        // Idempotence : un paiement déjà soldé ne se re-valide pas (sinon on
+        // écrirait une écriture comptable en double / de montant nul). On
+        // réaligne le cache sur l'état réel et on s'arrête.
+        if (payment.status === "paye") {
+            queryClient.setQueriesData<Payment[]>({ queryKey: PAYMENTS_KEY }, (old) =>
+                old?.map((p) => (p.id === paymentId ? { ...p, ...payment, students: undefined } as Payment : p)),
+            );
+            showNotification("Ce paiement est déjà validé", "info");
+            return;
+        }
 
         // Règlement partiel : on valide le montant déclaré en attente, sinon
         // (paiement créé/soumis sans déclaration) le reste dû de la tranche.
@@ -342,6 +362,12 @@ export default function PaymentsPage() {
             : Math.max(0, payment.montant - montantPaye);
         const newMontantPaye = montantPaye + validatedAmount;
         const fullySettled = newMontantPaye >= payment.montant;
+
+        // Rien à valider (montant déjà couvert) : on évite une écriture nulle.
+        if (validatedAmount <= 0) {
+            showNotification("Aucun montant à valider sur ce paiement", "info");
+            return;
+        }
 
         const nowIso = new Date().toISOString();
         const { error: updateError } = await supabase
@@ -445,6 +471,10 @@ export default function PaymentsPage() {
         // affiche le montant total de la prestation (pas l'acompte), elle n'est
         // exacte qu'au règlement complet.
         if (fullySettled) void emailReceiptToStudent(payment, nowIso);
+        } finally {
+            validatingRef.current.delete(paymentId);
+            forceRerender((n) => n + 1);
+        }
     };
 
     const handleReject = async (paymentId: string, reason: string) => {
@@ -1091,6 +1121,7 @@ export default function PaymentsPage() {
                                                                     Rejeter
                                                                 </button>
                                                                 <button
+                                                                    disabled={validatingRef.current.has(payment.id)}
                                                                     onClick={() =>
                                                                         setConfirmDialog({
                                                                             isOpen: true,
@@ -1102,9 +1133,9 @@ export default function PaymentsPage() {
                                                                             },
                                                                         })
                                                                     }
-                                                                    className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                                                                    className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                                                 >
-                                                                    Valider
+                                                                    {validatingRef.current.has(payment.id) ? "Validation…" : "Valider"}
                                                                 </button>
                                                             </>
                                                         ) : canDownloadReceipt ? null : (
