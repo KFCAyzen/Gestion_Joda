@@ -27,6 +27,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "../context/ThemeContext";
 import { locales } from "@/i18n/config";
 import { buildStudentAuthEmail } from "../lib/student-auth";
+import { sanitizePasswordInput } from "../lib/password";
 
 type Audience = "etudiant" | "equipe";
 
@@ -94,8 +95,11 @@ export default function LoginPage() {
         setTimeout(() => setShakeError(false), 600);
     };
 
+    // Supabase Auth stocke les emails en minuscules : on normalise pour qu'une
+    // majuscule laissée par un clavier mobile ne fasse pas échouer la connexion.
+    // Le chemin étudiant est déjà normalisé par `slugifyPart` dans buildStudentAuthEmail.
     const resolveEmail = (value: string) =>
-        value.includes("@") ? value.trim() : buildStudentAuthEmail(value.trim());
+        value.includes("@") ? value.trim().toLowerCase() : buildStudentAuthEmail(value.trim());
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -103,7 +107,7 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const result = await login(resolveEmail(identifier), password);
+            const result = await login(resolveEmail(identifier), sanitizePasswordInput(password));
             if (result.success) return; // useEffect handles redirect
             setError(result.message || t("errorDefault"));
             triggerShake();
@@ -300,6 +304,11 @@ export default function LoginPage() {
                             required
                             autoComplete="username"
                             inputMode={isStudent ? "text" : "email"}
+                            // Sur mobile, un `type="text"` est auto-capitalisé et corrigé par
+                            // le clavier : l'équipe saisissait « Kepseu@joda.com ».
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            spellCheck={false}
                             data-testid="login-identifier"
                             className="w-full bg-transparent text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                         />
@@ -323,6 +332,12 @@ export default function LoginPage() {
                             placeholder={t("passwordPlaceholder")}
                             required
                             autoComplete="current-password"
+                            // Indispensable ici : `type="password"` neutralise le clavier, mais
+                            // l'œil bascule le champ en `type="text"`, ce qui réactive majuscule
+                            // et correction automatiques et altère le mot de passe saisi.
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            spellCheck={false}
                             data-testid="login-password"
                             className="w-full bg-transparent text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                         />
