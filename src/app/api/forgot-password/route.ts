@@ -190,30 +190,27 @@ export async function POST(req: NextRequest) {
         }
 
         const tempPassword = generateTemporaryPassword();
-
-        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-            password: tempPassword,
-        });
-
-        if (updateError) {
-            console.error("[forgot-password] updateUser:", updateError.message);
-            return NextResponse.json({ success: true });
-        }
-
-        markReset(userId);
-        await supabaseAdmin.from("users").update({ must_change_password: true }).eq("id", userId);
-
         const isEn = lang === "en";
         const year = new Date().getFullYear();
+
+        // L'envoi PRÉCÈDE le changement de mot de passe. Dans l'ordre inverse (état
+        // antérieur), un email rejeté ou un SMS en échec laissait l'utilisateur
+        // définitivement verrouillé : son ancien mot de passe était déjà détruit et le
+        // nouveau n'arrivait jamais. C'est l'origine des signalements « j'utilise mon
+        // mot de passe et il est refusé ». Les deux canaux renvoient un statut, qui
+        // était ignoré — donc un envoi échoué passait pour un succès.
+        let delivered = false;
+        let deliveryError = "aucun canal de remise disponible";
 
         if (channel === "sms" && recipientPhone) {
             const smsText = isEn
                 ? `JODA - Password reset\nUsername: ${displayUsername}\nTemp password: ${tempPassword}\nLogin: https://gestion-joda.vercel.app`
                 : `JODA - Reinitialisation\nIdentifiant: ${displayUsername}\nMdp temp: ${tempPassword}\nConnexion: https://gestion-joda.vercel.app`;
-            await sendSmsToPhone(recipientPhone, smsText);
-            console.log(`[forgot-password] Credentials sent via SMS to ${recipientPhone}`);
+            const sms = await sendSmsToPhone(recipientPhone, smsText);
+            delivered = sms.ok;
+            if (!sms.ok) deliveryError = sms.error ?? "echec SMS";
         } else if (recipientEmail) {
-            await resend.emails.send({
+            const { error: sendError } = await resend.emails.send({
                 from: FROM_EMAIL,
                 to: [recipientEmail],
                 subject: isEn
@@ -221,8 +218,34 @@ export async function POST(req: NextRequest) {
                     : "Votre mot de passe temporaire - Joda Company",
                 html: credentialsEmailHtml(recipientName, displayUsername, tempPassword, year, lang),
             });
-            console.log(`[forgot-password] Credentials sent via email to ${recipientEmail}`);
+            delivered = !sendError;
+            if (sendError) deliveryError = sendError.message;
         }
+
+        if (!delivered) {
+            // Mot de passe volontairement laissé intact : un reset sans effet est très
+            // préférable à un compte verrouillé. Réponse 200 quand même (anti-énumération).
+            console.error(
+                `[forgot-password] remise echouee pour user ${userId}, mot de passe conserve:`,
+                deliveryError,
+            );
+            return NextResponse.json({ success: true });
+        }
+
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+            password: tempPassword,
+        });
+
+        if (updateError) {
+            // Le mot de passe temporaire a été communiqué mais n'a pas pris : l'ancien
+            // reste valide, l'utilisateur n'est donc pas bloqué.
+            console.error("[forgot-password] updateUser:", updateError.message);
+            return NextResponse.json({ success: true });
+        }
+
+        markReset(userId);
+        await supabaseAdmin.from("users").update({ must_change_password: true }).eq("id", userId);
+        console.log(`[forgot-password] mot de passe temporaire actif pour user ${userId}`);
     } catch (err: any) {
         console.error("[forgot-password] error:", err?.message);
     }
