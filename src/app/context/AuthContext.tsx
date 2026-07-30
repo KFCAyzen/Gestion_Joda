@@ -4,6 +4,8 @@ import { createContext, ReactNode, useContext, useEffect, useState } from "react
 import { getFriendlyErrorMessage } from "../lib/feedback";
 import { createClient } from "../lib/supabase/client";
 import { getDirectClient } from "../lib/desktop/offline-client";
+import { removeStorage, writeStorage } from "../lib/safeStorage";
+import { isNetworkError } from "../lib/authErrors";
 
 const supabase = createClient();
 // Lectures du profil applicatif (table `users`) : toujours interroger Supabase
@@ -20,15 +22,6 @@ function readCachedUser(): AuthUser | null {
     } catch {
         return null;
     }
-}
-
-/** Détecte une panne réseau (vs un vrai rejet d'auth) pour ne pas déconnecter hors-ligne. */
-function isNetworkError(err: unknown): boolean {
-    if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
-    const msg = err && typeof err === "object" && "message" in err
-        ? String((err as { message: unknown }).message)
-        : String(err);
-    return /failed to fetch|networkerror|fetch failed|enotfound|etimedout|econnrefused|timeout|err_internet|err_network|load failed|network request failed/i.test(msg);
 }
 
 export type UserRole = "student" | "agent" | "admin" | "supervisor" | "user" | "super_admin";
@@ -84,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (event === "SIGNED_OUT") {
                 setUser(null);
                 if (typeof window !== "undefined") {
-                    localStorage.removeItem("currentUser");
+                    removeStorage("currentUser");
                     // Desktop : informer le main process que la session est terminée
                     // pour qu'il arrête la sync RLS-protégée.
                     void window.jodaDesktop?.sync?.setAuth(null, null);
@@ -128,14 +121,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return;
             }
             console.error("Erreur récupération user:", userError.message);
-            await supabase.auth.signOut();
+            // `scope: "local"` impératif ici : ce chemin se déclenche sur une erreur
+            // de requête profil (donc à chaque TOKEN_REFRESHED en cas de hoquet
+            // PostgREST). Un signOut global révoquerait les sessions de l'utilisateur
+            // sur TOUS ses appareils pour un incident purement transitoire.
+            await supabase.auth.signOut({ scope: "local" });
             return;
         }
 
         if (userData.is_active === false) {
-            await supabase.auth.signOut();
+            await supabase.auth.signOut({ scope: "local" });
             if (typeof window !== "undefined") {
-                localStorage.removeItem("currentUser");
+                removeStorage("currentUser");
             }
             return;
         }
@@ -152,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(profile);
         // Rafraîchit le cache pour la reprise hors-ligne au prochain démarrage.
         if (typeof window !== "undefined") {
-            localStorage.setItem("currentUser", JSON.stringify(profile));
+            writeStorage("currentUser", JSON.stringify(profile));
         }
     };
 
@@ -180,10 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
                 const msg = String((authError as { message?: unknown })?.message ?? authError);
                 if (/refresh_token|Refresh Token|Invalid|JWT|session/i.test(msg)) {
-                    await supabase.auth.signOut();
+                    await supabase.auth.signOut({ scope: "local" });
                     setUser(null);
                     if (typeof window !== "undefined") {
-                        localStorage.removeItem("currentUser");
+                        removeStorage("currentUser");
                     }
                 }
                 return;
@@ -261,7 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (userError) {
                     console.error("Erreur récupération user DB:", userError.message);
-                    await supabase.auth.signOut();
+                    await supabase.auth.signOut({ scope: "local" });
                     return {
                         success: false,
                         message: "Le compte est authentifié mais son profil applicatif est introuvable. Contactez un administrateur.",
@@ -270,9 +267,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (userData) {
                     if (userData.is_active === false) {
-                        await supabase.auth.signOut();
+                        await supabase.auth.signOut({ scope: "local" });
                         if (typeof window !== "undefined") {
-                            localStorage.removeItem("currentUser");
+                            removeStorage("currentUser");
                         }
                         return {
                             success: false,
@@ -293,7 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUser(currentUser);
 
                     if (typeof window !== "undefined") {
-                        localStorage.setItem("currentUser", JSON.stringify(currentUser));
+                        writeStorage("currentUser", JSON.stringify(currentUser));
                     }
 
                     return { success: true };
@@ -324,7 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await supabase.auth.signOut({ scope: "local" });
             setUser(null);
             if (typeof window !== "undefined") {
-                localStorage.removeItem("currentUser");
+                removeStorage("currentUser");
             }
         } catch (error) {
             console.error("Erreur logout:", error);

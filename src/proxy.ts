@@ -2,6 +2,22 @@ import createMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from './i18n/config';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isAuthUnverifiable, isSessionRejected } from './app/lib/authErrors';
+
+const intlMiddleware = createMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: 'always'
+});
+
+/** Supprime les cookies de session Supabase portés par la requête. */
+function clearAuthCookies(request: NextRequest, response: NextResponse) {
+  request.cookies.getAll().forEach(cookie => {
+    if (cookie.name.includes('sb-') || cookie.name.includes('auth-token')) {
+      response.cookies.delete(cookie.name);
+    }
+  });
+}
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -54,36 +70,31 @@ export default async function proxy(request: NextRequest) {
   // Check authentication
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
-  // Clear invalid tokens
   if (authError) {
-    const response = NextResponse.next({ request });
-    // Delete all auth cookies
-    request.cookies.getAll().forEach(cookie => {
-      if (cookie.name.includes('sb-') || cookie.name.includes('auth-token')) {
-        response.cookies.delete(cookie.name);
-      }
-    });
-    
-    // Allow access to public routes only
-    if (!isPublicRoute && !isApiRoute) {
-      return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
+    // Un `authError` ne signifie pas « token invalide » : il couvre aussi le cas
+    // où le serveur d'auth est injoignable (réseau, timeout, 429, 5xx). Purger les
+    // cookies dans ce cas déconnecte des utilisateurs parfaitement authentifiés,
+    // qui se retrouvent au login persuadés que leur mot de passe ne marche plus.
+    if (isAuthUnverifiable(authError)) {
+      // Session probablement valide mais non vérifiable dans l'instant : on laisse
+      // passer sans toucher aux cookies. La donnée reste protégée par RLS côté
+      // Postgres et par `ProtectedRoute` côté client — au pire une coquille vide.
+      return intlMiddleware(request);
     }
-    
-    // Apply intl middleware for public routes
-    const intlMiddleware = createMiddleware({
-      locales,
-      defaultLocale,
-      localePrefix: 'always'
-    });
+
+    // Restent deux cas : aucune session (visiteur anonyme) ou token rejeté. Tous
+    // deux mènent au login, mais on ne purge que le second — un anonyme n'a rien
+    // à nettoyer, et purger sans raison masquerait les vrais rejets.
+    const shouldClearCookies = isSessionRejected(authError);
+
+    if (!isPublicRoute && !isApiRoute) {
+      const redirectResponse = NextResponse.redirect(new URL(`/${locale}/login`, request.url));
+      if (shouldClearCookies) clearAuthCookies(request, redirectResponse);
+      return redirectResponse;
+    }
+
     const intlResponse = intlMiddleware(request);
-    
-    // Preserve cookie deletions
-    request.cookies.getAll().forEach(cookie => {
-      if (cookie.name.includes('sb-') || cookie.name.includes('auth-token')) {
-        intlResponse.cookies.delete(cookie.name);
-      }
-    });
-    
+    if (shouldClearCookies) clearAuthCookies(request, intlResponse);
     return intlResponse;
   }
 
@@ -118,12 +129,6 @@ export default async function proxy(request: NextRequest) {
   }
 
   // Apply next-intl middleware for locale routing
-  const intlMiddleware = createMiddleware({
-    locales,
-    defaultLocale,
-    localePrefix: 'always'
-  });
-
   const response = intlMiddleware(request);
   
   // Preserve any cookies set by Supabase
