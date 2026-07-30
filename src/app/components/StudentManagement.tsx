@@ -12,6 +12,7 @@ import { useNotificationContext } from "../context/NotificationContext";
 import ProtectedRoute from "./ProtectedRoute";
 import Pagination from "./Pagination";
 import { getFriendlyErrorMessage } from "../lib/feedback";
+import { readStorage, removeStorage } from "../lib/safeStorage";
 import { logActivity } from "../utils/activityLogger";
 import { fetchLogoBase64 } from "../utils/logoLoader";
 import {
@@ -292,7 +293,7 @@ export default function StudentManagement() {
             return;
         }
 
-        const savedUser = localStorage.getItem("currentUser");
+        const savedUser = readStorage("currentUser");
         if (!savedUser) {
             setLocalUser(null);
             return;
@@ -301,7 +302,7 @@ export default function StudentManagement() {
         try {
             setLocalUser(JSON.parse(savedUser));
         } catch {
-            localStorage.removeItem("currentUser");
+            removeStorage("currentUser");
             setLocalUser(null);
         }
     }, []);

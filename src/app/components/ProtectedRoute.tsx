@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { Permission } from '../types/permissions';
+import { readStorage, removeStorage } from '../lib/safeStorage';
 
 type UserRole = 'student' | 'user' | 'agent' | 'admin' | 'supervisor' | 'super_admin';
 
@@ -40,12 +41,12 @@ export default function ProtectedRoute({
     // Check localStorage as fallback - synchronously
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const savedUser = localStorage.getItem('currentUser');
+            const savedUser = readStorage('currentUser');
             if (savedUser) {
                 try {
                     setLocalUser(JSON.parse(savedUser));
                 } catch (e) {
-                    localStorage.removeItem('currentUser');
+                    removeStorage('currentUser');
                 }
             } else {
                 setLocalUser(null);

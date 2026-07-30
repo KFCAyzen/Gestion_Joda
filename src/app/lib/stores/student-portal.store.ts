@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { StudentView } from '../../components/student/types';
 import type { Payment } from '../schemas/payment.schema';
+import { readSession, writeSession } from '../safeStorage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -46,13 +47,13 @@ export const useStudentPortalStore = create<StudentPortalState>((set) => ({
   view: 'dashboard',
 
   setView: (view) => {
-    if (typeof window !== 'undefined') sessionStorage.setItem('student_view', view);
+    if (typeof window !== 'undefined') writeSession('student_view', view);
     set({ view });
   },
 
   initView: () => {
     if (typeof window === 'undefined') return;
-    const saved = sessionStorage.getItem('student_view') as StudentView | null;
+    const saved = readSession('student_view') as StudentView | null;
     if (saved) set({ view: saved });
   },
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { readStorage, writeStorage } from "../lib/safeStorage";
 
 type Theme = "light" | "dark" | "system";
 
@@ -17,7 +18,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [actualTheme, setActualTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem("theme") as Theme | null;
+    const storedTheme = readStorage("theme") as Theme | null;
     if (storedTheme) {
       setTheme(storedTheme);
     }
@@ -48,7 +49,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const handleSetTheme = (newTheme: Theme) => {
     setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
+    writeStorage("theme", newTheme);
   };
 
   return (
