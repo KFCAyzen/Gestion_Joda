@@ -165,7 +165,15 @@ function applyActivityLogFilters<T>(query: T, filters: ActivityLogFilters): T {
   if (filters.endDate) q = q.lte("created_at", filters.endDate);
   const s = filters.search?.trim();
   if (s) {
-    q = q.or(`user_name.ilike.%${s}%,description.ilike.%${s}%,entity_type.ilike.%${s}%`);
+    // Injection de filtre PostgREST : dans un `or=(...)`, la virgule sépare les
+    // conditions. Interpolée brute, une virgule saisie dans le champ de recherche
+    // ajoutait donc ses propres conditions et contournait la restriction (ex.
+    // `x%,id.gt.0` fait correspondre toute la table). Les guillemets doubles
+    // neutralisent les caractères réservés ; il ne reste qu'à échapper `\` et `"`.
+    const escaped = s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    q = q.or(
+      `user_name.ilike."%${escaped}%",description.ilike."%${escaped}%",entity_type.ilike."%${escaped}%"`
+    );
   }
   return q as T;
 }
