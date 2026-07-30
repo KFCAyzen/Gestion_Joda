@@ -59,15 +59,6 @@ export function isTransientAuthError(err: unknown): boolean {
     );
 }
 
-/**
- * Le serveur d'auth n'a pas pu se prononcer : transport en échec ou indisponibilité
- * passagère. La session est peut-être parfaitement valide — il ne faut ni purger les
- * cookies, ni renvoyer l'utilisateur au login.
- */
-export function isAuthUnverifiable(err: unknown): boolean {
-    return isNetworkError(err) || isTransientAuthError(err);
-}
-
 /** Aucune session en cours : cas normal d'un visiteur anonyme, pas une anomalie. */
 export function isAuthSessionMissing(err: unknown): boolean {
     if (errorName(err) === "AuthSessionMissingError") return true;

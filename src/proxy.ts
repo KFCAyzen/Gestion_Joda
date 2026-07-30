@@ -2,7 +2,7 @@ import createMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from './i18n/config';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { isAuthUnverifiable, isSessionRejected } from './app/lib/authErrors';
+import { isSessionRejected } from './app/lib/authErrors';
 
 const intlMiddleware = createMiddleware({
   locales,
@@ -74,22 +74,21 @@ export default async function proxy(request: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError) {
-    // Un `authError` ne signifie pas « token invalide » : il couvre aussi le cas
-    // où le serveur d'auth est injoignable (réseau, timeout, 429, 5xx). Purger les
-    // cookies dans ce cas déconnecte des utilisateurs parfaitement authentifiés,
-    // qui se retrouvent au login persuadés que leur mot de passe ne marche plus.
-    if (isAuthUnverifiable(authError)) {
-      // Session probablement valide mais non vérifiable dans l'instant : on laisse
-      // passer sans toucher aux cookies. La donnée reste protégée par RLS côté
-      // Postgres et par `ProtectedRoute` côté client — au pire une coquille vide.
-      return intlMiddleware(request);
-    }
-
-    // Restent deux cas : aucune session (visiteur anonyme) ou token rejeté. Tous
-    // deux mènent au login, mais on ne purge que le second — un anonyme n'a rien
-    // à nettoyer, et purger sans raison masquerait les vrais rejets.
+    // On ne purge les cookies que sur un rejet RECONNU du token. Une erreur réseau,
+    // un 429 ou un 5xx ne disent rien de la validité de la session : purger dans ce
+    // cas déconnectait des utilisateurs authentifiés, contraints de ressaisir leur
+    // mot de passe. En les conservant, la session reprend d'elle-même dès que
+    // l'incident se dissipe — au pire un aller-retour par le login.
     const shouldClearCookies = isSessionRejected(authError);
 
+    // La redirection, elle, est inconditionnelle sur une route protégée, y compris
+    // quand l'erreur n'est pas concluante. Laisser passer ouvrirait la porte à
+    // quiconque sait provoquer un 429/5xx sur `getUser()` (cookie de session expiré
+    // forgé → refresh rate-limité → 429). Cette porte ne blesse rien aujourd'hui
+    // parce qu'aucune route protégée ne rend de données côté serveur, mais rien
+    // n'impose cet invariant : le premier composant serveur qui lira des données
+    // sous `(app)/` le romprait en silence. On ne fait pas reposer l'autorisation
+    // sur une propriété que personne ne garantit.
     if (!isPublicRoute && !isApiRoute) {
       const redirectResponse = NextResponse.redirect(new URL(`/${locale}/login`, request.url));
       if (shouldClearCookies) clearAuthCookies(request, redirectResponse);
