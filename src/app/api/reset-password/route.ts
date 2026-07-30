@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { z } from "zod";
 import { requireRole } from "@/app/lib/auth";
 import { sendSmsToPhone } from "@/app/lib/smsService";
+import { generateTemporaryPassword } from "@/app/lib/student-auth";
 
 const resetPasswordBodySchema = z
     .object({
@@ -20,16 +21,8 @@ const supabaseAdmin = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
 
-function generateTempPassword(): string {
-    // CSPRNG (Web Crypto, global en Node 18+) plutôt que Math.random.
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 32 symboles, sans ambigus
-    const LEN = 8;
-    const bytes = new Uint8Array(LEN);
-    crypto.getRandomValues(bytes);
-    let suffix = "";
-    for (let i = 0; i < LEN; i++) suffix += chars[bytes[i] % chars.length];
-    return `Joda@${suffix}`;
-}
+// Le générateur vit dans `student-auth` (CSPRNG, alphabet sans caractères ambigus).
+// Il en existait trois copies dans le projet ; celle-ci était la dernière.
 
 function credentialsEmailHtml(name: string, username: string, tempPassword: string, year: number) {
     return `<!DOCTYPE html>
@@ -146,28 +139,45 @@ async function handleResetPassword(req: NextRequest) {
             return NextResponse.json({ error: "email ou userId requis" }, { status: 400 });
         }
 
-        const tempPassword = generateTempPassword();
-
-        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
-            password: tempPassword,
-        });
-
-        if (updateError) {
-            console.error("[reset-password] updateUser:", updateError.message);
-            return NextResponse.json({ error: updateError.message }, { status: 400 });
-        }
-
-        await supabaseAdmin.from("users").update({ must_change_password: true }).eq("id", authUserId);
-
+        const tempPassword = generateTemporaryPassword();
         const year = new Date().getFullYear();
 
-        await resend.emails.send({
+        // L'email PRÉCÈDE le changement de mot de passe. Dans l'ordre inverse (état
+        // antérieur), le résultat de `resend.emails.send` était ignoré : un email rejeté
+        // laissait l'utilisateur verrouillé, ancien mot de passe déjà détruit et nouveau
+        // jamais reçu.
+        const { error: sendError } = await resend.emails.send({
             from: FROM_EMAIL,
             to: [recipientEmail],
             subject: "Votre mot de passe temporaire - Joda Company",
             html: credentialsEmailHtml(recipientName, displayUsername, tempPassword, year),
         });
 
+        if (sendError) {
+            // Mot de passe laissé intact : l'utilisateur garde un accès valide. L'admin
+            // est informé explicitement plutôt que de croire la réinitialisation réussie.
+            console.error("[reset-password] envoi email:", sendError.message);
+            return NextResponse.json(
+                {
+                    error: `Email non délivré (${sendError.message}). Le mot de passe n'a pas été modifié — l'utilisateur conserve son accès actuel.`,
+                },
+                { status: 502 }
+            );
+        }
+
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
+            password: tempPassword,
+        });
+
+        if (updateError) {
+            // Le temporaire a été communiqué mais n'a pas pris : l'ancien reste valide.
+            console.error("[reset-password] updateUser:", updateError.message);
+            return NextResponse.json({ error: updateError.message }, { status: 400 });
+        }
+
+        await supabaseAdmin.from("users").update({ must_change_password: true }).eq("id", authUserId);
+
+        // SMS best-effort : l'email a déjà confirmé la remise, un échec ici ne bloque rien.
         if (recipientPhone) {
             const smsText = `JODA - Reinitialisation\nIdentifiant: ${displayUsername}\nMdp temp: ${tempPassword}\nConnexion: https://gestion-joda.vercel.app`;
             sendSmsToPhone(recipientPhone, smsText).catch(console.error);
