@@ -237,14 +237,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
             if (authError) {
-                if (authError.message !== "Invalid login credentials") {
-                    console.error("Erreur auth:", authError.message);
-                }
+                // Tracer TOUS les échecs, y compris « Invalid login credentials » qui était
+                // volontairement muet : sans statut ni code, impossible de distinguer un vrai
+                // mauvais mot de passe d'un rejet pour une autre cause (quota, compte non
+                // confirmé…), ce qui rendait les signalements « mon mot de passe ne marche
+                // pas » indiagnostiquables.
+                const details = authError as { status?: number; code?: string };
+                console.warn(
+                    "Echec login:",
+                    details.status ?? "?",
+                    details.code ?? "-",
+                    authError.message,
+                );
 
                 return {
                     success: false,
                     message: getFriendlyErrorMessage(authError, {
-                        fallback: "Connexion impossible pour le moment. Vérifiez vos identifiants puis réessayez.",
+                        // Ne pas accuser les identifiants par défaut : ce fallback couvre aussi
+                        // des causes qui n'ont rien à voir avec le mot de passe.
+                        fallback: "Connexion impossible pour le moment. Réessayez dans un instant, ou prévenez l'administration si cela persiste.",
                     }),
                 };
             }
