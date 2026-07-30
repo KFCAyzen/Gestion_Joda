@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
+import { requireRole } from "@/app/lib/auth";
+import { escapeHtml } from "@/app/lib/html";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Joda Company <contact@portal-joda.company>";
@@ -14,12 +16,21 @@ const sendApplicationBodySchema = z.object({
     scholarshipType: z.string().optional().nullable(),
 });
 
-export async function POST(req: NextRequest) {
+async function handleSendApplication(req: NextRequest) {
     const parsed = sendApplicationBodySchema.safeParse(await req.json());
     if (!parsed.success) {
         return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Paramètres invalides" }, { status: 400 });
     }
     const { studentName, studentEmail, universityName, desiredProgram, studyLevel, scholarshipType } = parsed.data;
+
+    // Ces valeurs viennent de saisies utilisateur et sont interpolées dans le HTML de
+    // l'email : sans échappement, on peut y injecter du balisage (faux lien de
+    // connexion) dans un message signé par un domaine aux SPF/DKIM/DMARC valides.
+    const safeName = escapeHtml(studentName);
+    const safeUniversity = escapeHtml(universityName || "À définir");
+    const safeProgram = escapeHtml(desiredProgram || "À définir");
+    const safeLevel = escapeHtml(studyLevel || "À définir");
+    const safeScholarship = escapeHtml(scholarshipType || "À définir");
 
     const documents = [
         "Passeport valide (copie)",
@@ -50,7 +61,7 @@ export async function POST(req: NextRequest) {
         </tr>
         <tr>
           <td style="padding:36px 40px;">
-            <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${studentName}</strong>,</p>
+            <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour <strong>${safeName}</strong>,</p>
             <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
               Votre dossier de candidature pour une bourse d'études en Chine a été ouvert. Voici le récapitulatif :
             </p>
@@ -59,20 +70,20 @@ export async function POST(req: NextRequest) {
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="padding:6px 0;font-size:13px;color:#6b7280;width:160px;">Université</td>
-                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${universityName || "À définir"}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${safeUniversity}</td>
                   </tr>
                   <tr>
                     <td style="padding:6px 0;font-size:13px;color:#6b7280;">Programme souhaité</td>
-                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${desiredProgram || "À définir"}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${safeProgram}</td>
                   </tr>
                   <tr>
                     <td style="padding:6px 0;font-size:13px;color:#6b7280;">Niveau d'études</td>
-                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${studyLevel || "À définir"}</td>
+                    <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${safeLevel}</td>
                   </tr>
                   <tr>
                     <td style="padding:6px 0;font-size:13px;color:#6b7280;">Type de bourse</td>
                     <td style="padding:6px 0;">
-                      <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">${scholarshipType || "À définir"}</span>
+                      <span style="background:#fef2f2;color:#dc2626;font-size:12px;font-weight:600;padding:2px 10px;border-radius:20px;">${safeScholarship}</span>
                     </td>
                   </tr>
                 </table>
@@ -132,3 +143,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
+// La route était ouverte : n'importe qui pouvait faire expédier un email arbitraire
+// depuis contact@portal-joda.company vers n'importe quelle adresse. Les rôles retenus
+// reflètent la gate de l'écran appelant (ApplicationManagement, requiredRole="agent").
+export const POST = requireRole(["agent", "supervisor", "admin", "super_admin"], handleSendApplication);

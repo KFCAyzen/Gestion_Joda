@@ -679,14 +679,14 @@ Permet à un employé sans compte de soumettre son rapport quotidien via un PIN 
 | `/api/create-user` | POST | Crée compte Auth + `users` + email/SMS bienvenue | Service Role Key |
 | `/api/delete-user` | DELETE | Supprime compte Auth + `users` | Service Role Key |
 | `/api/reset-password` | POST | Réinitialise le mot de passe d'un utilisateur | Service Role Key |
-| `/api/forgot-password` | POST | Génère un mdp temporaire (envoi email/SMS). Rate-limit 5 min par user. Toujours 200 (anti-énumération) | Public |
+| `/api/forgot-password` | POST | Envoie un lien de réinitialisation à usage unique (TTL 1 h). Le mot de passe courant reste valide. Rate-limit 5 min par user. Toujours 200 (anti-énumération) | Public |
+| `/api/reset-password/confirm` | POST | Consomme le lien et applique le mot de passe choisi | Public (le token fait preuve) |
 | `/api/clear-password-flag` | POST | Efface `must_change_password` après changement | `requireAuth` |
-| `/api/send-welcome` | POST | Envoie email de bienvenue | Service Role Key |
-| `/api/send-application` | POST | Envoie email de demande de documents | Service Role Key |
+| `/api/send-application` | POST | Envoie email de demande de documents | `requireRole` (agent+) |
 | `/api/send-student-message` | POST | Envoi email + SMS de masse aux étudiants | `requireAuth` (agent+) |
 | `/api/send-sms` | POST | Envoi SMS direct à un ou plusieurs numéros | `requireAuth` (agent+) |
 | `/api/sms-balance` | GET | Solde de crédits SMS disponibles | `requireAuth` (agent+) |
-| `/api/validate-file` | POST | Valide un fichier côté serveur (type, taille) | `requireAuth` |
+| `/api/validate-file` | POST | Valide un fichier côté serveur (type, taille) | Public (aucun contrôle) |
 | `/api/notify-staff` | POST | Notifie admin/agent d'une soumission de documents | `requireAuth` |
 | `/api/declare-payment` | POST | Étudiant déclare un paiement effectué | `requireAuth` |
 | `/api/notify-payment-result` | POST | Notifie l'étudiant du résultat de validation | `requireAuth` (agent+) |

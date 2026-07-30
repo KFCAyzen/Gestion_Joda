@@ -87,7 +87,7 @@ src/
         ├── create-user/
         ├── delete-user/
         ├── reset-password/
-        └── send-welcome/
+        └── forgot-password/
 ```
 
 ## Installation

@@ -1,4 +1,5 @@
 import { fetchLogoBase64 } from "./logoLoader";
+import { escapeHtml } from "../lib/html";
 
 type ReportScope = "all" | "entrees" | "sorties";
 
@@ -9,15 +10,6 @@ type AccountingOperation = {
   amount: number;
   type: "entree" | "sortie";
 };
-
-function escapeHtml(input: string): string {
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
 type ReportCurrency = "FCFA" | "USD";
 
