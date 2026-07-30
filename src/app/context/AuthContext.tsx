@@ -130,7 +130,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (userData.is_active === false) {
-            await supabase.auth.signOut({ scope: "local" });
+            // `scope: "global"` volontaire, contrairement aux autres signOut défensifs :
+            // un compte désactivé doit perdre TOUTES ses sessions, pas seulement celle de
+            // cet appareil. En portée locale, les jetons de rafraîchissement déjà émis
+            // ailleurs restaient valides jusqu'à leur expiration naturelle — la
+            // désactivation ne coupait donc pas l'accès.
+            await supabase.auth.signOut({ scope: "global" });
             if (typeof window !== "undefined") {
                 removeStorage("currentUser");
             }
@@ -278,7 +283,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (userData) {
                     if (userData.is_active === false) {
-                        await supabase.auth.signOut({ scope: "local" });
+                        // Portée globale : voir `loadUserProfile`. Un compte désactivé ne
+                        // doit conserver aucune session, sur aucun appareil.
+                        await supabase.auth.signOut({ scope: "global" });
                         if (typeof window !== "undefined") {
                             removeStorage("currentUser");
                         }
