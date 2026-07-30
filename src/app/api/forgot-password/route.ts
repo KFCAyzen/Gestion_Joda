@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { z } from "zod";
-import { buildStudentAuthEmail } from "@/app/lib/student-auth";
+import { buildStudentAuthEmail, generateTemporaryPassword } from "@/app/lib/student-auth";
 import { getLang, type Lang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
 
@@ -44,12 +44,9 @@ function markReset(userId: string): void {
     }
 }
 
-function generateTempPassword(): string {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let suffix = "";
-    for (let i = 0; i < 5; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
-    return `Joda@${suffix}`;
-}
+// `generateTemporaryPassword` (student-auth) remplace l'ancienne implémentation locale,
+// qui tirait 5 caractères avec `Math.random()` — non cryptographique, donc prédictible.
+// La version partagée utilise `crypto.getRandomValues` sur 8 caractères.
 
 function credentialsEmailHtml(
     name: string,
@@ -192,7 +189,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        const tempPassword = generateTempPassword();
+        const tempPassword = generateTemporaryPassword();
 
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
             password: tempPassword,
