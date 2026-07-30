@@ -533,10 +533,10 @@ export default function LoginPage() {
                                         <Check className="h-7 w-7 text-green-600" strokeWidth={2.5} />
                                     </div>
                                     <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                                        {t("credentialsSent")}
+                                        {t("emailSent")}
                                     </h3>
                                     <p className="mb-6 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                                        {t("credentialsSentMessage")}
+                                        {t("emailSentMessage")}
                                     </p>
                                     <button
                                         onClick={closeForgotPassword}
@@ -606,7 +606,7 @@ export default function LoginPage() {
                                             data-testid="forgot-submit"
                                             className="h-[50px] w-full rounded-xl bg-red-600 text-sm font-semibold text-white shadow-[0_12px_24px_-8px_rgba(220,38,38,0.45)] transition-colors hover:bg-red-700 disabled:opacity-60"
                                         >
-                                            {forgotLoading ? t("sending") : t("sendCredentials")}
+                                            {forgotLoading ? t("sending") : t("sendLink")}
                                         </button>
                                         <button
                                             type="button"

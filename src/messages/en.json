@@ -314,7 +314,9 @@
       "editTitle": "Edit payslip",
       "empty": "No payslip",
       "computedNet": "Computed net pay",
-      "breakdown": { "brut": "Gross salary" },
+      "breakdown": {
+        "brut": "Gross salary"
+      },
       "exportPdf": "Export as PDF",
       "email": {
         "action": "Send by email",
@@ -726,7 +728,7 @@
     "errorDefault": "Unable to connect. Check your credentials and try again.",
     "forgotPassword": "Forgot password?",
     "forgotTitle": "Forgot Password",
-    "forgotDescription": "Enter your email (staff) or username (student) to receive your temporary credentials.",
+    "forgotDescription": "Enter your email (staff) or username (student) to receive a reset link.",
     "forgotInputPlaceholder": "email@example.com or firstname.lastname",
     "sendLink": "Send Reset Link",
     "sendCredentials": "Send my credentials",
@@ -736,7 +738,7 @@
     "credentialsSent": "Credentials sent",
     "credentialsSentMessage": "If an account exists, you received your username and temporary password. Log in then change your password.",
     "emailSent": "Email sent",
-    "emailSentMessage": "If an account exists, you will receive a reset link valid for 24 hours.",
+    "emailSentMessage": "If an account exists, you will receive a reset link valid for 1 hour.",
     "backToLogin": "Back to Login",
     "darkMode": "Dark mode",
     "lightMode": "Light mode",
@@ -3010,5 +3012,22 @@
     "empty": "No documents received yet.",
     "download": "Download",
     "new": "New"
+  },
+  "resetPassword": {
+    "title": "New password",
+    "subtitle": "Choose a password of at least 8 characters. Your current password stays active until you confirm.",
+    "passwordLabel": "New password",
+    "passwordPlaceholder": "At least 8 characters",
+    "confirmLabel": "Confirm password",
+    "confirmPlaceholder": "Re-enter the password",
+    "submit": "Save password",
+    "submitting": "Saving…",
+    "successTitle": "Password updated",
+    "successMessage": "You can now sign in with your new password.",
+    "backToLogin": "Back to login",
+    "errorMismatch": "The two passwords do not match.",
+    "errorTooShort": "Password must be at least 8 characters.",
+    "errorMissingToken": "Incomplete link. Open the link you received by email or SMS, or request a new one.",
+    "errorDefault": "The update failed. Try again or request a new link."
   }
 }

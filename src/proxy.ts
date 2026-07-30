@@ -43,8 +43,11 @@ export default async function proxy(request: NextRequest) {
   const isEtudiantPortal = pathnameWithoutLocale === '/etudiant';
   const isRegisterPage = pathnameWithoutLocale === '/register';
   const isPublicReport = pathnameWithoutLocale === '/rapport';
+  // Réinitialisation par lien : forcément accessible sans session, l'utilisateur
+  // qui arrive ici est par définition incapable de se connecter.
+  const isResetPassword = pathnameWithoutLocale === '/reset-password';
   const isApiRoute = pathname.startsWith('/api/');
-  const isPublicRoute = isLoginPage || isAuthCallback || isEtudiantPortal || isRegisterPage || isPublicReport;
+  const isPublicRoute = isLoginPage || isAuthCallback || isEtudiantPortal || isRegisterPage || isPublicReport || isResetPassword;
 
   let supabaseResponse = NextResponse.next({ request });
 

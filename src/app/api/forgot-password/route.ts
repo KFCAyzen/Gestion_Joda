@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { z } from "zod";
-import { buildStudentAuthEmail, generateTemporaryPassword } from "@/app/lib/student-auth";
-import { getLang, type Lang } from "@/app/lib/emailService";
+import { buildStudentAuthEmail } from "@/app/lib/student-auth";
+import { EMAIL_APP_URL, getLang, type Lang } from "@/app/lib/emailService";
 import { sendSmsToPhone } from "@/app/lib/smsService";
+import { createResetToken } from "@/app/lib/passwordReset";
 
 const forgotPasswordBodySchema = z.object({
     email: z.string().email().optional(),
@@ -44,14 +45,10 @@ function markReset(userId: string): void {
     }
 }
 
-// `generateTemporaryPassword` (student-auth) remplace l'ancienne implémentation locale,
-// qui tirait 5 caractères avec `Math.random()` — non cryptographique, donc prédictible.
-// La version partagée utilise `crypto.getRandomValues` sur 8 caractères.
-
-function credentialsEmailHtml(
+function resetLinkEmailHtml(
     name: string,
     username: string,
-    tempPassword: string,
+    resetUrl: string,
     year: number,
     lang: Lang = "fr"
 ) {
@@ -76,8 +73,8 @@ function credentialsEmailHtml(
             <p style="margin:0 0 8px;font-size:16px;color:#111827;">${isEn ? "Hello" : "Bonjour"} <strong>${name}</strong>,</p>
             <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.6;">
               ${isEn
-                ? "Your password has been reset. Use the temporary credentials below to log in, then change your password immediately."
-                : "Votre mot de passe a été réinitialisé. Utilisez les identifiants temporaires ci-dessous pour vous connecter, puis changez votre mot de passe immédiatement."}
+                ? "You requested to reset your password. Click the button below to choose a new one. <strong>Your current password remains valid</strong> until you complete this step."
+                : "Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau. <strong>Votre mot de passe actuel reste valide</strong> jusqu'à ce que vous alliez au bout."}
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:28px;">
               <tr><td style="padding:20px 24px;">
@@ -86,27 +83,28 @@ function credentialsEmailHtml(
                     <td style="padding:6px 0;font-size:13px;color:#6b7280;width:160px;">${isEn ? "Username" : "Identifiant"}</td>
                     <td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${username}</td>
                   </tr>
-                  <tr>
-                    <td style="padding:6px 0;font-size:13px;color:#6b7280;">${isEn ? "Temporary password" : "Mot de passe temporaire"}</td>
-                    <td style="padding:6px 0;font-size:14px;color:#dc2626;font-weight:700;font-family:monospace,monospace;">${tempPassword}</td>
-                  </tr>
                 </table>
               </td></tr>
             </table>
             <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#dc2626;border-radius:8px;">
-                  <a href="https://gestion-joda.vercel.app/login"
+                  <a href="${resetUrl}"
                      style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">
-                    ${isEn ? "Go to login →" : "Accéder à la connexion →"}
+                    ${isEn ? "Choose a new password →" : "Choisir un nouveau mot de passe →"}
                   </a>
                 </td>
               </tr>
             </table>
+            <p style="margin:0 0 12px;font-size:12px;color:#9ca3af;line-height:1.6;">
+              ${isEn
+                ? "This link expires in 1 hour and can only be used once."
+                : "Ce lien expire dans 1 heure et ne peut servir qu'une seule fois."}
+            </p>
             <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
               ${isEn
-                ? "If you did not request this reset, contact your administrator immediately."
-                : "Si vous n'avez pas demandé cette réinitialisation, contactez immédiatement votre administrateur."}
+                ? "If you did not request this reset, you can ignore this email — nothing has changed on your account."
+                : "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : rien n'a changé sur votre compte."}
             </p>
           </td>
         </tr>
@@ -189,23 +187,36 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        const tempPassword = generateTemporaryPassword();
         const isEn = lang === "en";
         const year = new Date().getFullYear();
 
-        // L'envoi PRÉCÈDE le changement de mot de passe. Dans l'ordre inverse (état
-        // antérieur), un email rejeté ou un SMS en échec laissait l'utilisateur
-        // définitivement verrouillé : son ancien mot de passe était déjà détruit et le
-        // nouveau n'arrivait jamais. C'est l'origine des signalements « j'utilise mon
-        // mot de passe et il est refusé ». Les deux canaux renvoient un statut, qui
-        // était ignoré — donc un envoi échoué passait pour un succès.
+        // Le mot de passe courant n'est PAS touché ici. Il ne changera que lorsque
+        // l'utilisateur ouvrira le lien et choisira lui-même son nouveau mot de passe
+        // (voir /api/reset-password/confirm). Conséquences : un email perdu ou classé en
+        // spam n'a plus aucun effet, et un tiers connaissant l'email d'un collègue ne
+        // peut plus lui verrouiller son accès.
+        const { rawToken, tokenHash, expiresAt } = createResetToken();
+
+        const { error: tokenError } = await supabaseAdmin.from("password_reset_tokens").insert({
+            user_id: userId,
+            token_hash: tokenHash,
+            expires_at: expiresAt,
+        });
+
+        if (tokenError) {
+            console.error("[forgot-password] insertion token:", tokenError.message);
+            return NextResponse.json({ success: true });
+        }
+
+        const resetUrl = `${EMAIL_APP_URL}/${lang}/reset-password?token=${rawToken}`;
+
         let delivered = false;
         let deliveryError = "aucun canal de remise disponible";
 
         if (channel === "sms" && recipientPhone) {
             const smsText = isEn
-                ? `JODA - Password reset\nUsername: ${displayUsername}\nTemp password: ${tempPassword}\nLogin: https://gestion-joda.vercel.app`
-                : `JODA - Reinitialisation\nIdentifiant: ${displayUsername}\nMdp temp: ${tempPassword}\nConnexion: https://gestion-joda.vercel.app`;
+                ? `JODA - Password reset\nChoose a new password: ${resetUrl}\nValid 1h, single use.`
+                : `JODA - Reinitialisation\nChoisir un nouveau mot de passe : ${resetUrl}\nValable 1h, usage unique.`;
             const sms = await sendSmsToPhone(recipientPhone, smsText);
             delivered = sms.ok;
             if (!sms.ok) deliveryError = sms.error ?? "echec SMS";
@@ -214,38 +225,24 @@ export async function POST(req: NextRequest) {
                 from: FROM_EMAIL,
                 to: [recipientEmail],
                 subject: isEn
-                    ? "Your temporary password - Joda Company"
-                    : "Votre mot de passe temporaire - Joda Company",
-                html: credentialsEmailHtml(recipientName, displayUsername, tempPassword, year, lang),
+                    ? "Reset your password - Joda Company"
+                    : "Réinitialisez votre mot de passe - Joda Company",
+                html: resetLinkEmailHtml(recipientName, displayUsername, resetUrl, year, lang),
             });
             delivered = !sendError;
             if (sendError) deliveryError = sendError.message;
         }
 
         if (!delivered) {
-            // Mot de passe volontairement laissé intact : un reset sans effet est très
-            // préférable à un compte verrouillé. Réponse 200 quand même (anti-énumération).
-            console.error(
-                `[forgot-password] remise echouee pour user ${userId}, mot de passe conserve:`,
-                deliveryError,
-            );
-            return NextResponse.json({ success: true });
-        }
-
-        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-            password: tempPassword,
-        });
-
-        if (updateError) {
-            // Le mot de passe temporaire a été communiqué mais n'a pas pris : l'ancien
-            // reste valide, l'utilisateur n'est donc pas bloqué.
-            console.error("[forgot-password] updateUser:", updateError.message);
+            // Révoquer le token : inutile de laisser un lien valide en circulation alors
+            // qu'il n'a jamais atteint son destinataire.
+            await supabaseAdmin.from("password_reset_tokens").delete().eq("token_hash", tokenHash);
+            console.error(`[forgot-password] remise echouee pour user ${userId}:`, deliveryError);
             return NextResponse.json({ success: true });
         }
 
         markReset(userId);
-        await supabaseAdmin.from("users").update({ must_change_password: true }).eq("id", userId);
-        console.log(`[forgot-password] mot de passe temporaire actif pour user ${userId}`);
+        console.log(`[forgot-password] lien de reinitialisation envoye a user ${userId}`);
     } catch (err: any) {
         console.error("[forgot-password] error:", err?.message);
     }

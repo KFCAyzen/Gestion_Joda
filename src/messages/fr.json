@@ -314,7 +314,9 @@
       "editTitle": "Modifier la fiche de paie",
       "empty": "Aucune fiche de paie",
       "computedNet": "Net à payer calculé",
-      "breakdown": { "brut": "Salaire brut" },
+      "breakdown": {
+        "brut": "Salaire brut"
+      },
       "exportPdf": "Exporter en PDF",
       "email": {
         "action": "Envoyer par e-mail",
@@ -726,7 +728,7 @@
     "errorDefault": "Impossible de se connecter. Vérifiez vos identifiants et réessayez.",
     "forgotPassword": "Mot de passe oublié ?",
     "forgotTitle": "Mot de passe oublié",
-    "forgotDescription": "Entrez votre email (staff) ou nom d'utilisateur (étudiant) pour recevoir vos identifiants temporaires.",
+    "forgotDescription": "Entrez votre email (staff) ou nom d'utilisateur (étudiant) pour recevoir un lien de réinitialisation.",
     "forgotInputPlaceholder": "email@exemple.com ou prenom.nom",
     "sendLink": "Envoyer le lien de réinitialisation",
     "sendCredentials": "Envoyer mes identifiants",
@@ -736,7 +738,7 @@
     "credentialsSent": "Identifiants envoyés",
     "credentialsSentMessage": "Si un compte existe, vous avez reçu votre identifiant et mot de passe temporaire. Connectez-vous puis changez votre mot de passe.",
     "emailSent": "Email envoyé",
-    "emailSentMessage": "Si un compte existe, vous recevrez un lien de réinitialisation valable 24 heures.",
+    "emailSentMessage": "Si un compte existe, vous recevrez un lien de réinitialisation valable 1 heure.",
     "backToLogin": "Retour à la connexion",
     "darkMode": "Mode sombre",
     "lightMode": "Mode clair",
@@ -3010,5 +3012,22 @@
     "empty": "Aucun document reçu pour l'instant.",
     "download": "Télécharger",
     "new": "Nouveau"
+  },
+  "resetPassword": {
+    "title": "Nouveau mot de passe",
+    "subtitle": "Choisissez un mot de passe d'au moins 8 caractères. Votre ancien mot de passe reste actif jusqu'à la validation.",
+    "passwordLabel": "Nouveau mot de passe",
+    "passwordPlaceholder": "Au moins 8 caractères",
+    "confirmLabel": "Confirmer le mot de passe",
+    "confirmPlaceholder": "Ressaisissez le mot de passe",
+    "submit": "Enregistrer le mot de passe",
+    "submitting": "Enregistrement…",
+    "successTitle": "Mot de passe modifié",
+    "successMessage": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
+    "backToLogin": "Retour à la connexion",
+    "errorMismatch": "Les deux mots de passe ne correspondent pas.",
+    "errorTooShort": "Le mot de passe doit contenir au moins 8 caractères.",
+    "errorMissingToken": "Lien incomplet. Ouvrez le lien reçu par email ou SMS, ou demandez-en un nouveau.",
+    "errorDefault": "La modification a échoué. Réessayez ou demandez un nouveau lien."
   }
 }
