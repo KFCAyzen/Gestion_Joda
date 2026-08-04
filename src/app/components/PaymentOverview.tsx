@@ -34,6 +34,16 @@ interface Service {
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+// Constante, donc hissée au niveau module : déclarée dans le composant, elle
+// devenait une dépendance implicite des `useMemo` qui l'utilisent, et le React
+// Compiler renonçait à optimiser TOUT le composant faute de pouvoir concilier
+// les dépendances inférées et celles écrites à la main.
+const INTL_PROGRAM_TYPES: ServiceType[] = [
+    "language_program_intl",
+    "partial_scholarship_intl",
+    "full_scholarship_intl",
+];
+
 function computeTrancheState(
     payment: Payment | undefined,
     serviceType: string,
@@ -255,8 +265,6 @@ export default function PaymentOverview({
     // Locale fr-FR (espace fine séparateur milliers) pour TOUS les montants,
     // cohérent avec FeeConfigManagement / StudentManagement.
     const numLocale = "fr-FR";
-
-    const INTL_PROGRAM_TYPES: ServiceType[] = ["language_program_intl", "partial_scholarship_intl", "full_scholarship_intl"];
 
     const services = useMemo((): Service[] => {
         const list: Service[] = [];
