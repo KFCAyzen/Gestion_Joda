@@ -264,6 +264,18 @@ export default function UserManagement() {
         }
     };
 
+    // Qui peut supprimer qui — miroir exact de la règle appliquée par
+    // `/api/delete-user`, qui reste seul juge : l'interface ne fait que cesser
+    // de masquer une action déjà autorisée. Un admin ne pouvait pas supprimer de
+    // compte alors que l'API le lui permettait pour les rôles non privilégiés.
+    const DELETABLE_BY_ADMIN = ["student", "agent", "user"];
+    const canDeleteAccount = (target: DbUser): boolean => {
+        if (!currentUser || target.id === currentUser.id) return false;
+        if (currentUser.role === "super_admin") return true;
+        if (currentUser.role === "admin") return DELETABLE_BY_ADMIN.includes(target.role);
+        return false;
+    };
+
     const handleToggleUserActive = async (targetUser: DbUser) => {
         if (!currentUser || targetUser.id === currentUser.id) return;
         setTogglingId(targetUser.id);
@@ -701,7 +713,7 @@ export default function UserManagement() {
                                                                       },
                                                                   ]
                                                                 : []),
-                                                            ...(currentUser?.role === "super_admin" && entry.id !== currentUser.id
+                                                            ...(canDeleteAccount(entry)
                                                                 ? [
                                                                       {
                                                                           label: t("actions.delete"),
