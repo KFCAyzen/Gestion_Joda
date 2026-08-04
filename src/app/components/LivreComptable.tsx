@@ -26,6 +26,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useNotificationContext } from "../context/NotificationContext";
 import { logActivity } from "../utils/activityLogger";
 import { printAccountingHtmlReport } from "../utils/accountingReportPrinter";
+import { parseDbDate } from "../lib/dates";
 import ConfirmDialog from "./ConfirmDialog";
 import ProtectedRoute from "./ProtectedRoute";
 import {
@@ -67,7 +68,14 @@ interface SortieComptable {
 interface LedgerRow {
     id: string;
     kind: "entree" | "sortie";
+    /** Instant d'enregistrement (created_at) : sert UNIQUEMENT à afficher l'heure. */
     time: string;
+    /**
+     * Date d'opération (colonne `date`, type DATE) : la seule que l'utilisateur
+     * modifie et la seule qui fasse foi en comptabilité. C'est elle qu'il faut
+     * imprimer — `time` reste figé à la saisie et ne suit pas les corrections.
+     */
+    date: string;
     description: string;
     student_id: string | null;
     categorie: string;
@@ -133,6 +141,11 @@ function fmtCompact(n: number): string {
 
 function fmtTime(dateStr: string): string {
     return new Date(dateStr).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Date d'opération, au même format que celle imprimée sur le rapport. */
+function fmtDay(dateStr: string): string {
+    return parseDbDate(dateStr).toLocaleDateString("fr-FR");
 }
 
 function fmtFullDate(date: Date): string {
@@ -281,6 +294,7 @@ export default function LivreComptable() {
             // `created_at` (timestamptz réel) pour afficher l'heure exacte.
             kind: "entree",
             time: e.created_at ?? e.date,
+            date: e.date ?? e.created_at,
             description: e.description,
             student_id: e.student_id,
             categorie: e.type,
@@ -300,6 +314,7 @@ export default function LivreComptable() {
                 id: s.id,
                 kind: "sortie",
                 time: s.created_at ?? s.date,
+                date: s.date ?? s.created_at,
                 description: s.description,
                 student_id: null,
                 categorie: s.categorie,
@@ -565,14 +580,20 @@ export default function LivreComptable() {
         });
     };
 
-    const printReport = async () => {
-        const ops = rows.map((r) => ({
-            date: r.time,
+    // Lignes du rapport : on imprime `r.date` (date d'opération, corrigeable) et
+    // NON `r.time` (created_at, figé à la saisie). Utiliser `time` faisait que le
+    // rapport continuait d'afficher l'ancienne date après une correction.
+    const reportOperations = () =>
+        rows.map((r) => ({
+            date: r.date,
             description: r.description,
             category: catLabel(r.categorie),
             amount: r.montant,
             type: r.kind,
         }));
+
+    const printReport = async () => {
+        const ops = reportOperations();
         await printAccountingHtmlReport({
             title: `Rapport comptable ${isUsd ? "USD" : "FCFA"} — ${periodLabel()}`,
             period: { start: dayStart.toISOString(), end: dayEnd.toISOString() },
@@ -585,13 +606,7 @@ export default function LivreComptable() {
     };
 
     const downloadReport = async () => {
-        const ops = rows.map((r) => ({
-            date: r.time,
-            description: r.description,
-            category: catLabel(r.categorie),
-            amount: r.montant,
-            type: r.kind,
-        }));
+        const ops = reportOperations();
         try {
             const { generateAccountingReport } = await import("../lib/pdfGenerator");
             await generateAccountingReport({
@@ -607,8 +622,11 @@ export default function LivreComptable() {
     };
 
     const exportCSV = () => {
-        const headers = ["Heure", "Type", "Désignation", "Catégorie", "Montant", "Validé par"];
+        // La date d'opération manquait : sur une période de plusieurs jours,
+        // l'export ne donnait que des heures sans dire de quel jour.
+        const headers = ["Date", "Heure", "Type", "Désignation", "Catégorie", "Montant", "Validé par"];
         const lines = filtered.map((r) => [
+            fmtDay(r.date),
             fmtTime(r.time),
             r.kind === "entree" ? "Entrée" : "Sortie",
             r.description,

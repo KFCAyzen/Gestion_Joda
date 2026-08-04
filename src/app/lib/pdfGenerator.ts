@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { payslipReference } from './payslipRef';
 import { computeCameroonPayroll } from './cameroonPayroll';
+import { parseDbDate } from './dates';
 
 // ─── Company info ────────────────────────────────────────────────────────────
 const COMPANY = {
@@ -78,7 +79,7 @@ const formatCurrency = (amount: number): string =>
   Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' FCFA';
 
 const formatDate = (date: string): string =>
-  new Date(date).toLocaleDateString('fr-FR', {
+  parseDbDate(date).toLocaleDateString('fr-FR', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 

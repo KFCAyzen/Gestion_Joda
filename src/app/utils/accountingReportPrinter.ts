@@ -1,5 +1,6 @@
 import { fetchLogoBase64 } from "./logoLoader";
 import { escapeHtml } from "../lib/html";
+import { parseDbDate } from "../lib/dates";
 
 type ReportScope = "all" | "entrees" | "sorties";
 
@@ -19,7 +20,7 @@ function formatCurrency(amount: number, locale: string, currency: ReportCurrency
 }
 
 function formatDate(date: string, locale: string): string {
-  return new Date(date).toLocaleDateString(locale);
+  return parseDbDate(date).toLocaleDateString(locale);
 }
 
 function buildJournalRows(ops: AccountingOperation[], locale: string, scope: ReportScope, currency: ReportCurrency): string {
@@ -42,7 +43,7 @@ function buildJournalRows(ops: AccountingOperation[], locale: string, scope: Rep
 
   let runningBalance = 0;
   return filtered
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((a, b) => parseDbDate(a.date).getTime() - parseDbDate(b.date).getTime())
     .map((op, idx) => {
       runningBalance += op.type === "entree" ? op.amount : -op.amount;
       const credit = op.type === "entree" ? formatCurrency(op.amount, locale, currency) : "—";
