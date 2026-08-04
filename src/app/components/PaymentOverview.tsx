@@ -180,14 +180,27 @@ function computeTrancheState(
 }
 
 function configToService(cfg: PaymentConfig, type: string, payments: Payment[]): Service {
-    // Le montant réellement dû par tranche provient de la ligne `payments`
-    // correspondante lorsqu'elle existe (un admin a pu l'ajuster manuellement) ;
-    // la config ne sert que de repli pour les tranches pas encore matérialisées.
     const rows = payments.filter((p) => p.type === type);
-    const tranches = cfg.tranches.map((tr) => {
-        const row = rows.find((p) => p.tranche === tr.tranche);
-        return row ? { ...tr, montant: row.montant } : tr;
-    });
+
+    // Dès qu'un échéancier a été matérialisé en lignes `payments`, CE SONT ELLES
+    // qui font foi : la config ne décrit plus qu'un modèle par défaut. On itérait
+    // auparavant sur `cfg.tranches` en n'y puisant que le montant, si bien qu'une
+    // tranche supprimée par un admin était aussitôt réintroduite depuis la config
+    // et continuait de peser dans le total dû — alors qu'elle avait disparu de la
+    // liste des frais. Le repli sur la config ne vaut donc que pour un service
+    // dont aucune ligne n'existe encore (tranches pas encore générées).
+    const tranches: Tranche[] =
+        rows.length > 0
+            ? rows
+                  .map((row) => ({ row, num: row.tranche ?? 1 }))
+                  .sort((a, b) => a.num - b.num)
+                  .map(({ row, num }) => ({
+                      tranche: num,
+                      label: cfg.tranches.find((t) => t.tranche === num)?.label ?? `Tranche ${num}`,
+                      montant: row.montant,
+                  }))
+            : cfg.tranches;
+
     return {
         type,
         label: cfg.label,
