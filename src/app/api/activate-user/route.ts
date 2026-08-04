@@ -45,6 +45,36 @@ async function handleActivateUser(req: NextRequest) {
         return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
+    // Répercuter la décision sur Supabase Auth lui-même. Sans cela, `is_active`
+    // n'était qu'un drapeau applicatif : un compte désactivé continuait de
+    // s'authentifier normalement auprès de GoTrue et de rafraîchir ses jetons.
+    // Le bannissement coupe la délivrance de tout nouveau jeton ; les jetons
+    // d'accès déjà émis, eux, sont refusés dès la requête suivante par la
+    // vérification de `is_active` dans `getServerSession`.
+    const BAN_FOREVER = "876000h"; // 100 ans
+    const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        ban_duration: activate ? "none" : BAN_FOREVER,
+    });
+
+    if (banError) {
+        // On rétablit `is_active` pour ne pas laisser un compte « désactivé » à
+        // l'écran alors qu'il peut toujours se connecter : mieux vaut une erreur
+        // franche qu'une désactivation de façade.
+        await supabaseAdmin
+            .from("users")
+            .update({ is_active: !activate, updated_at: new Date().toISOString() })
+            .eq("id", userId);
+        console.error("[activate-user] banError:", banError.message);
+        return NextResponse.json(
+            {
+                error: activate
+                    ? "Le compte n'a pas pu être réactivé côté authentification. Statut inchangé."
+                    : "Le compte n'a pas pu être désactivé côté authentification. Statut inchangé.",
+            },
+            { status: 502 },
+        );
+    }
+
     let workflowResult: { dossierId?: string; paymentsCreated: number } | null = null;
 
     // Déclencher le workflow complet uniquement lors de l'activation d'un étudiant

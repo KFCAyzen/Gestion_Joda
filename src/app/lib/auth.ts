@@ -61,11 +61,19 @@ export async function getServerSession(req: NextRequest): Promise<AuthSession | 
   // Récupérer le rôle depuis la table users
   const { data: userData } = await supabase
     .from('users')
-    .select('role')
+    .select('role, is_active')
     .eq('id', user.id)
     .single();
 
   if (!userData) return null;
+
+  // Un compte désactivé n'a plus de session valide, quel que soit le canal.
+  // `is_active` n'était vérifié que dans `AuthContext`, donc côté navigateur et
+  // sur le web uniquement : le jeton d'un compte désactivé restait accepté par
+  // toutes les routes d'API, et les applications mobiles (qui n'exécutent pas
+  // `AuthContext` et s'authentifient par en-tête Bearer) conservaient un accès
+  // complet. La désactivation n'avait donc aucun effet réel côté serveur.
+  if (userData.is_active === false) return null;
 
   return {
     user: {
