@@ -634,7 +634,12 @@ export default function LivreComptable() {
             (r.kind === "entree" ? "+" : "-") + fmt(r.montant),
             r.needsValidation ? "À valider" : getUserName(r.validatedBy),
         ]);
-        const csv = [headers, ...lines].map((row) => row.map((c) => `"${c}"`).join(",")).join("\n");
+        // En CSV, un guillemet dans un champ se double. Sans cela, une
+        // désignation contenant `"` refermait le champ en avance et décalait
+        // toutes les colonnes suivantes de la ligne.
+        const csv = [headers, ...lines]
+            .map((row) => row.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(","))
+            .join("\n");
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
