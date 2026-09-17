@@ -10,6 +10,19 @@ const supabaseAdmin = createClient(
 
 const deleteUserBodySchema = z.object({ userId: z.string().min(1) });
 
+/**
+ * Transforme l'erreur brute de FK Postgres
+ *   « update or delete on table "users" violates foreign key constraint
+ *     "messages_to_user_id_fkey" on table "messages" »
+ * en message lisible qui nomme la table qui retient le compte.
+ */
+function fkErrorMessage(raw: string | undefined): string {
+    const table = raw ? /on table "([^"]+)"\s*$/.exec(raw)?.[1] : undefined;
+    const where = table ? ` (table « ${table} »)` : "";
+    return `Ce compte est encore référencé par des données${where} et ne peut pas être supprimé. ` +
+        `Appliquez la migration fix_user_delete_fk_actions.sql, ou désactivez le compte à la place.`;
+}
+
 async function handleDeleteUser(req: NextRequest, session: AuthSession) {
     try {
         const parsed = deleteUserBodySchema.safeParse(await req.json());
@@ -34,6 +47,18 @@ async function handleDeleteUser(req: NextRequest, session: AuthSession) {
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
         if (authError) {
             console.error("[delete-user] authError:", authError.message);
+            // « Database error deleting user » = une FK vers users bloque la cascade
+            // auth.users → public.users (cf. migrations/fix_user_delete_fk_actions.sql).
+            // GoTrue ne remonte pas la contrainte fautive : on la révèle en tentant
+            // la suppression côté table, dont l'erreur PostgREST est explicite.
+            if (/database error/i.test(authError.message)) {
+                const { error: probe } = await supabaseAdmin.from("users").delete().eq("id", userId);
+                console.error("[delete-user] FK bloquante:", probe?.message ?? "(aucune erreur PostgREST)");
+                return NextResponse.json(
+                    { error: fkErrorMessage(probe?.message) },
+                    { status: 409 }
+                );
+            }
             return NextResponse.json({ error: authError.message }, { status: 400 });
         }
 
@@ -41,7 +66,8 @@ async function handleDeleteUser(req: NextRequest, session: AuthSession) {
         const { error: dbError } = await supabaseAdmin.from("users").delete().eq("id", userId);
         if (dbError) {
             console.error("[delete-user] dbError:", dbError.message);
-            return NextResponse.json({ error: dbError.message }, { status: 500 });
+            const status = dbError.code === "23503" ? 409 : 500;
+            return NextResponse.json({ error: fkErrorMessage(dbError.message) }, { status });
         }
 
         return NextResponse.json({ success: true });

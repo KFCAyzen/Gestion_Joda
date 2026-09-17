@@ -23,14 +23,22 @@ async function handleActivateUser(req: NextRequest) {
 
     const { userId, activate } = parsed.data;
 
-    // Récupérer le profil utilisateur
+    // Récupérer le profil utilisateur. La langue n'est pas ici : elle vit sur
+    // `students.langue` (lue plus bas pour l'email). La sélectionner sur `users`
+    // faisait échouer la requête (colonne inexistante), et l'erreur était
+    // renvoyée comme « Utilisateur introuvable » : impossible d'activer ou de
+    // désactiver le moindre compte.
     const { data: userData, error: userError } = await supabaseAdmin
         .from("users")
-        .select("id, role, name, contact_email, email, is_active, langue")
+        .select("id, role, name, contact_email, email, is_active")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
-    if (userError || !userData) {
+    if (userError) {
+        console.error("[activate-user] userError:", userError.message);
+        return NextResponse.json({ error: userError.message }, { status: 500 });
+    }
+    if (!userData) {
         return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
     }
 
