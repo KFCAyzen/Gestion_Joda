@@ -20,15 +20,33 @@ export async function POST(req: NextRequest) {
         }
         const { employee_id, pin } = parsed.data;
 
-        const { data: ok, error: verifyError } = await supabaseAdmin.rpc("hr_verify_report_pin", {
-            emp_id: employee_id,
-            plain: pin,
-        });
+        const { data: ok, error: verifyError } = await supabaseAdmin
+            .rpc("hr_verify_report_pin", { emp_id: employee_id, plain: pin })
+            .abortSignal(AbortSignal.timeout(15_000));
 
         if (verifyError) {
-            return NextResponse.json({ error: verifyError.message }, { status: 500 });
+            console.error("[rapport/verify] rpc error:", verifyError.message, "employee:", employee_id);
+            return NextResponse.json({ error: "Vérification impossible pour le moment, réessayez." }, { status: 500 });
         }
         if (!ok) {
+            // La RPC ne renvoie qu'un booléen : on qualifie le refus côté logs
+            // (jamais côté client) pour distinguer un vrai PIN faux d'un compte
+            // qui n'a plus de PIN / n'est plus actif / a été archivé.
+            const { data: why } = await supabaseAdmin
+                .from("employees")
+                .select("statut, archived_at, report_pin")
+                .eq("id", employee_id)
+                .maybeSingle();
+            const reason = !why
+                ? "employe_introuvable"
+                : why.archived_at
+                    ? "archive"
+                    : why.statut !== "actif"
+                        ? `statut=${why.statut}`
+                        : !why.report_pin
+                            ? "pin_absent"
+                            : "pin_incorrect";
+            console.warn("[rapport/verify] refus:", reason, "employee:", employee_id);
             return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
         }
 

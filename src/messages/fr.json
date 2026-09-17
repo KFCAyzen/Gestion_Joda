@@ -2964,7 +2964,11 @@
       "activitiesRequired": "Veuillez décrire vos activités.",
       "invalidHours": "Nombre d'heures invalide (0 à 24).",
       "submitFailed": "Échec de l'envoi du rapport",
-      "callStatsRequired": "Renseignez tous les compteurs d'appels (0 accepté)."
+      "callStatsRequired": "Renseignez tous les compteurs d'appels (0 accepté).",
+      "listFailed": "Impossible de charger la liste des employés. Vérifiez votre connexion puis réessayez.",
+      "retry": "Réessayer",
+      "timeout": "Le serveur met trop de temps à répondre. Vérifiez votre connexion puis réessayez.",
+      "serverUnavailable": "Service momentanément indisponible, réessayez dans un instant."
     }
   },
   "staffDocuments": {

@@ -49,6 +49,14 @@ export default async function proxy(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api/');
   const isPublicRoute = isLoginPage || isAuthCallback || isEtudiantPortal || isRegisterPage || isPublicReport || isResetPassword;
 
+  // L'espace rapport (nom + PIN) n'utilise jamais la session Supabase : inutile
+  // d'attendre `getUser()` — un appel réseau au serveur d'auth à chaque chargement,
+  // qui suspendait la page quand l'auth était lente ou rate-limitée (429 par vagues
+  // derrière l'IP du bureau) alors que la page n'en a aucun besoin.
+  if (isPublicReport) {
+    return intlMiddleware(request);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

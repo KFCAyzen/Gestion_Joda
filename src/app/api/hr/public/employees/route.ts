@@ -13,13 +13,20 @@ export async function GET() {
             .select("id, prenom, nom, poste, departement, suivi_appels, quota_appels")
             .eq("statut", "actif")
             .is("archived_at", null)
-            .order("nom", { ascending: true });
+            .order("nom", { ascending: true })
+            // Borné : sans cela une base lente laissait la fonction (et le
+            // client) suspendus, liste des employés jamais affichée.
+            .abortSignal(AbortSignal.timeout(15_000));
 
         if (error) {
+            console.error("[rapport/employees] erreur:", error.message);
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        return NextResponse.json({ employees: data ?? [] });
+        return NextResponse.json(
+            { employees: data ?? [] },
+            { headers: { "Cache-Control": "no-store" } }
+        );
     } catch (err: any) {
         return NextResponse.json({ error: err?.message || "Erreur serveur" }, { status: 500 });
     }

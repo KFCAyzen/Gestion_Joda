@@ -71,6 +71,24 @@ type PublicEvaluation = {
 };
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
+
+// Toutes les requêtes de la page sont bornées : sur réseau mobile un fetch
+// sans timeout peut rester suspendu des minutes → spinner infini, « ça charge
+// puis rien ne se passe ». Ici on échoue vite et on affiche un message.
+const REQUEST_TIMEOUT_MS = 20_000;
+// AbortController plutôt que AbortSignal.timeout : ce dernier manque sur les
+// WebViews Android un peu anciennes (lien ouvert depuis WhatsApp).
+const fetchWithTimeout = async (input: string, init?: RequestInit) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+    try {
+        return await fetch(input, { ...init, signal: ctrl.signal });
+    } finally {
+        clearTimeout(timer);
+    }
+};
+const isTimeout = (err: unknown) =>
+    typeof err === "object" && err !== null && (err as { name?: string }).name === "AbortError";
 const initials = (e: PublicEmployee) =>
     `${e.prenom?.charAt(0) ?? ""}${e.nom?.charAt(0) ?? ""}`.toUpperCase();
 
@@ -94,11 +112,15 @@ function EmployeeSelect({
     employees,
     value,
     loading,
+    loadError,
+    onRetry,
     onChange,
 }: {
     employees: PublicEmployee[];
     value: string;
     loading: boolean;
+    loadError: boolean;
+    onRetry: () => void;
     onChange: (id: string) => void;
 }) {
     const t = useTranslations("publicReport");
@@ -158,6 +180,20 @@ function EmployeeSelect({
                     >
                         {loading ? (
                             <div className="px-2.5 py-3 text-[13.5px] text-zinc-400">{t("loading")}</div>
+                        ) : loadError ? (
+                            <div className="px-2.5 py-3 text-[13.5px] text-red-700">
+                                <p>{t("errors.listFailed")}</p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOpen(false);
+                                        onRetry();
+                                    }}
+                                    className="mt-2 rounded-lg bg-red-600 px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-red-700"
+                                >
+                                    {t("errors.retry")}
+                                </button>
+                            </div>
                         ) : employees.length === 0 ? (
                             <div className="px-2.5 py-3 text-[13.5px] text-zinc-400">
                                 {t("noEmployees")}
@@ -341,6 +377,8 @@ export default function PublicReportPage() {
 
     const [employees, setEmployees] = useState<PublicEmployee[]>([]);
     const [loadingList, setLoadingList] = useState(true);
+    const [listError, setListError] = useState(false);
+    const [listAttempt, setListAttempt] = useState(0);
     const [employeeId, setEmployeeId] = useState("");
     const [pin, setPin] = useState<string[]>(["", "", "", "", "", ""]);
     const [pinErr, setPinErr] = useState(false);
@@ -373,23 +411,41 @@ export default function PublicReportPage() {
 
     const pinValue = pin.join("");
 
+    // La liste est le point d'entrée : sans elle l'employé ne peut rien faire.
+    // Sur réseau mobile + démarrage à froid du serveur, un premier échec est
+    // courant → on réessaie 3 fois avec attente croissante, puis on affiche
+    // une erreur explicite avec un bouton Réessayer (avant : liste vide muette).
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            try {
-                const res = await fetch("/api/hr/public/employees");
-                const json = await res.json();
-                if (!cancelled && res.ok) setEmployees(json.employees ?? []);
-            } catch {
-                /* ignored */
-            } finally {
-                if (!cancelled) setLoadingList(false);
+            setLoadingList(true);
+            setListError(false);
+            const delays = [0, 1500, 4000];
+            let ok = false;
+            for (const delay of delays) {
+                if (delay) await new Promise((r) => setTimeout(r, delay));
+                if (cancelled) return;
+                try {
+                    const res = await fetchWithTimeout("/api/hr/public/employees", { cache: "no-store" });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const json = await res.json();
+                    if (cancelled) return;
+                    setEmployees(json.employees ?? []);
+                    ok = true;
+                    break;
+                } catch (err) {
+                    console.warn("[rapport] chargement employés échoué:", err);
+                }
+            }
+            if (!cancelled) {
+                setListError(!ok);
+                setLoadingList(false);
             }
         })();
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [listAttempt]);
 
     useEffect(
         () => () => {
@@ -402,7 +458,7 @@ export default function PublicReportPage() {
     const refreshHistory = async (emp: PublicEmployee, p: string) => {
         setLoadingHistory(true);
         try {
-            const res = await fetch("/api/hr/public/list", {
+            const res = await fetchWithTimeout("/api/hr/public/list", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ employee_id: emp.id, pin: p }),
@@ -419,7 +475,7 @@ export default function PublicReportPage() {
     const refreshEvaluations = async (emp: PublicEmployee, p: string) => {
         setLoadingEvals(true);
         try {
-            const res = await fetch("/api/hr/public/evaluations", {
+            const res = await fetchWithTimeout("/api/hr/public/evaluations", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ employee_id: emp.id, pin: p }),
@@ -448,15 +504,20 @@ export default function PublicReportPage() {
         }
         setVerifying(true);
         try {
-            const res = await fetch("/api/hr/public/verify", {
+            const res = await fetchWithTimeout("/api/hr/public/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ employee_id: employeeId, pin: pinValue }),
             });
-            const json = await res.json();
-            if (!res.ok) {
-                setPinErr(true);
-                setAuthError(json.error || t("errors.invalidCredentials"));
+            // Une passerelle en erreur (502/504) renvoie du HTML, pas du JSON.
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || !json.employee) {
+                setPinErr(res.status === 401);
+                setAuthError(
+                    res.status === 401
+                        ? json.error || t("errors.invalidCredentials")
+                        : json.error || t("errors.serverUnavailable")
+                );
                 setTimeout(() => setPinErr(false), 500);
                 return;
             }
@@ -464,8 +525,9 @@ export default function PublicReportPage() {
             setSession(emp);
             refreshHistory(emp, pinValue);
             refreshEvaluations(emp, pinValue);
-        } catch {
-            setAuthError(t("errors.network"));
+        } catch (err) {
+            console.warn("[rapport] verify échoué:", err);
+            setAuthError(isTimeout(err) ? t("errors.timeout") : t("errors.network"));
         } finally {
             setVerifying(false);
         }
@@ -503,7 +565,7 @@ export default function PublicReportPage() {
 
         setSubmitting(true);
         try {
-            const res = await fetch("/api/hr/public/submit", {
+            const res = await fetchWithTimeout("/api/hr/public/submit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -516,7 +578,7 @@ export default function PublicReportPage() {
                     ...callPayload,
                 }),
             });
-            const json = await res.json();
+            const json = await res.json().catch(() => ({}));
             if (!res.ok) {
                 setSubmitErr(json.error || t("errors.submitFailed"));
                 return;
@@ -532,8 +594,9 @@ export default function PublicReportPage() {
             setFreshActive(true);
             if (freshTimer.current) clearTimeout(freshTimer.current);
             freshTimer.current = setTimeout(() => setFreshActive(false), 2200);
-        } catch {
-            setSubmitErr(t("errors.network"));
+        } catch (err) {
+            console.warn("[rapport] submit échoué:", err);
+            setSubmitErr(isTimeout(err) ? t("errors.timeout") : t("errors.network"));
         } finally {
             setSubmitting(false);
         }
@@ -633,11 +696,26 @@ export default function PublicReportPage() {
                                 employees={employees}
                                 value={employeeId}
                                 loading={loadingList}
+                                loadError={listError}
+                                onRetry={() => setListAttempt((n) => n + 1)}
                                 onChange={(v) => {
                                     setEmployeeId(v);
                                     setAuthError(null);
                                 }}
                             />
+                            {listError && (
+                                <div className="flex items-start gap-2.5 rounded-[10px] border border-red-100 bg-red-50 px-3 py-2.5 text-[12.5px] leading-snug text-red-700">
+                                    <AlertTriangle className="mt-px h-[15px] w-[15px] shrink-0" />
+                                    <span className="flex-1">{t("errors.listFailed")}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setListAttempt((n) => n + 1)}
+                                        className="shrink-0 font-semibold underline underline-offset-2"
+                                    >
+                                        {t("errors.retry")}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-col gap-[7px]">

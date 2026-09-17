@@ -2964,7 +2964,11 @@
       "activitiesRequired": "Please describe your activities.",
       "invalidHours": "Invalid number of hours (0 to 24).",
       "submitFailed": "Failed to submit the report",
-      "callStatsRequired": "Fill in all call counters (0 is allowed)."
+      "callStatsRequired": "Fill in all call counters (0 is allowed).",
+      "listFailed": "Could not load the employee list. Check your connection and try again.",
+      "retry": "Retry",
+      "timeout": "The server is taking too long to respond. Check your connection and try again.",
+      "serverUnavailable": "Service temporarily unavailable, please try again shortly."
     }
   },
   "staffDocuments": {
