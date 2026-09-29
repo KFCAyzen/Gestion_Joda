@@ -7,8 +7,10 @@ import { useAuth } from '@/lib/auth-context';
 import {
   bonNumero,
   isEnRetard,
+  positionGrille,
   useBonsATraiter,
   useComptaParametres,
+  useGrilleTransport,
   useUpdateBon,
   type BonCaisse,
 } from '@/lib/hooks/use-bons-caisse';
@@ -30,6 +32,7 @@ export default function AdminBonsCaisse() {
   const { user } = useAuth();
   const { data: bons = [], isLoading } = useBonsATraiter();
   const { data: params } = useComptaParametres();
+  const { data: grille } = useGrilleTransport();
   const update = useUpdateBon(user ?? undefined);
 
   const [tab, setTab] = useState('demande');
@@ -127,6 +130,7 @@ export default function AdminBonsCaisse() {
 
             {list.map((b) => (
               <BonCard key={b.id} bon={b} showDemandeur>
+                <GrilleInfo pos={b.status === 'demande' ? positionGrille(b, grille) : null} nb={b.nb_trajets ?? 1} />
                 {isMine(b) && b.status !== 'remis' ? (
                   <Text style={T.t3}>Votre propre bon : un autre compte doit le traiter.</Text>
                 ) : b.status === 'demande' ? (
@@ -195,6 +199,20 @@ export default function AdminBonsCaisse() {
         onSubmit={submitMotif}
       />
     </ScreenBackground>
+  );
+}
+
+/** Bon de transport hors grille ou au-dessus du tarif : décision administrateur. */
+function GrilleInfo({ pos, nb }: { pos: ReturnType<typeof positionGrille>; nb: number }) {
+  const T = useText();
+  const colors = useColors();
+  if (!pos || pos.kind === 'dans_grille') return null;
+  return (
+    <Text style={[T.t3, { color: colors.amber, width: '100%' }]}>
+      {pos.kind === 'hors_grille'
+        ? 'Trajet hors grille des transports : décision administrateur.'
+        : `${pos.trajet}${nb > 1 ? ` × ${nb}` : ''} : ${fmtFCFA(pos.plafond)} F max selon la grille.`}
+    </Text>
   );
 }
 

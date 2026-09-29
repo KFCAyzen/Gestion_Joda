@@ -12,6 +12,7 @@ import {
   isEnRetard,
   useComptaParametres,
   useCreateBon,
+  useGrilleTransport,
   useJustifierBon,
   useMesBons,
   useUpdateBon,
@@ -53,13 +54,17 @@ export default function MesAvances() {
 
   const { data: bons = [], isLoading } = useMesBons(user?.id);
   const { data: params } = useComptaParametres();
+  const { data: grille } = useGrilleTransport();
+  const trajets = (grille ?? []).filter((t) => t.actif);
   const create = useCreateBon(actor);
   const update = useUpdateBon(actor);
   const justifier = useJustifierBon(actor);
 
   const [tab, setTab] = useState('actifs');
   const [newOpen, setNewOpen] = useState(false);
-  const [form, setForm] = useState({ montant: '', categorie: 'transports', motif: '' });
+  // trajetId '' = pas encore choisi, 'hors' = trajet absent de la grille.
+  const emptyForm = { montant: '', categorie: 'transports', motif: '', trajetId: '', nb: 1 };
+  const [form, setForm] = useState(emptyForm);
   const [justif, setJustif] = useState<{
     bon: BonCaisse;
     depense: string;
@@ -80,7 +85,7 @@ export default function MesAvances() {
       toast('Justifie d’abord ton avance en retard');
       return;
     }
-    setForm({ montant: '', categorie: 'transports', motif: '' });
+    setForm(emptyForm);
     setNewOpen(true);
   }
 
@@ -94,8 +99,18 @@ export default function MesAvances() {
       toast('Motif trop vague : précise le trajet et l’objet, ou l’article et le fournisseur');
       return;
     }
+    if (grilleActive && !form.trajetId) {
+      toast('Choisis le trajet dans la grille (ou « Autre trajet »)');
+      return;
+    }
     try {
-      await create.mutateAsync({ montant, categorie: form.categorie, motif: form.motif.trim() });
+      await create.mutateAsync({
+        montant,
+        categorie: form.categorie,
+        motif: form.motif.trim(),
+        // Colonnes de la phase 3 : envoyées seulement quand la grille existe.
+        ...(trajetChoisi ? { trajet_id: trajetChoisi.id, nb_trajets: form.nb } : {}),
+      });
       setNewOpen(false);
       toast('Demande envoyée ✓');
     } catch (e) {
@@ -154,6 +169,21 @@ export default function MesAvances() {
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Échec de l’annulation');
     }
+  }
+
+  // Grille des transports : le trajet fixe le tarif maximal (× nombre de trajets).
+  const grilleActive = form.categorie === 'transports' && trajets.length > 0;
+  const trajetChoisi = grilleActive ? trajets.find((t) => t.id === form.trajetId) ?? null : null;
+  const plafond = trajetChoisi ? trajetChoisi.montant_max * form.nb : null;
+
+  function choisirTrajet(id: string, nb = form.nb) {
+    const t = trajets.find((x) => x.id === id);
+    setForm((f) => {
+      const ancien = trajets.find((x) => x.id === f.trajetId);
+      // Montant pré-rempli au tarif de la grille, sauf s'il a été saisi à la main.
+      const auto = !f.montant || (ancien && Number(f.montant) === ancien.montant_max * f.nb);
+      return { ...f, trajetId: id, nb, montant: t && auto ? String(t.montant_max * nb) : f.montant };
+    });
   }
 
   const depenseSaisie = justif ? Number(justif.depense.replace(/[^0-9]/g, '')) || 0 : 0;
@@ -249,6 +279,41 @@ export default function MesAvances() {
             </Pressable>
           ))}
         </ScrollView>
+        {grilleActive ? (
+          <>
+            <Text style={[T.t3, styles.fieldLabel]}>Trajet</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }}>
+              {trajets.map((t) => (
+                <Pressable key={t.id} onPress={() => choisirTrajet(t.id)} style={[styles.catChip, form.trajetId === t.id && styles.catChipOn]}>
+                  <Text style={[styles.catChipTxt, form.trajetId === t.id && { color: '#fff' }]}>
+                    {t.trajet} · {fmtFCFA(t.montant_max)} F
+                  </Text>
+                </Pressable>
+              ))}
+              <Pressable onPress={() => setForm((f) => ({ ...f, trajetId: 'hors' }))} style={[styles.catChip, form.trajetId === 'hors' && styles.catChipOn]}>
+                <Text style={[styles.catChipTxt, form.trajetId === 'hors' && { color: '#fff' }]}>Autre trajet</Text>
+              </Pressable>
+            </ScrollView>
+            {trajetChoisi ? (
+              <View style={local.nbRow}>
+                <Text style={T.t3}>Nombre de trajets</Text>
+                <View style={local.stepper}>
+                  <Button label="−" variant="glass" size="sm" onPress={() => choisirTrajet(trajetChoisi.id, Math.max(1, form.nb - 1))} />
+                  <Text style={[T.t1, { minWidth: 24, textAlign: 'center' }]}>{form.nb}</Text>
+                  <Button label="+" variant="glass" size="sm" onPress={() => choisirTrajet(trajetChoisi.id, Math.min(20, form.nb + 1))} />
+                </View>
+              </View>
+            ) : null}
+            {plafond !== null ? (
+              <Text style={[T.t3, { marginTop: 4 }, Number(form.montant) > plafond && { color: colors.amber }]}>
+                Tarif de la grille : {fmtFCFA(plafond)} F au plus
+                {Number(form.montant) > plafond ? ' — au-dessus : un administrateur décidera.' : '.'}
+              </Text>
+            ) : form.trajetId === 'hors' ? (
+              <Text style={[T.t3, { marginTop: 4, color: colors.amber }]}>Trajet hors grille : un administrateur décidera.</Text>
+            ) : null}
+          </>
+        ) : null}
         <Text style={[T.t3, styles.fieldLabel]}>Motif précis</Text>
         <TextInput
           value={form.motif}
@@ -330,4 +395,6 @@ const local = StyleSheet.create({
   alert: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   big: { fontSize: 28, fontWeight: '700', letterSpacing: -1, marginVertical: 4 },
   empty: { fontSize: 13, textAlign: 'center', paddingVertical: 30 },
+  nbRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

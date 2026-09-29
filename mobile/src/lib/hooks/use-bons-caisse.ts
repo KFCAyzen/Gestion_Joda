@@ -26,6 +26,9 @@ export type BonCaisse = {
   montant: number;
   categorie: string;
   motif: string;
+  /** Trajet de la grille des transports (phase 3), choisi à la demande. */
+  trajet_id?: string | null;
+  nb_trajets?: number;
   status: BonStatus;
   decision_at: string | null;
   refus_motif: string | null;
@@ -66,6 +69,30 @@ export const BON_CATEGORIE_LABEL: Record<string, string> = {
   divers: 'Divers',
   fonctionnement: 'Fonctionnement',
 };
+
+/** Trajet de la grille des transports (compta_grille_transport). */
+export type TrajetGrille = { id: string; trajet: string; montant_max: number; actif: boolean };
+
+/**
+ * Position d'un bon de transport par rapport à la grille (miroir de
+ * trg_bons_caisse_plafonds) : hors grille ou au-dessus du tarif, seul un
+ * administrateur approuve. `null` : pas concerné ou grille vide.
+ */
+export type PositionGrille =
+  | { kind: 'hors_grille' }
+  | { kind: 'au_dessus' | 'dans_grille'; trajet: string; plafond: number };
+
+export function positionGrille(
+  b: Pick<BonCaisse, 'categorie' | 'montant' | 'trajet_id' | 'nb_trajets'>,
+  grille: TrajetGrille[] | null | undefined,
+): PositionGrille | null {
+  const actifs = (grille ?? []).filter((t) => t.actif);
+  if (b.categorie !== 'transports' || actifs.length === 0) return null;
+  const t = actifs.find((x) => x.id === b.trajet_id);
+  if (!t) return { kind: 'hors_grille' };
+  const plafond = t.montant_max * (b.nb_trajets ?? 1);
+  return { kind: b.montant > plafond ? 'au_dessus' : 'dans_grille', trajet: t.trajet, plafond };
+}
 
 export function bonNumero(n: number): string {
   return `BC-${String(n).padStart(6, '0')}`;
@@ -147,6 +174,22 @@ export function useComptaParametres() {
   });
 }
 
+/** Grille des transports ; `null` si la migration phase 3 n'est pas appliquée. */
+export function useGrilleTransport() {
+  return useQuery({
+    queryKey: ['compta_grille_transport'],
+    queryFn: async (): Promise<TrajetGrille[] | null> => {
+      const { data, error } = await supabase
+        .from('compta_grille_transport')
+        .select('id, trajet, montant_max, actif')
+        .order('trajet', { ascending: true });
+      if (error) return null;
+      return (data ?? []).map((t: any) => ({ ...t, montant_max: Number(t.montant_max) }));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 function useInvalidateBons() {
   const qc = useQueryClient();
   return () => {
@@ -160,7 +203,13 @@ function useInvalidateBons() {
 export function useCreateBon(actor?: Actor) {
   const invalidate = useInvalidateBons();
   return useMutation({
-    mutationFn: async (input: { montant: number; categorie: string; motif: string }) => {
+    mutationFn: async (input: {
+      montant: number;
+      categorie: string;
+      motif: string;
+      trajet_id?: string;
+      nb_trajets?: number;
+    }) => {
       const { data, error } = await supabase
         .from('bons_caisse')
         .insert(input)
