@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
-import { Bell, ChevronRight, ClipboardList, Globe, Lock, LogOut, Moon, Shield, WalletCards } from 'lucide-react-native';
+import { Banknote, Bell, ChevronRight, ClipboardList, Globe, Lock, LogOut, Moon, Shield, WalletCards } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import { useStaffBadges, useStaffDossiers } from '@/lib/hooks/use-staff';
+import { isEnRetard, useMesBons } from '@/lib/hooks/use-bons-caisse';
 import {
   Avatar,
   Chip,
@@ -44,6 +45,9 @@ export default function StaffProfil() {
   const { user, logout } = useAuth();
   const { data: badges } = useStaffBadges(user?.id);
   const { data: dossiers } = useStaffDossiers();
+  const { data: bons } = useMesBons(user?.id);
+  const bonsEnRetard = (bons ?? []).filter((b) => isEnRetard(b)).length;
+  const bonsAJustifier = (bons ?? []).filter((b) => b.status === 'remis').length;
   const toast = useToast();
   const [notif, setNotif] = useState(true);
 
@@ -104,6 +108,28 @@ export default function StaffProfil() {
               sub={`${badges?.payments ?? 0} déclaration(s)`}
               right={badges?.payments ? <CountBadge count={badges.payments} color={colors.amber} /> : <ChevronRight size={17} color={colors.ink35} />}
               onPress={() => router.navigate('/(staff)/(tabs)/paiements' as Href)}
+              last
+            />
+          </ListCard>
+
+          {/* Caisse */}
+          <SectionLabel title="Caisse" />
+          <ListCard>
+            <Row
+              tone={bonsEnRetard ? 'red' : 'amber'}
+              icon={<Banknote size={17} color={bonsEnRetard ? iconTint.red : iconTint.amber} />}
+              label="Mes avances (bons de caisse)"
+              sub={
+                bonsEnRetard
+                  ? `${bonsEnRetard} en retard — nouvelles demandes bloquées`
+                  : bonsAJustifier
+                    ? `${bonsAJustifier} à justifier`
+                    : 'Demander une avance, justifier une dépense'
+              }
+              right={
+                bonsEnRetard ? <CountBadge count={bonsEnRetard} color={colors.crimsonVivid} /> : <ChevronRight size={17} color={colors.ink35} />
+              }
+              onPress={() => router.navigate('/(staff)/avances' as Href)}
               last
             />
           </ListCard>

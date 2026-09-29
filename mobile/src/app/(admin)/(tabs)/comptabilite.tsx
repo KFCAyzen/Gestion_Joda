@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, type Href } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { ArrowDownLeft, ArrowUpRight, Camera, Check, Plus, TriangleAlert, X } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, Banknote, Camera, Check, ChevronRight, Plus, TriangleAlert, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -16,6 +17,7 @@ import {
   type JustificatifFile,
   type LedgerRow,
 } from '@/lib/hooks/use-admin';
+import { isEnRetard, useBonsATraiter } from '@/lib/hooks/use-bons-caisse';
 import {
   Button,
   GlassCard,
@@ -82,6 +84,9 @@ export default function AdminCompta() {
   const rejectSortie = useRejectSortie(user ?? undefined);
   const addEntry = useAddAccountingEntry(user ?? undefined);
   const toast = useToast();
+  const { data: bons = [] } = useBonsATraiter();
+  const bonsATraiter = bons.filter((b) => b.status !== 'remis').length;
+  const bonsEnRetard = bons.filter((b) => isEnRetard(b)).length;
 
   const canWrite = user?.role === 'admin' || user?.role === 'super_admin';
 
@@ -309,6 +314,22 @@ export default function AdminCompta() {
                 </View>
               </GlassCard>
             ) : null}
+
+            {/* Bons de caisse : avances nominatives à justifier */}
+            <Pressable onPress={() => router.navigate('/(admin)/bons-caisse' as Href)}>
+              <GlassCard style={styles.alertCard}>
+                <IconBox tone={bonsEnRetard ? 'red' : 'amber'} size={40}>
+                  <Banknote size={18} color={bonsEnRetard ? iconTint.red : iconTint.amber} />
+                </IconBox>
+                <View style={{ flex: 1 }}>
+                  <Text style={T.t1}>Bons de caisse</Text>
+                  <Text style={T.t2}>
+                    {bonsATraiter} à traiter{bonsEnRetard ? ` · ${bonsEnRetard} avance(s) en retard` : ''}
+                  </Text>
+                </View>
+                <ChevronRight size={17} color={colors.ink35} />
+              </GlassCard>
+            </Pressable>
 
             <SegFilter
               options={[

@@ -23,6 +23,7 @@ function StaffStack() {
         <Stack.Screen name="student/[id]" />
         <Stack.Screen name="chat/[id]" />
         <Stack.Screen name="rapports" />
+        <Stack.Screen name="avances" />
       </Stack>
     </>
   );
