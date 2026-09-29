@@ -40,6 +40,7 @@ export type Permission =
   | 'accounting.delete'
   | 'accounting.validate'
   | 'accounting.export'
+  | 'accounting.disburse'
   
   // Utilisateurs
   | 'users.view'
@@ -137,6 +138,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'accounting.delete',
     'accounting.validate',
     'accounting.export',
+    'accounting.disburse',
     'users.view',
     'users.create',
     'users.edit',
@@ -178,6 +180,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'accounting.delete',
     'accounting.validate',
     'accounting.export',
+    'accounting.disburse',
     'users.view',
     'users.create',
     'users.edit',
@@ -226,6 +229,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'accounting.delete': 'Annuler / supprimer des écritures',
   'accounting.validate': 'Valider la comptabilité',
   'accounting.export': 'Exporter la comptabilité',
+  'accounting.disburse': 'Décaisser (bons de caisse)',
   
   'users.view': 'Voir les utilisateurs',
   'users.create': 'Créer des utilisateurs',
@@ -278,6 +282,7 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'accounting.delete': "Annuler une sortie avec motif (elle reste tracée) ou supprimer une entrée.",
   'accounting.validate': "Valider une sortie saisie par un autre compte (contrôle financier).",
   'accounting.export': "Exporter les données comptables (Excel/PDF).",
+  'accounting.disburse': "Remettre l'argent d'un bon de caisse approuvé (tenue de la caisse).",
 
   'users.view': "Consulter la liste des comptes utilisateurs.",
   'users.create': "Créer de nouveaux comptes utilisateurs.",
@@ -301,7 +306,7 @@ export const PERMISSION_GROUPS = {
   'Dossiers': ['dossiers.view', 'dossiers.create', 'dossiers.edit', 'dossiers.delete', 'dossiers.validate'],
   'Universités': ['universities.view', 'universities.create', 'universities.edit', 'universities.delete'],
   'Paiements': ['payments.view', 'payments.create', 'payments.edit', 'payments.delete', 'payments.validate'],
-  'Comptabilité': ['accounting.view', 'accounting.create', 'accounting.edit', 'accounting.delete', 'accounting.validate', 'accounting.export'],
+  'Comptabilité': ['accounting.view', 'accounting.create', 'accounting.edit', 'accounting.delete', 'accounting.validate', 'accounting.export', 'accounting.disburse'],
   'Utilisateurs': ['users.view', 'users.create', 'users.edit', 'users.delete', 'users.manage_permissions'],
   'Rapports': ['reports.view', 'reports.export'],
   'Système': ['logs.view', 'storage.view', 'storage.manage'],

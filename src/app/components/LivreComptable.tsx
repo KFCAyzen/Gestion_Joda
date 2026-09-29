@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     Ban,
@@ -22,6 +22,7 @@ import { createClient } from "../lib/supabase/client";
 import { useEntreesComptables, useSortiesComptables, useSoldeCourant, useSoldeCourantFallback, ENTREES_KEY, SORTIES_KEY, SOLDE_KEY, COMPTA_AUDIT_KEY } from "../lib/hooks/use-accounting";
 import { checkJustificatif, JUSTIFICATIF_ACCEPT, uploadJustificatif } from "../lib/justificatifs";
 import EcritureDetailModal, { type EcritureDetail } from "./EcritureDetailModal";
+import { isEnCours, useBonsCaisse } from "../lib/hooks/use-bons-caisse";
 import type { Devise } from "../lib/schemas/accounting.schema";
 import { useUsers } from "../lib/hooks/use-users";
 import { useStudents } from "../lib/hooks/use-students";
@@ -65,6 +66,7 @@ interface SortieComptable {
     created_by: string | null;
     created_at: string;
     payslip_id: string | null;
+    bon_caisse_id?: string | null;
     status?: string | null;
     rejected_by?: string | null;
     rejected_at?: string | null;
@@ -105,7 +107,8 @@ interface LedgerRow {
     needsValidation: boolean;
     rejected: boolean;
     cancelled: boolean;
-    linkedToPayslip: boolean;
+    /** Sortie générée ailleurs (bulletin de paie, bon de caisse) : verrouillée ici. */
+    linkedTo: "bulletin" | "bon" | null;
     /** Sortie : pièce justificative déposée. Toujours faux pour une entrée. */
     hasJustificatif: boolean;
     raw: EntreeComptable | SortieComptable;
@@ -224,7 +227,7 @@ function getPeriodBounds(viewDate: Date, viewMode: ViewMode): { start: Date; end
     }
 }
 
-export default function LivreComptable() {
+export default function LivreComptable({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
     const supabase = createClient();
     const { user } = useAuth();
     const { hasPermission } = usePermissions();
@@ -358,7 +361,7 @@ export default function LivreComptable() {
             needsValidation: false,
             rejected: false,
             cancelled: false,
-            linkedToPayslip: false,
+            linkedTo: null,
             hasJustificatif: false,
             raw: e,
         })),
@@ -378,7 +381,7 @@ export default function LivreComptable() {
                 needsValidation: status === "pending",
                 rejected: status === "rejected",
                 cancelled: status === "cancelled",
-                linkedToPayslip: !!s.payslip_id,
+                linkedTo: s.payslip_id ? "bulletin" : s.bon_caisse_id ? "bon" : null,
                 hasJustificatif: !!s.justificatif_path,
                 raw: s,
             };
@@ -400,18 +403,18 @@ export default function LivreComptable() {
     const canEditRow = (row: LedgerRow) => {
         if (row.kind === "entree") return canEditEntry;
         // Sortie : modifiable seulement en attente ; validée = verrouillée.
-        return row.needsValidation && !row.linkedToPayslip && (canEditEntry || isOwnSortie(row));
+        return row.needsValidation && !row.linkedTo && (canEditEntry || isOwnSortie(row));
     };
 
     const canCancelRow = (row: LedgerRow) => {
-        if (row.kind !== "sortie" || row.linkedToPayslip) return false;
+        if (row.kind !== "sortie" || row.linkedTo) return false;
         // L'auteur peut retirer sa demande tant qu'elle n'est pas traitée.
         if (row.needsValidation) return canDeleteEntry || isOwnSortie(row);
         return sortieStatus(row.raw as SortieComptable) === "validated" && canDeleteEntry;
     };
 
     const canAttachJustificatif = (row: LedgerRow) =>
-        row.kind === "sortie" && row.needsValidation && !row.linkedToPayslip && !row.hasJustificatif
+        row.kind === "sortie" && row.needsValidation && !row.linkedTo && !row.hasJustificatif
         && (canEditEntry || isOwnSortie(row));
 
     const filtered =
@@ -440,6 +443,11 @@ export default function LivreComptable() {
     // Source de vérité : le cache maintenu par triggers (lecture O(1)). Tant que
     // la migration n'est pas appliquée, on retombe sur le repli global léger.
     const soldeCourant = soldeCache ?? soldeFallback ?? 0;
+
+    // Argent remis sur bons de caisse et pas encore clôturé : déjà déduit du
+    // solde (il a quitté la caisse), mais pas encore une dépense du livre.
+    const { data: bons = [] } = useBonsCaisse();
+    const avancesEnCours = isUsd ? 0 : bons.filter(isEnCours).reduce((s, b) => s + b.montant, 0);
 
     const periodLabel = () => {
         const d = viewDate;
@@ -682,8 +690,13 @@ export default function LivreComptable() {
     };
 
     const openEdit = (row: LedgerRow) => {
-        if (row.linkedToPayslip) {
-            showNotification("Sortie liée à un bulletin de paie : modifiez le bulletin", "error");
+        if (row.linkedTo) {
+            showNotification(
+                row.linkedTo === "bon"
+                    ? "Sortie issue d'un bon de caisse : elle se gère depuis le bon"
+                    : "Sortie liée à un bulletin de paie : modifiez le bulletin",
+                "error"
+            );
             return;
         }
         const raw = row.raw;
@@ -825,7 +838,7 @@ export default function LivreComptable() {
                 (r.kind === "entree" ? "+" : "-") + fmt(r.montant),
                 r.needsValidation ? "À valider" : r.rejected ? "Rejetée" : r.cancelled ? "Annulée" : "Validée",
                 s ? s.beneficiaire_nom ?? (s.beneficiaire_id ? getUserFullName(s.beneficiaire_id) : "") : "",
-                s ? (r.linkedToPayslip ? "Bulletin" : r.hasJustificatif ? "Oui" : "Non") : "",
+                s ? (r.linkedTo === "bulletin" ? "Bulletin" : r.hasJustificatif ? "Oui" : "Non") : "",
                 r.needsValidation || r.rejected ? "" : getUserName(r.validatedBy),
             ];
         });
@@ -875,7 +888,7 @@ export default function LivreComptable() {
                 cancelled_by: s?.cancelled_by,
                 cancelled_at: s?.cancelled_at,
                 cancellation_reason: s?.cancellation_reason,
-                linkedToPayslip: detailRow.linkedToPayslip,
+                linkedTo: detailRow.linkedTo,
             };
         })()
         : null;
@@ -885,9 +898,12 @@ export default function LivreComptable() {
             <div className="-m-4 sm:-m-5 flex flex-col bg-white dark:bg-slate-900" style={{ minHeight: "calc(100vh - 130px)" }}>
                 {/* Header */}
                 <div className="border-b border-gray-100 dark:border-slate-700 px-6 py-4">
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                        Finance &rsaquo; Livre comptable
-                    </p>
+                    <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                            Finance &rsaquo; Livre comptable
+                        </p>
+                        {viewSwitcher}
+                    </div>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Livre</h1>
@@ -1021,6 +1037,11 @@ export default function LivreComptable() {
                         <p className="mt-1 text-[11px] font-medium text-gray-400">
                             Net période&nbsp;: {money(solde, true)}
                         </p>
+                        {avancesEnCours > 0 && (
+                            <p className="mt-0.5 text-[11px] font-medium text-orange-300">
+                                Avances en cours (bons de caisse)&nbsp;: {money(avancesEnCours)}, déjà déduites
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -1099,7 +1120,7 @@ export default function LivreComptable() {
                                                     <Paperclip className="ml-1.5 inline h-3.5 w-3.5 text-gray-400" aria-label="Justificatif joint" />
                                                 )}
                                             </button>
-                                            {sortie && !row.linkedToPayslip && (
+                                            {sortie && row.linkedTo !== "bulletin" && (
                                                 <p className={`text-[11px] ${beneficiaire || !row.needsValidation ? "text-gray-400" : "font-medium text-amber-600"}`}>
                                                     {beneficiaire ? `Remis à ${beneficiaire}` : "Bénéficiaire non renseigné"}
                                                 </p>
@@ -1188,13 +1209,17 @@ export default function LivreComptable() {
                                         </td>
                                         {showActions && (
                                             <td className="py-3 pl-3 pr-0 text-right">
-                                                {row.linkedToPayslip ? (
+                                                {row.linkedTo ? (
                                                     <span
-                                                        title="Sortie générée par un bulletin de paie — gérée via le bulletin"
+                                                        title={
+                                                            row.linkedTo === "bon"
+                                                                ? "Sortie issue d'un bon de caisse — gérée depuis le bon"
+                                                                : "Sortie générée par un bulletin de paie — gérée via le bulletin"
+                                                        }
                                                         className="inline-flex items-center justify-end gap-1 text-[11px] font-medium text-gray-400"
                                                     >
                                                         <Lock className="h-3.5 w-3.5" />
-                                                        Via bulletin
+                                                        {row.linkedTo === "bon" ? "Via bon" : "Via bulletin"}
                                                     </span>
                                                 ) : (
                                                     <div className="flex items-center justify-end gap-1">

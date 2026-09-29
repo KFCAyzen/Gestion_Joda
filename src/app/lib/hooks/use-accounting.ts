@@ -188,7 +188,7 @@ export interface ComptaAuditEntry {
  * Retourne `null` si le journal est indisponible (migration pas encore appliquée).
  */
 export function useComptaAudit(
-  table: 'entrees_comptables' | 'sorties_comptables',
+  table: 'entrees_comptables' | 'sorties_comptables' | 'bons_caisse',
   recordId: string | null,
 ) {
   return useQuery({

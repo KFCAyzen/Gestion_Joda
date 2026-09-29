@@ -30,7 +30,8 @@ export interface EcritureDetail {
     cancelled_by?: string | null;
     cancelled_at?: string | null;
     cancellation_reason?: string | null;
-    linkedToPayslip: boolean;
+    /** Sortie générée ailleurs : bulletin de paie ou bon de caisse. */
+    linkedTo: "bulletin" | "bon" | null;
 }
 
 interface Props {
@@ -189,7 +190,7 @@ export default function EcritureDetailModal({ detail, onClose, money, userName, 
                     )}
                     <dt className="text-gray-500 dark:text-gray-400">Saisie par</dt>
                     <dd className="text-gray-900 dark:text-gray-100">
-                        {detail.linkedToPayslip ? "Bulletin de paie" : userName(detail.created_by)}
+                        {detail.linkedTo === "bulletin" ? "Bulletin de paie" : userName(detail.created_by)}
                         <span className="ml-1 text-xs text-gray-400">le {fmtDateTime(detail.created_at)}</span>
                     </dd>
                     {detail.validated_at && (
@@ -229,7 +230,7 @@ export default function EcritureDetailModal({ detail, onClose, money, userName, 
                             <Paperclip className="h-3.5 w-3.5" />
                             Justificatif
                         </h3>
-                        {detail.linkedToPayslip ? (
+                        {detail.linkedTo === "bulletin" ? (
                             <p className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
                                 <Lock className="h-3.5 w-3.5" />
                                 Sortie générée par un bulletin de paie : la pièce est le bulletin lui-même.
