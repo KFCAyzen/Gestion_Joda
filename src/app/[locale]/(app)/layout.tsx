@@ -138,7 +138,13 @@ const CANDIDATURE_TODO_STATUSES = ["en_attente", "document_recu", "document_manq
 const DOSSIER_PENDING_STATUSES = ["en_cours", "en_attente_universite", "visa_en_cours"];
 
 
-function AppShell({ children }: { children: ReactNode }) {
+// Les toasts affichés ici DOIVENT venir de la même instance `useNotification`
+// que celle fournie au contexte par `AppLayout`. AppShell appelait le hook une
+// seconde fois : les pages écrivaient dans l'état d'AppLayout (jamais rendu) et
+// AppShell rendait sa propre liste, toujours vide — aucun toast n'apparaissait.
+type ToastProps = Pick<ReturnType<typeof useNotification>, "notifications" | "removeNotification">;
+
+function AppShell({ children, notifications, removeNotification }: { children: ReactNode } & ToastProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { user, logout, loading } = useAuth();
@@ -146,7 +152,6 @@ function AppShell({ children }: { children: ReactNode }) {
     const supabase = createClient();
     const t = useTranslations('layout');
     const tNav = useTranslations('nav');
-    const { notifications, showNotification, removeNotification } = useNotification();
     const menuSections: MenuSection[] = useMemo(() => [
         {
             id: "pilotage",
@@ -671,7 +676,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return (
         <ErrorBoundary>
             <NotificationProvider showNotification={showNotification}>
-                <AppShell>{children}</AppShell>
+                <AppShell notifications={notifications} removeNotification={removeNotification}>
+                    {children}
+                </AppShell>
             </NotificationProvider>
         </ErrorBoundary>
     );
