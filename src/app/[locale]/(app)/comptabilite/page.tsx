@@ -3,8 +3,9 @@
 import { useState } from "react";
 import LivreComptable from "../../../components/LivreComptable";
 import BonsCaisse from "../../../components/BonsCaisse";
+import ControleComptable from "../../../components/compta/ControleComptable";
 
-type Vue = "livre" | "bons";
+type Vue = "livre" | "bons" | "controle";
 
 export default function ComptabilitePage() {
     const [vue, setVue] = useState<Vue>("livre");
@@ -16,6 +17,7 @@ export default function ComptabilitePage() {
             {([
                 ["livre", "Livre comptable"],
                 ["bons", "Bons de caisse"],
+                ["controle", "Contrôle"],
             ] as const).map(([id, label]) => (
                 <button
                     key={id}
@@ -32,5 +34,7 @@ export default function ComptabilitePage() {
         </div>
     );
 
-    return vue === "livre" ? <LivreComptable viewSwitcher={switcher} /> : <BonsCaisse viewSwitcher={switcher} />;
+    if (vue === "bons") return <BonsCaisse viewSwitcher={switcher} />;
+    if (vue === "controle") return <ControleComptable viewSwitcher={switcher} />;
+    return <LivreComptable viewSwitcher={switcher} />;
 }

@@ -15,11 +15,14 @@ import {
     bonNumero,
     isEnCours,
     isEnRetard,
+    positionGrille,
     useBonsCaisse,
     useComptaParametres,
     type BonCaisse,
     type BonStatus,
+    type PositionGrille,
 } from "../lib/hooks/use-bons-caisse";
+import { useGrilleTransport } from "../lib/hooks/use-controle-compta";
 import { getJustificatifUrl, isPdfJustificatif } from "../lib/justificatifs";
 import { logActivity } from "../utils/activityLogger";
 import ConfirmDialog from "./ConfirmDialog";
@@ -116,6 +119,7 @@ export default function BonsCaisse({ viewSwitcher }: { viewSwitcher?: ReactNode 
 
     const { data: bons = [], isLoading } = useBonsCaisse();
     const { data: params = DEFAULT_COMPTA_PARAMETRES } = useComptaParametres();
+    const { data: grille } = useGrilleTransport();
     const { data: _usersData = [] } = useUsers();
     const users = _usersData as unknown as { id: string; name: string }[];
 
@@ -146,7 +150,13 @@ export default function BonsCaisse({ viewSwitcher }: { viewSwitcher?: ReactNode 
 
     // Miroir des règles de trg_bons_caisse_controle (la base reste l'arbitre).
     const isMine = (b: BonCaisse) => !!user && b.demandeur_id === user.id;
-    const needsAdmin = (b: BonCaisse) => b.montant >= params.seuil_approbation_admin;
+    // Au-delà du seuil, hors grille ou au-dessus du tarif : décision admin.
+    // (Un budget dépassé l'impose aussi ; la base le signale à l'approbation.)
+    const grillePos = (b: BonCaisse) => positionGrille(b, grille);
+    const needsAdmin = (b: BonCaisse) => {
+        const g = grillePos(b);
+        return b.montant >= params.seuil_approbation_admin || g?.kind === "hors_grille" || g?.kind === "au_dessus";
+    };
     const canDecide = (b: BonCaisse) =>
         b.status === "demande" && !isMine(b) && (needsAdmin(b) ? isAdminRole : canValidate || isAdminRole);
     const canRemettre = (b: BonCaisse) => b.status === "approuve" && !isMine(b) && canDisburse;
@@ -372,6 +382,7 @@ export default function BonsCaisse({ viewSwitcher }: { viewSwitcher?: ReactNode 
                                                     )}
                                                 </button>
                                                 <p className="text-[11px] text-gray-400">{CATEGORIE_LABEL[b.categorie] ?? b.categorie}</p>
+                                                <GrilleBadge pos={grillePos(b)} nb={b.nb_trajets ?? 1} />
                                             </td>
                                             <td className="px-3 py-3 font-semibold text-gray-900 dark:text-gray-100">
                                                 {fmtF(b.montant)}
@@ -416,7 +427,12 @@ export default function BonsCaisse({ viewSwitcher }: { viewSwitcher?: ReactNode 
                                                         </>
                                                     )}
                                                     {b.status === "demande" && !canDecide(b) && !isMine(b) && needsAdmin(b) && !isAdminRole && (
-                                                        <span className="text-[11px] text-gray-400" title={`Montant ≥ ${fmtF(params.seuil_approbation_admin)}`}>
+                                                        <span
+                                                            className="text-[11px] text-gray-400"
+                                                            title={grillePos(b) && grillePos(b)!.kind !== "dans_grille"
+                                                                ? "Transport hors grille ou au-dessus du tarif"
+                                                                : `Montant ≥ ${fmtF(params.seuil_approbation_admin)}`}
+                                                        >
                                                             Décision admin
                                                         </span>
                                                     )}
@@ -516,6 +532,7 @@ export default function BonsCaisse({ viewSwitcher }: { viewSwitcher?: ReactNode 
                     bon={detail}
                     now={now}
                     userName={userName}
+                    grille={grillePos(detail)}
                     onClose={() => setDetailId(null)}
                     controle={
                         canControler(detail) ? (
@@ -647,15 +664,33 @@ function Piece({ path, label }: { path: string; label: string }) {
     );
 }
 
+/** Trajet de la grille et position du montant (bons de transport). */
+function GrilleBadge({ pos, nb, detail = false }: { pos: PositionGrille | null; nb: number; detail?: boolean }) {
+    if (!pos) return null;
+    if (pos.kind === "hors_grille") {
+        return <p className="text-[11px] font-semibold text-amber-600">Hors grille des transports</p>;
+    }
+    const trajet = `${pos.trajet}${nb > 1 ? ` × ${nb}` : ""}`;
+    return (
+        <p className={`text-[11px] ${pos.kind === "au_dessus" ? "font-semibold text-amber-600" : detail ? "" : "text-gray-400"}`}>
+            {trajet}
+            {pos.kind === "au_dessus" ? ` — au-dessus de la grille (${fmtF(pos.plafond)} max)` : detail ? ` — grille : ${fmtF(pos.plafond)} max` : ""}
+        </p>
+    );
+}
+
 function BonDetailModal({
     bon,
     now,
     userName,
     onClose,
     controle,
+    grille,
 }: {
     bon: BonCaisse;
     now: number;
+    /** Position du bon par rapport à la grille des transports. */
+    grille: PositionGrille | null;
     userName: (id: string | null | undefined) => string;
     onClose: () => void;
     /** Boutons de contrôle (clôturer / rejeter), si le compte connecté peut contrôler. */
@@ -669,6 +704,7 @@ function BonDetailModal({
         ["Catégorie", CATEGORIE_LABEL[bon.categorie] ?? bon.categorie],
         ["Demandé le", fmtDateTime(bon.created_at)],
     ];
+    if (grille) rows.splice(3, 0, ["Trajet", <GrilleBadge key="g" pos={grille} nb={bon.nb_trajets ?? 1} detail />]);
     if (bon.decision_at) {
         rows.push([bon.status === "refuse" ? "Refusé par" : "Approuvé par", `${userName(bon.decision_par)} — ${fmtDateTime(bon.decision_at)}`]);
     }

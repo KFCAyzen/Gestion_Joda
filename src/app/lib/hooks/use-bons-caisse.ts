@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '../supabase/client';
+import type { TrajetGrille } from './use-controle-compta';
 
 const supabase = createClient();
 
@@ -22,6 +23,9 @@ export interface BonCaisse {
   categorie: string;
   motif: string;
   student_id: string | null;
+  /** Trajet de la grille des transports (phase 3), choisi à la demande. */
+  trajet_id?: string | null;
+  nb_trajets?: number;
   status: BonStatus;
   decision_par: string | null;
   decision_at: string | null;
@@ -67,6 +71,27 @@ export function isEnCours(b: Pick<BonCaisse, 'status'>): boolean {
 /** Remis et non justifié après l'échéance : bloque toute nouvelle demande. */
 export function isEnRetard(b: Pick<BonCaisse, 'status' | 'echeance_justification'>, now = Date.now()): boolean {
   return b.status === 'remis' && !!b.echeance_justification && new Date(b.echeance_justification).getTime() < now;
+}
+
+/**
+ * Position d'un bon de transport par rapport à la grille (miroir de
+ * trg_bons_caisse_plafonds). `null` : pas concerné (autre catégorie, ou
+ * grille vide/indisponible).
+ */
+export type PositionGrille =
+  | { kind: 'hors_grille' }
+  | { kind: 'au_dessus' | 'dans_grille'; trajet: string; plafond: number };
+
+export function positionGrille(
+  b: Pick<BonCaisse, 'categorie' | 'montant' | 'trajet_id' | 'nb_trajets'>,
+  grille: TrajetGrille[] | null | undefined,
+): PositionGrille | null {
+  const actifs = (grille ?? []).filter((t) => t.actif);
+  if (b.categorie !== 'transports' || actifs.length === 0) return null;
+  const t = actifs.find((x) => x.id === b.trajet_id);
+  if (!t) return { kind: 'hors_grille' };
+  const plafond = t.montant_max * (b.nb_trajets ?? 1);
+  return { kind: b.montant > plafond ? 'au_dessus' : 'dans_grille', trajet: t.trajet, plafond };
 }
 
 /** Tous les bons visibles (RLS : les siens, ou tous pour la comptabilité). */

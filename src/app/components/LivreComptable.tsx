@@ -23,6 +23,7 @@ import { useEntreesComptables, useSortiesComptables, useSoldeCourant, useSoldeCo
 import { checkJustificatif, JUSTIFICATIF_ACCEPT, uploadJustificatif } from "../lib/justificatifs";
 import EcritureDetailModal, { type EcritureDetail } from "./EcritureDetailModal";
 import { isEnCours, useBonsCaisse } from "../lib/hooks/use-bons-caisse";
+import { isoDay, moisKey, useMoisClotures } from "../lib/hooks/use-controle-compta";
 import type { Devise } from "../lib/schemas/accounting.schema";
 import { useUsers } from "../lib/hooks/use-users";
 import { useStudents } from "../lib/hooks/use-students";
@@ -290,6 +291,11 @@ export default function LivreComptable({ viewSwitcher }: { viewSwitcher?: ReactN
     const canValidateEntry = hasPermission("accounting.validate");
     const canEditEntry = hasPermission("accounting.edit");
     const canDeleteEntry = hasPermission("accounting.delete");
+    // Mois clôturés (phase 3) : leurs écritures sont figées par la base.
+    const moisClotures = useMoisClotures();
+    const periodeCloturee =
+        (viewMode === "jour" || viewMode === "semaine" || viewMode === "mois")
+        && moisClotures.has(moisKey(isoDay(dayStart)));
 
     const [editingRow, setEditingRow] = useState<LedgerRow | null>(null);
     const [editForm, setEditForm] = useState({
@@ -400,21 +406,24 @@ export default function LivreComptable({ viewSwitcher }: { viewSwitcher?: ReactN
         return !!user && (s.created_by === user.id || s.beneficiaire_id === user.id);
     };
 
+    const isClosedRow = (row: LedgerRow) => moisClotures.has(moisKey(row.date));
+
     const canEditRow = (row: LedgerRow) => {
+        if (isClosedRow(row)) return false;
         if (row.kind === "entree") return canEditEntry;
         // Sortie : modifiable seulement en attente ; validée = verrouillée.
         return row.needsValidation && !row.linkedTo && (canEditEntry || isOwnSortie(row));
     };
 
     const canCancelRow = (row: LedgerRow) => {
-        if (row.kind !== "sortie" || row.linkedTo) return false;
+        if (row.kind !== "sortie" || row.linkedTo || isClosedRow(row)) return false;
         // L'auteur peut retirer sa demande tant qu'elle n'est pas traitée.
         if (row.needsValidation) return canDeleteEntry || isOwnSortie(row);
         return sortieStatus(row.raw as SortieComptable) === "validated" && canDeleteEntry;
     };
 
     const canAttachJustificatif = (row: LedgerRow) =>
-        row.kind === "sortie" && row.needsValidation && !row.linkedTo && !row.hasJustificatif
+        row.kind === "sortie" && !isClosedRow(row) && row.needsValidation && !row.linkedTo && !row.hasJustificatif
         && (canEditEntry || isOwnSortie(row));
 
     const filtered =
@@ -991,6 +1000,12 @@ export default function LivreComptable({ viewSwitcher }: { viewSwitcher?: ReactN
                             </button>
                         </div>
                     </div>
+                    {periodeCloturee && (
+                        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+                            <Lock className="h-3.5 w-3.5" />
+                            Mois clôturé : ses écritures sont figées
+                        </p>
+                    )}
                 </div>
 
                 {/* Stats cards */}
@@ -1220,6 +1235,14 @@ export default function LivreComptable({ viewSwitcher }: { viewSwitcher?: ReactN
                                                     >
                                                         <Lock className="h-3.5 w-3.5" />
                                                         {row.linkedTo === "bon" ? "Via bon" : "Via bulletin"}
+                                                    </span>
+                                                ) : isClosedRow(row) ? (
+                                                    <span
+                                                        title="Mois clôturé : écriture figée. Corrigez par une écriture de régularisation dans le mois en cours."
+                                                        className="inline-flex items-center justify-end gap-1 text-[11px] font-medium text-gray-400"
+                                                    >
+                                                        <Lock className="h-3.5 w-3.5" />
+                                                        Mois clôturé
                                                     </span>
                                                 ) : (
                                                     <div className="flex items-center justify-end gap-1">
