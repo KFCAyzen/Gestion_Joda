@@ -3,10 +3,12 @@
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+    Ban,
     ChevronLeft,
     ChevronRight,
     Download,
     Filter,
+    Paperclip,
     Plus,
     Printer,
     X,
@@ -17,7 +19,9 @@ import {
     Lock,
 } from "lucide-react";
 import { createClient } from "../lib/supabase/client";
-import { useEntreesComptables, useSortiesComptables, useSoldeCourant, useSoldeCourantFallback, ENTREES_KEY, SORTIES_KEY, SOLDE_KEY } from "../lib/hooks/use-accounting";
+import { useEntreesComptables, useSortiesComptables, useSoldeCourant, useSoldeCourantFallback, ENTREES_KEY, SORTIES_KEY, SOLDE_KEY, COMPTA_AUDIT_KEY } from "../lib/hooks/use-accounting";
+import { checkJustificatif, JUSTIFICATIF_ACCEPT, uploadJustificatif } from "../lib/justificatifs";
+import EcritureDetailModal, { type EcritureDetail } from "./EcritureDetailModal";
 import type { Devise } from "../lib/schemas/accounting.schema";
 import { useUsers } from "../lib/hooks/use-users";
 import { useStudents } from "../lib/hooks/use-students";
@@ -62,7 +66,23 @@ interface SortieComptable {
     created_at: string;
     payslip_id: string | null;
     status?: string | null;
+    rejected_by?: string | null;
+    rejected_at?: string | null;
     rejection_reason?: string | null;
+    cancelled_by?: string | null;
+    cancelled_at?: string | null;
+    cancellation_reason?: string | null;
+    beneficiaire_id?: string | null;
+    beneficiaire_nom?: string | null;
+    justificatif_path?: string | null;
+}
+
+/**
+ * Statut effectif d'une sortie : la colonne `status` fait foi ; repli sur
+ * validated_by pour d'éventuelles lignes antérieures à la migration du statut.
+ */
+function sortieStatus(s: SortieComptable): string {
+    return s.status ?? (s.validated_by ? "validated" : "pending");
 }
 
 interface LedgerRow {
@@ -84,14 +104,26 @@ interface LedgerRow {
     validatedAt: string | null;
     needsValidation: boolean;
     rejected: boolean;
+    cancelled: boolean;
     linkedToPayslip: boolean;
+    /** Sortie : pièce justificative déposée. Toujours faux pour une entrée. */
+    hasJustificatif: boolean;
     raw: EntreeComptable | SortieComptable;
 }
 
 interface AppUser {
     id: string;
     name: string;
+    role?: string;
+    is_active?: boolean | null;
 }
+
+// Valeur du sélecteur de bénéficiaire quand l'argent va à une personne sans
+// compte (fournisseur, bailleur, chauffeur…) : on saisit alors son nom.
+const BENEFICIAIRE_EXTERNE = "__externe";
+// Longueur minimale du motif d'une sortie : « Transport » seul ne dit rien de
+// la course ; on attend le trajet et l'objet, ou l'article et le fournisseur.
+const MOTIF_MIN = 10;
 
 interface Student {
     id: string;
@@ -235,12 +267,16 @@ export default function LivreComptable() {
     const [page, setPage] = useState(1);
     const [showNewModal, setShowNewModal] = useState(false);
     const [newKind, setNewKind] = useState<"entree" | "sortie">("entree");
-    const [newForm, setNewForm] = useState({
+    const emptyNewForm = {
         montant: "",
         description: "",
         type: "revenus_divers",
         categorie: "divers",
-    });
+        beneficiaireId: "",
+        beneficiaireNom: "",
+    };
+    const [newForm, setNewForm] = useState(emptyNewForm);
+    const [newJustificatif, setNewJustificatif] = useState<File | null>(null);
     const [saving, setSaving] = useState(false);
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean; title: string; description: string; onConfirm: () => void;
@@ -259,11 +295,16 @@ export default function LivreComptable() {
         type: "revenus_divers",
         categorie: "divers",
         date: "",
+        beneficiaireId: "",
+        beneficiaireNom: "",
     });
     const [savingEdit, setSavingEdit] = useState(false);
 
     const [rejectModal, setRejectModal] = useState<{ open: boolean; id: string; reason: string }>({ open: false, id: "", reason: "" });
     const [rejecting, setRejecting] = useState(false);
+    const [cancelModal, setCancelModal] = useState<{ row: LedgerRow | null; reason: string }>({ row: null, reason: "" });
+    const [cancelling, setCancelling] = useState(false);
+    const [detailId, setDetailId] = useState<string | null>(null);
 
     const getUserName = useCallback(
         (id: string | null): string => {
@@ -273,6 +314,19 @@ export default function LivreComptable() {
         },
         [users]
     );
+
+    const getUserFullName = useCallback(
+        (id: string | null | undefined): string => {
+            if (!id) return "—";
+            return users.find((u) => u.id === id)?.name ?? "Compte supprimé";
+        },
+        [users]
+    );
+
+    // Bénéficiaires possibles : comptes du personnel actifs (pas les étudiants).
+    const staffUsers = users
+        .filter((u) => u.role !== "student" && u.is_active !== false)
+        .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 
     const getStudentName = useCallback(
         (id: string | null): string | null => {
@@ -303,13 +357,13 @@ export default function LivreComptable() {
             validatedAt: null,
             needsValidation: false,
             rejected: false,
+            cancelled: false,
             linkedToPayslip: false,
+            hasJustificatif: false,
             raw: e,
         })),
         ...daySorties.map((s): LedgerRow => {
-            // Statut effectif : la colonne `status` fait foi ; repli sur
-            // validated_by pour d'éventuelles lignes antérieures à la migration.
-            const status = s.status ?? (s.validated_by ? "validated" : "pending");
+            const status = sortieStatus(s);
             return {
                 id: s.id,
                 kind: "sortie",
@@ -323,11 +377,42 @@ export default function LivreComptable() {
                 validatedAt: s.validated_at,
                 needsValidation: status === "pending",
                 rejected: status === "rejected",
+                cancelled: status === "cancelled",
                 linkedToPayslip: !!s.payslip_id,
+                hasJustificatif: !!s.justificatif_path,
                 raw: s,
             };
         }),
     ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+    // Règles d'action par ligne. Elles reflètent le trigger
+    // trg_sorties_comptables_controle, qui reste l'arbitre final.
+    const isOwnSortie = (row: LedgerRow) =>
+        row.kind === "sortie" && !!user && (row.raw as SortieComptable).created_by === user.id;
+
+    // Contrôle par un tiers : ni l'auteur de la sortie ni celui qui a reçu
+    // l'argent ne peuvent la valider.
+    const isSelfValidation = (row: LedgerRow) => {
+        const s = row.raw as SortieComptable;
+        return !!user && (s.created_by === user.id || s.beneficiaire_id === user.id);
+    };
+
+    const canEditRow = (row: LedgerRow) => {
+        if (row.kind === "entree") return canEditEntry;
+        // Sortie : modifiable seulement en attente ; validée = verrouillée.
+        return row.needsValidation && !row.linkedToPayslip && (canEditEntry || isOwnSortie(row));
+    };
+
+    const canCancelRow = (row: LedgerRow) => {
+        if (row.kind !== "sortie" || row.linkedToPayslip) return false;
+        // L'auteur peut retirer sa demande tant qu'elle n'est pas traitée.
+        if (row.needsValidation) return canDeleteEntry || isOwnSortie(row);
+        return sortieStatus(row.raw as SortieComptable) === "validated" && canDeleteEntry;
+    };
+
+    const canAttachJustificatif = (row: LedgerRow) =>
+        row.kind === "sortie" && row.needsValidation && !row.linkedToPayslip && !row.hasJustificatif
+        && (canEditEntry || isOwnSortie(row));
 
     const filtered =
         catFilter === "tout"
@@ -344,8 +429,9 @@ export default function LivreComptable() {
     const validatedSorties = daySorties.filter((s) => s.status === "validated");
     const totalSorties = validatedSorties.reduce((s, e) => s + e.montant, 0);
     // Sorties en attente de validation (affichées à part, non déduites du solde).
+    // Les rejetées et annulées ne sont ni dépensées ni en attente.
     const totalSortiesPending = daySorties
-        .filter((s) => s.status !== "validated" && s.status !== "rejected")
+        .filter((s) => sortieStatus(s) === "pending")
         .reduce((s, e) => s + e.montant, 0);
     // Net de la période affichée (mouvements validés de la période uniquement)
     const solde = totalEntrees - totalSorties;
@@ -397,21 +483,32 @@ export default function LivreComptable() {
         return now >= start && now < end;
     };
 
+    // Invalide tout ce qu'une action sur une sortie peut changer (liste, solde,
+    // historique d'audit affiché dans la fiche détail).
+    const refreshSorties = () => {
+        queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
+        queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
+        queryClient.invalidateQueries({ queryKey: COMPTA_AUDIT_KEY });
+    };
+
     const handleValidateSortie = async (id: string) => {
         if (!user || !canValidateEntry) return;
         // status='validated' est indispensable : le trigger de trésorerie ne
-        // déduit une sortie que si son status vaut 'validated'.
-        await supabase
+        // déduit une sortie que si son status vaut 'validated'. Le trigger de
+        // contrôle pose lui-même validated_by/validated_at (compte connecté) et
+        // refuse la validation par l'auteur, par le bénéficiaire, ou sans pièce.
+        const { error } = await supabase
             .from("sorties_comptables")
             .update({
                 status: "validated",
                 validated_by: user.id,
                 validated_at: new Date().toISOString(),
-                rejected_by: null,
-                rejected_at: null,
-                rejection_reason: null,
             })
             .eq("id", id);
+        if (error) {
+            showNotification(error.message || "Validation impossible", "error");
+            return;
+        }
         await logActivity(
             user.id, user.name, user.role,
             "accounting_expense", "sorties_comptables", id,
@@ -419,30 +516,100 @@ export default function LivreComptable() {
             {}
         );
         showNotification("Sortie validée", "success");
-        queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
-        queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
+        refreshSorties();
     };
 
     const handleRejectSortie = async (id: string, reason: string) => {
-        if (!user || !canValidateEntry) return;
-        await supabase
+        if (!user || !canValidateEntry || !reason) return;
+        const { error } = await supabase
             .from("sorties_comptables")
             .update({
                 status: "rejected",
                 rejected_by: user.id,
                 rejected_at: new Date().toISOString(),
-                rejection_reason: reason || null,
+                rejection_reason: reason,
             })
             .eq("id", id);
+        if (error) {
+            showNotification(error.message || "Rejet impossible", "error");
+            return;
+        }
         await logActivity(
             user.id, user.name, user.role,
             "accounting_expense", "sorties_comptables", id,
-            `Sortie comptable rejetée${reason ? ` — ${reason}` : ""}`,
+            `Sortie comptable rejetée — ${reason}`,
             {}
         );
         showNotification("Sortie rejetée", "success");
-        queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
-        queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
+        refreshSorties();
+    };
+
+    // Annulation (remplace la suppression) : la sortie reste dans le livre, barrée,
+    // avec son motif ; si elle était validée, son montant revient à la trésorerie.
+    const handleCancelSortie = async (row: LedgerRow, reason: string) => {
+        if (!user || !reason) return;
+        const { error } = await supabase
+            .from("sorties_comptables")
+            .update({ status: "cancelled", cancellation_reason: reason })
+            .eq("id", row.id);
+        if (error) {
+            showNotification(error.message || "Annulation impossible", "error");
+            return;
+        }
+        await logActivity(
+            user.id, user.name, user.role,
+            "accounting_expense", "sorties_comptables", row.id,
+            `Sortie comptable annulée — ${row.description} — motif : ${reason}`,
+            { montant: row.montant, etait_validee: !row.needsValidation }
+        );
+        showNotification("Sortie annulée", "success");
+        refreshSorties();
+    };
+
+    const handleAttachJustificatif = async (row: LedgerRow, file: File) => {
+        if (!user) return;
+        try {
+            const path = await uploadJustificatif(supabase, file);
+            const { error } = await supabase
+                .from("sorties_comptables")
+                .update({ justificatif_path: path })
+                .eq("id", row.id);
+            if (error) throw new Error(error.message);
+            await logActivity(
+                user.id, user.name, user.role,
+                "accounting_expense", "sorties_comptables", row.id,
+                `Justificatif joint — ${row.description}`,
+                {}
+            );
+            showNotification("Justificatif joint", "success");
+            refreshSorties();
+        } catch (err) {
+            showNotification(err instanceof Error ? err.message : "Dépôt du justificatif impossible", "error");
+        }
+    };
+
+    // Bénéficiaire saisi dans un formulaire → colonnes de la sortie.
+    const beneficiairePayload = (form: { beneficiaireId: string; beneficiaireNom: string }) =>
+        form.beneficiaireId === BENEFICIAIRE_EXTERNE
+            ? { beneficiaire_id: null, beneficiaire_nom: form.beneficiaireNom.trim() }
+            : {
+                beneficiaire_id: form.beneficiaireId,
+                beneficiaire_nom: users.find((u) => u.id === form.beneficiaireId)?.name ?? null,
+            };
+
+    const hasBeneficiaire = (form: { beneficiaireId: string; beneficiaireNom: string }) =>
+        form.beneficiaireId === BENEFICIAIRE_EXTERNE ? form.beneficiaireNom.trim().length > 1 : !!form.beneficiaireId;
+
+    // Une sortie n'est enregistrable qu'avec un motif précis, un bénéficiaire et
+    // une pièce : c'est ce qui la rend traçable a posteriori.
+    const newSortieIncomplete =
+        newKind === "sortie"
+        && (newForm.description.trim().length < MOTIF_MIN || !hasBeneficiaire(newForm) || !newJustificatif);
+
+    const closeNewModal = () => {
+        setShowNewModal(false);
+        setNewForm(emptyNewForm);
+        setNewJustificatif(null);
     };
 
     const handleAdd = async () => {
@@ -452,10 +619,15 @@ export default function LivreComptable() {
             showNotification("Action réservée aux administrateurs", "error");
             return;
         }
+        if (Number(newForm.montant) <= 0) {
+            showNotification("Le montant doit être supérieur à zéro", "error");
+            return;
+        }
+        if (newSortieIncomplete) return;
         setSaving(true);
         try {
             if (newKind === "entree") {
-                const { data } = await supabase.from("entrees_comptables").insert({
+                const { data, error } = await supabase.from("entrees_comptables").insert({
                     montant: Number(newForm.montant),
                     description: newForm.description,
                     type: newForm.type,
@@ -463,6 +635,7 @@ export default function LivreComptable() {
                     date: new Date().toISOString(),
                     created_by: user.id,
                 }).select();
+                if (error) throw new Error(error.message);
                 if (data?.[0]) {
                     await logActivity(user.id, user.name, user.role,
                         "accounting_entry", "entrees_comptables", data[0].id,
@@ -471,14 +644,19 @@ export default function LivreComptable() {
                     );
                 }
             } else {
-                const { data } = await supabase.from("sorties_comptables").insert({
+                // La pièce part d'abord : une sortie n'existe jamais sans elle.
+                const justificatifPath = await uploadJustificatif(supabase, newJustificatif!);
+                const { data, error } = await supabase.from("sorties_comptables").insert({
                     montant: Number(newForm.montant),
-                    description: newForm.description,
+                    description: newForm.description.trim(),
                     categorie: newForm.categorie,
                     devise,
                     date: new Date().toISOString(),
                     created_by: user.id,
+                    justificatif_path: justificatifPath,
+                    ...beneficiairePayload(newForm),
                 }).select();
+                if (error) throw new Error(error.message);
                 if (data?.[0]) {
                     await logActivity(user.id, user.name, user.role,
                         "accounting_expense", "sorties_comptables", data[0].id,
@@ -487,13 +665,17 @@ export default function LivreComptable() {
                     );
                 }
             }
-            showNotification("Opération enregistrée", "success");
-            setShowNewModal(false);
-            setNewForm({ montant: "", description: "", type: "revenus_divers", categorie: "divers" });
+            showNotification(
+                newKind === "sortie"
+                    ? "Sortie enregistrée — en attente de validation par un autre compte"
+                    : "Opération enregistrée",
+                "success"
+            );
+            closeNewModal();
             queryClient.invalidateQueries({ queryKey: newKind === "entree" ? ENTREES_KEY : SORTIES_KEY });
             queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
         } catch (err) {
-            showNotification("Erreur lors de l'enregistrement", "error");
+            showNotification(err instanceof Error ? err.message : "Erreur lors de l'enregistrement", "error");
         } finally {
             setSaving(false);
         }
@@ -505,18 +687,21 @@ export default function LivreComptable() {
             return;
         }
         const raw = row.raw;
+        const sortie = row.kind === "sortie" ? (raw as SortieComptable) : null;
         setEditingRow(row);
         setEditForm({
             montant: String(raw.montant),
             description: raw.description,
             type: row.kind === "entree" ? (raw as EntreeComptable).type : "revenus_divers",
-            categorie: row.kind === "sortie" ? (raw as SortieComptable).categorie : "divers",
+            categorie: sortie ? sortie.categorie : "divers",
             date: raw.date ? raw.date.slice(0, 10) : "",
+            beneficiaireId: sortie?.beneficiaire_id ?? (sortie?.beneficiaire_nom ? BENEFICIAIRE_EXTERNE : ""),
+            beneficiaireNom: sortie?.beneficiaire_id ? "" : sortie?.beneficiaire_nom ?? "",
         });
     };
 
     const handleSaveEdit = async () => {
-        if (!user || !editingRow || !canEditEntry) return;
+        if (!user || !editingRow || !canEditRow(editingRow)) return;
         if (!editForm.montant || !editForm.description) return;
         setSavingEdit(true);
         try {
@@ -527,9 +712,14 @@ export default function LivreComptable() {
                 date: editForm.date || editingRow.raw.date,
             };
             if (editingRow.kind === "entree") payload.type = editForm.type;
-            else payload.categorie = editForm.categorie;
+            else {
+                payload.categorie = editForm.categorie;
+                // Permet de compléter une ancienne sortie saisie sans bénéficiaire.
+                if (hasBeneficiaire(editForm)) Object.assign(payload, beneficiairePayload(editForm));
+            }
 
-            await supabase.from(table).update(payload).eq("id", editingRow.id);
+            const { error } = await supabase.from(table).update(payload).eq("id", editingRow.id);
+            if (error) throw new Error(error.message);
             await logActivity(
                 user.id, user.name, user.role,
                 editingRow.kind === "entree" ? "accounting_entry" : "accounting_expense",
@@ -541,40 +731,38 @@ export default function LivreComptable() {
             setEditingRow(null);
             queryClient.invalidateQueries({ queryKey: editingRow.kind === "entree" ? ENTREES_KEY : SORTIES_KEY });
             queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
+            queryClient.invalidateQueries({ queryKey: COMPTA_AUDIT_KEY });
         } catch (err) {
-            showNotification("Erreur lors de la modification", "error");
+            showNotification(err instanceof Error ? err.message : "Erreur lors de la modification", "error");
         } finally {
             setSavingEdit(false);
         }
     };
 
+    // Suppression : entrées uniquement (une sortie s'annule, cf. handleCancelSortie).
+    // La base garde la ligne supprimée dans le journal d'audit.
     const handleDelete = (row: LedgerRow) => {
-        if (!user || !canDeleteEntry) return;
-        if (row.linkedToPayslip) {
-            showNotification("Sortie liée à un bulletin de paie : supprimez le bulletin", "error");
-            return;
-        }
+        if (!user || !canDeleteEntry || row.kind !== "entree") return;
         setConfirmDialog({
             isOpen: true,
-            title: `Supprimer cette ${row.kind === "entree" ? "entrée" : "sortie"} ?`,
-            description: `Cette opération de ${money(row.montant)} (${row.description}) sera définitivement supprimée.`,
+            title: "Supprimer cette entrée ?",
+            description: `Cette entrée de ${money(row.montant)} (${row.description}) sera retirée du livre. La suppression reste tracée dans le journal d'audit.`,
             onConfirm: async () => {
                 closeConfirm();
-                const table = row.kind === "entree" ? "entrees_comptables" : "sorties_comptables";
                 try {
-                    await supabase.from(table).delete().eq("id", row.id);
+                    const { error } = await supabase.from("entrees_comptables").delete().eq("id", row.id);
+                    if (error) throw new Error(error.message);
                     await logActivity(
                         user.id, user.name, user.role,
-                        row.kind === "entree" ? "accounting_entry" : "accounting_expense",
-                        table, row.id,
-                        `${row.kind === "entree" ? "Entrée" : "Sortie"} comptable supprimée — ${row.description}`,
+                        "accounting_entry", "entrees_comptables", row.id,
+                        `Entrée comptable supprimée — ${row.description}`,
                         { montant: row.montant }
                     );
                     showNotification("Opération supprimée", "success");
-                    queryClient.invalidateQueries({ queryKey: row.kind === "entree" ? ENTREES_KEY : SORTIES_KEY });
+                    queryClient.invalidateQueries({ queryKey: ENTREES_KEY });
                     queryClient.invalidateQueries({ queryKey: SOLDE_KEY });
                 } catch (err) {
-                    showNotification("Erreur lors de la suppression", "error");
+                    showNotification(err instanceof Error ? err.message : "Erreur lors de la suppression", "error");
                 }
             },
         });
@@ -583,8 +771,9 @@ export default function LivreComptable() {
     // Lignes du rapport : on imprime `r.date` (date d'opération, corrigeable) et
     // NON `r.time` (created_at, figé à la saisie). Utiliser `time` faisait que le
     // rapport continuait d'afficher l'ancienne date après une correction.
+    // Les sorties rejetées ou annulées ne sont pas des mouvements : exclues.
     const reportOperations = () =>
-        rows.map((r) => ({
+        rows.filter((r) => !r.rejected && !r.cancelled).map((r) => ({
             date: r.date,
             description: r.description,
             category: catLabel(r.categorie),
@@ -624,16 +813,22 @@ export default function LivreComptable() {
     const exportCSV = () => {
         // La date d'opération manquait : sur une période de plusieurs jours,
         // l'export ne donnait que des heures sans dire de quel jour.
-        const headers = ["Date", "Heure", "Type", "Désignation", "Catégorie", "Montant", "Validé par"];
-        const lines = filtered.map((r) => [
-            fmtDay(r.date),
-            fmtTime(r.time),
-            r.kind === "entree" ? "Entrée" : "Sortie",
-            r.description,
-            catLabel(r.categorie),
-            (r.kind === "entree" ? "+" : "-") + fmt(r.montant),
-            r.needsValidation ? "À valider" : getUserName(r.validatedBy),
-        ]);
+        const headers = ["Date", "Heure", "Type", "Désignation", "Catégorie", "Montant", "Statut", "Bénéficiaire", "Justificatif", "Validé par"];
+        const lines = filtered.map((r) => {
+            const s = r.kind === "sortie" ? (r.raw as SortieComptable) : null;
+            return [
+                fmtDay(r.date),
+                fmtTime(r.time),
+                r.kind === "entree" ? "Entrée" : "Sortie",
+                r.description,
+                catLabel(r.categorie),
+                (r.kind === "entree" ? "+" : "-") + fmt(r.montant),
+                r.needsValidation ? "À valider" : r.rejected ? "Rejetée" : r.cancelled ? "Annulée" : "Validée",
+                s ? s.beneficiaire_nom ?? (s.beneficiaire_id ? getUserFullName(s.beneficiaire_id) : "") : "",
+                s ? (r.linkedToPayslip ? "Bulletin" : r.hasJustificatif ? "Oui" : "Non") : "",
+                r.needsValidation || r.rejected ? "" : getUserName(r.validatedBy),
+            ];
+        });
         // En CSV, un guillemet dans un champ se double. Sans cela, une
         // désignation contenant `"` refermait le champ en avance et décalait
         // toutes les colonnes suivantes de la ligne.
@@ -650,6 +845,40 @@ export default function LivreComptable() {
     };
 
     const allCats = Array.from(new Set(rows.map((r) => r.categorie)));
+
+    // L'auteur d'une sortie (permission « créer ») peut la compléter ou la
+    // retirer tant qu'elle est en attente : la colonne lui est donc utile aussi.
+    const showActions = canEditEntry || canDeleteEntry || canCreateEntry;
+
+    const detailRow = detailId ? rows.find((r) => r.id === detailId) ?? null : null;
+    const detail: EcritureDetail | null = detailRow
+        ? (() => {
+            const s = detailRow.kind === "sortie" ? (detailRow.raw as SortieComptable) : null;
+            return {
+                kind: detailRow.kind,
+                id: detailRow.id,
+                montant: detailRow.montant,
+                date: detailRow.date,
+                created_at: detailRow.time,
+                description: detailRow.description,
+                categorieLabel: catLabel(detailRow.categorie),
+                status: s ? sortieStatus(s) : null,
+                created_by: detailRow.raw.created_by,
+                beneficiaire_id: s?.beneficiaire_id,
+                beneficiaire_nom: s?.beneficiaire_nom,
+                justificatif_path: s?.justificatif_path,
+                validated_by: s?.validated_by,
+                validated_at: s?.validated_at,
+                rejected_by: s?.rejected_by,
+                rejected_at: s?.rejected_at,
+                rejection_reason: s?.rejection_reason,
+                cancelled_by: s?.cancelled_by,
+                cancelled_at: s?.cancelled_at,
+                cancellation_reason: s?.cancellation_reason,
+                linkedToPayslip: detailRow.linkedToPayslip,
+            };
+        })()
+        : null;
 
     return (
         <ProtectedRoute requiredRole="agent" requiredPermission="accounting.view">
@@ -820,7 +1049,7 @@ export default function LivreComptable() {
                                             </th>
                                         )
                                     )}
-                                    {(canEditEntry || canDeleteEntry) && (
+                                    {showActions && (
                                         <th className="px-3 py-2.5 text-right text-[10px] font-semibold uppercase tracking-widest text-gray-400 last:pr-0">
                                             Actions
                                         </th>
@@ -828,14 +1057,20 @@ export default function LivreComptable() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {pageRows.map((row) => (
+                                {pageRows.map((row) => {
+                                    const sortie = row.kind === "sortie" ? (row.raw as SortieComptable) : null;
+                                    const beneficiaire = sortie
+                                        ? sortie.beneficiaire_nom ?? (sortie.beneficiaire_id ? getUserFullName(sortie.beneficiaire_id) : null)
+                                        : null;
+                                    const closed = row.rejected || row.cancelled;
+                                    return (
                                     <tr
                                         key={row.id}
                                         className={`border-b border-gray-100 dark:border-slate-700/60 text-sm ${
                                             row.needsValidation
                                                 ? "bg-amber-50 dark:bg-amber-900/20"
-                                                : row.kind === "sortie"
-                                                  ? "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                                : closed
+                                                  ? "opacity-60 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                                   : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                         }`}
                                     >
@@ -853,8 +1088,22 @@ export default function LivreComptable() {
                                                 {row.kind === "entree" ? "Entrée" : "Sortie"}
                                             </span>
                                         </td>
-                                        <td className="px-3 py-3 font-medium text-gray-900 dark:text-gray-100">
-                                            {row.description}
+                                        <td className="px-3 py-3">
+                                            <button
+                                                onClick={() => setDetailId(row.id)}
+                                                title="Voir le détail, le justificatif et l'historique"
+                                                className="text-left font-medium text-gray-900 hover:underline dark:text-gray-100"
+                                            >
+                                                {row.description}
+                                                {row.hasJustificatif && (
+                                                    <Paperclip className="ml-1.5 inline h-3.5 w-3.5 text-gray-400" aria-label="Justificatif joint" />
+                                                )}
+                                            </button>
+                                            {sortie && !row.linkedToPayslip && (
+                                                <p className={`text-[11px] ${beneficiaire || !row.needsValidation ? "text-gray-400" : "font-medium text-amber-600"}`}>
+                                                    {beneficiaire ? `Remis à ${beneficiaire}` : "Bénéficiaire non renseigné"}
+                                                </p>
+                                            )}
                                         </td>
                                         <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
                                             {getStudentName(row.student_id) || "—"}
@@ -864,20 +1113,37 @@ export default function LivreComptable() {
                                         </td>
                                         <td className="px-3 py-3">
                                             {row.needsValidation && canValidateEntry && (
+                                                isSelfValidation(row) ? (
+                                                    // Personne ne contrôle sa propre dépense : la base le refuse aussi.
+                                                    <span
+                                                        title="Vous avez saisi cette sortie ou en êtes le bénéficiaire : un autre compte doit la valider."
+                                                        className="text-[11px] font-medium text-gray-400"
+                                                    >
+                                                        Contrôle par un tiers
+                                                    </span>
+                                                ) : (
                                                 <div className="flex items-center gap-1.5">
                                                     <button
                                                         onClick={() =>
                                                             setConfirmDialog({
                                                                 isOpen: true,
                                                                 title: "Valider cette sortie ?",
-                                                                description: `Confirmer la sortie de ${money(row.montant)} — ${row.description}`,
+                                                                description: `Confirmer la sortie de ${money(row.montant)} — ${row.description}${beneficiaire ? `, remise à ${beneficiaire}` : ""}. Vérifiez le justificatif avant de valider : une sortie validée ne peut plus être modifiée.`,
                                                                 onConfirm: async () => {
                                                                     closeConfirm();
                                                                     await handleValidateSortie(row.id);
                                                                 },
                                                             })
                                                         }
-                                                        className="rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100"
+                                                        disabled={!row.hasJustificatif || !beneficiaire}
+                                                        title={
+                                                            !row.hasJustificatif
+                                                                ? "Justificatif manquant : impossible de valider"
+                                                                : !beneficiaire
+                                                                  ? "Bénéficiaire non renseigné : impossible de valider"
+                                                                  : undefined
+                                                        }
+                                                        className="rounded-full border border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
                                                     >
                                                         Valider
                                                     </button>
@@ -888,10 +1154,11 @@ export default function LivreComptable() {
                                                         Rejeter
                                                     </button>
                                                 </div>
+                                                )
                                             )}
                                         </td>
                                         <td className="px-3 py-3 text-right font-semibold">
-                                            <span className={row.kind === "entree" ? "text-green-600" : "text-red-500"}>
+                                            <span className={`${row.kind === "entree" ? "text-green-600" : "text-red-500"} ${closed ? "line-through" : ""}`}>
                                                 {row.kind === "entree" ? "+" : "−"}
                                                 {money(row.montant)}
                                             </span>
@@ -903,16 +1170,23 @@ export default function LivreComptable() {
                                                 </span>
                                             ) : row.rejected ? (
                                                 <span
-                                                    title={(row.raw as SortieComptable).rejection_reason || "Sortie rejetée"}
+                                                    title={sortie?.rejection_reason || "Sortie rejetée"}
                                                     className="rounded-full border border-rose-300 px-2.5 py-0.5 text-[11px] font-semibold text-rose-600"
                                                 >
                                                     Rejetée
+                                                </span>
+                                            ) : row.cancelled ? (
+                                                <span
+                                                    title={sortie?.cancellation_reason ? `Motif : ${sortie.cancellation_reason}` : "Sortie annulée"}
+                                                    className="rounded-full border border-gray-300 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500"
+                                                >
+                                                    Annulée
                                                 </span>
                                             ) : (
                                                 getUserName(row.validatedBy)
                                             )}
                                         </td>
-                                        {(canEditEntry || canDeleteEntry) && (
+                                        {showActions && (
                                             <td className="py-3 pl-3 pr-0 text-right">
                                                 {row.linkedToPayslip ? (
                                                     <span
@@ -924,7 +1198,7 @@ export default function LivreComptable() {
                                                     </span>
                                                 ) : (
                                                     <div className="flex items-center justify-end gap-1">
-                                                        {canEditEntry && (
+                                                        {canEditRow(row) && (
                                                             <button
                                                                 onClick={() => openEdit(row)}
                                                                 title="Modifier"
@@ -933,7 +1207,16 @@ export default function LivreComptable() {
                                                                 <Pencil className="h-4 w-4" />
                                                             </button>
                                                         )}
-                                                        {canDeleteEntry && (
+                                                        {canCancelRow(row) && (
+                                                            <button
+                                                                onClick={() => setCancelModal({ row, reason: "" })}
+                                                                title="Annuler la sortie (avec motif)"
+                                                                className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600"
+                                                            >
+                                                                <Ban className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                        {row.kind === "entree" && canDeleteEntry && (
                                                             <button
                                                                 onClick={() => handleDelete(row)}
                                                                 title="Supprimer"
@@ -942,12 +1225,18 @@ export default function LivreComptable() {
                                                                 <Trash2 className="h-4 w-4" />
                                                             </button>
                                                         )}
+                                                        {sortie && sortieStatus(sortie) === "validated" && !canCancelRow(row) && (
+                                                            <span title="Sortie validée : verrouillée" className="p-1.5 text-gray-300 dark:text-gray-600">
+                                                                <Lock className="h-4 w-4" />
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 )}
                                             </td>
                                         )}
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}
@@ -1032,7 +1321,7 @@ export default function LivreComptable() {
                     <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Nouvelle opération</h2>
-                            <button onClick={() => setShowNewModal(false)} className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
+                            <button onClick={closeNewModal} className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
@@ -1072,16 +1361,62 @@ export default function LivreComptable() {
 
                             <div>
                                 <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    Désignation
+                                    {newKind === "sortie" ? "Motif précis" : "Désignation"}
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="ex: Loyer novembre"
+                                    placeholder={
+                                        newKind === "sortie"
+                                            ? "ex: Taxi Akwa → Bonanjo, dépôt dossier Mballa à l'ambassade"
+                                            : "ex: Loyer novembre"
+                                    }
                                     value={newForm.description}
                                     onChange={(e) => setNewForm((f) => ({ ...f, description: e.target.value }))}
                                     className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
                                 />
+                                {newKind === "sortie" && (
+                                    <p className="mt-1 text-[11px] text-gray-400">
+                                        Transport : trajet et objet de la course. Achat : article et fournisseur.
+                                    </p>
+                                )}
                             </div>
+
+                            {newKind === "sortie" && (
+                                <BeneficiaireFields
+                                    staffUsers={staffUsers}
+                                    beneficiaireId={newForm.beneficiaireId}
+                                    beneficiaireNom={newForm.beneficiaireNom}
+                                    onChange={(patch) => setNewForm((f) => ({ ...f, ...patch }))}
+                                />
+                            )}
+
+                            {newKind === "sortie" && (
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                        Justificatif (photo du reçu, facture, fiche de course)
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept={JUSTIFICATIF_ACCEPT}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0] ?? null;
+                                            const invalid = file ? checkJustificatif(file) : null;
+                                            if (invalid) {
+                                                showNotification(invalid, "error");
+                                                e.target.value = "";
+                                                setNewJustificatif(null);
+                                                return;
+                                            }
+                                            setNewJustificatif(file);
+                                        }}
+                                        className="w-full text-sm text-gray-600 file:mr-3 file:rounded-full file:border-0 file:bg-gray-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white dark:text-gray-300"
+                                    />
+                                    <p className="mt-1 text-[11px] text-gray-400">
+                                        Sans reçu (moto-taxi) : photo d&apos;une fiche de course signée, ou preuve de la mission
+                                        (accusé de dépôt du document).
+                                    </p>
+                                </div>
+                            )}
 
                             {newKind === "entree" ? (
                                 <div>
@@ -1120,14 +1455,19 @@ export default function LivreComptable() {
 
                         <div className="mt-6 flex gap-3">
                             <button
-                                onClick={() => setShowNewModal(false)}
+                                onClick={closeNewModal}
                                 className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                             >
                                 Annuler
                             </button>
                             <button
                                 onClick={handleAdd}
-                                disabled={saving || !newForm.montant || !newForm.description}
+                                disabled={saving || !newForm.montant || !newForm.description || newSortieIncomplete}
+                                title={
+                                    newSortieIncomplete
+                                        ? `Requis : motif précis (${MOTIF_MIN} caractères min.), bénéficiaire et justificatif`
+                                        : undefined
+                                }
                                 className={`flex-1 rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 ${
                                     newKind === "entree" ? "bg-green-600 hover:bg-green-700" : "bg-orange-500 hover:bg-orange-600"
                                 }`}
@@ -1222,6 +1562,15 @@ export default function LivreComptable() {
                                     </Select>
                                 </div>
                             )}
+
+                            {editingRow.kind === "sortie" && (
+                                <BeneficiaireFields
+                                    staffUsers={staffUsers}
+                                    beneficiaireId={editForm.beneficiaireId}
+                                    beneficiaireNom={editForm.beneficiaireNom}
+                                    onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
+                                />
+                            )}
                         </div>
 
                         <div className="mt-6 flex gap-3">
@@ -1285,7 +1634,7 @@ export default function LivreComptable() {
                                         setRejectModal({ open: false, id: "", reason: "" });
                                     }
                                 }}
-                                disabled={rejecting}
+                                disabled={rejecting || !rejectModal.reason.trim()}
                                 className="flex-1 rounded-xl bg-rose-600 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
                             >
                                 {rejecting ? "Rejet…" : "Confirmer le rejet"}
@@ -1293,6 +1642,75 @@ export default function LivreComptable() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Cancel sortie modal — remplace la suppression */}
+            {cancelModal.row && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-rose-600">Annuler la sortie</h2>
+                            <button
+                                onClick={() => setCancelModal({ row: null, reason: "" })}
+                                className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <p className="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {money(cancelModal.row.montant)} — {cancelModal.row.description}
+                        </p>
+                        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                            {cancelModal.row.needsValidation
+                                ? "La demande sera retirée. Elle reste visible, barrée, avec son motif."
+                                : "La sortie validée sera annulée et son montant rendu à la trésorerie. Elle reste visible, barrée, avec son motif. Pour corriger une erreur, saisissez ensuite une nouvelle sortie."}
+                        </p>
+                        <textarea
+                            rows={3}
+                            placeholder="Motif de l'annulation (obligatoire)"
+                            value={cancelModal.reason}
+                            onChange={(e) => setCancelModal((s) => ({ ...s, reason: e.target.value }))}
+                            className="w-full resize-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-gray-400"
+                        />
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                onClick={() => setCancelModal({ row: null, reason: "" })}
+                                disabled={cancelling}
+                                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                            >
+                                Retour
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const { row, reason } = cancelModal;
+                                    if (!row) return;
+                                    setCancelling(true);
+                                    try {
+                                        await handleCancelSortie(row, reason.trim());
+                                    } finally {
+                                        setCancelling(false);
+                                        setCancelModal({ row: null, reason: "" });
+                                    }
+                                }}
+                                disabled={cancelling || !cancelModal.reason.trim()}
+                                className="flex-1 rounded-xl bg-rose-600 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                            >
+                                {cancelling ? "Annulation…" : "Confirmer l'annulation"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {detail && detailRow && (
+                <EcritureDetailModal
+                    detail={detail}
+                    onClose={() => setDetailId(null)}
+                    money={(n) => money(n)}
+                    userName={getUserFullName}
+                    canAttach={canAttachJustificatif(detailRow)}
+                    onAttach={(file) => handleAttachJustificatif(detailRow, file)}
+                />
             )}
 
             <ConfirmDialog
@@ -1303,5 +1721,54 @@ export default function LivreComptable() {
                 onClose={closeConfirm}
             />
         </ProtectedRoute>
+    );
+}
+
+/**
+ * Choix de la personne qui a reçu l'argent : un compte du personnel, ou une
+ * personne sans compte (fournisseur, bailleur, chauffeur) saisie par son nom.
+ */
+function BeneficiaireFields({
+    staffUsers,
+    beneficiaireId,
+    beneficiaireNom,
+    onChange,
+}: {
+    staffUsers: AppUser[];
+    beneficiaireId: string;
+    beneficiaireNom: string;
+    onChange: (patch: { beneficiaireId?: string; beneficiaireNom?: string }) => void;
+}) {
+    return (
+        <div>
+            <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                Remis à (qui a reçu l&apos;argent)
+            </label>
+            <Select value={beneficiaireId} onValueChange={(v) => onChange({ beneficiaireId: v ?? "" })}>
+                <SelectTrigger className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white">
+                    {/* La valeur est un identifiant : on affiche le nom, pas l'UUID. */}
+                    <SelectValue placeholder="Choisir le bénéficiaire">
+                        {beneficiaireId === BENEFICIAIRE_EXTERNE
+                            ? "Personne externe"
+                            : staffUsers.find((u) => u.id === beneficiaireId)?.name ?? "Choisir le bénéficiaire"}
+                    </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                    {staffUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                    ))}
+                    <SelectItem value={BENEFICIAIRE_EXTERNE}>Personne externe (fournisseur, chauffeur…)</SelectItem>
+                </SelectContent>
+            </Select>
+            {beneficiaireId === BENEFICIAIRE_EXTERNE && (
+                <input
+                    type="text"
+                    placeholder="Nom de la personne ou de l'entreprise"
+                    value={beneficiaireNom}
+                    onChange={(e) => onChange({ beneficiaireNom: e.target.value })}
+                    className="mt-2 w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm outline-none focus:border-gray-400"
+                />
+            )}
+        </div>
     );
 }

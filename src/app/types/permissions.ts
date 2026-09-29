@@ -223,7 +223,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'accounting.view': 'Voir la comptabilité',
   'accounting.create': 'Créer des écritures',
   'accounting.edit': 'Modifier la comptabilité',
-  'accounting.delete': 'Supprimer des écritures',
+  'accounting.delete': 'Annuler / supprimer des écritures',
   'accounting.validate': 'Valider la comptabilité',
   'accounting.export': 'Exporter la comptabilité',
   
@@ -273,10 +273,10 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'payments.validate': "Valider un paiement et lever les pénalités de retard.",
 
   'accounting.view': "Accéder au livre comptable (entrées et sorties).",
-  'accounting.create': "Saisir une nouvelle écriture comptable.",
-  'accounting.edit': "Modifier une écriture comptable existante.",
-  'accounting.delete': "Supprimer définitivement une écriture comptable.",
-  'accounting.validate': "Valider une sortie comptable (contrôle financier).",
+  'accounting.create': "Saisir une nouvelle écriture comptable (une sortie exige bénéficiaire et justificatif).",
+  'accounting.edit': "Modifier une entrée, ou une sortie encore en attente (une sortie validée est verrouillée).",
+  'accounting.delete': "Annuler une sortie avec motif (elle reste tracée) ou supprimer une entrée.",
+  'accounting.validate': "Valider une sortie saisie par un autre compte (contrôle financier).",
   'accounting.export': "Exporter les données comptables (Excel/PDF).",
 
   'users.view': "Consulter la liste des comptes utilisateurs.",

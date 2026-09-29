@@ -21,6 +21,7 @@ export const SORTIES_KEY = ['sorties_comptables'];
 export const SOLDE_KEY = ['comptabilite_solde'];
 export const BUDGETS_KEY = ['budgets'];
 export const CUSTOM_CATEGORIES_KEY = ['custom_categories'];
+export const COMPTA_AUDIT_KEY = ['comptabilite_audit'];
 
 /**
  * Solde de trésorerie global, lu depuis le cache maintenu par triggers
@@ -150,28 +151,6 @@ export function useCreateSortieComptable() {
   });
 }
 
-export function useValidateSortie() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, validatedBy }: { id: string; validatedBy: string }) => {
-      const { data, error } = await supabase
-        .from('sorties_comptables')
-        .update({
-          validated_by: validatedBy,
-          validated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as SortieComptable;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
-    },
-  });
-}
-
 export function useDeleteEntree() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -185,15 +164,45 @@ export function useDeleteEntree() {
   });
 }
 
-export function useDeleteSortie() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('sorties_comptables').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SORTIES_KEY });
+/**
+ * Une ligne du journal d'audit comptable, écrite par la base (trigger
+ * trg_comptabilite_audit) et non modifiable par les clients.
+ */
+export interface ComptaAuditEntry {
+  id: number;
+  table_name: string;
+  record_id: string;
+  operation: 'INSERT' | 'UPDATE' | 'DELETE';
+  changed_fields: string[] | null;
+  old_data: Record<string, unknown> | null;
+  new_data: Record<string, unknown> | null;
+  actor_id: string | null;
+  actor_name: string | null;
+  actor_role: string | null;
+  db_role: string | null;
+  created_at: string;
+}
+
+/**
+ * Historique d'une écriture (entrée ou sortie), du plus ancien au plus récent.
+ * Retourne `null` si le journal est indisponible (migration pas encore appliquée).
+ */
+export function useComptaAudit(
+  table: 'entrees_comptables' | 'sorties_comptables',
+  recordId: string | null,
+) {
+  return useQuery({
+    queryKey: [...COMPTA_AUDIT_KEY, table, recordId],
+    enabled: !!recordId,
+    queryFn: async (): Promise<ComptaAuditEntry[] | null> => {
+      const { data, error } = await supabase
+        .from('comptabilite_audit')
+        .select('*')
+        .eq('table_name', table)
+        .eq('record_id', recordId!)
+        .order('created_at', { ascending: true });
+      if (error) return null;
+      return data as ComptaAuditEntry[];
     },
   });
 }

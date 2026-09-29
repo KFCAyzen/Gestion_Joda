@@ -16,6 +16,11 @@ export const entreeComptableSchema = z.object({
   created_at: z.string(),
 });
 
+// Circuit d'une sortie (cf. migration add_sorties_tracabilite_phase1.sql) :
+// pending → validated | rejected | cancelled, et validated → cancelled.
+export const sortieStatusSchema = z.enum(['pending', 'validated', 'rejected', 'cancelled']);
+export type SortieStatus = z.infer<typeof sortieStatusSchema>;
+
 export const sortieComptableSchema = z.object({
   id: z.string().uuid(),
   montant: z.number(),
@@ -23,9 +28,22 @@ export const sortieComptableSchema = z.object({
   categorie: z.string(),
   description: z.string(),
   devise: deviseSchema.default('FCFA'),
+  status: sortieStatusSchema.default('pending'),
   justificatif_url: z.string().nullable().optional(),
+  // Chemin dans le bucket privé `justificatifs-comptables`.
+  justificatif_path: z.string().nullable().optional(),
+  // Qui a reçu l'argent : compte de l'application et/ou nom (externe ou instantané).
+  beneficiaire_id: z.string().uuid().nullable().optional(),
+  beneficiaire_nom: z.string().nullable().optional(),
+  payslip_id: z.string().uuid().nullable().optional(),
   validated_by: z.string().uuid().nullable().optional(),
   validated_at: z.string().nullable().optional(),
+  rejected_by: z.string().uuid().nullable().optional(),
+  rejected_at: z.string().nullable().optional(),
+  rejection_reason: z.string().nullable().optional(),
+  cancelled_by: z.string().uuid().nullable().optional(),
+  cancelled_at: z.string().nullable().optional(),
+  cancellation_reason: z.string().nullable().optional(),
   created_by: z.string().uuid().nullable().optional(),
   created_at: z.string(),
 });
