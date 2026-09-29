@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as FileSystem from 'expo-file-system/legacy';
+import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '../supabase';
 import { apiFetch } from '../api';
@@ -90,6 +92,13 @@ export type LedgerRow = {
   montant: number;
   needsValidation: boolean;
   rejected: boolean;
+  cancelled: boolean;
+  /** Sorties : auteur et bénéficiaire (contrôle par un tiers), pièce déposée. */
+  createdBy: string | null;
+  beneficiaireId: string | null;
+  beneficiaire: string | null;
+  hasJustificatif: boolean;
+  linkedToPayslip: boolean;
 };
 export type Ledger = {
   solde: number;
@@ -104,6 +113,12 @@ export type Ledger = {
 function isValidated(s: { status?: string | null; validated_at?: string | null }): boolean {
   if (s.status) return s.status === 'validated';
   return !!s.validated_at;
+}
+
+/** En attente de validation : ni validée, ni rejetée, ni annulée. */
+function isPending(s: { status?: string | null; validated_at?: string | null }): boolean {
+  if (s.status) return s.status === 'pending';
+  return !s.validated_at;
 }
 
 /** Début (ISO) de la période courante pour la vue choisie (borne serveur). */
@@ -139,19 +154,19 @@ export function useAccountingLedger(view: string = 'mois', devise: 'FCFA' | 'USD
         supabase.from('sorties_comptables').select('*').eq('devise', devise).gte('date', startIso).order('date', { ascending: false }).limit(1000),
         // Sorties à valider : comptage GLOBAL (indépendant de la période) pour
         // ne jamais masquer une dépense en attente d'action. head=true → aucune
-        // ligne transférée, juste le count.
-        supabase.from('sorties_comptables').select('id', { count: 'exact', head: true }).eq('devise', devise).neq('status', 'validated'),
+        // ligne transférée, juste le count. Rejetées et annulées ne sont plus à traiter.
+        supabase.from('sorties_comptables').select('id', { count: 'exact', head: true }).eq('devise', devise).eq('status', 'pending'),
       ]);
       const ent = (entRes.data as any[]) ?? [];
       const sor = (sorRes.data as any[]) ?? [];
 
       const entrees = ent.reduce((s, e) => s + Number(e.montant || 0), 0);
       const sortiesValid = sor.filter(isValidated).reduce((s, x) => s + Number(x.montant || 0), 0);
-      // Sorties de la période en attente (pending) — exclut les rejetées, comme le web.
+      // Sorties de la période en attente (pending) — hors rejetées et annulées, comme le web.
       const sortiesPending = sor
-        .filter((s) => !isValidated(s) && s.status !== 'rejected')
+        .filter(isPending)
         .reduce((acc, x) => acc + Number(x.montant || 0), 0);
-      const toValidate = pendRes.count ?? sor.filter((s) => !isValidated(s)).length;
+      const toValidate = pendRes.count ?? sor.filter(isPending).length;
 
       const rows: LedgerRow[] = [
         ...ent.map((e) => ({
@@ -163,6 +178,12 @@ export function useAccountingLedger(view: string = 'mois', devise: 'FCFA' | 'USD
           montant: Number(e.montant || 0),
           needsValidation: false,
           rejected: false,
+          cancelled: false,
+          createdBy: e.created_by ?? null,
+          beneficiaireId: null,
+          beneficiaire: null,
+          hasJustificatif: false,
+          linkedToPayslip: false,
         })),
         ...sor.map((s) => ({
           id: s.id,
@@ -171,9 +192,15 @@ export function useAccountingLedger(view: string = 'mois', devise: 'FCFA' | 'USD
           desc: s.description ?? 'Sortie',
           cat: s.categorie ?? 'Divers',
           montant: Number(s.montant || 0),
-          // Seules les sorties 'pending' sont à valider (les rejetées ne le sont plus).
-          needsValidation: !isValidated(s) && s.status !== 'rejected',
+          // Seules les sorties 'pending' sont à valider (ni rejetées ni annulées).
+          needsValidation: isPending(s),
           rejected: s.status === 'rejected',
+          cancelled: s.status === 'cancelled',
+          createdBy: s.created_by ?? null,
+          beneficiaireId: s.beneficiaire_id ?? null,
+          beneficiaire: s.beneficiaire_nom ?? null,
+          hasJustificatif: !!s.justificatif_path,
+          linkedToPayslip: !!s.payslip_id,
         })),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -231,27 +258,19 @@ export function useTreasuryBalanceFallback(enabled: boolean, devise: 'FCFA' | 'U
 
 /**
  * Valide une sortie comptable — miroir `LivreComptable.handleValidateSortie`.
- * Pose `validated_by`/`validated_at` (parité web) ET `status='validated'` en
- * best-effort : la lecture mobile (`isValidated`) privilégie `status`, donc on
- * aligne les deux sans casser si la colonne `status` n'existe pas.
+ * Une seule écriture : le trigger `trg_sorties_comptables_controle` pose
+ * validated_by/validated_at (compte connecté) et refuse la validation par
+ * l'auteur, par le bénéficiaire, ou sans justificatif — son message remonte tel quel.
  */
 export function useValidateSortie(actor?: Actor) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const nowIso = new Date().toISOString();
       const { error } = await supabase
         .from('sorties_comptables')
-        .update({ validated_by: actor?.id ?? null, validated_at: nowIso })
+        .update({ status: 'validated', validated_by: actor?.id ?? null, validated_at: new Date().toISOString() })
         .eq('id', id);
-      if (error) throw error;
-
-      // best-effort : flip du `status` si la colonne existe (cohérence d'affichage).
-      const { error: statusErr } = await supabase
-        .from('sorties_comptables')
-        .update({ status: 'validated' })
-        .eq('id', id);
-      if (statusErr) console.warn('[sortie status] non posé:', statusErr.message);
+      if (error) throw new Error(error.message);
 
       await logActivity(actor ?? {}, 'accounting_expense', 'sorties_comptables', id, 'Sortie comptable validée', {});
     },
@@ -280,7 +299,7 @@ export function useRejectSortie(actor?: Actor) {
           rejection_reason: reason || null,
         })
         .eq('id', id);
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       await logActivity(
         actor ?? {},
         'accounting_expense',
@@ -297,10 +316,35 @@ export function useRejectSortie(actor?: Actor) {
   });
 }
 
+/** Bucket privé des pièces justificatives (migration add_sorties_tracabilite_phase1.sql). */
+const JUSTIFICATIFS_BUCKET = 'justificatifs-comptables';
+
+/** Pièce choisie à la saisie d'une sortie (photo du reçu ou PDF). */
+export type JustificatifFile = {
+  uri: string;
+  mimeType: string;
+  /** base64 déjà fourni (images ImagePicker) ; sinon lu depuis `uri`. */
+  base64?: string;
+};
+
+async function uploadJustificatif(file: JustificatifFile): Promise<string> {
+  const b64 = file.base64 ?? (await FileSystem.readAsStringAsync(file.uri, { encoding: 'base64' }));
+  const ext = file.mimeType === 'application/pdf' ? 'pdf' : file.mimeType === 'image/png' ? 'png' : 'jpg';
+  const rand = Math.random().toString(36).slice(2, 10);
+  const path = `sorties/${new Date().toISOString().slice(0, 7)}/${Date.now()}-${rand}.${ext}`;
+  // upsert:false — une pièce déposée ne se remplace pas (aucune policy UPDATE).
+  const { error } = await supabase.storage
+    .from(JUSTIFICATIFS_BUCKET)
+    .upload(path, decode(b64), { contentType: file.mimeType, upsert: false });
+  if (error) throw new Error(`Dépôt du justificatif impossible : ${error.message}`);
+  return path;
+}
+
 /**
  * Ajoute une écriture comptable manuelle — miroir `LivreComptable.handleAdd`.
  * `entree` → `entrees_comptables` (avec `type`), `sortie` → `sorties_comptables`
- * (avec `categorie`).
+ * (avec `categorie`). Une sortie exige un bénéficiaire et une pièce, déposée
+ * AVANT l'insertion : une sortie n'existe jamais sans elle.
  */
 export function useAddAccountingEntry(actor?: Actor) {
   const qc = useQueryClient();
@@ -312,6 +356,9 @@ export function useAddAccountingEntry(actor?: Actor) {
       type,
       categorie,
       devise = 'FCFA',
+      beneficiaireId,
+      beneficiaireNom,
+      justificatif,
     }: {
       kind: 'entree' | 'sortie';
       montant: number;
@@ -319,6 +366,9 @@ export function useAddAccountingEntry(actor?: Actor) {
       type?: string;
       categorie?: string;
       devise?: 'FCFA' | 'USD';
+      beneficiaireId?: string | null;
+      beneficiaireNom?: string | null;
+      justificatif?: JustificatifFile | null;
     }) => {
       const nowIso = new Date().toISOString();
       if (kind === 'entree') {
@@ -330,12 +380,25 @@ export function useAddAccountingEntry(actor?: Actor) {
         if (error) throw error;
         await logActivity(actor ?? {}, 'accounting_entry', 'entrees_comptables', data?.id ?? null, `Entrée comptable — ${description}`, { montant });
       } else {
+        if (!justificatif) throw new Error('Justificatif obligatoire pour une sortie');
+        if (!beneficiaireId && !beneficiaireNom?.trim()) throw new Error('Indiquez à qui l’argent a été remis');
+        const justificatif_path = await uploadJustificatif(justificatif);
         const { data, error } = await supabase
           .from('sorties_comptables')
-          .insert({ montant, description, categorie: categorie ?? 'divers', devise, date: nowIso, created_by: actor?.id ?? null })
+          .insert({
+            montant,
+            description,
+            categorie: categorie ?? 'divers',
+            devise,
+            date: nowIso,
+            created_by: actor?.id ?? null,
+            justificatif_path,
+            beneficiaire_id: beneficiaireId ?? null,
+            beneficiaire_nom: beneficiaireNom?.trim() || null,
+          })
           .select('id')
           .single();
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         await logActivity(actor ?? {}, 'accounting_expense', 'sorties_comptables', data?.id ?? null, `Sortie comptable — ${description}`, { montant });
       }
     },

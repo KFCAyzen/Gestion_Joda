@@ -1,10 +1,21 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowDownLeft, ArrowUpRight, Check, Plus, TriangleAlert, X } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { ArrowDownLeft, ArrowUpRight, Camera, Check, Plus, TriangleAlert, X } from 'lucide-react-native';
 
 import { useAuth } from '@/lib/auth-context';
-import { useAccountingLedger, useValidateSortie, useRejectSortie, useAddAccountingEntry, useTreasuryBalance, useTreasuryBalanceFallback } from '@/lib/hooks/use-admin';
+import {
+  useAccountingLedger,
+  useValidateSortie,
+  useRejectSortie,
+  useAddAccountingEntry,
+  useAdminUsers,
+  useTreasuryBalance,
+  useTreasuryBalanceFallback,
+  type JustificatifFile,
+  type LedgerRow,
+} from '@/lib/hooks/use-admin';
 import {
   Button,
   GlassCard,
@@ -36,6 +47,11 @@ const CAT_LABEL: Record<string, string> = {
   partenaires: 'Partenaires',
   divers: 'Divers',
 };
+
+// Bénéficiaire sans compte (fournisseur, chauffeur…) : saisi par son nom.
+const EXTERNE = '__externe';
+// Motif d'une sortie : le trajet et l'objet, ou l'article et le fournisseur.
+const MOTIF_MIN = 10;
 
 const VIEWS = [
   { id: 'jour', label: 'Jour' },
@@ -72,18 +88,35 @@ export default function AdminCompta() {
   const [filter, setFilter] = useState('tout');
   const [add, setAdd] = useState(false);
   const [reject, setReject] = useState<{ open: boolean; id: string; reason: string }>({ open: false, id: '', reason: '' });
-  const [form, setForm] = useState<{ kind: 'entree' | 'sortie'; montant: string; description: string; cat: string }>({
+  const [form, setForm] = useState<{
+    kind: 'entree' | 'sortie';
+    montant: string;
+    description: string;
+    cat: string;
+    beneficiaireId: string;
+    beneficiaireNom: string;
+    justificatif: JustificatifFile | null;
+  }>({
     kind: 'sortie',
     montant: '',
     description: '',
     cat: 'divers',
+    beneficiaireId: '',
+    beneficiaireNom: '',
+    justificatif: null,
   });
+  const { data: allUsers = [] } = useAdminUsers();
+  // Bénéficiaires possibles : comptes du personnel actifs (pas les étudiants).
+  const staffUsers = allUsers.filter((u) => u.role !== 'student' && u.active);
+
+  // Personne ne contrôle sa propre dépense : la base le refuse aussi.
+  const isSelfValidation = (r: LedgerRow) => !!user?.id && (r.createdBy === user.id || r.beneficiaireId === user.id);
 
   // data.rows est déjà borné à la période (serveur) ; on en dérive les flux.
   const pRows = data?.rows ?? [];
   const periodEntrees = pRows.filter((r) => r.kind === 'in').reduce((s, r) => s + r.montant, 0);
   const periodSorties = pRows
-    .filter((r) => r.kind === 'out' && !r.needsValidation)
+    .filter((r) => r.kind === 'out' && !r.needsValidation && !r.rejected && !r.cancelled)
     .reduce((s, r) => s + r.montant, 0);
   const periodSortiesPending = data?.sortiesPending ?? 0;
   const solde = soldeCache ?? soldeFallback ?? 0;
@@ -91,7 +124,15 @@ export default function AdminCompta() {
   const rows = pRows.filter((r) => filter === 'tout' || (filter === 'entrees' ? r.kind === 'in' : r.kind === 'out'));
 
   function openAdd(kind: 'entree' | 'sortie') {
-    setForm({ kind, montant: '', description: '', cat: kind === 'entree' ? 'revenus_divers' : 'divers' });
+    setForm({
+      kind,
+      montant: '',
+      description: '',
+      cat: kind === 'entree' ? 'revenus_divers' : 'divers',
+      beneficiaireId: '',
+      beneficiaireNom: '',
+      justificatif: null,
+    });
     setAdd(true);
   }
 
@@ -99,11 +140,53 @@ export default function AdminCompta() {
     setForm((f) => ({ ...f, kind, cat: kind === 'entree' ? 'revenus_divers' : 'divers' }));
   }
 
+  async function pickJustificatif(fromCamera: boolean) {
+    const perm = fromCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission requise', "Autorise l'accès pour joindre le justificatif.");
+      return;
+    }
+    const res = fromCamera
+      ? await ImagePicker.launchCameraAsync({ quality: 0.6, base64: true })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.6, base64: true });
+    if (res.canceled || !res.assets[0]) return;
+    const a = res.assets[0];
+    setForm((f) => ({
+      ...f,
+      justificatif: { uri: a.uri, mimeType: a.mimeType ?? 'image/jpeg', base64: a.base64 ?? undefined },
+    }));
+  }
+
+  function promptJustificatif() {
+    Alert.alert('Justificatif', 'Photo du reçu, de la facture ou de la fiche de course.', [
+      { text: 'Prendre une photo', onPress: () => pickJustificatif(true) },
+      { text: 'Choisir une image', onPress: () => pickJustificatif(false) },
+      { text: 'Annuler', style: 'cancel' },
+    ]);
+  }
+
   async function saveAdd() {
     const montant = Number(form.montant);
     if (!montant || montant <= 0 || !form.description.trim()) {
       toast('Montant et description requis');
       return;
+    }
+    const externe = form.beneficiaireId === EXTERNE;
+    if (form.kind === 'sortie') {
+      if (form.description.trim().length < MOTIF_MIN) {
+        toast('Motif trop vague : précisez le trajet et l’objet, ou l’article et le fournisseur');
+        return;
+      }
+      if (!form.beneficiaireId || (externe && form.beneficiaireNom.trim().length < 2)) {
+        toast('Indiquez à qui l’argent a été remis');
+        return;
+      }
+      if (!form.justificatif) {
+        toast('Joignez la photo du justificatif');
+        return;
+      }
     }
     try {
       await addEntry.mutateAsync({
@@ -113,9 +196,17 @@ export default function AdminCompta() {
         type: form.kind === 'entree' ? form.cat : undefined,
         categorie: form.kind === 'sortie' ? form.cat : undefined,
         devise,
+        beneficiaireId: form.kind === 'sortie' && !externe ? form.beneficiaireId : null,
+        beneficiaireNom:
+          form.kind === 'sortie'
+            ? externe
+              ? form.beneficiaireNom.trim()
+              : staffUsers.find((u) => u.id === form.beneficiaireId)?.name ?? null
+            : null,
+        justificatif: form.kind === 'sortie' ? form.justificatif : null,
       });
       setAdd(false);
-      toast('Écriture enregistrée ✓');
+      toast(form.kind === 'sortie' ? 'Sortie enregistrée — à valider par un autre compte' : 'Écriture enregistrée ✓');
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Échec de l’enregistrement');
     }
@@ -132,6 +223,10 @@ export default function AdminCompta() {
 
   async function confirmReject() {
     if (!reject.id) return;
+    if (!reject.reason.trim()) {
+      toast('Le motif du rejet est obligatoire');
+      return;
+    }
     try {
       await rejectSortie.mutateAsync({ id: reject.id, reason: reject.reason.trim() });
       setReject({ open: false, id: '', reason: '' });
@@ -235,20 +330,33 @@ export default function AdminCompta() {
                     <Text style={[T.t1, { fontSize: 13.5 }]} numberOfLines={1}>{r.desc}</Text>
                     <Text style={T.t3}>
                       {shortDate(r.date)} · {CAT_LABEL[r.cat] ?? r.cat}
-                      {r.needsValidation ? ' · à valider' : r.rejected ? ' · rejetée' : ''}
+                      {r.needsValidation ? ' · à valider' : r.rejected ? ' · rejetée' : r.cancelled ? ' · annulée' : ''}
                     </Text>
+                    {r.kind === 'out' && !r.linkedToPayslip ? (
+                      <Text style={[T.t3, !r.beneficiaire && { color: colors.amber }]} numberOfLines={1}>
+                        {r.beneficiaire ? `Remis à ${r.beneficiaire}` : 'Bénéficiaire non renseigné'}
+                        {r.hasJustificatif ? ' · pièce jointe' : ' · sans pièce'}
+                      </Text>
+                    ) : null}
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                    <Text style={[styles.la, { color: r.kind === 'in' ? colors.mint : colors.crimsonVivid }]}>
+                    <Text
+                      style={[
+                        styles.la,
+                        { color: r.kind === 'in' ? colors.mint : colors.crimsonVivid },
+                        (r.rejected || r.cancelled) && styles.laClosed,
+                      ]}>
                       {r.kind === 'in' ? '+' : '−'}
                       {fmtFCFA(r.montant)}
                     </Text>
-                    {r.needsValidation && canWrite ? (
+                    {r.needsValidation && canWrite && isSelfValidation(r) ? (
+                      <Text style={styles.selfNote}>Contrôle par un tiers</Text>
+                    ) : r.needsValidation && canWrite ? (
                       <View style={styles.rowActions}>
                         <Pressable
                           onPress={() => validate(r.id)}
-                          disabled={validateSortie.isPending}
-                          style={styles.validateBtn}>
+                          disabled={validateSortie.isPending || !r.hasJustificatif || !r.beneficiaire}
+                          style={[styles.validateBtn, (!r.hasJustificatif || !r.beneficiaire) && { opacity: 0.4 }]}>
                           <Check size={12} color={colors.mint} strokeWidth={2.6} />
                           <Text style={styles.validateTxt}>Valider</Text>
                         </Pressable>
@@ -281,6 +389,8 @@ export default function AdminCompta() {
               </Pressable>
             </View>
 
+            {/* Champs défilants : bénéficiaire et pièce allongent la fiche d'une sortie. */}
+            <ScrollView style={{ flexGrow: 0 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {/* Type d'écriture */}
             <View style={styles.kindRow}>
               {(['sortie', 'entree'] as const).map((k) => (
@@ -308,14 +418,57 @@ export default function AdminCompta() {
               style={styles.input}
             />
 
-            <Text style={[T.t3, styles.fieldLabel]}>Description</Text>
+            <Text style={[T.t3, styles.fieldLabel]}>{form.kind === 'sortie' ? 'Motif précis' : 'Description'}</Text>
             <TextInput
               value={form.description}
               onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
-              placeholder="Motif de l’écriture"
+              placeholder={form.kind === 'sortie' ? 'Ex : Taxi Akwa → Bonanjo, dépôt dossier' : 'Motif de l’écriture'}
               placeholderTextColor={colors.ink35}
               style={styles.input}
             />
+
+            {form.kind === 'sortie' ? (
+              <>
+                <Text style={[T.t3, styles.fieldLabel]}>Remis à (qui a reçu l’argent)</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }}>
+                  {[...staffUsers.map((u) => ({ id: u.id, label: u.name })), { id: EXTERNE, label: 'Personne externe' }].map((b) => (
+                    <Pressable
+                      key={b.id}
+                      onPress={() => setForm((f) => ({ ...f, beneficiaireId: b.id }))}
+                      style={[styles.catChip, form.beneficiaireId === b.id && styles.catChipOn]}>
+                      <Text style={[styles.catChipTxt, form.beneficiaireId === b.id && { color: '#fff' }]}>{b.label}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+                {form.beneficiaireId === EXTERNE ? (
+                  <TextInput
+                    value={form.beneficiaireNom}
+                    onChangeText={(v) => setForm((f) => ({ ...f, beneficiaireNom: v }))}
+                    placeholder="Nom de la personne ou de l’entreprise"
+                    placeholderTextColor={colors.ink35}
+                    style={[styles.input, { marginTop: 8 }]}
+                  />
+                ) : null}
+
+                <Text style={[T.t3, styles.fieldLabel]}>Justificatif</Text>
+                <Pressable onPress={promptJustificatif} style={styles.pieceBtn}>
+                  {form.justificatif ? (
+                    <>
+                      <Image source={{ uri: form.justificatif.uri }} style={styles.pieceThumb} />
+                      <Text style={styles.pieceTxt}>Pièce jointe — toucher pour changer</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Camera size={16} color={colors.ink70} />
+                      <Text style={styles.pieceTxt}>Photographier le reçu</Text>
+                    </>
+                  )}
+                </Pressable>
+                <Text style={[T.t3, { marginTop: 6 }]}>
+                  Sans reçu (moto-taxi) : fiche de course signée, ou preuve de la mission.
+                </Text>
+              </>
+            ) : null}
 
             <Text style={[T.t3, styles.fieldLabel]}>{form.kind === 'entree' ? 'Type' : 'Catégorie'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }}>
@@ -324,6 +477,7 @@ export default function AdminCompta() {
                   <Text style={[styles.catChipTxt, form.cat === c && { color: '#fff' }]}>{CAT_LABEL[c] ?? c}</Text>
                 </Pressable>
               ))}
+            </ScrollView>
             </ScrollView>
 
             <View style={styles.modalBtns}>
@@ -392,6 +546,21 @@ const makeStyles = (colors: Palette) =>
     lkIn: { backgroundColor: 'rgba(52,217,168,0.13)' },
     lkOut: { backgroundColor: colors.redGlass },
     la: { fontSize: 14, fontWeight: '700' },
+    laClosed: { textDecorationLine: 'line-through', opacity: 0.55 },
+    selfNote: { fontSize: 10.5, fontWeight: '600', color: colors.ink50 },
+    pieceBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      padding: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: colors.glassLine,
+      backgroundColor: colors.glass2,
+    },
+    pieceThumb: { width: 44, height: 44, borderRadius: 8 },
+    pieceTxt: { fontSize: 13, fontWeight: '600', color: colors.ink70 },
     empty: { color: colors.ink35, fontSize: 13, textAlign: 'center', paddingVertical: 30 },
 
     addBtn: {
@@ -439,6 +608,7 @@ const makeStyles = (colors: Palette) =>
       borderColor: colors.glassLine2,
       padding: 18,
       paddingBottom: 34,
+      maxHeight: '92%',
     },
     grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.glassLine2, marginBottom: 14 },
     sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
