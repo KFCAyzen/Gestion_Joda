@@ -47,15 +47,14 @@ async function handleDeleteUser(req: NextRequest, session: AuthSession) {
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
         if (authError) {
             console.error("[delete-user] authError:", authError.message);
-            // « Database error deleting user » = une FK vers users bloque la cascade
-            // auth.users → public.users (cf. migrations/fix_user_delete_fk_actions.sql).
-            // GoTrue ne remonte pas la contrainte fautive : on la révèle en tentant
-            // la suppression côté table, dont l'erreur PostgREST est explicite.
+            // « Database error deleting user » = une erreur SQL dans la cascade
+            // auth.users → public.users (FK bloquante, trigger en échec…). GoTrue
+            // n'en dit pas plus : la vraie erreur est dans les logs Auth Supabase.
+            // Ne PAS tenter de supprimer public.users ici : si ça passe, le compte
+            // Auth reste orphelin (invisible dans la liste mais toujours actif).
             if (/database error/i.test(authError.message)) {
-                const { error: probe } = await supabaseAdmin.from("users").delete().eq("id", userId);
-                console.error("[delete-user] FK bloquante:", probe?.message ?? "(aucune erreur PostgREST)");
                 return NextResponse.json(
-                    { error: fkErrorMessage(probe?.message) },
+                    { error: "La base de données a refusé la suppression de ce compte. Désactivez-le en attendant ; le détail technique figure dans les logs Auth Supabase." },
                     { status: 409 }
                 );
             }
